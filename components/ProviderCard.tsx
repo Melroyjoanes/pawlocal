@@ -28,7 +28,14 @@ export default function ProviderCard({ provider, category }: Props) {
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <p className="font-semibold text-gray-900 truncate">{provider.name}</p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <p className="font-semibold text-gray-900 truncate">{provider.name}</p>
+              {provider.is_verified && (
+                <span className="inline-flex items-center gap-0.5 text-xs font-medium text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                  ✓ Verified
+                </span>
+              )}
+            </div>
             {provider.business_name && (
               <p className="text-xs text-gray-400 truncate">{provider.business_name}</p>
             )}

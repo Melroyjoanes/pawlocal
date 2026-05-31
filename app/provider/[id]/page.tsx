@@ -64,7 +64,14 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           )}
         </div>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-900">{provider.name}</h1>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-bold text-gray-900">{provider.name}</h1>
+            {provider.is_verified && (
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-1 rounded-full">
+                ✓ Verified by PawLocal
+              </span>
+            )}
+          </div>
           {provider.business_name && (
             <p className="text-gray-400 text-sm">{provider.business_name}</p>
           )}
@@ -143,6 +150,18 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
             📞 Call
           </a>
         )}
+      </div>
+
+      {/* Share row */}
+      <div className="mt-4 flex justify-center">
+        <a
+          href={`https://wa.me/?text=${encodeURIComponent(`🐾 Check out ${provider.name} for ${category.name} near Juhu!\n\nhttps://pawlocal-ashen.vercel.app/provider/${provider.id}`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 text-sm text-gray-500 hover:text-green-600 transition"
+        >
+          <span>↗</span> Share this listing on WhatsApp
+        </a>
       </div>
     </div>
   )

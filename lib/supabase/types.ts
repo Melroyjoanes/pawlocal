@@ -27,6 +27,7 @@ export type Provider = {
   working_days: string[]
   bio: string | null
   status: 'pending' | 'approved' | 'rejected'
+  is_verified: boolean
   created_at: string
 }
 

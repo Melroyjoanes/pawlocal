@@ -35,6 +35,17 @@ export default function AdminPage() {
     setProviders((prev) => prev.filter((p) => p.id !== id))
   }
 
+  async function toggleVerified(id: string, current: boolean) {
+    await fetch(`/api/admin/providers/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_verified: !current }),
+    })
+    setProviders((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, is_verified: !current } : p))
+    )
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -93,30 +104,51 @@ export default function AdminPage() {
                     <span className="text-gray-500">📱 {p.whatsapp}</span>
                     {p.price_min && <span className="text-gray-500">· ₹{p.price_min}–{p.price_max}</span>}
                   </div>
-                  {filter === 'pending' && (
-                    <div className="flex gap-2 mt-3">
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    {filter === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => updateStatus(p.id, 'approved')}
+                          className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition"
+                        >
+                          ✓ Approve
+                        </button>
+                        <button
+                          onClick={() => updateStatus(p.id, 'rejected')}
+                          className="bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-200 transition"
+                        >
+                          ✗ Reject
+                        </button>
+                      </>
+                    )}
+                    {filter === 'approved' && (
                       <button
-                        onClick={() => updateStatus(p.id, 'approved')}
-                        className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition"
+                        onClick={() => toggleVerified(p.id, p.is_verified)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                          p.is_verified
+                            ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
                       >
-                        ✓ Approve
+                        {p.is_verified ? '✓ Verified — click to remove' : '☆ Mark as Verified'}
                       </button>
-                      <button
-                        onClick={() => updateStatus(p.id, 'rejected')}
-                        className="bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-200 transition"
-                      >
-                        ✗ Reject
-                      </button>
-                      <a
-                        href={`https://wa.me/91${p.whatsapp.replace(/\D/g, '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="border px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
-                      >
-                        💬 WhatsApp
-                      </a>
-                    </div>
-                  )}
+                    )}
+                    <a
+                      href={`https://wa.me/91${p.whatsapp.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="border px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+                    >
+                      💬 WhatsApp
+                    </a>
+                    <a
+                      href={`/provider/${p.id}`}
+                      target="_blank"
+                      className="border px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+                    >
+                      👁 View
+                    </a>
+                  </div>
                 </div>
               </div>
             )
