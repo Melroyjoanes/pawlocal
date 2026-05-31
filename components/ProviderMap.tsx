@@ -18,7 +18,7 @@ export default function ProviderMap({ providers, category, onSelectProvider, sel
       <Map
         defaultCenter={JUHU_CENTER}
         defaultZoom={DEFAULT_ZOOM}
-        mapId="pawlocal-map"
+        mapId="2e772a5d74f171be6814c0ca"
         className="w-full h-full rounded-xl"
         gestureHandling="greedy"
         disableDefaultUI={false}

@@ -172,7 +172,7 @@ export default function JoinPage() {
               <Map
                 defaultCenter={JUHU_CENTER}
                 defaultZoom={15}
-                mapId="join-map"
+                mapId="2e772a5d74f171be6814c0ca"
                 className="w-full h-full"
                 gestureHandling="greedy"
                 onClick={(e) => {
