@@ -7,24 +7,44 @@ interface Props {
 }
 
 export default function CategoryCard({ category, count }: Props) {
+  const isInsurance = category.slug === 'insurance'
+
   return (
     <Link
       href={`/${category.slug}`}
-      className={`${category.bgColor} rounded-2xl p-6 flex flex-col gap-3 hover:scale-[1.02] transition-transform cursor-pointer border border-transparent hover:border-gray-200`}
+      className="group flex items-center gap-4 bg-white p-4 rounded-2xl border border-border hover:border-[var(--pl-teal)] hover:shadow-sm transition-all"
     >
-      <span className="text-4xl">{category.icon}</span>
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900">{category.name}</h2>
-        <p className="text-sm text-gray-500 mt-0.5">{category.tagline}</p>
+      {/* Icon swatch */}
+      <div
+        className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 transition-transform group-hover:scale-105"
+        style={{ backgroundColor: category.color + '18' }}
+      >
+        {category.icon}
       </div>
-      {count !== undefined && (
-        <span
-          className="text-xs font-medium px-2 py-1 rounded-full w-fit"
-          style={{ backgroundColor: category.color + '20', color: category.color }}
-        >
-          {count} listed
-        </span>
-      )}
+
+      {/* Text */}
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-foreground leading-snug">{category.name}</p>
+        <p className="text-xs text-muted-foreground mt-0.5 truncate">{category.tagline}</p>
+      </div>
+
+      {/* Count or action */}
+      <div className="flex-shrink-0 text-right">
+        {isInsurance ? (
+          <span className="text-xs font-medium" style={{ color: 'var(--pl-teal)' }}>
+            Compare →
+          </span>
+        ) : count !== undefined && count > 0 ? (
+          <span
+            className="text-xs font-semibold px-2 py-1 rounded-full"
+            style={{ backgroundColor: category.color + '14', color: category.color }}
+          >
+            {count}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">Soon</span>
+        )}
+      </div>
     </Link>
   )
 }

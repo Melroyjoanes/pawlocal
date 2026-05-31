@@ -5,7 +5,6 @@ import { CATEGORIES } from '@/lib/categories'
 export default async function HomePage() {
   const supabase = await createClient()
 
-  // Count approved providers per category
   const { data: counts } = await supabase
     .from('providers')
     .select('category_slug')
@@ -21,21 +20,32 @@ export default async function HomePage() {
   return (
     <div>
       {/* Hero */}
-      <div className="mb-10">
-        <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-xs font-medium px-3 py-1.5 rounded-full mb-4">
-          🐾 Juhu &amp; surroundings · {totalProviders > 0 ? `${totalProviders} verified providers` : 'New — adding providers now'}
+      <div className="mb-11">
+        <div className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full mb-5 border"
+          style={{
+            backgroundColor: 'var(--pl-teal-light)',
+            borderColor: 'oklch(0.88 0.07 196)',
+            color: 'var(--pl-teal)',
+          }}
+        >
+          📍 Juhu, Mumbai
+          {totalProviders > 0 && (
+            <span className="opacity-70">· {totalProviders} services listed</span>
+          )}
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
-          The best pet services<br />
-          near <span className="text-indigo-600">Juhu, Mumbai</span>
+
+        <h1
+          className="text-4xl sm:text-5xl leading-tight text-foreground mb-3 font-display"
+        >
+          Pet care you can trust.
         </h1>
-        <p className="text-gray-500 mt-3 text-lg">
-          Dog walkers, groomers, vets, stores, and insurance — all in one place. Every listing is reviewed by us.
+        <p className="text-lg text-muted-foreground max-w-lg">
+          Every walker, groomer, vet, and store on PawLocal is reviewed before going live. Browse, compare, and WhatsApp directly.
         </p>
       </div>
 
       {/* Category grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-14">
         {CATEGORIES.map((category) => (
           <CategoryCard
             key={category.slug}
@@ -46,19 +56,38 @@ export default async function HomePage() {
       </div>
 
       {/* How it works */}
-      <div className="mb-12">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">How PawLocal works</h2>
+      <div className="mb-14">
+        <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-5">
+          How it works
+        </h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { step: '1', icon: '🔍', title: 'Browse by service', desc: 'Pick dog walking, grooming, vet, or a store near you.' },
-            { step: '2', icon: '📍', title: 'Find on the map', desc: 'See exactly where each provider is — toggle list or map view.' },
-            { step: '3', icon: '💬', title: 'WhatsApp directly', desc: 'One tap to contact them. No middleman, no booking fee.' },
-          ].map(({ step, icon, title, desc }) => (
-            <div key={step} className="flex gap-4 p-4 bg-gray-50 rounded-2xl">
-              <div className="text-2xl flex-shrink-0">{icon}</div>
+            {
+              n: '01',
+              title: 'Browse by category',
+              desc: 'Pick the service you need — walking, grooming, vet, store, or insurance.',
+            },
+            {
+              n: '02',
+              title: 'Compare on the map',
+              desc: 'See every provider near you. Toggle between list and map view.',
+            },
+            {
+              n: '03',
+              title: 'WhatsApp directly',
+              desc: 'One tap to contact them. No booking fee, no middleman.',
+            },
+          ].map(({ n, title, desc }) => (
+            <div key={n} className="flex gap-4">
+              <span
+                className="text-2xl font-display leading-none pt-0.5 flex-shrink-0"
+                style={{ color: 'var(--pl-teal)' }}
+              >
+                {n}
+              </span>
               <div>
-                <p className="font-semibold text-gray-900 text-sm">{title}</p>
-                <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{desc}</p>
+                <p className="font-semibold text-foreground text-sm">{title}</p>
+                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{desc}</p>
               </div>
             </div>
           ))}
@@ -66,14 +95,18 @@ export default async function HomePage() {
       </div>
 
       {/* Provider CTA */}
-      <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-100 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 border border-border"
+        style={{ backgroundColor: 'var(--pl-teal-light)' }}
+      >
         <div>
-          <p className="font-semibold text-gray-900">Are you a pet service provider?</p>
-          <p className="text-sm text-gray-500">Get listed for free. Reach pet owners in Juhu &amp; nearby areas.</p>
+          <p className="font-semibold text-foreground text-base">Are you a pet service provider?</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Get listed for free. Every listing is reviewed by our team before going live.
+          </p>
         </div>
         <a
           href="/join"
-          className="bg-black text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-gray-800 transition whitespace-nowrap"
+          className="flex-shrink-0 text-sm font-medium px-5 py-2.5 rounded-full transition-colors bg-[var(--pl-teal)] text-white hover:bg-[var(--pl-teal-hover)] whitespace-nowrap"
         >
           List your service — it&apos;s free
         </a>

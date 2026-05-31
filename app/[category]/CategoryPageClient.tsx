@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { getCategoryBySlug } from '@/lib/categories'
 import type { ProviderWithPhotos, CategorySlug } from '@/lib/supabase/types'
@@ -9,6 +10,29 @@ import ProviderCard from '@/components/ProviderCard'
 import dynamic from 'next/dynamic'
 
 const ProviderMap = dynamic(() => import('@/components/ProviderMap'), { ssr: false })
+
+// Skeleton card shown while loading
+function ProviderCardSkeleton() {
+  return (
+    <div className="flex gap-4 bg-white p-4 rounded-2xl border border-border animate-pulse">
+      <div className="w-[88px] h-[88px] rounded-xl bg-stone-200 flex-shrink-0" />
+      <div className="flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <div className="h-4 bg-stone-200 rounded-full w-2/5" />
+          <div className="h-4 bg-stone-200 rounded-full w-1/6" />
+        </div>
+        <div className="h-3 bg-stone-200 rounded-full w-1/3 mt-2" />
+        <div className="h-3 bg-stone-200 rounded-full w-3/5 mt-1.5" />
+        <div className="flex gap-2 mt-3">
+          <div className="h-7 bg-stone-200 rounded-full w-24" />
+          <div className="h-7 bg-stone-200 rounded-full w-16" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+const EASE_OUT_QUART = [0.25, 0.46, 0.45, 0.94] as const
 
 export default function CategoryPage() {
   const params = useParams()
@@ -28,6 +52,7 @@ export default function CategoryPage() {
       .select('*, provider_photos(*)')
       .eq('category_slug', slug as CategorySlug)
       .eq('status', 'approved')
+      .order('is_verified', { ascending: false })
       .order('created_at', { ascending: false })
       .then(({ data }) => {
         setProviders((data as unknown as ProviderWithPhotos[]) ?? [])
@@ -36,82 +61,143 @@ export default function CategoryPage() {
   }, [slug, category])
 
   if (!category) {
-    return <div className="py-20 text-center text-gray-400">Category not found.</div>
+    return <div className="py-20 text-center text-muted-foreground">Category not found.</div>
   }
 
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <span className="text-3xl">{category.icon}</span>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{category.name}</h1>
-          <p className="text-sm text-gray-400">{category.tagline} · Juhu, Mumbai</p>
+      <div className="flex items-center gap-4 mb-7">
+        <div
+          className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
+          style={{ backgroundColor: category.color + '18' }}
+        >
+          {category.icon}
         </div>
+        <div>
+          <h1 className="text-xl font-bold text-foreground font-display">{category.name}</h1>
+          <p className="text-sm text-muted-foreground">{category.tagline} · Juhu, Mumbai</p>
+        </div>
+        {!loading && (
+          <span className="ml-auto text-xs text-muted-foreground">
+            {providers.length} {providers.length === 1 ? 'result' : 'results'}
+          </span>
+        )}
       </div>
 
       {/* View toggle */}
-      <div className="flex gap-2 mb-5">
+      <div className="flex gap-1.5 mb-6 p-1 bg-muted rounded-xl w-fit">
         {(['list', 'map'] as const).map((v) => (
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition ${
+            className={`relative px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               view === v
-                ? 'bg-black text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            {v === 'list' ? '☰ List' : '🗺 Map'}
+            {view === v && (
+              <motion.span
+                layoutId="view-pill"
+                className="absolute inset-0 bg-white rounded-lg shadow-sm"
+                transition={{ duration: 0.18, ease: EASE_OUT_QUART }}
+              />
+            )}
+            <span className="relative z-10">
+              {v === 'list' ? '☰ List' : '🗺 Map'}
+            </span>
           </button>
         ))}
-        <span className="ml-auto text-sm text-gray-400 self-center">
-          {providers.length} provider{providers.length !== 1 ? 's' : ''}
-        </span>
       </div>
 
       {/* Content */}
       {loading ? (
-        <div className="py-20 text-center text-gray-400">Loading...</div>
-      ) : providers.length === 0 ? (
-        <div className="py-20 text-center">
-          <p className="text-gray-400 mb-4">No providers listed yet in this area.</p>
-          <a href="/join" className="text-sm font-medium text-indigo-600 hover:underline">
-            Be the first to list →
-          </a>
-        </div>
-      ) : view === 'list' ? (
         <div className="flex flex-col gap-3">
-          {providers.map((p) => (
-            <ProviderCard key={p.id} provider={p} category={category} />
+          {Array.from({ length: 4 }).map((_, i) => (
+            <ProviderCardSkeleton key={i} />
           ))}
         </div>
+      ) : providers.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: EASE_OUT_QUART }}
+          className="py-20 text-center"
+        >
+          <p className="text-muted-foreground mb-4">No providers listed yet in this area.</p>
+          <a
+            href="/join"
+            className="text-sm font-medium transition-colors hover:opacity-80"
+            style={{ color: 'var(--pl-teal)' }}
+          >
+            Be the first to list →
+          </a>
+        </motion.div>
       ) : (
-        <div className="flex flex-col lg:flex-row gap-4" style={{ height: '600px' }}>
-          <div className="flex-1 min-h-0">
-            <ProviderMap
-              providers={providers}
-              category={category}
-              onSelectProvider={setSelectedId}
-              selectedId={selectedId}
-            />
-          </div>
-          <div className="lg:w-72 overflow-y-auto flex flex-col gap-3 pr-1">
-            {providers
-              .sort((a, b) => (a.id === selectedId ? -1 : b.id === selectedId ? 1 : 0))
-              .map((p) => (
-                <div
+        <AnimatePresence mode="wait">
+          {view === 'list' ? (
+            <motion.div
+              key="list"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="flex flex-col gap-3"
+            >
+              {providers.map((p, i) => (
+                <motion.div
                   key={p.id}
-                  onClick={() => setSelectedId(p.id)}
-                  className={`cursor-pointer rounded-xl transition ${
-                    selectedId === p.id ? 'ring-2 ring-black' : ''
-                  }`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.28,
+                    ease: EASE_OUT_QUART,
+                    delay: Math.min(i * 0.04, 0.24),
+                  }}
                 >
                   <ProviderCard provider={p} category={category} />
-                </div>
+                </motion.div>
               ))}
-          </div>
-        </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="map"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="flex flex-col lg:flex-row gap-4"
+              style={{ height: '600px' }}
+            >
+              <div className="flex-1 min-h-0">
+                <ProviderMap
+                  providers={providers}
+                  category={category}
+                  onSelectProvider={setSelectedId}
+                  selectedId={selectedId}
+                />
+              </div>
+              <div className="lg:w-72 overflow-y-auto flex flex-col gap-3 pr-1">
+                {providers
+                  .sort((a, b) => (a.id === selectedId ? -1 : b.id === selectedId ? 1 : 0))
+                  .map((p) => (
+                    <div
+                      key={p.id}
+                      onClick={() => setSelectedId(p.id)}
+                      className={`cursor-pointer rounded-2xl transition-shadow ${
+                        selectedId === p.id
+                          ? 'ring-2 ring-[var(--pl-teal)] shadow-md'
+                          : ''
+                      }`}
+                    >
+                      <ProviderCard provider={p} category={category} />
+                    </div>
+                  ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       )}
     </div>
   )

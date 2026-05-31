@@ -38,93 +38,132 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
   const category = getCategoryBySlug(provider.category_slug)
   if (!category) notFound()
 
-  const primaryPhoto = provider.provider_photos.find((p) => p.is_primary) ?? provider.provider_photos[0]
+  const primaryPhoto =
+    provider.provider_photos.find((p) => p.is_primary) ?? provider.provider_photos[0]
   const galleryPhotos = provider.provider_photos
     .filter((p) => !p.is_primary)
     .sort((a, b) => a.sort_order - b.sort_order)
 
   const whatsappUrl = `https://wa.me/91${provider.whatsapp.replace(/\D/g, '')}`
+  const shareUrl = `https://wa.me/?text=${encodeURIComponent(
+    `🐾 Check out ${provider.name} for ${category.name} near Juhu!\n\nhttps://pawlocal-ashen.vercel.app/provider/${provider.id}`
+  )}`
+
+  function formatHour(t: string) {
+    const [h, m] = t.split(':')
+    const hour = parseInt(h, 10)
+    const ampm = hour >= 12 ? 'pm' : 'am'
+    const display = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour
+    return m === '00' ? `${display}${ampm}` : `${display}:${m}${ampm}`
+  }
 
   return (
     <div className="max-w-2xl mx-auto">
       {/* Back */}
-      <a href={`/${provider.category_slug}`} className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1 mb-6">
-        ← Back to {category.name}
+      <a
+        href={`/${provider.category_slug}`}
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-7"
+      >
+        ← {category.name}
       </a>
 
       {/* Profile header */}
-      <div className="flex gap-5 items-start mb-6">
-        <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-gray-100">
+      <div className="flex gap-5 items-start mb-7">
+        <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-stone-100">
           {primaryPhoto ? (
-            <img src={primaryPhoto.url} alt={provider.name} className="w-full h-full object-cover" />
+            <img
+              src={primaryPhoto.url}
+              alt={provider.name}
+              className="w-full h-full object-cover"
+            />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-4xl">
+            <div
+              className="w-full h-full flex items-center justify-center text-4xl"
+              style={{ backgroundColor: category.color + '18' }}
+            >
               {category.icon}
             </div>
           )}
         </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-bold text-gray-900">{provider.name}</h1>
+
+        <div className="flex-1 min-w-0">
+          <h1 className="text-2xl font-display text-foreground leading-tight">
+            {provider.name}
+          </h1>
+          {provider.business_name && provider.business_name !== provider.name && (
+            <p className="text-sm text-muted-foreground mt-0.5">{provider.business_name}</p>
+          )}
+
+          <div className="flex items-center gap-2 flex-wrap mt-2">
+            <span
+              className="inline-block text-xs font-medium px-2.5 py-1 rounded-full"
+              style={{ backgroundColor: category.color + '18', color: category.color }}
+            >
+              {category.icon} {category.name}
+            </span>
             {provider.is_verified && (
-              <span className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-1 rounded-full">
+              <span
+                className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border"
+                style={{
+                  backgroundColor: 'var(--pl-amber-light)',
+                  borderColor: 'oklch(0.88 0.12 75)',
+                  color: 'var(--pl-amber)',
+                }}
+              >
                 ✓ Verified by PawLocal
               </span>
             )}
           </div>
-          {provider.business_name && (
-            <p className="text-gray-400 text-sm">{provider.business_name}</p>
-          )}
-          <span
-            className="inline-block mt-2 text-xs font-medium px-2 py-1 rounded-full"
-            style={{ backgroundColor: category.color + '20', color: category.color }}
-          >
-            {category.icon} {category.name}
-          </span>
         </div>
       </div>
 
       {/* Bio */}
       {provider.bio && (
-        <p className="text-gray-600 leading-relaxed mb-6">{provider.bio}</p>
+        <p className="text-muted-foreground leading-relaxed mb-7">{provider.bio}</p>
       )}
 
-      {/* Details grid */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      {/* Details */}
+      <div className="grid grid-cols-2 gap-3 mb-7">
         {(provider.price_min || provider.price_max) && (
-          <div className="bg-gray-50 rounded-xl p-4">
-            <p className="text-xs text-gray-400 mb-1">Pricing</p>
-            <p className="font-semibold text-gray-900">
+          <div className="bg-white border border-border rounded-xl p-4">
+            <p className="text-xs text-muted-foreground mb-1.5">Pricing</p>
+            <p className="font-semibold text-foreground">
               ₹{provider.price_min}
               {provider.price_max && provider.price_max !== provider.price_min
                 ? `–₹${provider.price_max}`
                 : ''}
-              <span className="text-xs font-normal text-gray-400 ml-1">{provider.price_unit}</span>
             </p>
+            <p className="text-xs text-muted-foreground mt-0.5">{provider.price_unit}</p>
           </div>
         )}
-        <div className="bg-gray-50 rounded-xl p-4">
-          <p className="text-xs text-gray-400 mb-1">Hours</p>
-          <p className="font-semibold text-gray-900">
-            {provider.hours_from} – {provider.hours_to}
+        <div className="bg-white border border-border rounded-xl p-4">
+          <p className="text-xs text-muted-foreground mb-1.5">Hours</p>
+          <p className="font-semibold text-foreground">
+            {formatHour(provider.hours_from)} – {formatHour(provider.hours_to)}
           </p>
-          <p className="text-xs text-gray-400 mt-1">
-            {provider.working_days.join(', ')}
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {provider.working_days.slice(0, 3).join(', ')}
+            {provider.working_days.length > 3 ? ` +${provider.working_days.length - 3} more` : ''}
           </p>
         </div>
-        <div className="bg-gray-50 rounded-xl p-4 col-span-2">
-          <p className="text-xs text-gray-400 mb-1">Location</p>
-          <p className="font-medium text-gray-900">{provider.address}</p>
+        <div className="bg-white border border-border rounded-xl p-4 col-span-2">
+          <p className="text-xs text-muted-foreground mb-1.5">Location</p>
+          <p className="font-medium text-foreground">{provider.address}</p>
         </div>
       </div>
 
       {/* Gallery */}
       {galleryPhotos.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-sm font-medium text-gray-400 mb-3 uppercase tracking-wide">Photos</h2>
+        <div className="mb-7">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+            Photos
+          </p>
           <div className="grid grid-cols-3 gap-2">
             {galleryPhotos.map((photo) => (
-              <div key={photo.id} className="aspect-square rounded-xl overflow-hidden bg-gray-100">
+              <div
+                key={photo.id}
+                className="aspect-square rounded-xl overflow-hidden bg-stone-100"
+              >
                 <img src={photo.url} alt="" className="w-full h-full object-cover" />
               </div>
             ))}
@@ -132,35 +171,35 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         </div>
       )}
 
-      {/* CTA buttons */}
-      <div className="flex gap-3 sticky bottom-4">
+      {/* Sticky CTA */}
+      <div className="sticky bottom-4 flex gap-3">
         <a
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 bg-green-500 text-white py-4 rounded-2xl font-semibold text-center hover:bg-green-600 transition text-lg"
+          className="flex-1 bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold text-center transition-colors flex items-center justify-center gap-2"
         >
           💬 WhatsApp
         </a>
         {provider.phone && (
           <a
             href={`tel:${provider.phone}`}
-            className="flex-1 border-2 border-gray-200 text-gray-700 py-4 rounded-2xl font-semibold text-center hover:bg-gray-50 transition text-lg"
+            className="flex-1 bg-white border border-border text-foreground py-4 rounded-2xl font-semibold text-center hover:bg-muted transition-colors flex items-center justify-center gap-2"
           >
             📞 Call
           </a>
         )}
       </div>
 
-      {/* Share row */}
+      {/* Share */}
       <div className="mt-4 flex justify-center">
         <a
-          href={`https://wa.me/?text=${encodeURIComponent(`🐾 Check out ${provider.name} for ${category.name} near Juhu!\n\nhttps://pawlocal-ashen.vercel.app/provider/${provider.id}`)}`}
+          href={shareUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 text-sm text-gray-500 hover:text-green-600 transition"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors"
         >
-          <span>↗</span> Share this listing on WhatsApp
+          ↗ Share this listing on WhatsApp
         </a>
       </div>
     </div>
