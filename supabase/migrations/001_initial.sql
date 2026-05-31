@@ -71,6 +71,19 @@ ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "categories are public" ON categories
   FOR SELECT USING (true);
 
+-- Performance indexes
+CREATE INDEX idx_providers_category_slug ON providers(category_slug);
+CREATE INDEX idx_providers_status ON providers(status);
+CREATE INDEX idx_provider_photos_provider_id ON provider_photos(provider_id);
+
+-- RLS: admin (service role) can update and delete providers
+CREATE POLICY "admin can update providers" ON providers
+  FOR UPDATE USING (true) WITH CHECK (true);
+
+-- RLS: admin can delete provider photos
+CREATE POLICY "admin can delete photos" ON provider_photos
+  FOR DELETE USING (true);
+
 -- Storage bucket for provider photos
 INSERT INTO storage.buckets (id, name, public) VALUES ('provider-photos', 'provider-photos', true);
 CREATE POLICY "public can read photos" ON storage.objects FOR SELECT USING (bucket_id = 'provider-photos');
