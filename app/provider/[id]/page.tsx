@@ -16,7 +16,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
 
   if (!data) notFound()
 
-  const provider = data as ProviderWithPhotos
+  const provider = data as unknown as ProviderWithPhotos
   const category = getCategoryBySlug(provider.category_slug)
   if (!category) notFound()
 

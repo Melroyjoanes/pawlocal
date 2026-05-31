@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getCategoryBySlug } from '@/lib/categories'
-import type { ProviderWithPhotos } from '@/lib/supabase/types'
+import type { ProviderWithPhotos, CategorySlug } from '@/lib/supabase/types'
 import ProviderCard from '@/components/ProviderCard'
 import dynamic from 'next/dynamic'
 
@@ -26,11 +26,11 @@ export default function CategoryPage() {
     supabase
       .from('providers')
       .select('*, provider_photos(*)')
-      .eq('category_slug', slug)
+      .eq('category_slug', slug as CategorySlug)
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
       .then(({ data }) => {
-        setProviders((data as ProviderWithPhotos[]) ?? [])
+        setProviders((data as unknown as ProviderWithPhotos[]) ?? [])
         setLoading(false)
       })
   }, [slug, category])

@@ -1,6 +1,6 @@
 export type CategorySlug = 'dog-walking' | 'grooming' | 'vet' | 'pet-store' | 'insurance'
 
-export interface Category {
+export type Category = {
   id: string
   name: string
   slug: CategorySlug
@@ -9,7 +9,7 @@ export interface Category {
   tagline: string | null
 }
 
-export interface Provider {
+export type Provider = {
   id: string
   name: string
   business_name: string | null
@@ -30,7 +30,7 @@ export interface Provider {
   created_at: string
 }
 
-export interface ProviderPhoto {
+export type ProviderPhoto = {
   id: string
   provider_id: string
   url: string
@@ -38,16 +38,51 @@ export interface ProviderPhoto {
   sort_order: number
 }
 
-export interface ProviderWithPhotos extends Provider {
+export type ProviderWithPhotos = Provider & {
   provider_photos: ProviderPhoto[]
+}
+
+export type ProviderInsert = {
+  name: string
+  business_name?: string | null
+  category_slug: CategorySlug
+  whatsapp: string
+  phone?: string | null
+  lat: number
+  lng: number
+  address: string
+  price_min?: number | null
+  price_max?: number | null
+  price_unit?: string
+  hours_from?: string
+  hours_to?: string
+  working_days?: string[]
+  bio?: string | null
+}
+
+export type ProviderPhotoInsert = {
+  provider_id: string
+  url: string
+  is_primary: boolean
+  sort_order: number
+}
+
+type GenericRelationship = {
+  foreignKeyName: string
+  columns: string[]
+  isOneToOne?: boolean
+  referencedRelation: string
+  referencedColumns: string[]
 }
 
 export type Database = {
   public: {
     Tables: {
-      categories: { Row: Category; Insert: Omit<Category, 'id'>; Update: Partial<Category> }
-      providers: { Row: Provider; Insert: Omit<Provider, 'id' | 'created_at' | 'status'>; Update: Partial<Provider> }
-      provider_photos: { Row: ProviderPhoto; Insert: Omit<ProviderPhoto, 'id'>; Update: Partial<ProviderPhoto> }
+      categories: { Row: Category; Insert: Omit<Category, 'id'>; Update: Partial<Category>; Relationships: GenericRelationship[] }
+      providers: { Row: Provider; Insert: ProviderInsert; Update: Partial<Provider>; Relationships: GenericRelationship[] }
+      provider_photos: { Row: ProviderPhoto; Insert: ProviderPhotoInsert; Update: Partial<ProviderPhoto>; Relationships: GenericRelationship[] }
     }
+    Views: Record<string, { Row: Record<string, unknown>; Relationships: GenericRelationship[] }>
+    Functions: Record<string, { Args: Record<string, unknown>; Returns: unknown }>
   }
 }
