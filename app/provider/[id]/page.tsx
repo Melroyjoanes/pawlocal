@@ -1,7 +1,25 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getCategoryBySlug } from '@/lib/categories'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ id: string }> }
+): Promise<Metadata> {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('providers')
+    .select('name, bio, category_slug')
+    .eq('id', id)
+    .single()
+  if (!data) return { title: 'Provider not found | PawLocal' }
+  return {
+    title: `${data.name} | PawLocal`,
+    description: data.bio ?? `${data.name} offers ${data.category_slug.replace(/-/g, ' ')} services in Juhu, Mumbai.`,
+  }
+}
 
 export default async function ProviderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
