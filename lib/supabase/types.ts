@@ -28,6 +28,8 @@ export type Provider = {
   bio: string | null
   status: 'pending' | 'approved' | 'rejected'
   is_verified: boolean
+  source: string
+  google_place_id: string | null
   created_at: string
 }
 

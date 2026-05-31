@@ -53,7 +53,7 @@ export default function ProviderCard({ provider, category }: Props) {
         {provider.bio && (
           <p className="text-xs text-gray-500 mt-1 line-clamp-2">{provider.bio}</p>
         )}
-        <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
+        <div className="flex gap-2 mt-3 flex-wrap items-center" onClick={(e) => e.stopPropagation()}>
           <a
             href={whatsappUrl}
             target="_blank"
@@ -69,6 +69,9 @@ export default function ProviderCard({ provider, category }: Props) {
             >
               Call
             </a>
+          )}
+          {provider.source === 'google_places' && !provider.is_verified && (
+            <span className="text-xs text-gray-300 ml-auto">via Google</span>
           )}
         </div>
       </div>
