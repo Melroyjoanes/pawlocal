@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { getCategoryBySlug } from '@/lib/categories'
-import type { ProviderWithPhotos, CategorySlug } from '@/lib/supabase/types'
+import type { ProviderWithPhotos } from '@/lib/supabase/types'
 import ProviderCard from '@/components/ProviderCard'
 import dynamic from 'next/dynamic'
 
@@ -50,7 +50,7 @@ export default function CategoryPage() {
     supabase
       .from('providers')
       .select('*, provider_photos(*)')
-      .eq('category_slug', slug as CategorySlug)
+      .or(`category_slug.eq.${slug},category_slugs.cs.{${slug}}`)
       .eq('status', 'approved')
       .order('is_verified', { ascending: false })
       .order('created_at', { ascending: false })

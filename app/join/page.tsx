@@ -4,6 +4,10 @@ import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { CATEGORIES, JUHU_CENTER } from '@/lib/categories'
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps'
+import AddressAutocomplete from '@/components/AddressAutocomplete'
+
+// Insurance is an affiliate page — providers can't list there
+const SERVICE_CATEGORIES = CATEGORIES.filter((c) => c.slug !== 'insurance')
 
 export default function JoinPage() {
   const [step, setStep] = useState<'form' | 'success'>('form')
@@ -16,7 +20,7 @@ export default function JoinPage() {
   const [form, setForm] = useState({
     name: '',
     business_name: '',
-    category_slug: 'dog-walking',
+    category_slugs: ['dog-walking'] as string[],
     whatsapp: '',
     phone: '',
     address: '',
@@ -27,6 +31,19 @@ export default function JoinPage() {
     hours_to: '18:00',
     bio: '',
   })
+
+  function toggleCategory(slug: string) {
+    setForm((prev) => {
+      const has = prev.category_slugs.includes(slug)
+      if (has && prev.category_slugs.length === 1) return prev // need at least one
+      return {
+        ...prev,
+        category_slugs: has
+          ? prev.category_slugs.filter((s) => s !== slug)
+          : [...prev.category_slugs, slug],
+      }
+    })
+  }
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []).slice(0, 3)
@@ -49,12 +66,14 @@ export default function JoinPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (form.category_slugs.length === 0) return
     setSubmitting(true)
     const res = await fetch('/api/providers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...form,
+        category_slug: form.category_slugs[0], // primary category (backward compat)
         lat: pin.lat,
         lng: pin.lng,
         photo_urls: photoUrls,
@@ -68,12 +87,12 @@ export default function JoinPage() {
     return (
       <div className="max-w-md mx-auto text-center py-20">
         <div className="text-6xl mb-4">🎉</div>
-        <h1 className="text-2xl font-bold mb-2">You're in the queue!</h1>
-        <p className="text-gray-500">
-          We'll review your listing and WhatsApp you at{' '}
-          <strong>{form.whatsapp}</strong> within 24 hours once you're live.
+        <h1 className="text-2xl font-bold mb-2">You&apos;re in the queue!</h1>
+        <p className="text-muted-foreground">
+          We&apos;ll review your listing and WhatsApp you at{' '}
+          <strong>{form.whatsapp}</strong> within 24 hours once you&apos;re live.
         </p>
-        <a href="/" className="mt-6 inline-block text-sm text-indigo-600 hover:underline">
+        <a href="/" className="mt-6 inline-block text-sm hover:underline" style={{ color: 'var(--pl-teal)' }}>
           ← Back to home
         </a>
       </div>
@@ -81,97 +100,119 @@ export default function JoinPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto pb-10">
-      <h1 className="text-2xl font-bold mb-1">List your service</h1>
-      <p className="text-gray-400 text-sm mb-8">
-        Free forever. Takes 5 minutes. We&apos;ll review and go live within 24 hours.
-      </p>
+    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
+      <div className="max-w-xl mx-auto pb-12">
+        <h1 className="text-2xl font-bold mb-1">List your service</h1>
+        <p className="text-muted-foreground text-sm mb-8">
+          Free forever. Takes 5 minutes. We&apos;ll review and go live within 24 hours.
+        </p>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        {/* Name */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Your name *</label>
-          <input
-            required
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-            placeholder="Ravi Kumar"
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
-        {/* Business name */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Business name (optional)</label>
-          <input
-            value={form.business_name}
-            onChange={(e) => setForm({ ...form, business_name: e.target.value })}
-            className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-            placeholder="Ravi's Dog Walk"
-          />
-        </div>
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Your name *</label>
+            <input
+              required
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+              placeholder="Ravi Kumar"
+            />
+          </div>
 
-        {/* Category */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Service type *</label>
-          <select
-            required
-            value={form.category_slug}
-            onChange={(e) => setForm({ ...form, category_slug: e.target.value })}
-            className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black bg-white"
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c.slug} value={c.slug}>
-                {c.icon} {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
+          {/* Business name */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Business name (optional)</label>
+            <input
+              value={form.business_name}
+              onChange={(e) => setForm({ ...form, business_name: e.target.value })}
+              className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+              placeholder="Ravi&apos;s Dog Walk"
+            />
+          </div>
 
-        {/* WhatsApp */}
-        <div>
-          <label className="block text-sm font-medium mb-1">WhatsApp number *</label>
-          <input
-            required
-            value={form.whatsapp}
-            onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
-            className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-            placeholder="98765 43210"
-          />
-        </div>
+          {/* Service type — multi-select chips */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">
+              Service type * <span className="text-muted-foreground font-normal">(select all that apply)</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {SERVICE_CATEGORIES.map((c) => {
+                const selected = form.category_slugs.includes(c.slug)
+                return (
+                  <button
+                    key={c.slug}
+                    type="button"
+                    onClick={() => toggleCategory(c.slug)}
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium border transition-all ${
+                      selected
+                        ? 'text-white border-transparent'
+                        : 'bg-white text-foreground border-border hover:border-[var(--pl-teal)]'
+                    }`}
+                    style={selected ? { backgroundColor: 'var(--pl-teal)', borderColor: 'var(--pl-teal)' } : {}}
+                  >
+                    <span>{c.icon}</span>
+                    <span>{c.name}</span>
+                    {selected && <span className="text-xs opacity-80">✓</span>}
+                  </button>
+                )
+              })}
+            </div>
+            {form.category_slugs.length === 0 && (
+              <p className="text-xs text-red-500 mt-1.5">Please select at least one service type.</p>
+            )}
+          </div>
 
-        {/* Phone */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Phone (optional)</label>
-          <input
-            value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
-            className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-            placeholder="98765 43210"
-          />
-        </div>
+          {/* WhatsApp */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">WhatsApp number *</label>
+            <input
+              required
+              type="tel"
+              value={form.whatsapp}
+              onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
+              className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+              placeholder="98765 43210"
+            />
+          </div>
 
-        {/* Address */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Your address / area *</label>
-          <input
-            required
-            value={form.address}
-            onChange={(e) => setForm({ ...form, address: e.target.value })}
-            className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-            placeholder="Juhu Tara Road, Juhu, Mumbai"
-          />
-        </div>
+          {/* Phone */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Phone (optional)</label>
+            <input
+              type="tel"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+              placeholder="98765 43210"
+            />
+          </div>
 
-        {/* Pin on map */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Pin your location *</label>
-          <p className="text-xs text-gray-400 mb-2">Click on the map to set your exact location</p>
-          <div className="h-52 rounded-xl overflow-hidden border">
-            <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
+          {/* Address — autocomplete */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Your address / area *</label>
+            <AddressAutocomplete
+              value={form.address}
+              onChange={(address) => setForm({ ...form, address })}
+              onPlaceSelect={(coords) => setPin(coords)}
+              required
+            />
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Start typing — select from the dropdown to pin your location automatically.
+            </p>
+          </div>
+
+          {/* Map — visual confirmation, still clickable to adjust pin */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Confirm your pin</label>
+            <p className="text-xs text-muted-foreground mb-2">
+              The pin updates automatically when you pick an address. You can also tap the map to adjust.
+            </p>
+            <div className="h-48 rounded-xl overflow-hidden border border-border">
               <Map
-                defaultCenter={JUHU_CENTER}
-                defaultZoom={15}
+                center={pin}
+                zoom={16}
                 mapId="2e772a5d74f171be6814c0ca"
                 className="w-full h-full"
                 gestureHandling="greedy"
@@ -181,114 +222,115 @@ export default function JoinPage() {
               >
                 <AdvancedMarker position={pin} />
               </Map>
-            </APIProvider>
+            </div>
           </div>
-        </div>
 
-        {/* Pricing */}
-        <div className="grid grid-cols-2 xs:grid-cols-2 gap-3">
+          {/* Pricing */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Min price (₹)</label>
+              <input
+                type="number"
+                value={form.price_min}
+                onChange={(e) => setForm({ ...form, price_min: e.target.value })}
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+                placeholder="300"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Max price (₹)</label>
+              <input
+                type="number"
+                value={form.price_max}
+                onChange={(e) => setForm({ ...form, price_max: e.target.value })}
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+                placeholder="600"
+              />
+            </div>
+          </div>
+
+          {/* Hours */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Opens at</label>
+              <input
+                type="time"
+                value={form.hours_from}
+                onChange={(e) => setForm({ ...form, hours_from: e.target.value })}
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Closes at</label>
+              <input
+                type="time"
+                value={form.hours_to}
+                onChange={(e) => setForm({ ...form, hours_to: e.target.value })}
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+              />
+            </div>
+          </div>
+
+          {/* Bio */}
           <div>
-            <label className="block text-sm font-medium mb-1">Min price (₹)</label>
+            <label className="block text-sm font-medium mb-1.5">Short bio (max 200 chars)</label>
+            <textarea
+              maxLength={200}
+              value={form.bio}
+              onChange={(e) => setForm({ ...form, bio: e.target.value })}
+              className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] resize-none bg-white"
+              rows={3}
+              placeholder="I&apos;ve walked 50+ dogs in Juhu for 3 years. Trained in basic pet first aid."
+            />
+            <p className="text-xs text-muted-foreground mt-1 text-right">{form.bio.length}/200</p>
+          </div>
+
+          {/* Photos */}
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Photos (up to 3)</label>
+            <p className="text-xs text-muted-foreground mb-2">First photo will be your profile picture</p>
+            <div className="flex gap-3 flex-wrap">
+              {photoUrls.map((url, i) => (
+                <div key={i} className="w-20 h-20 rounded-xl overflow-hidden border border-border">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                </div>
+              ))}
+              {photoUrls.length < 3 && (
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                  className="w-20 h-20 rounded-xl border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-2xl hover:border-[var(--pl-teal)] transition-colors"
+                >
+                  {uploading ? '…' : '+'}
+                </button>
+              )}
+            </div>
             <input
-              type="number"
-              value={form.price_min}
-              onChange={(e) => setForm({ ...form, price_min: e.target.value })}
-              className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder="300"
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handlePhotoUpload}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Max price (₹)</label>
-            <input
-              type="number"
-              value={form.price_max}
-              onChange={(e) => setForm({ ...form, price_max: e.target.value })}
-              className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-              placeholder="600"
-            />
-          </div>
-        </div>
 
-        {/* Hours */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1">Opens at</label>
-            <input
-              type="time"
-              value={form.hours_from}
-              onChange={(e) => setForm({ ...form, hours_from: e.target.value })}
-              className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Closes at</label>
-            <input
-              type="time"
-              value={form.hours_to}
-              onChange={(e) => setForm({ ...form, hours_to: e.target.value })}
-              className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-            />
-          </div>
-        </div>
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={submitting || uploading || form.category_slugs.length === 0}
+            className="w-full text-white py-4 rounded-2xl font-semibold text-base transition-colors disabled:opacity-50"
+            style={{ backgroundColor: 'var(--pl-teal)' }}
+          >
+            {submitting ? 'Submitting…' : "Submit for review — it's free"}
+          </button>
 
-        {/* Bio */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Short bio (max 200 chars)</label>
-          <textarea
-            maxLength={200}
-            value={form.bio}
-            onChange={(e) => setForm({ ...form, bio: e.target.value })}
-            className="w-full border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black resize-none"
-            rows={3}
-            placeholder="I've walked 50+ dogs in Juhu for 3 years. Trained in basic pet first aid."
-          />
-          <p className="text-xs text-gray-400 mt-1 text-right">{form.bio.length}/200</p>
-        </div>
-
-        {/* Photos */}
-        <div>
-          <label className="block text-sm font-medium mb-1">Photos (up to 3)</label>
-          <p className="text-xs text-gray-400 mb-2">First photo will be your profile picture</p>
-          <div className="flex gap-3 flex-wrap">
-            {photoUrls.map((url, i) => (
-              <div key={i} className="w-20 h-20 rounded-xl overflow-hidden border">
-                <img src={url} alt="" className="w-full h-full object-cover" />
-              </div>
-            ))}
-            {photoUrls.length < 3 && (
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-                className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-400 text-2xl hover:border-gray-400 transition"
-              >
-                {uploading ? '...' : '+'}
-              </button>
-            )}
-          </div>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={handlePhotoUpload}
-          />
-        </div>
-
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={submitting || uploading}
-          className="w-full bg-black text-white py-4 rounded-2xl font-semibold text-base hover:bg-gray-800 transition disabled:opacity-50"
-        >
-          {submitting ? 'Submitting...' : "Submit for review — it's free"}
-        </button>
-
-        <p className="text-xs text-center text-gray-400">
-          We review every listing manually. You'll hear from us on WhatsApp within 24 hours.
-        </p>
-      </form>
-    </div>
+          <p className="text-xs text-center text-muted-foreground">
+            We review every listing manually. You&apos;ll hear from us on WhatsApp within 24 hours.
+          </p>
+        </form>
+      </div>
+    </APIProvider>
   )
 }

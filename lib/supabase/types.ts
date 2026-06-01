@@ -30,6 +30,7 @@ export type Provider = {
   is_verified: boolean
   source: string
   google_place_id: string | null
+  category_slugs: string[]
   created_at: string
 }
 
@@ -49,6 +50,7 @@ export type ProviderInsert = {
   name: string
   business_name?: string | null
   category_slug: CategorySlug
+  category_slugs?: string[]
   whatsapp: string
   phone?: string | null
   lat: number

@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json()
   const {
-    name, business_name, category_slug, whatsapp, phone,
+    name, business_name, category_slug, category_slugs, whatsapp, phone,
     lat, lng, address, price_min, price_max, price_unit,
     hours_from, hours_to, bio, photo_urls,
   } = body
@@ -27,12 +27,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
+  // Build the slugs array: prefer the explicit array, fall back to wrapping the primary slug
+  const slugsArray: string[] = Array.isArray(category_slugs) && category_slugs.length > 0
+    ? category_slugs
+    : [category_slug]
+
   const { data: provider, error } = await supabase
     .from('providers')
     .insert({
       name,
       business_name: business_name || null,
       category_slug: category_slug as CategorySlug,
+      category_slugs: slugsArray,
       whatsapp,
       phone: phone || null,
       lat: Number(lat),
