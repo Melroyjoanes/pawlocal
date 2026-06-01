@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getCategoryBySlug } from '@/lib/categories'
-import type { ProviderWithPhotos } from '@/lib/supabase/types'
+import type { ProviderWithPhotos, Review } from '@/lib/supabase/types'
+import { Stars } from '@/components/StarRating'
+import ReviewForm from '@/components/ReviewForm'
 
 export async function generateMetadata(
   { params }: { params: Promise<{ id: string }> }
@@ -37,6 +39,19 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
   const provider = data as unknown as ProviderWithPhotos
   const category = getCategoryBySlug(provider.category_slug)
   if (!category) notFound()
+
+  // Fetch approved reviews
+  const { data: reviewsData } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('provider_id', id)
+    .eq('status', 'approved')
+    .order('created_at', { ascending: false })
+
+  const reviews = (reviewsData ?? []) as unknown as Review[]
+  const avgRating = reviews.length
+    ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
+    : 0
 
   const primaryPhoto =
     provider.provider_photos.find((p) => p.is_primary) ?? provider.provider_photos[0]
@@ -113,6 +128,11 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
                 ✓ Verified by PawLocal
               </span>
             )}
+            {reviews.length > 0 && (
+              <span className="text-amber-400">
+                <Stars rating={avgRating} count={reviews.length} size="sm" />
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -170,6 +190,55 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
       )}
+
+      {/* ── Reviews ────────────────────────────────────────────────── */}
+      <div className="mb-24">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+            Reviews
+          </h2>
+          {reviews.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <Stars rating={avgRating} size="sm" />
+              <span className="text-xs text-muted-foreground">
+                {avgRating.toFixed(1)} · {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Existing reviews */}
+        {reviews.length > 0 ? (
+          <div className="flex flex-col gap-3 mb-8">
+            {reviews.map((r) => (
+              <div key={r.id} className="bg-white border border-border rounded-xl p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-sm text-foreground">{r.reviewer_name}</p>
+                    <Stars rating={r.rating} size="sm" />
+                  </div>
+                  <p className="text-xs text-muted-foreground flex-shrink-0">
+                    {new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+                {r.comment && (
+                  <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{r.comment}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground mb-8">
+            No reviews yet. Be the first to share your experience.
+          </p>
+        )}
+
+        {/* Write a review */}
+        <div className="border border-border rounded-2xl p-5">
+          <h3 className="font-semibold text-foreground mb-4">Write a review</h3>
+          <ReviewForm providerId={provider.id} />
+        </div>
+      </div>
 
       {/* Sticky CTA — clears iOS home indicator via safe-area-inset */}
       <div

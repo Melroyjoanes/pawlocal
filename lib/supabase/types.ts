@@ -65,6 +65,25 @@ export type ProviderInsert = {
   bio?: string | null
 }
 
+export type Review = {
+  id: string
+  provider_id: string
+  rating: number
+  comment: string | null
+  reviewer_name: string
+  reviewer_phone: string | null
+  status: 'pending' | 'approved' | 'rejected'
+  created_at: string
+}
+
+export type ReviewInsert = {
+  provider_id: string
+  rating: number
+  comment?: string | null
+  reviewer_name: string
+  reviewer_phone?: string | null
+}
+
 export type ProviderPhotoInsert = {
   provider_id: string
   url: string

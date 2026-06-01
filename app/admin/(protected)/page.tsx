@@ -2,15 +2,20 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { ProviderWithPhotos } from '@/lib/supabase/types'
+import type { ProviderWithPhotos, Review } from '@/lib/supabase/types'
 import { getCategoryBySlug } from '@/lib/categories'
+import { Stars } from '@/components/StarRating'
 
 type Filter = 'pending' | 'approved' | 'rejected'
+type Tab = 'providers' | 'reviews'
 
 export default function AdminPage() {
+  const [tab, setTab] = useState<Tab>('providers')
   const [providers, setProviders] = useState<ProviderWithPhotos[]>([])
   const [filter, setFilter] = useState<Filter>('pending')
   const [loading, setLoading] = useState(true)
+  const [reviews, setReviews] = useState<(Review & { provider_name?: string })[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
 
   async function loadProviders(status: Filter) {
     setLoading(true)
@@ -24,7 +29,22 @@ export default function AdminPage() {
     setLoading(false)
   }
 
+  async function loadReviews() {
+    setReviewsLoading(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('reviews')
+      .select('*, providers(name)')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const mapped = (data ?? []).map((r: any) => ({ ...r, provider_name: r.providers?.name }))
+    setReviews(mapped)
+    setReviewsLoading(false)
+  }
+
   useEffect(() => { loadProviders(filter) }, [filter])
+  useEffect(() => { if (tab === 'reviews') loadReviews() }, [tab])
 
   async function updateStatus(id: string, status: 'approved' | 'rejected') {
     await fetch(`/api/admin/providers/${id}`, {
@@ -33,6 +53,15 @@ export default function AdminPage() {
       body: JSON.stringify({ status }),
     })
     setProviders((prev) => prev.filter((p) => p.id !== id))
+  }
+
+  async function updateReview(id: string, status: 'approved' | 'rejected') {
+    await fetch(`/api/admin/reviews/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    })
+    setReviews((prev) => prev.filter((r) => r.id !== id))
   }
 
   async function toggleVerified(id: string, current: boolean) {
@@ -53,7 +82,23 @@ export default function AdminPage() {
         <a href="/" className="text-sm text-gray-400 hover:text-gray-600">← View site</a>
       </div>
 
-      {/* Filter tabs */}
+      {/* Top-level tab: Providers / Reviews */}
+      <div className="flex gap-2 mb-5 border-b border-border pb-3">
+        {(['providers', 'reviews'] as Tab[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition ${
+              tab === t ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {t === 'reviews' ? '⭐ Reviews' : '🏠 Providers'}
+          </button>
+        ))}
+      </div>
+
+      {/* Provider status tabs */}
+      {tab === 'providers' && (
       <div className="flex gap-2 mb-6">
         {(['pending', 'approved', 'rejected'] as Filter[]).map((f) => (
           <button
@@ -67,8 +112,58 @@ export default function AdminPage() {
           </button>
         ))}
       </div>
+      )}
 
-      {loading ? (
+      {/* ── Reviews panel ─────────────────────────────────────────── */}
+      {tab === 'reviews' && (
+        reviewsLoading ? (
+          <div className="py-20 text-center text-gray-400">Loading reviews…</div>
+        ) : reviews.length === 0 ? (
+          <div className="py-20 text-center text-gray-400">No pending reviews 🎉</div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {reviews.map((r) => (
+              <div key={r.id} className="border rounded-xl p-4">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div>
+                    <p className="font-semibold text-sm">{r.reviewer_name}</p>
+                    <p className="text-xs text-gray-400">for <span className="font-medium text-gray-600">{r.provider_name}</span></p>
+                  </div>
+                  <div className="text-right">
+                    <Stars rating={r.rating} size="sm" />
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {new Date(r.created_at).toLocaleDateString('en-IN')}
+                    </p>
+                  </div>
+                </div>
+                {r.comment && (
+                  <p className="text-sm text-gray-600 mb-3 bg-gray-50 rounded-lg p-3">&ldquo;{r.comment}&rdquo;</p>
+                )}
+                {r.reviewer_phone && (
+                  <p className="text-xs text-gray-400 mb-3">📱 {r.reviewer_phone}</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => updateReview(r.id, 'approved')}
+                    className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition"
+                  >
+                    ✓ Publish
+                  </button>
+                  <button
+                    onClick={() => updateReview(r.id, 'rejected')}
+                    className="bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-200 transition"
+                  >
+                    ✗ Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      )}
+
+      {/* ── Providers panel ───────────────────────────────────────── */}
+      {tab === 'providers' && (loading ? (
         <div className="py-20 text-center text-gray-400">Loading...</div>
       ) : providers.length === 0 ? (
         <div className="py-20 text-center text-gray-400">No {filter} providers.</div>
@@ -154,7 +249,7 @@ export default function AdminPage() {
             )
           })}
         </div>
-      )}
+      ))}
     </div>
   )
 }
