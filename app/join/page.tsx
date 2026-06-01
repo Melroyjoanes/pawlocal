@@ -32,6 +32,27 @@ export default function JoinPage() {
     bio: '',
   })
 
+  // Trainer-specific metadata (shown only when dog-training is selected)
+  const [trainerMeta, setTrainerMeta] = useState({
+    training_methods: [] as string[],
+    specialisations: [] as string[],
+    session_format: '',
+    certifications: '',
+    breeds: '',
+  })
+
+  const isTrainer = form.category_slugs.includes('dog-training')
+
+  function toggleChip<T extends string>(
+    list: T[],
+    value: T,
+    setter: (fn: (prev: typeof list) => typeof list) => void
+  ) {
+    setter((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    )
+  }
+
   function toggleCategory(slug: string) {
     setForm((prev) => {
       const has = prev.category_slugs.includes(slug)
@@ -68,15 +89,24 @@ export default function JoinPage() {
     e.preventDefault()
     if (form.category_slugs.length === 0) return
     setSubmitting(true)
+    const metadata = isTrainer ? {
+      training_methods: trainerMeta.training_methods,
+      specialisations: trainerMeta.specialisations,
+      session_format: trainerMeta.session_format || null,
+      certifications: trainerMeta.certifications.trim() || null,
+      breeds: trainerMeta.breeds.trim() || null,
+    } : null
+
     const res = await fetch('/api/providers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...form,
-        category_slug: form.category_slugs[0], // primary category (backward compat)
+        category_slug: form.category_slugs[0],
         lat: pin.lat,
         lng: pin.lng,
         photo_urls: photoUrls,
+        metadata,
       }),
     })
     setSubmitting(false)
@@ -284,6 +314,100 @@ export default function JoinPage() {
             />
             <p className="text-xs text-muted-foreground mt-1 text-right">{form.bio.length}/200</p>
           </div>
+
+          {/* ── Trainer-specific fields (shown only when Dog Training selected) ── */}
+          {isTrainer && (
+            <div className="flex flex-col gap-5 border border-border rounded-2xl p-5 bg-white">
+              <p className="text-sm font-semibold text-foreground flex items-center gap-2">
+                🎯 Dog Trainer details
+                <span className="text-xs font-normal text-muted-foreground">helps owners find the right fit</span>
+              </p>
+
+              {/* Training methods */}
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  Training method <span className="text-muted-foreground font-normal">(select all that apply)</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {['Positive Reinforcement', 'Clicker Training', 'Balanced', 'Board & Train'].map((m) => {
+                    const selected = trainerMeta.training_methods.includes(m)
+                    return (
+                      <button
+                        key={m} type="button"
+                        onClick={() => toggleChip(trainerMeta.training_methods, m, (fn) => setTrainerMeta(p => ({ ...p, training_methods: fn(p.training_methods) })))}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${selected ? 'text-white border-transparent' : 'bg-white text-foreground border-border hover:border-[var(--pl-teal)]'}`}
+                        style={selected ? { backgroundColor: 'var(--pl-teal)' } : {}}
+                      >{m}</button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Specialisations */}
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  I specialise in <span className="text-muted-foreground font-normal">(select all that apply)</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {['Puppy Training', 'Basic Obedience', 'Aggression Rehab', 'Separation Anxiety', 'Competitive Obedience', 'Trick Training'].map((s) => {
+                    const selected = trainerMeta.specialisations.includes(s)
+                    return (
+                      <button
+                        key={s} type="button"
+                        onClick={() => toggleChip(trainerMeta.specialisations, s, (fn) => setTrainerMeta(p => ({ ...p, specialisations: fn(p.specialisations) })))}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${selected ? 'text-white border-transparent' : 'bg-white text-foreground border-border hover:border-[var(--pl-teal)]'}`}
+                        style={selected ? { backgroundColor: 'var(--pl-teal)' } : {}}
+                      >{s}</button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Session format */}
+              <div>
+                <label className="block text-sm font-medium mb-1.5">Session format</label>
+                <div className="flex flex-wrap gap-2">
+                  {['Home visits', 'Training centre', 'Group classes', 'Online'].map((f) => {
+                    const selected = trainerMeta.session_format === f
+                    return (
+                      <button
+                        key={f} type="button"
+                        onClick={() => setTrainerMeta(p => ({ ...p, session_format: selected ? '' : f }))}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${selected ? 'text-white border-transparent' : 'bg-white text-foreground border-border hover:border-[var(--pl-teal)]'}`}
+                        style={selected ? { backgroundColor: 'var(--pl-teal)' } : {}}
+                      >{f}</button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Breeds */}
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  Breeds you work with <span className="text-muted-foreground font-normal">(optional)</span>
+                </label>
+                <input
+                  value={trainerMeta.breeds}
+                  onChange={(e) => setTrainerMeta(p => ({ ...p, breeds: e.target.value }))}
+                  className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+                  placeholder="Labrador, German Shepherd, Golden Retriever..."
+                />
+              </div>
+
+              {/* Certifications */}
+              <div>
+                <label className="block text-sm font-medium mb-1.5">
+                  Certifications <span className="text-muted-foreground font-normal">(optional)</span>
+                </label>
+                <input
+                  value={trainerMeta.certifications}
+                  onChange={(e) => setTrainerMeta(p => ({ ...p, certifications: e.target.value }))}
+                  className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+                  placeholder="CPDT-KA, KPA-CTP..."
+                />
+              </div>
+            </div>
+          )}
 
           {/* Photos */}
           <div>

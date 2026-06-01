@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getCategoryBySlug } from '@/lib/categories'
-import type { ProviderWithPhotos, Review } from '@/lib/supabase/types'
+import type { ProviderWithPhotos, Review, TrainerMetadata } from '@/lib/supabase/types'
 import { Stars } from '@/components/StarRating'
 import ReviewForm from '@/components/ReviewForm'
 
@@ -171,6 +171,62 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           <p className="font-medium text-foreground">{provider.address}</p>
         </div>
       </div>
+
+      {/* ── Trainer details ─────────────────────────────────────── */}
+      {provider.category_slug === 'dog-training' && provider.metadata && (() => {
+        const t = provider.metadata as TrainerMetadata
+        const hasAny = t.training_methods?.length || t.specialisations?.length || t.session_format || t.certifications || t.breeds
+        if (!hasAny) return null
+        return (
+          <div className="mb-7">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">
+              Trainer details
+            </p>
+            <div className="flex flex-col gap-4">
+              {t.training_methods && t.training_methods.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Training method</p>
+                  <div className="flex flex-wrap gap-2">
+                    {t.training_methods.map((m) => (
+                      <span key={m} className="px-3 py-1 rounded-full text-xs font-medium bg-cyan-50 text-cyan-700 border border-cyan-100">{m}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {t.specialisations && t.specialisations.length > 0 && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Specialises in</p>
+                  <div className="flex flex-wrap gap-2">
+                    {t.specialisations.map((s) => (
+                      <span key={s} className="px-3 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-700">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                {t.session_format && (
+                  <div className="bg-white border border-border rounded-xl p-4">
+                    <p className="text-xs text-muted-foreground mb-1">Session format</p>
+                    <p className="text-sm font-medium text-foreground">{t.session_format}</p>
+                  </div>
+                )}
+                {t.certifications && (
+                  <div className="bg-white border border-border rounded-xl p-4">
+                    <p className="text-xs text-muted-foreground mb-1">Certifications</p>
+                    <p className="text-sm font-medium text-foreground">{t.certifications}</p>
+                  </div>
+                )}
+              </div>
+              {t.breeds && (
+                <div className="bg-white border border-border rounded-xl p-4">
+                  <p className="text-xs text-muted-foreground mb-1.5">Breeds experienced with</p>
+                  <p className="text-sm text-foreground">{t.breeds}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Gallery */}
       {galleryPhotos.length > 0 && (

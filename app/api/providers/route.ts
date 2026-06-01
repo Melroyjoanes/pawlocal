@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const {
     name, business_name, category_slug, category_slugs, whatsapp, phone,
     lat, lng, address, price_min, price_max, price_unit,
-    hours_from, hours_to, bio, photo_urls,
+    hours_from, hours_to, bio, photo_urls, metadata,
   } = body
 
   if (!name || !category_slug || !whatsapp || !lat || !lng || !address) {
@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
       hours_from: hours_from ?? '09:00',
       hours_to: hours_to ?? '18:00',
       bio: bio || null,
+      metadata: metadata ?? null,
     })
     .select()
     .single()

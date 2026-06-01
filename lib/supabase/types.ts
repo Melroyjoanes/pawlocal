@@ -9,6 +9,14 @@ export type Category = {
   tagline: string | null
 }
 
+export type TrainerMetadata = {
+  training_methods?: string[]
+  specialisations?: string[]
+  session_format?: string
+  certifications?: string
+  breeds?: string
+}
+
 export type Provider = {
   id: string
   name: string
@@ -31,6 +39,7 @@ export type Provider = {
   source: string
   google_place_id: string | null
   category_slugs: string[]
+  metadata: TrainerMetadata | null
   created_at: string
 }
 
@@ -63,6 +72,7 @@ export type ProviderInsert = {
   hours_to?: string
   working_days?: string[]
   bio?: string | null
+  metadata?: TrainerMetadata | null
 }
 
 export type Review = {
