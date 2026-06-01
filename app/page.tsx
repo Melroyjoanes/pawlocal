@@ -45,7 +45,7 @@ export default async function HomePage() {
       </div>
 
       {/* Category grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-14">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
         {CATEGORIES.map((category) => (
           <CategoryCard
             key={category.slug}
@@ -54,6 +54,23 @@ export default async function HomePage() {
           />
         ))}
       </div>
+
+      {/* Map CTA */}
+      <a
+        href="/map"
+        className="flex items-center justify-between gap-3 w-full mb-14 px-5 py-3.5 rounded-2xl border border-border bg-white hover:border-[var(--pl-teal)] hover:shadow-sm transition-all group"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">🗺</span>
+          <div>
+            <p className="text-sm font-semibold text-foreground">See everything on one map</p>
+            <p className="text-xs text-muted-foreground">All vets, stores, groomers & walkers near you</p>
+          </div>
+        </div>
+        <span className="text-sm font-medium transition-colors text-muted-foreground group-hover:text-[var(--pl-teal)]">
+          Open map →
+        </span>
+      </a>
 
       {/* How it works */}
       <div className="mb-14">

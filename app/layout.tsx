@@ -47,6 +47,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
 
               <a
+                href="/map"
+                className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                🗺 Map
+              </a>
+              <a
                 href="/join"
                 className="flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-full transition-colors bg-[var(--pl-teal)] text-white hover:bg-[var(--pl-teal-hover)]"
               >
@@ -61,6 +67,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
               <p>© {new Date().getFullYear()} PawLocal · Juhu, Mumbai</p>
               <div className="flex items-center gap-4">
+                <a href="/map" className="hover:text-foreground transition-colors">All on map</a>
                 <a href="/join" className="hover:text-foreground transition-colors">List your service</a>
                 <a href="/insurance" className="hover:text-foreground transition-colors">Pet insurance</a>
               </div>

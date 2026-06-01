@@ -187,6 +187,8 @@ function placeToProvider(place, details, categorySlug) {
   }
 }
 
+let firstErrorShown = false
+
 // Upsert a single provider via Supabase REST API
 // Uses google_place_id as the conflict key — safe to re-run
 async function upsertProvider(provider) {
@@ -205,6 +207,19 @@ async function upsertProvider(provider) {
   )
   if (!res.ok) {
     const err = await res.text()
+    if (!firstErrorShown) {
+      firstErrorShown = true
+      console.log('\n\n❌ UPSERT FAILED — first error:')
+      console.log(err)
+      console.log('\n👉 This almost always means migration 004 has NOT been run.')
+      console.log('   Go to Supabase → SQL Editor and run this:\n')
+      console.log('   ALTER TABLE providers ADD COLUMN IF NOT EXISTS source text DEFAULT \'manual\';')
+      console.log('   ALTER TABLE providers ADD COLUMN IF NOT EXISTS google_place_id text;')
+      console.log('   CREATE UNIQUE INDEX IF NOT EXISTS idx_providers_google_place_id')
+      console.log('     ON providers(google_place_id) WHERE google_place_id IS NOT NULL;\n')
+      console.log('   Then re-run: node scripts/import-places.mjs\n')
+      process.exit(1)
+    }
     return { error: err }
   }
   return { ok: true }
