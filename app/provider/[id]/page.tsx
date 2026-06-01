@@ -171,35 +171,36 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         </div>
       )}
 
-      {/* Sticky CTA */}
-      <div className="sticky bottom-4 flex gap-3">
-        <a
-          href={whatsappUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold text-center transition-colors flex items-center justify-center gap-2"
-        >
-          💬 WhatsApp
-        </a>
-        {provider.phone && (
+      {/* Sticky CTA — clears iOS home indicator via safe-area-inset */}
+      <div
+        className="sticky bottom-0 -mx-4 px-4 pt-3 bg-background/95 backdrop-blur-sm flex flex-col gap-2"
+        style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+      >
+        <div className="flex gap-3">
           <a
-            href={`tel:${provider.phone}`}
-            className="flex-1 bg-white border border-border text-foreground py-4 rounded-2xl font-semibold text-center hover:bg-muted transition-colors flex items-center justify-center gap-2"
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 bg-green-600 active:bg-green-800 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold text-center transition-colors flex items-center justify-center gap-2 min-h-[52px]"
           >
-            📞 Call
+            💬 WhatsApp
           </a>
-        )}
-      </div>
-
-      {/* Share */}
-      <div className="mt-4 flex justify-center">
+          {provider.phone && (
+            <a
+              href={`tel:${provider.phone}`}
+              className="flex-1 bg-white border border-border text-foreground py-4 rounded-2xl font-semibold text-center hover:bg-muted active:bg-muted transition-colors flex items-center justify-center gap-2 min-h-[52px]"
+            >
+              📞 Call
+            </a>
+          )}
+        </div>
         <a
           href={shareUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors"
+          className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors py-1"
         >
-          ↗ Share this listing on WhatsApp
+          ↗ Share on WhatsApp
         </a>
       </div>
     </div>

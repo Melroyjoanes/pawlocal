@@ -81,10 +81,10 @@ export default function JoinPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto">
+    <div className="max-w-xl mx-auto pb-10">
       <h1 className="text-2xl font-bold mb-1">List your service</h1>
       <p className="text-gray-400 text-sm mb-8">
-        Free forever. Takes 5 minutes. We'll review and go live within 24 hours.
+        Free forever. Takes 5 minutes. We&apos;ll review and go live within 24 hours.
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
@@ -186,7 +186,7 @@ export default function JoinPage() {
         </div>
 
         {/* Pricing */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 xs:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium mb-1">Min price (₹)</label>
             <input

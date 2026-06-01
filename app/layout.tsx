@@ -10,6 +10,12 @@ const dmSerif = DM_Serif_Display({
   variable: '--font-dm-serif',
 })
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover', // enables env(safe-area-inset-*) on iOS notch/Dynamic Island
+}
+
 export const metadata: Metadata = {
   title: 'PawLocal — Pet Services in Juhu, Mumbai',
   description: 'Find trusted dog walkers, groomers, vets, pet stores and insurance near Juhu, Mumbai. Every listing reviewed.',

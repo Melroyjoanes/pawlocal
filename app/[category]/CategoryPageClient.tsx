@@ -167,10 +167,10 @@ export default function CategoryPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="flex flex-col lg:flex-row gap-4"
-              style={{ height: '600px' }}
+              className="flex flex-col lg:flex-row lg:gap-4 lg:h-[600px]"
             >
-              <div className="flex-1 min-h-0">
+              {/* Map — 50vh on mobile, fills container on desktop */}
+              <div className="h-[50vh] lg:h-full lg:flex-1 lg:min-h-0 rounded-xl overflow-hidden">
                 <ProviderMap
                   providers={providers}
                   category={category}
@@ -178,7 +178,8 @@ export default function CategoryPage() {
                   selectedId={selectedId}
                 />
               </div>
-              <div className="lg:w-72 overflow-y-auto flex flex-col gap-3 pr-1">
+              {/* Card list — normal flow on mobile, scrollable panel on desktop */}
+              <div className="flex flex-col gap-3 mt-3 lg:mt-0 lg:w-72 lg:overflow-y-auto lg:pr-1">
                 {providers
                   .sort((a, b) => (a.id === selectedId ? -1 : b.id === selectedId ? 1 : 0))
                   .map((p) => (

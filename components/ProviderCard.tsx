@@ -69,7 +69,7 @@ export default function ProviderCard({ provider, category }: Props) {
 
           {/* Price — top right, first thing eye goes to after name */}
           {provider.price_min && (
-            <div className="text-right flex-shrink-0">
+            <div className="text-right shrink-0 pl-1">
               <p className="text-sm font-semibold text-foreground leading-none">
                 ₹{provider.price_min}
                 {provider.price_max && provider.price_max !== provider.price_min
@@ -82,12 +82,12 @@ export default function ProviderCard({ provider, category }: Props) {
         </div>
 
         {/* Hours + location — scan-critical row */}
-        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground flex-wrap">
-          <span>
+        <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground min-w-0">
+          <span className="shrink-0">
             {formatHour(provider.hours_from)} – {formatHour(provider.hours_to)}
           </span>
-          <span className="opacity-40">·</span>
-          <span className="truncate">📍 {provider.address}</span>
+          <span className="opacity-40 shrink-0">·</span>
+          <span className="truncate min-w-0">📍 {provider.address}</span>
         </div>
 
         {/* Bio */}
