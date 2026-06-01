@@ -41,6 +41,72 @@ if (!MAPS_KEY || !SUPABASE_URL || !SERVICE_ROLE_KEY) {
   process.exit(1)
 }
 
+// ── Pre-flight: verify DB columns exist before touching Google API ────────────
+async function preflight() {
+  console.log('Checking database schema...')
+
+  // Try inserting a test row with all the fields we need
+  // Use a clearly fake place_id so it never conflicts with real data
+  const testRow = {
+    name: '__preflight_test__',
+    category_slug: 'pet-store',
+    category_slugs: ['pet-store'],
+    whatsapp: '0000000000',
+    lat: 0, lng: 0,
+    address: 'test',
+    source: 'google_places',
+    google_place_id: '__preflight_test__',
+    status: 'approved',
+    is_verified: false,
+  }
+
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/providers?on_conflict=google_place_id`,
+    {
+      method: 'POST',
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=ignore-duplicates,return=representation',
+      },
+      body: JSON.stringify(testRow),
+    }
+  )
+
+  if (!res.ok) {
+    const body = await res.text()
+    console.log('\n❌ DB pre-flight failed. Raw error from Supabase:\n')
+    console.log(body)
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+    console.log('This means the required columns are missing.')
+    console.log('Go to Supabase → SQL Editor → New query and run:\n')
+    console.log(`ALTER TABLE providers ADD COLUMN IF NOT EXISTS source text DEFAULT 'manual';`)
+    console.log(`ALTER TABLE providers ADD COLUMN IF NOT EXISTS google_place_id text;`)
+    console.log(`CREATE UNIQUE INDEX IF NOT EXISTS idx_providers_google_place_id`)
+    console.log(`  ON providers(google_place_id) WHERE google_place_id IS NOT NULL;`)
+    console.log(`ALTER TABLE providers ADD COLUMN IF NOT EXISTS category_slugs text[] DEFAULT '{}';`)
+    console.log(`CREATE INDEX IF NOT EXISTS idx_providers_category_slugs ON providers USING GIN(category_slugs);`)
+    console.log('\nThen re-run: node scripts/import-places.mjs')
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n')
+    process.exit(1)
+  }
+
+  // Clean up the test row
+  await fetch(
+    `${SUPABASE_URL}/rest/v1/providers?google_place_id=eq.__preflight_test__`,
+    {
+      method: 'DELETE',
+      headers: {
+        apikey: SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+      },
+    }
+  )
+
+  console.log('✅ DB schema OK — all required columns exist\n')
+}
+
 // ── Config ───────────────────────────────────────────────────────────────────
 
 // Mumbai search centres — covers Juhu, Bandra, Andheri, Powai, Worli, Borivali, Thane, Navi Mumbai
@@ -230,6 +296,9 @@ async function upsertProvider(provider) {
 async function main() {
   console.log('🐾 PawLocal — Google Places import')
   console.log('====================================\n')
+
+  // Fail immediately if DB columns are missing — before any Google API calls
+  await preflight()
 
   const seen = new Set()    // deduplicate across search runs
   let totalImported = 0
