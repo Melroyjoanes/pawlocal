@@ -1,24 +1,37 @@
 # PawLocal — Product Roadmap
 
+## Positioning
+**PawLocal = inDrive of pet services.**
+Sploot is Uber — they assign providers, fixed price, no choice.
+PawLocal is inDrive — pet owner posts what they need + budget, verified providers respond, deal done on WhatsApp. No booking fee. No middleman cut. Ever.
+Two layers: Directory (browse & compare, Practo-style) + Broadcast (post a need, providers bid, inDrive-style).
+
+---
+
 ## Now (active)
 - [x] Directory live: dog walking, grooming, vet, pet store, insurance affiliate
 - [x] Admin approve / verify flow
-- [x] Google Places import (~300 Mumbai businesses)
+- [x] Google Places import (~300 Mumbai businesses on map)
 - [x] Redesigned UI: teal system, DM Serif, Framer Motion, scan-first cards
-- [ ] Run migration 004 + import script (pet stores showing on map)
-- [ ] Mobile responsiveness
+- [x] All-pets map (/map) with category filter chips
+- [x] Multi-category provider listings
+- [x] Address autocomplete on /join form
+- [x] Reviews & ratings (submit → admin approves → shows on profile)
+- [ ] **Run reviews SQL migration in Supabase** (reviews table doesn't exist yet)
 - [ ] Domain: pawlocal.in → Vercel
+- [ ] Get Shahrukh listed via /join (dog walking category is empty)
+- [ ] Reach 15 dog walkers on the app (unlock Broadcast feature)
+- [ ] Email Digit Insurance partnerships@godigit.com for referral code
+- [ ] WhatsApp the 60 dog walker leads (CSV at dog-walkers-leads.csv)
 
-## V2 (1–3 months)
-- [ ] Geolocation — center map on user, distance labels ("0.4 km"), radius filter (1/2/5 km)
-- [ ] All-category "Around Me" map — all provider types as colour-coded pins at once
-- [ ] Pet Broadcast Alerts — lost pets, vaccination drives, neighbourhood alerts (community hook)
-- [ ] AuthBridge background check badge — provider pays ₹299, auto-verified, zero ops cost
-- [ ] Three-tier trust system:
-        Tier 1 Google synced (unverified)
-        Tier 2 Claimed (Aadhaar + phone, identity authenticated)
-        Tier 3 Community Approved (5 distinct neighbour vouches or reviews)
-- [ ] Basic reviews — 1–5 stars + text, unlocks Community Approved tier
+## V2 — unlock at 15 walkers
+- [ ] **Pet Broadcast** — inDrive model: owner posts need + budget, verified providers respond
+        Only verified providers can respond (trust gate)
+        Free for owners always. Free for providers until scale.
+        Revenue at scale: ₹299/month for providers to see + respond to broadcasts
+- [ ] Geolocation — center map on user, distance labels ("0.4 km"), radius filter
+- [ ] "Open now" filter — critical for vets (nearest open clinic at 10pm)
+- [ ] Species filter — dog / cat / other (instant 2x market, zero new data)
 - [ ] "Claim your listing" self-serve flow for Google-imported businesses
 - [ ] OG image for WhatsApp share previews
 - [ ] Google Search Console setup (rank for "dog walker Juhu")
