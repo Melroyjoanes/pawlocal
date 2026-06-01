@@ -59,10 +59,9 @@ const SEARCH_TYPES = [
 const TEXT_SEARCHES = [
   { query: 'dog grooming Mumbai',   categorySlug: 'grooming',      label: 'Grooming'     },
   { query: 'pet grooming Mumbai',   categorySlug: 'grooming',      label: 'Grooming'     },
-  { query: 'dog walker Mumbai',     categorySlug: 'dog-walking',   label: 'Dog Walking'  },
-  { query: 'dog trainer Mumbai',    categorySlug: 'dog-training',  label: 'Dog Training' },
-  { query: 'dog training Mumbai',   categorySlug: 'dog-training',  label: 'Dog Training' },
-  { query: 'puppy training Mumbai', categorySlug: 'dog-training',  label: 'Dog Training' },
+  // Dog walkers excluded — they are onboarded manually via /join by the field team
+  // Dog training excluded from Google import — most results are pet stores/vets already in DB.
+  // Trainers self-list via /join or are added manually by admin.
 ]
 
 const SEARCH_RADIUS_M = 5000
