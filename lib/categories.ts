@@ -48,6 +48,15 @@ export const CATEGORIES: CategoryConfig[] = [
     description: 'Food, accessories, and everything your pet needs',
   },
   {
+    slug: 'dog-training',
+    name: 'Dog Training',
+    icon: '🎯',
+    color: '#0891B2',
+    bgColor: 'bg-cyan-50',
+    tagline: 'Trainers near Juhu',
+    description: 'Obedience, behaviour correction and puppy training',
+  },
+  {
     slug: 'insurance',
     name: 'Insurance',
     icon: '🛡️',
