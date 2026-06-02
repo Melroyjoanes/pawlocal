@@ -236,30 +236,50 @@ export default function DashboardClient({ provider, category, stats }: Props) {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <div className="bg-white border border-border rounded-2xl p-4">
-          <p className="text-xs text-muted-foreground mb-1">Profile views</p>
-          <p className="text-2xl font-bold text-slate-900">{stats.views}</p>
-          <p className="text-xs text-emerald-600 mt-0.5">+{stats.viewsThisMonth} this month</p>
+      {stats.views === 0 && stats.contacts === 0 && stats.reviews === 0 ? (
+        <div className="bg-white border border-border rounded-2xl p-6 mb-5 text-center">
+          <p className="text-3xl mb-3">📈</p>
+          <p className="font-semibold text-slate-900 mb-1">Your stats are warming up</p>
+          <p className="text-sm text-slate-500 leading-relaxed">
+            As customers visit your profile and click WhatsApp, your views and contacts will appear here automatically. Share your profile link to get your first stats!
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(`https://pawlocal-ashen.vercel.app/provider/${provider.id}`)
+                .then(() => alert('Profile link copied! Share it on WhatsApp.'))
+            }}
+            className="mt-4 px-5 py-2.5 rounded-xl text-sm font-semibold border border-border text-slate-700 hover:bg-muted transition-colors"
+          >
+            📋 Copy my profile link
+          </button>
         </div>
-        <div className="bg-white border border-border rounded-2xl p-4">
-          <p className="text-xs text-muted-foreground mb-1">WhatsApp contacts</p>
-          <p className="text-2xl font-bold text-slate-900">{stats.contacts}</p>
-          <p className="text-xs text-emerald-600 mt-0.5">+{stats.contactsThisMonth} this month</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          <div className="bg-white border border-border rounded-2xl p-4">
+            <p className="text-xs text-muted-foreground mb-1">Profile views</p>
+            <p className="text-2xl font-bold text-slate-900">{stats.views}</p>
+            <p className="text-xs text-emerald-600 mt-0.5">+{stats.viewsThisMonth} this month</p>
+          </div>
+          <div className="bg-white border border-border rounded-2xl p-4">
+            <p className="text-xs text-muted-foreground mb-1">WhatsApp contacts</p>
+            <p className="text-2xl font-bold text-slate-900">{stats.contacts}</p>
+            <p className="text-xs text-emerald-600 mt-0.5">+{stats.contactsThisMonth} this month</p>
+          </div>
+          <div className="bg-white border border-border rounded-2xl p-4">
+            <p className="text-xs text-muted-foreground mb-1">Total reviews</p>
+            <p className="text-2xl font-bold text-slate-900">{stats.reviews}</p>
+            {stats.avgRating > 0 && (
+              <p className="text-xs text-amber-500 mt-0.5">⭐ {stats.avgRating.toFixed(1)} avg rating</p>
+            )}
+          </div>
+          <div className="bg-white border border-border rounded-2xl p-4">
+            <p className="text-xs text-muted-foreground mb-1">Call clicks</p>
+            <p className="text-2xl font-bold text-slate-900">{stats.calls}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">via profile page</p>
+          </div>
         </div>
-        <div className="bg-white border border-border rounded-2xl p-4">
-          <p className="text-xs text-muted-foreground mb-1">Total reviews</p>
-          <p className="text-2xl font-bold text-slate-900">{stats.reviews}</p>
-          {stats.avgRating > 0 && (
-            <p className="text-xs text-amber-500 mt-0.5">⭐ {stats.avgRating.toFixed(1)} avg rating</p>
-          )}
-        </div>
-        <div className="bg-white border border-border rounded-2xl p-4">
-          <p className="text-xs text-muted-foreground mb-1">Call clicks</p>
-          <p className="text-2xl font-bold text-slate-900">{stats.calls}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">via profile page</p>
-        </div>
-      </div>
+      )}
 
       {/* Points breakdown */}
       <div className="bg-white border border-border rounded-2xl p-5 mb-5">

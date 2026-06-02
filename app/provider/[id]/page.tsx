@@ -5,7 +5,7 @@ import { getCategoryBySlug } from '@/lib/categories'
 import type { ProviderWithPhotos, Review, TrainerMetadata } from '@/lib/supabase/types'
 import { Stars } from '@/components/StarRating'
 import ReviewForm from '@/components/ReviewForm'
-import { TrackView, TrackButton } from '@/components/ProviderTracker'
+import { TrackView, TrackButton, SaveButton } from '@/components/ProviderTracker'
 
 export async function generateMetadata(
   { params }: { params: Promise<{ id: string }> }
@@ -333,7 +333,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           >
             💬 WhatsApp
           </TrackButton>
-          {provider.phone && (
+          {provider.phone ? (
             <TrackButton
               providerId={provider.id}
               eventType="call_click"
@@ -342,16 +342,43 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
             >
               📞 Call
             </TrackButton>
+          ) : (
+            <SaveButton
+              providerId={provider.id}
+              providerName={provider.name}
+              categorySlug={provider.category_slug}
+              whatsapp={provider.whatsapp}
+            />
           )}
         </div>
-        <a
-          href={shareUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors py-1"
-        >
-          ↗ Share on WhatsApp
-        </a>
+        {provider.phone && (
+          <div className="flex gap-3">
+            <SaveButton
+              providerId={provider.id}
+              providerName={provider.name}
+              categorySlug={provider.category_slug}
+              whatsapp={provider.whatsapp}
+            />
+            <a
+              href={shareUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors py-1"
+            >
+              ↗ Share on WhatsApp
+            </a>
+          </div>
+        )}
+        {!provider.phone && (
+          <a
+            href={shareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors py-1"
+          >
+            ↗ Share on WhatsApp
+          </a>
+        )}
       </div>
     </div>
   )

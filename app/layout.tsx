@@ -68,6 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {[
                   { href: '/map', label: '🗺 Map' },
                   { href: '/broadcast', label: '📣 Broadcast' },
+                  { href: '/account', label: '👤 Account' },
                 ].map(({ href, label }) => (
                   <a
                     key={href}
@@ -78,6 +79,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </a>
                 ))}
               </nav>
+
+              {/* Account icon — mobile */}
+              <a
+                href="/account"
+                className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:bg-amber-50 transition-all flex-shrink-0"
+                aria-label="My account"
+              >
+                👤
+              </a>
 
               {/* CTA */}
               <a
