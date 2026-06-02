@@ -116,11 +116,9 @@ export default function ProviderCard({ provider, category }: Props) {
               📞 Call
             </a>
           )}
-          {provider.source === 'google_places' && !provider.is_verified && (
-            <span className="text-[10px] text-muted-foreground ml-auto opacity-60">
-              via Google
-            </span>
-          )}
+          <span className="ml-auto text-xs text-[var(--pl-teal)] font-medium group-hover:underline flex items-center gap-0.5 shrink-0">
+            View profile →
+          </span>
         </div>
       </div>
     </Link>

@@ -189,7 +189,7 @@ export default function EditProviderClient({
         ← Back to listing
       </a>
 
-      <div className="flex items-center gap-3 mb-7">
+      <div className="flex items-center gap-3 mb-5">
         <div
           className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
           style={{ backgroundColor: category.color + '18' }}
@@ -203,6 +203,29 @@ export default function EditProviderClient({
         <span className="ml-auto text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
           ✓ Verified
         </span>
+      </div>
+
+      {/* Profile link — so provider can copy & share */}
+      <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 mb-6">
+        <span className="text-xs text-slate-500 shrink-0">Your profile:</span>
+        <a
+          href={`/provider/${provider.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs font-medium text-[var(--pl-teal)] underline underline-offset-2 truncate"
+        >
+          pawlocal.in/provider/{provider.id.slice(0, 8)}…
+        </a>
+        <button
+          type="button"
+          onClick={() => {
+            navigator.clipboard.writeText(`https://pawlocal-ashen.vercel.app/provider/${provider.id}`)
+              .then(() => alert('Profile link copied!'))
+          }}
+          className="ml-auto text-xs text-slate-400 hover:text-slate-700 shrink-0 transition-colors"
+        >
+          Copy 📋
+        </button>
       </div>
 
       {saved && (
