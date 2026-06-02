@@ -5,6 +5,7 @@ import { getCategoryBySlug } from '@/lib/categories'
 import type { ProviderWithPhotos, Review, TrainerMetadata } from '@/lib/supabase/types'
 import { Stars } from '@/components/StarRating'
 import ReviewForm from '@/components/ReviewForm'
+import { TrackView, TrackButton } from '@/components/ProviderTracker'
 
 export async function generateMetadata(
   { params }: { params: Promise<{ id: string }> }
@@ -74,6 +75,9 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="max-w-2xl mx-auto">
+      {/* Silent view tracker */}
+      <TrackView providerId={provider.id} />
+
       {/* Back */}
       <a
         href={`/${provider.category_slug}`}
@@ -138,13 +142,21 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
-      {/* Edit link */}
-      <a
-        href={`/provider/${provider.id}/edit`}
-        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-6 border border-border rounded-full px-3 py-1.5"
-      >
-        ✏️ Edit your listing
-      </a>
+      {/* Provider links row */}
+      <div className="flex items-center gap-2 mb-6">
+        <a
+          href={`/provider/${provider.id}/edit`}
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors border border-border rounded-full px-3 py-1.5"
+        >
+          ✏️ Edit listing
+        </a>
+        <a
+          href={`/provider/${provider.id}/dashboard`}
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors border border-border rounded-full px-3 py-1.5"
+        >
+          📊 My dashboard
+        </a>
+      </div>
 
       {/* Bio */}
       {provider.bio && (
@@ -311,21 +323,25 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
       >
         <div className="flex gap-3">
-          <a
+          <TrackButton
+            providerId={provider.id}
+            eventType="whatsapp_click"
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex-1 bg-green-600 active:bg-green-800 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold text-center transition-colors flex items-center justify-center gap-2 min-h-[52px]"
           >
             💬 WhatsApp
-          </a>
+          </TrackButton>
           {provider.phone && (
-            <a
+            <TrackButton
+              providerId={provider.id}
+              eventType="call_click"
               href={`tel:${provider.phone}`}
               className="flex-1 bg-white border border-border text-foreground py-4 rounded-2xl font-semibold text-center hover:bg-muted active:bg-muted transition-colors flex items-center justify-center gap-2 min-h-[52px]"
             >
               📞 Call
-            </a>
+            </TrackButton>
           )}
         </div>
         <a
