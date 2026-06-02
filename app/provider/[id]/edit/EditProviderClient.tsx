@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
-import type { Category } from '@/lib/supabase/types'
+import type { CategoryConfig } from '@/lib/categories'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -12,7 +12,7 @@ export default function EditProviderClient({
   category,
 }: {
   provider: ProviderWithPhotos
-  category: Category
+  category: CategoryConfig
 }) {
   const router = useRouter()
 
