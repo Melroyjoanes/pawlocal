@@ -9,8 +9,14 @@ export async function generateMetadata(
   const cat = getCategoryBySlug(category)
   if (!cat) return { title: 'Not found' }
   return {
-    title: `${cat.name} in Juhu, Mumbai | PawLocal`,
-    description: `Find trusted ${cat.name.toLowerCase()} services near Juhu, Mumbai. Browse verified providers, compare prices, and contact directly on WhatsApp.`,
+    title: `${cat.name} in Juhu, Mumbai`,
+    description: `Find trusted ${cat.name.toLowerCase()} services near Juhu, Mumbai. Browse ${cat.name.toLowerCase()} providers, read reviews, and contact directly on WhatsApp. Zero booking fees.`,
+    openGraph: {
+      title: `${cat.name} near Juhu, Mumbai | PawLocal`,
+      description: `Verified ${cat.name.toLowerCase()} providers near Juhu. WhatsApp direct.`,
+      type: 'website',
+    },
+    alternates: { canonical: `https://pawlocal.in/${category}` },
   }
 }
 

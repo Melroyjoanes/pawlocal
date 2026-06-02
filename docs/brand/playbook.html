@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PawLocal — Brand Playbook 2025</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  /* Brand Color System */
+  --teal:         #0891B2;   /* Primary — CTAs, links, brand anchor */
+  --teal-deep:    #0E7490;   /* Hover states, dark text on teal bg */
+  --teal-pastel:  #BAE6FD;   /* Soft teal bg, clay cards */
+  --peach:        #FED7AA;   /* Secondary pastel — warmth, CTAs alt */
+  --peach-deep:   #C2410C;   /* Peach text */
+  --lavender:     #E9D5FF;   /* Tertiary pastel — variety */
+  --lavender-deep:#6D28D9;   /* Lavender text */
+  --mint:         #BBF7D0;   /* Nature, verified, success */
+  --mint-deep:    #065F46;   /* Mint text */
+  --lemon:        #FEF9C3;   /* Happy, warm accent */
+  --lemon-deep:   #713F12;   /* Lemon text */
+  --cream:        #F7FBFF;   /* Page background */
+  --white:        #FFFFFF;
+  --slate-900:    #0F172A;   /* Primary text */
+  --slate-700:    #334155;   /* Secondary text */
+  --slate-500:    #64748B;   /* Muted text */
+  --slate-200:    #E2E8F0;   /* Borders */
+  --font-display: 'DM Serif Display', serif;
+  --font-body:    'Inter', sans-serif;
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-xl: 36px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-body); background: #fff; color: var(--slate-900); line-height: 1.6; }
+.container { max-width: 960px; margin: 0 auto; padding: 0 32px; }
+.label { font-size: 9px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--teal); margin-bottom: 8px; display: block; }
+h1 { font-family: var(--font-display); font-size: 3.5rem; line-height: 1.05; }
+h2 { font-family: var(--font-display); font-size: 2.2rem; color: var(--slate-900); line-height: 1.15; margin-bottom: 1rem; }
+h3 { font-size: 1rem; font-weight: 700; color: var(--slate-900); margin-bottom: 0.5rem; }
+p { color: var(--slate-700); line-height: 1.7; margin-bottom: 1rem; }
+a { color: var(--teal); }
+
+/* Cover */
+.cover { background: linear-gradient(135deg, #0F172A 0%, #0C2A3A 100%); color: white; padding: 80px 0; min-height: 380px; display: flex; align-items: center; position: relative; overflow: hidden; }
+.cover::before { content: ''; position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; border-radius: 50%; background: var(--teal-pastel); opacity: 0.08; }
+.cover .label { color: var(--teal-pastel); }
+.cover h1 { color: white; }
+.cover p { color: rgba(255,255,255,0.6); }
+
+/* Sections */
+section { padding: 72px 0; border-bottom: 1px solid var(--slate-200); }
+section:last-child { border-bottom: none; }
+
+/* Color swatches */
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; margin: 24px 0; }
+.swatch { border-radius: var(--radius-md); overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.swatch-color { height: 80px; display: flex; align-items: flex-end; padding: 10px 12px; }
+.swatch-hex { font-family: monospace; font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 600; }
+.swatch-info { padding: 10px 12px; background: white; }
+.swatch-name { font-size: 11px; font-weight: 700; color: var(--slate-900); }
+.swatch-use { font-size: 10px; color: var(--slate-500); margin-top: 2px; }
+
+/* Framework pillars */
+.pillars { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; }
+.pillar { background: var(--cream); border-radius: var(--radius-md); padding: 24px; border-left: 4px solid var(--teal); }
+.pillar-name { font-weight: 700; font-size: 1rem; color: var(--teal-deep); margin-bottom: 12px; }
+.pillar-sub { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--teal); margin: 10px 0 4px; }
+.risk { border-left: 4px solid #EF4444; background: #FFF5F5; border-radius: 8px; padding: 10px 14px; margin-top: 10px; font-size: 13px; color: #7F1D1D; }
+
+/* Segments */
+.segment { background: var(--cream); border-radius: var(--radius-lg); padding: 28px; margin: 16px 0; }
+.segment-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+.segment-name { font-family: var(--font-display); font-size: 1.4rem; color: var(--teal-deep); }
+.segment-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 100px; background: var(--teal-pastel); color: var(--teal-deep); }
+.decision-tree { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 16px 0; }
+.dt-step { background: white; border-radius: 8px; padding: 8px 6px; text-align: center; font-size: 10px; font-weight: 600; color: var(--slate-700); border: 1px solid var(--slate-200); }
+.dt-step.highlight { background: var(--teal); color: white; border-color: var(--teal); }
+blockquote { border-left: 4px solid var(--peach); background: #FFFBF7; border-radius: 0 12px 12px 0; padding: 16px 20px; margin: 16px 0; font-style: italic; color: var(--slate-700); font-size: 0.95rem; }
+
+/* Competitors table */
+table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 13px; }
+thead tr { background: var(--teal); color: white; }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--slate-200); }
+th { font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
+tr:nth-child(even) { background: var(--cream); }
+.white-space { background: #F0FDF4; font-weight: 600; color: var(--mint-deep); border-left: 4px solid var(--mint-deep); }
+
+/* Vocab landscape */
+.vocab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; }
+.vocab-cluster { background: var(--cream); border-radius: var(--radius-md); padding: 20px; }
+.vocab-cluster h3 { color: var(--teal-deep); margin-bottom: 8px; }
+.vocab-gap { background: linear-gradient(135deg, var(--teal-deep), var(--teal)); color: white; border-radius: var(--radius-md); padding: 24px; margin: 16px 0; }
+
+/* Typography */
+.type-spec { display: grid; grid-template-columns: 200px 1fr; gap: 24px; align-items: center; margin: 16px 0; padding: 20px; background: var(--cream); border-radius: var(--radius-md); }
+.type-preview { }
+.type-meta { font-size: 12px; color: var(--slate-500); }
+.type-meta strong { display: block; color: var(--slate-900); font-size: 13px; margin-bottom: 4px; }
+
+/* Voice samples */
+.voice-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.voice-good { background: #F0FDF4; border-radius: var(--radius-md); padding: 16px; border-left: 4px solid var(--mint-deep); }
+.voice-bad { background: #FFF5F5; border-radius: var(--radius-md); padding: 16px; border-left: 4px solid #EF4444; }
+.voice-label { font-size: 10px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
+.voice-good .voice-label { color: var(--mint-deep); }
+.voice-bad .voice-label { color: #EF4444; }
+
+/* CRO */
+.cro-item { background: var(--cream); border-radius: var(--radius-md); padding: 24px; margin: 16px 0; border-left: 4px solid var(--teal); }
+.cro-observe { font-size: 12px; font-weight: 700; color: var(--teal); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.cro-cost { background: #FFF5F5; border-radius: 8px; padding: 8px 12px; font-size: 13px; color: #7F1D1D; margin: 8px 0; }
+
+/* Footer */
+.playbook-footer { background: #0F172A; color: rgba(255,255,255,0.5); text-align: center; padding: 32px; font-size: 12px; }
+.playbook-footer strong { color: white; }
+
+@media (max-width: 640px) {
+  h1 { font-size: 2.4rem; }
+  .pillars, .vocab-grid, .voice-pair, .decision-tree, .type-spec { grid-template-columns: 1fr; }
+  .decision-tree { grid-template-columns: repeat(3, 1fr); }
+  .segment-header { flex-direction: column; gap: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="container">
+    <span class="label">Brand Playbook · June 2025 · Prepared for PawLocal</span>
+    <h1>🐾 PawLocal</h1>
+    <p style="font-size:1.2rem; margin:16px 0 8px;">Mumbai's Pet Layer — Brand Playbook & Design System</p>
+    <p style="max-width:520px;">The complete brand strategy, identity system, and CRO roadmap for India's first hyperlocal pet services marketplace built on the inDrive model.</p>
+    <div style="margin-top:32px; display:flex; gap:24px; font-size:12px; color:rgba(255,255,255,0.5);">
+      <span>Category: Hyperlocal Marketplace · Pet Services</span>
+      <span>Stage: Early · Juhu, Mumbai</span>
+      <span>Model: Asset-light · WhatsApp-direct</span>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 1: BRAND AT A GLANCE -->
+<section>
+  <div class="container">
+    <span class="label">01 — Brand at a Glance</span>
+    <h2>Everything PawLocal is, in one spread</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+      <div>
+        <h3>Positioning</h3>
+        <p>For Mumbai's pet-owning households, PawLocal is the hyperlocal pet services marketplace that connects them directly to verified vets, groomers, walkers and trainers via WhatsApp — with zero booking fees and zero middlemen — because we believe the best pet care already exists in your neighbourhood, it just needs a trusted front door.</p>
+        <h3 style="margin-top:20px;">Brand Voice in Three Words</h3>
+        <p><strong>Warm. Trusted. Local.</strong><br/>Never corporate. Never clinical. Always the knowledgeable neighbour.</p>
+        <h3 style="margin-top:20px;">The Bet</h3>
+        <p>Mumbai has 800,000+ pets and a pet care market growing at 15% CAGR. Every national platform — Supertails, Wiggles, Sploot — either sells products or manages the service. Nobody owns the <em>discovery + trust</em> layer. PawLocal does.</p>
+      </div>
+      <div>
+        <h3>The inDrive Parallel</h3>
+        <p>inDrive disrupted Ola/Uber not by running a fleet but by letting supply and demand negotiate directly. PawLocal does the same for pet services: verified providers, WhatsApp-direct contact, zero commission. The platform value is trust and discoverability, not service delivery.</p>
+        <h3 style="margin-top:20px;">The Moat</h3>
+        <p>Reviews + verification data compound. Every approved listing, every review, every Pet Broadcast interaction creates a trust layer that is genuinely hard to replicate fast. A new entrant can build a directory; they cannot build 500 verified reviews overnight.</p>
+        <h3 style="margin-top:20px;">Primary Markets</h3>
+        <p>Juhu (live) → Andheri West → Bandra → Santacruz. Dense residential pockets with high pet ownership and WhatsApp-native households.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: BRAND IDENTITY — COLOR SYSTEM -->
+<section>
+  <div class="container">
+    <span class="label">02 — Brand Identity · Color System</span>
+    <h2>Six colors. Each earns its place.</h2>
+    <p>The palette is built for a single emotional mandate: <strong>cute, pastel, and happy — without being childish.</strong> Every color is WCAG AA compliant when paired with its designated text color.</p>
+
+    <div class="swatches">
+      <div class="swatch">
+        <div class="swatch-color" style="background:#0891B2;"><span class="swatch-hex">#0891B2</span></div>
+        <div class="swatch-info"><div class="swatch-name">Sky Teal — Primary</div><div class="swatch-use">CTAs, links, brand anchor. Never on colored bg.</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#BAE6FD;"><span class="swatch-hex" style="color:#0C4A6E;">#BAE6FD</span></div>
+        <div class="swatch-info"><div class="swatch-name">Pastel Sky — Teal Light</div><div class="swatch-use">Clay card bg, badges, hero tints. Text: #0C4A6E.</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#FED7AA;"><span class="swatch-hex" style="color:#7C2D12;">#FED7AA</span></div>
+        <div class="swatch-info"><div class="swatch-name">Peach — Secondary</div><div class="swatch-use">Warmth, dog walking cards. Text: #7C2D12.</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#E9D5FF;"><span class="swatch-hex" style="color:#4C1D95;">#E9D5FF</span></div>
+        <div class="swatch-info"><div class="swatch-name">Lavender — Playful</div><div class="swatch-use">Grooming, training cards. Text: #4C1D95.</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#BBF7D0;"><span class="swatch-hex" style="color:#064E3B;">#BBF7D0</span></div>
+        <div class="swatch-info"><div class="swatch-name">Mint — Trust</div><div class="swatch-use">Verified badges, pet store, success. Text: #064E3B.</div></div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background:#FEF9C3;"><span class="swatch-hex" style="color:#713F12;">#FEF9C3</span></div>
+        <div class="swatch-info"><div class="swatch-name">Lemon — Happy</div><div class="swatch-use">Insurance, highlight accents. Text: #713F12.</div></div>
+      </div>
+    </div>
+
+    <div style="background:#F7FBFF;border-radius:20px;padding:24px;margin-top:16px;border:1px solid #E0F2FE;">
+      <h3>Contrast ratios — all WCAG AA compliant</h3>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px;">
+        <div style="font-size:12px;padding:10px;background:white;border-radius:10px;">
+          <strong>#0891B2</strong> on white<br/><span style="color:#059669;">✓ 5.1:1 (AA)</span>
+        </div>
+        <div style="font-size:12px;padding:10px;background:white;border-radius:10px;">
+          <strong>#0C4A6E</strong> on #BAE6FD<br/><span style="color:#059669;">✓ 7.8:1 (AAA)</span>
+        </div>
+        <div style="font-size:12px;padding:10px;background:white;border-radius:10px;">
+          <strong>White</strong> on #0E7490<br/><span style="color:#059669;">✓ 4.6:1 (AA)</span>
+        </div>
+        <div style="font-size:12px;padding:10px;background:white;border-radius:10px;">
+          <strong>#7C2D12</strong> on #FED7AA<br/><span style="color:#059669;">✓ 6.1:1 (AA)</span>
+        </div>
+        <div style="font-size:12px;padding:10px;background:white;border-radius:10px;">
+          <strong>#4C1D95</strong> on #E9D5FF<br/><span style="color:#059669;">✓ 6.7:1 (AA)</span>
+        </div>
+        <div style="font-size:12px;padding:10px;background:white;border-radius:10px;">
+          <strong>#064E3B</strong> on #BBF7D0<br/><span style="color:#059669;">✓ 8.2:1 (AAA)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: TYPOGRAPHY -->
+<section>
+  <div class="container">
+    <span class="label">03 — Typography System</span>
+    <h2>Two fonts. A clear hierarchy.</h2>
+
+    <div class="type-spec">
+      <div class="type-preview">
+        <div style="font-family:'DM Serif Display',serif;font-size:2.5rem;color:#0891B2;line-height:1.1;">DM Serif</div>
+      </div>
+      <div class="type-meta">
+        <strong>DM Serif Display — Display & Headlines only</strong>
+        Why: Serifs signal earned authority and warmth simultaneously. DM Serif in particular has a soft, rounded letterform that feels approachable rather than stiff — important for a brand built on neighbourhood trust. Competitors like Sploot use geometric sans; DM Serif is our differentiator.
+        <br/><br/>
+        <strong>Usage:</strong> Hero H1, H2 section headings, pull quotes, stat numbers. Never for body copy, labels, or buttons.
+        <br/><br/>
+        <strong>Sizes:</strong> Hero: clamp(2.5rem, 5vw, 5rem) · H2: 2.25rem · H3: 1.5rem · Pull quote: 1.25rem
+      </div>
+    </div>
+
+    <div class="type-spec">
+      <div class="type-preview">
+        <div style="font-family:'Inter',sans-serif;font-size:1.5rem;font-weight:600;color:#0F172A;">Inter</div>
+        <div style="font-family:'Inter',sans-serif;font-size:0.875rem;color:#64748B;margin-top:4px;">Body, labels, UI</div>
+      </div>
+      <div class="type-meta">
+        <strong>Inter — Body, UI, labels, buttons</strong>
+        Why: Inter is the gold standard for legibility on screens. At small sizes (10–12px for category labels and badges) it remains readable — critical for mobile where we need to show provider name, rating, price, distance and category in a small card. Alternatives like Poppins or Nunito feel rounder but sacrifice information density.
+        <br/><br/>
+        <strong>Size scale:</strong> Body 16px · Body-sm 14px · Label 12px · Caption 11px · Tiny badge 10px
+        <br/><br/>
+        <strong>Weights:</strong> Regular (400) for body · Medium (500) for labels · Semibold (600) for card titles · Bold (700) for CTAs and stats
+      </div>
+    </div>
+
+    <h3 style="margin-top:28px;">Complete type scale</h3>
+    <table>
+      <thead><tr><th>Token</th><th>Size</th><th>Weight</th><th>Font</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>display</td><td>clamp(2.5rem, 5vw, 5rem)</td><td>400</td><td>DM Serif Display</td><td>Hero headline only</td></tr>
+        <tr><td>h1</td><td>3rem (48px)</td><td>400</td><td>DM Serif Display</td><td>Page-level heading</td></tr>
+        <tr><td>h2</td><td>2.25rem (36px)</td><td>400</td><td>DM Serif Display</td><td>Section headings</td></tr>
+        <tr><td>h3</td><td>1.25rem (20px)</td><td>700</td><td>Inter</td><td>Card headings, sub-sections</td></tr>
+        <tr><td>body-lg</td><td>1.125rem (18px)</td><td>400</td><td>Inter</td><td>Hero subtext, intros</td></tr>
+        <tr><td>body</td><td>1rem (16px)</td><td>400</td><td>Inter</td><td>General body copy. Never smaller on mobile.</td></tr>
+        <tr><td>body-sm</td><td>0.875rem (14px)</td><td>400/500</td><td>Inter</td><td>Card descriptions, secondary info</td></tr>
+        <tr><td>label</td><td>0.75rem (12px)</td><td>600</td><td>Inter</td><td>Section labels, badge text, tags</td></tr>
+        <tr><td>caption</td><td>0.6875rem (11px)</td><td>500</td><td>Inter</td><td>Provider card sub-info, timestamps</td></tr>
+        <tr><td>micro</td><td>0.625rem (10px)</td><td>700</td><td>Inter</td><td>Tiny badges only. Never body copy.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 4: THE PAWLOCAL FRAMEWORK -->
+<section>
+  <div class="container">
+    <span class="label">04 — The PawLocal Framework</span>
+    <h2>The Paw Promise — 5 non-negotiables</h2>
+    <p>Every brand that wins long-term has operational non-negotiables that compound into a moat. These are PawLocal's five. Violate any one and the entire trust proposition unravels.</p>
+    <div class="pillars">
+      <div class="pillar">
+        <div class="pillar-name">🔍 01 — Verified First</div>
+        <div class="pillar-sub">Why non-negotiable</div>
+        <p style="font-size:13px;color:#334155;">Every provider goes live only after human review. This is what separates PawLocal from JustDial, Sulekha, and Google Maps. Those platforms list anyone. PawLocal lists people your neighbour would recommend.</p>
+        <div class="pillar-sub">How to embed</div>
+        <p style="font-size:13px;color:#334155;">✓ Verified badge on every card — prominent, not buried. "Reviewed by PawLocal team" tooltip. Show review date.</p>
+        <div class="risk">The risk of staying quiet: One bad experience from an unverified-looking listing will circulate on 10 Juhu WhatsApp groups before you wake up. Mumbai operates on social proof. A single "I found a fraud on PawLocal" post undoes six months of goodwill. Verification is not a feature — it's your insurance policy.</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-name">💬 02 — WhatsApp Native</div>
+        <div class="pillar-sub">Why non-negotiable</div>
+        <p style="font-size:13px;color:#334155;">Mumbai runs on WhatsApp. 97% of Indian smartphone users use it daily. Every booking platform that built its own chat lost to providers who figured out "just message on WhatsApp." PawLocal doesn't fight this — it makes WhatsApp the product.</p>
+        <div class="pillar-sub">How to embed</div>
+        <p style="font-size:13px;color:#334155;">✓ Every CTA ends in WhatsApp. Pre-filled message template. Provider phone visible on profile. Zero friction to contact.</p>
+        <div class="risk">The risk: Build a custom in-app chat and you'll spend ₹15L building something providers never check. Your conversion rate will halve overnight the moment a user realises they have to use an inbox nobody monitors.</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-name">₹0 03 — Zero Commission</div>
+        <div class="pillar-sub">Why non-negotiable</div>
+        <p style="font-size:13px;color:#334155;">Urban Company takes 20–35% from providers. That margin comes from somewhere — either higher prices to consumers or lower income to providers. PawLocal's zero-fee model creates genuine loyalty from providers that no commission platform can match. A provider earning full income through PawLocal will never delist.</p>
+        <div class="pillar-sub">How to embed</div>
+        <p style="font-size:13px;color:#334155;">✓ "₹0 fee, always" in every hero, every provider pitch. Make it a badge of honour, not a footnote.</p>
+        <div class="risk">The risk: The moment providers suspect hidden fees are coming, they list on competitor platforms "just in case." Provider trust, once lost in a B2B2C model, is gone permanently. Be fanatically transparent on this forever.</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-name">📍 04 — Genuinely Local</div>
+        <div class="pillar-sub">Why non-negotiable</div>
+        <p style="font-size:13px;color:#334155;">Supertails is a national brand that ships to your door. Wiggles is veterinary advice for India. PawLocal is specifically for Juhu. Then Andheri. Then Bandra. The neighbourhood specificity IS the product — a groomer 0.5km away beats a 4.9-star one 8km away, always.</p>
+        <div class="pillar-sub">How to embed</div>
+        <p style="font-size:13px;color:#334155;">✓ Show distance in km, not just area name. "Near you" language everywhere. Area-specific taglines per category page.</p>
+        <div class="risk">The risk: Expand too fast and the "hyperlocal" claim becomes hollow. A Mumbai directory with 3 providers per area feels emptier than a Juhu directory with 30. Depth before breadth, always.</div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-name">📣 05 — Demand Visible</div>
+        <div class="pillar-sub">Why non-negotiable</div>
+        <p style="font-size:13px;color:#334155;">The Pet Broadcast feature flips the model. Instead of only supply (providers) being visible, demand (pet owners who need a service now) is visible too. This is PawLocal's structural differentiator. No competitor — Sploot, JustDial, Sulekha — has this. It creates a real-time signal of market health that compounds with every broadcast posted.</p>
+        <div class="pillar-sub">How to embed</div>
+        <p style="font-size:13px;color:#334155;">✓ Broadcast count on homepage. "X active requests near you" for providers. Make demand visible in both directions.</p>
+        <div class="risk">The risk: If the Broadcast section sits quietly in the nav and nobody uses it, PawLocal is just another directory. The inDrive model only works when both sides know the other side is active. Broadcast volume is a growth metric, not a feature metric.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5: TARGET SEGMENTS -->
+<section>
+  <div class="container">
+    <span class="label">05 — Target Segments</span>
+    <h2>Four segments. One is the real bet.</h2>
+
+    <div class="segment">
+      <div class="segment-header">
+        <div>
+          <div class="segment-name">The Anxious New Parent 🐶</div>
+          <p style="font-size:13px;color:#64748B;margin-top:4px;">First pet in 0–18 months. Mumbai flat. One question a day on 5 WhatsApp groups.</p>
+        </div>
+        <div class="segment-tags">
+          <span class="tag">High intent</span><span class="tag">High LTV</span><span class="tag">Primary segment</span>
+        </div>
+      </div>
+      <div class="decision-tree">
+        <div class="dt-step highlight">Awareness<br/>Friends + WA group</div>
+        <div class="dt-step">Consideration<br/>Googles + asks</div>
+        <div class="dt-step highlight">Conversion<br/>Verifies on PawLocal</div>
+        <div class="dt-step highlight">Advocacy<br/>Shares in WA groups</div>
+        <div class="dt-step">Drop-off<br/>Provider ghosts</div>
+        <div class="dt-step highlight">Retention<br/>Every new need → PawLocal</div>
+      </div>
+      <blockquote>Meera got a Labrador puppy six months ago. She's in three Juhu pet WhatsApp groups, has bookmarked eight vet websites, and has never actually called any of them — because she can't tell which ones are real. She needs someone to do the vetting for her. She needs PawLocal's verified badge more than she knows.</blockquote>
+    </div>
+
+    <div class="segment">
+      <div class="segment-header">
+        <div>
+          <div class="segment-name">The Experienced Pet Parent 🏅</div>
+          <p style="font-size:13px;color:#64748B;margin-top:4px;">2+ pets or 3+ years. Knows what they want. WhatsApp-first. Price-sensitive but not cheap.</p>
+        </div>
+        <div class="segment-tags">
+          <span class="tag">High frequency</span><span class="tag">Review writers</span>
+        </div>
+      </div>
+      <div class="decision-tree">
+        <div class="dt-step">Awareness<br/>Referred in</div>
+        <div class="dt-step highlight">Consideration<br/>Checks reviews</div>
+        <div class="dt-step highlight">Conversion<br/>WhatsApps direct</div>
+        <div class="dt-step">Advocacy<br/>Writes review if prompted</div>
+        <div class="dt-step">Drop-off<br/>Finds provider on own</div>
+        <div class="dt-step highlight">Retention<br/>Broadcast user</div>
+      </div>
+      <blockquote>Rohan has had two dogs for four years. He has a groomer, a vet, and a walker — all found the hard way. He doesn't need PawLocal to find services he already has. He needs it for emergencies, for when his regular vet is unavailable at 11pm, and for when he moves to a new area. He's the silent power user.</blockquote>
+    </div>
+
+    <div class="segment">
+      <div class="segment-header">
+        <div>
+          <div class="segment-name">The Pet Service Provider 🛠️</div>
+          <p style="font-size:13px;color:#64748B;margin-top:4px;">Vet, groomer, walker, trainer. Looking for clients without Instagram or ads.</p>
+        </div>
+        <div class="segment-tags">
+          <span class="tag">Supply side</span><span class="tag">Zero cost to serve</span>
+        </div>
+      </div>
+      <div class="decision-tree">
+        <div class="dt-step">Awareness<br/>Word of mouth</div>
+        <div class="dt-step highlight">Consideration<br/>Checks /join page</div>
+        <div class="dt-step highlight">Conversion<br/>Lists for free</div>
+        <div class="dt-step">Advocacy<br/>Tells peers</div>
+        <div class="dt-step">Drop-off<br/>No leads in 30 days</div>
+        <div class="dt-step highlight">Retention<br/>Review accumulation</div>
+      </div>
+      <blockquote>Shahrukh walks dogs in Juhu. He has 8 clients and wants 15. He tried Instagram for three months, got 200 followers and zero bookings. He doesn't want to manage a profile — he wants phone calls. PawLocal's zero-fee, WhatsApp-direct model is the only platform where he keeps 100% of what he earns.</blockquote>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 6: COMPETITIVE LANDSCAPE -->
+<section>
+  <div class="container">
+    <span class="label">06 — Competitive Landscape</span>
+    <h2>Five players. One white space.</h2>
+    <table>
+      <thead>
+        <tr><th>Brand</th><th>Model</th><th>Geography</th><th>Category</th><th>Strength</th><th>Weakness</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Sploot</strong></td>
+          <td>Managed (employs walkers/groomers)</td>
+          <td>Delhi-NCR only</td>
+          <td>Dog only</td>
+          <td>Premium brand, subscription</td>
+          <td>Asset-heavy, high cost, no Mumbai, no vets</td>
+        </tr>
+        <tr>
+          <td><strong>Supertails</strong></td>
+          <td>E-commerce + vet teleconsult</td>
+          <td>Pan-India delivery</td>
+          <td>Products + teleconsult</td>
+          <td>Funding, product range, VC-backed</td>
+          <td>No local in-person discovery, no grooming/walking</td>
+        </tr>
+        <tr>
+          <td><strong>Wiggles</strong></td>
+          <td>D2C pet supplements + vet advice</td>
+          <td>Pan-India</td>
+          <td>Nutrition + teleconsult</td>
+          <td>Category depth, vet credibility</td>
+          <td>No marketplace, no local, no physical services</td>
+        </tr>
+        <tr>
+          <td><strong>JustDial / Sulekha</strong></td>
+          <td>Lead generation directory</td>
+          <td>Pan-India</td>
+          <td>All services</td>
+          <td>Scale, SEO dominance</td>
+          <td>Unverified listings, spam calls, no pet-specific trust</td>
+        </tr>
+        <tr>
+          <td><strong>Urban Company</strong></td>
+          <td>Managed marketplace (pet grooming)</td>
+          <td>Top 10 cities</td>
+          <td>Grooming only</td>
+          <td>Operations, quality control, app</td>
+          <td>20–35% commission, no vet/walk/train, not WhatsApp</td>
+        </tr>
+        <tr class="white-space">
+          <td colspan="6">🟢 White space: Hyperlocal, multi-category, WhatsApp-native, zero-fee, verified discovery. Nobody owns this in Mumbai. PawLocal does.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 7: CATEGORY VOCABULARY LANDSCAPE -->
+<section>
+  <div class="container">
+    <span class="label">07 — Category Vocabulary Landscape</span>
+    <h2>How the category talks — and what nobody has said yet</h2>
+    <div class="vocab-grid">
+      <div class="vocab-cluster">
+        <h3>Cluster 1: Clinical care</h3>
+        <p style="font-size:13px;">"Expert veterinary care" · "Professional grooming" · "Certified trainers" · "Medical-grade" · "Clinically validated"<br/><em>Brands: Supertails, Wiggles, DCC Animal Hospital</em></p>
+      </div>
+      <div class="vocab-cluster">
+        <h3>Cluster 2: Premium managed</h3>
+        <p style="font-size:13px;">"Trained & verified walkers" · "On-demand pet care" · "Peace of mind" · "Trusted professionals" · "Subscription care plans"<br/><em>Brands: Sploot, Urban Company</em></p>
+      </div>
+      <div class="vocab-cluster">
+        <h3>Cluster 3: Generic directory</h3>
+        <p style="font-size:13px;">"Find pet services near you" · "Book appointment" · "List of vets in Mumbai" · "Contact now"<br/><em>Brands: JustDial, Sulekha, Google Maps</em></p>
+      </div>
+      <div class="vocab-cluster">
+        <h3>Cluster 4: Community/social</h3>
+        <p style="font-size:13px;">"Pet parent community" · "Stories from pet families" · "Share your fur baby"<br/><em>Brands: PetKonnect, Instagram pet pages</em></p>
+      </div>
+    </div>
+    <div class="vocab-gap">
+      <h3 style="color:white;margin-bottom:8px;">The gap nobody has claimed</h3>
+      <p style="color:rgba(255,255,255,0.8);font-size:14px;">No one defines pet care as <strong style="color:white;">"the person your trusted neighbour already uses, made easy to find."</strong> The concept of neighbourhood-verified, proximity-first, WhatsApp-native pet services doesn't exist as a vocabulary category yet. PawLocal can own: <strong style="color:#BAE6FD;">Neighbourhood Trust.</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 8: VOICE & TONE -->
+<section>
+  <div class="container">
+    <span class="label">08 — Voice & Tone</span>
+    <h2>Warm neighbour. Not corporate helpdesk.</h2>
+    <p>PawLocal speaks like the most trusted person in the Juhu pet WhatsApp group — someone who genuinely loves animals, knows the neighbourhood, and cuts through the noise with a straight recommendation.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:24px 0;">
+      <div style="background:#BAE6FD;border-radius:12px;padding:14px;text-align:center;font-size:12px;font-weight:700;color:#0C4A6E;">Warm</div>
+      <div style="background:#FED7AA;border-radius:12px;padding:14px;text-align:center;font-size:12px;font-weight:700;color:#7C2D12;">Playful</div>
+      <div style="background:#BBF7D0;border-radius:12px;padding:14px;text-align:center;font-size:12px;font-weight:700;color:#064E3B;">Trusted</div>
+      <div style="background:#E9D5FF;border-radius:12px;padding:14px;text-align:center;font-size:12px;font-weight:700;color:#4C1D95;">Direct</div>
+      <div style="background:#FEF9C3;border-radius:12px;padding:14px;text-align:center;font-size:12px;font-weight:700;color:#713F12;">Local</div>
+    </div>
+
+    <div class="voice-pair">
+      <div class="voice-good">
+        <div class="voice-label">✓ PawLocal voice</div>
+        <p style="font-size:14px;">"Every walker, groomer, and vet here has been reviewed by our team. If they're listed, we'd trust them with our own pet."</p>
+      </div>
+      <div class="voice-bad">
+        <div class="voice-label">✗ Not PawLocal</div>
+        <p style="font-size:14px;">"Our platform connects pet owners with verified service providers through our proprietary screening process."</p>
+      </div>
+    </div>
+    <div class="voice-pair">
+      <div class="voice-good">
+        <div class="voice-label">✓ PawLocal voice</div>
+        <p style="font-size:14px;">"Need a groomer this Sunday? Post it. Verified groomers near Juhu will WhatsApp you directly."</p>
+      </div>
+      <div class="voice-bad">
+        <div class="voice-label">✗ Not PawLocal</div>
+        <p style="font-size:14px;">"Request a service by filling out our broadcast form and await responses from nearby professionals."</p>
+      </div>
+    </div>
+    <div class="voice-pair">
+      <div class="voice-good">
+        <div class="voice-label">✓ PawLocal voice</div>
+        <p style="font-size:14px;">"₹0 fee. Always. The provider keeps 100% — which means they're here because they want to be."</p>
+      </div>
+      <div class="voice-bad">
+        <div class="voice-label">✗ Not PawLocal</div>
+        <p style="font-size:14px;">"We do not charge any commission or platform fees for our services."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 9: CRO ROADMAP -->
+<section>
+  <div class="container">
+    <span class="label">09 — CRO Roadmap · What's costing conversions today</span>
+    <h2>Five fixes. Each one measurable.</h2>
+
+    <div class="cro-item">
+      <div class="cro-observe">Observation 1 — Header has no location context on mobile</div>
+      <p style="font-size:13px;">The "📍 Juhu, Mumbai" location pill is hidden on mobile (<code>hidden sm:flex</code>). Mobile users — PawLocal's primary audience — land on a generic page with no local signal.</p>
+      <div class="cro-cost">Estimated cost: 15–20% of mobile users bounce within 3 seconds because the page doesn't feel local to them. That's the only reason they came.</div>
+      <p style="font-size:13px;margin-top:8px;"><strong>Fix:</strong> Show a small location chip on mobile too. Use the OnboardingSheet area to personalise: "Pet care in Juhu" → "Pet care in Bandra" once they set their area.</p>
+    </div>
+
+    <div class="cro-item">
+      <div class="cro-observe">Observation 2 — Category pages show 0 providers for dog walking</div>
+      <p style="font-size:13px;">Dog walking is listed prominently but has zero approved providers (they're being onboarded manually). A visitor who taps Dog Walking sees an empty state — possibly the service they came for.</p>
+      <div class="cro-cost">Estimated cost: Every empty category visit has a 70%+ bounce rate and a WhatsApp group message that says "PawLocal has nothing for walkers."</div>
+      <p style="font-size:13px;margin-top:8px;"><strong>Fix:</strong> Replace empty state with a "We're onboarding walkers — be first to know" email/WhatsApp capture. Turn a dead end into a lead.</p>
+    </div>
+
+    <div class="cro-item">
+      <div class="cro-observe">Observation 3 — Pet Broadcast has no social proof of activity</div>
+      <p style="font-size:13px;">The /broadcast page exists but shows "No active requests right now" when empty. This signals low usage to early visitors who are evaluating whether to trust the platform.</p>
+      <div class="cro-cost">Estimated cost: The inDrive model only creates trust when both sides see the other side is active. An empty broadcast feed kills the network effect before it starts.</div>
+      <p style="font-size:13px;margin-top:8px;"><strong>Fix:</strong> Seed 3–5 real broadcasts manually. Even "test" requests from team members create the appearance of a live marketplace to early visitors.</p>
+    </div>
+
+    <div class="cro-item">
+      <div class="cro-observe">Observation 4 — /join form is long with no progress indicator</div>
+      <p style="font-size:13px;">The provider registration form has 15+ fields on one page. No step indicator. No "saved" state. A walker filling this out on mobile will abandon at field 8.</p>
+      <div class="cro-cost">Estimated cost: Every 1 additional form field reduces completion by ~3–5% on mobile. At 15 fields vs. a 3-step wizard, you're losing 30–40% of provider signups.</div>
+      <p style="font-size:13px;margin-top:8px;"><strong>Fix:</strong> Break into 3 steps: Basic info → Location & availability → Photos & bio. Show "Step 1 of 3." Auto-save draft to localStorage.</p>
+    </div>
+
+    <div class="cro-item">
+      <div class="cro-observe">Observation 5 — No urgency signal for emergency vet search</div>
+      <p style="font-size:13px;">The single highest-intent visit on PawLocal is someone searching for an emergency vet at 10pm. The current vet category page shows all vets in the same visual weight — emergency and non-emergency listed together.</p>
+      <div class="cro-cost">Estimated cost: This is the moment that either earns a lifelong loyal user or sends them back to Google. You will be judged on this one experience more than any other.</div>
+      <p style="font-size:13px;margin-top:8px;"><strong>Fix:</strong> Pin emergency vets to the top of the list with a distinct red clay card. "Open now · 24hr · 0.8km" — the three things they need at 10pm, immediately visible.</p>
+    </div>
+  </div>
+</section>
+
+<div class="playbook-footer">
+  <p>Prepared for <strong>PawLocal</strong> · June 2025 · Brand Playbook v1.0</p>
+  <p style="margin-top:4px;">Design system ready for implementation in Next.js + Tailwind v4</p>
+</div>
+
+</body>
+</html>

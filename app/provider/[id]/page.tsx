@@ -110,6 +110,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           )}
 
           <div className="flex items-center gap-2 flex-wrap mt-2">
+
             <span
               className="inline-block text-xs font-medium px-2.5 py-1 rounded-full"
               style={{ backgroundColor: category.color + '18', color: category.color }}
@@ -136,6 +137,14 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
       </div>
+
+      {/* Edit link */}
+      <a
+        href={`/provider/${provider.id}/edit`}
+        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-6 border border-border rounded-full px-3 py-1.5"
+      >
+        ✏️ Edit your listing
+      </a>
 
       {/* Bio */}
       {provider.bio && (

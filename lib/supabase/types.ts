@@ -40,7 +40,24 @@ export type Provider = {
   google_place_id: string | null
   category_slugs: string[]
   metadata: TrainerMetadata | null
+  is_emergency: boolean
+  neighbourhood: string
   created_at: string
+}
+
+export type Broadcast = {
+  id: string
+  service_slug: string
+  pet_description: string
+  area: string
+  date_needed: string
+  budget: string | null
+  poster_name: string
+  poster_whatsapp: string
+  notes: string | null
+  status: 'active' | 'filled' | 'expired'
+  created_at: string
+  expires_at: string
 }
 
 export type ProviderPhoto = {
@@ -73,6 +90,7 @@ export type ProviderInsert = {
   working_days?: string[]
   bio?: string | null
   metadata?: TrainerMetadata | null
+  is_emergency?: boolean
 }
 
 export type Review = {
@@ -115,6 +133,8 @@ export type Database = {
       categories: { Row: Category; Insert: Omit<Category, 'id'>; Update: Partial<Category>; Relationships: GenericRelationship[] }
       providers: { Row: Provider; Insert: ProviderInsert; Update: Partial<Provider>; Relationships: GenericRelationship[] }
       provider_photos: { Row: ProviderPhoto; Insert: ProviderPhotoInsert; Update: Partial<ProviderPhoto>; Relationships: GenericRelationship[] }
+      broadcasts: { Row: Broadcast; Insert: Omit<Broadcast, 'id' | 'status' | 'created_at' | 'expires_at'>; Update: Partial<Broadcast>; Relationships: GenericRelationship[] }
+      reviews: { Row: Review; Insert: ReviewInsert & { status?: string }; Update: Partial<Review>; Relationships: GenericRelationship[] }
     }
     Views: Record<string, { Row: Record<string, unknown>; Relationships: GenericRelationship[] }>
     Functions: Record<string, { Args: Record<string, unknown>; Returns: unknown }>

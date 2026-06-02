@@ -30,6 +30,7 @@ export default function JoinPage() {
     hours_from: '09:00',
     hours_to: '18:00',
     bio: '',
+    is_emergency: false,
   })
 
   // Trainer-specific metadata (shown only when dog-training is selected)
@@ -107,6 +108,7 @@ export default function JoinPage() {
         lng: pin.lng,
         photo_urls: photoUrls,
         metadata,
+        is_emergency: form.is_emergency,
       }),
     })
     setSubmitting(false)
@@ -300,6 +302,25 @@ export default function JoinPage() {
               />
             </div>
           </div>
+
+          {/* Emergency tag — vets only */}
+          {form.category_slugs.includes('vet') && (
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={form.is_emergency}
+                onChange={(e) => setForm({ ...form, is_emergency: e.target.checked })}
+                className="mt-0.5 w-4 h-4 rounded accent-[var(--pl-teal)]"
+              />
+              <div>
+                <p className="text-sm font-medium text-foreground">We offer 24hr / emergency services</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Tick this only if you genuinely have emergency or after-hours availability.
+                  This helps pet owners find you during urgent situations.
+                </p>
+              </div>
+            </label>
+          )}
 
           {/* Bio */}
           <div>

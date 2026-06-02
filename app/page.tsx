@@ -1,14 +1,41 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import CategoryCard from '@/components/CategoryCard'
-import { CATEGORIES } from '@/lib/categories'
+import LandingPage from '@/components/LandingPage'
 
-export default async function HomePage() {
+export const metadata: Metadata = {
+  title: 'PawLocal — Pet Services in Juhu, Mumbai',
+  description:
+    'Find trusted vets, groomers, dog walkers, trainers and pet stores near Juhu, Mumbai. WhatsApp directly. No booking fee.',
+}
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ area?: string }>
+}) {
+  const { area } = await searchParams
+  const neighbourhood = area ?? 'Juhu'
+
   const supabase = await createClient()
 
-  const { data: counts } = await supabase
+  // Try to filter by neighbourhood — gracefully falls back to all if column doesn't exist yet
+  let counts: { category_slug: string }[] | null = null
+  const { data: filtered, error } = await supabase
     .from('providers')
     .select('category_slug')
-    .eq('status', 'approved') as { data: { category_slug: string }[] | null }
+    .eq('status', 'approved')
+    .eq('neighbourhood', neighbourhood)
+
+  if (error) {
+    // Migration 010 not run yet — fall back to all approved providers
+    const { data: all } = await supabase
+      .from('providers')
+      .select('category_slug')
+      .eq('status', 'approved')
+    counts = all
+  } else {
+    counts = filtered
+  }
 
   const countMap: Record<string, number> = {}
   counts?.forEach((row) => {
@@ -18,116 +45,33 @@ export default async function HomePage() {
   const totalProviders = Object.values(countMap).reduce((a, b) => a + b, 0)
 
   return (
-    <div>
-      {/* Hero */}
-      <div className="mb-11">
-        <div className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full mb-5 border"
-          style={{
-            backgroundColor: 'var(--pl-teal-light)',
-            borderColor: 'oklch(0.88 0.07 196)',
-            color: 'var(--pl-teal)',
-          }}
-        >
-          📍 Juhu, Mumbai
-          {totalProviders > 0 && (
-            <span className="opacity-70">· {totalProviders} services listed</span>
-          )}
-        </div>
-
-        <h1
-          className="text-4xl sm:text-5xl leading-tight text-foreground mb-3 font-display"
-        >
-          Pet care you can trust.
-        </h1>
-        <p className="text-lg text-muted-foreground max-w-lg">
-          Every walker, groomer, vet, and store on PawLocal is reviewed before going live. Browse, compare, and WhatsApp directly.
-        </p>
-      </div>
-
-      {/* Category grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
-        {CATEGORIES.map((category) => (
-          <CategoryCard
-            key={category.slug}
-            category={category}
-            count={countMap[category.slug] ?? 0}
-          />
-        ))}
-      </div>
-
-      {/* Map CTA */}
-      <a
-        href="/map"
-        className="flex items-center justify-between gap-3 w-full mb-14 px-5 py-3.5 rounded-2xl border border-border bg-white hover:border-[var(--pl-teal)] hover:shadow-sm transition-all group"
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">🗺</span>
-          <div>
-            <p className="text-sm font-semibold text-foreground">See everything on one map</p>
-            <p className="text-xs text-muted-foreground">All vets, stores, groomers & walkers near you</p>
-          </div>
-        </div>
-        <span className="text-sm font-medium transition-colors text-muted-foreground group-hover:text-[var(--pl-teal)]">
-          Open map →
-        </span>
-      </a>
-
-      {/* How it works */}
-      <div className="mb-14">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground mb-5">
-          How it works
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            {
-              n: '01',
-              title: 'Browse by category',
-              desc: 'Pick the service you need — walking, grooming, vet, store, or insurance.',
-            },
-            {
-              n: '02',
-              title: 'Compare on the map',
-              desc: 'See every provider near you. Toggle between list and map view.',
-            },
-            {
-              n: '03',
-              title: 'WhatsApp directly',
-              desc: 'One tap to contact them. No booking fee, no middleman.',
-            },
-          ].map(({ n, title, desc }) => (
-            <div key={n} className="flex gap-4">
-              <span
-                className="text-2xl font-display leading-none pt-0.5 flex-shrink-0"
-                style={{ color: 'var(--pl-teal)' }}
-              >
-                {n}
-              </span>
-              <div>
-                <p className="font-semibold text-foreground text-sm">{title}</p>
-                <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{desc}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Provider CTA */}
-      <div className="rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 border border-border"
-        style={{ backgroundColor: 'var(--pl-teal-light)' }}
-      >
-        <div>
-          <p className="font-semibold text-foreground text-base">Are you a pet service provider?</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Get listed for free. Every listing is reviewed by our team before going live.
-          </p>
-        </div>
-        <a
-          href="/join"
-          className="flex-shrink-0 text-sm font-medium px-5 py-2.5 rounded-full transition-colors bg-[var(--pl-teal)] text-white hover:bg-[var(--pl-teal-hover)] whitespace-nowrap"
-        >
-          List your service — it&apos;s free
-        </a>
-      </div>
-    </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            "name": "PawLocal",
+            "description": "Hyperlocal pet services directory for Juhu, Mumbai",
+            "url": "https://pawlocal.in",
+            "areaServed": { "@type": "City", "name": "Mumbai" },
+            "serviceArea": { "@type": "GeoCircle", "geoMidpoint": { "@type": "GeoCoordinates", "latitude": 19.1075, "longitude": 72.8263 }, "geoRadius": "5000" },
+            "hasOfferCatalog": {
+              "@type": "OfferCatalog",
+              "name": "Pet Services",
+              "itemListElement": [
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Dog Walking" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Pet Grooming" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Veterinary Services" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Dog Training" } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Pet Store" } }
+              ]
+            }
+          })
+        }}
+      />
+      <LandingPage countMap={countMap} totalProviders={totalProviders} neighbourhood={neighbourhood} />
+    </>
   )
 }

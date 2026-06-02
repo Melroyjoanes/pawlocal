@@ -135,6 +135,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    overflow-x: clip; /* lets full-bleed sections use 100vw without horizontal scroll */
   }
   html {
     @apply font-sans;
