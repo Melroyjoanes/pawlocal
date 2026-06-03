@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import AuthModal from '@/components/AuthModal'
 
 // Invisible component — fires a tracking event silently on mount
 export function TrackView({ providerId }: { providerId: string }) {
@@ -68,7 +66,6 @@ export function TrackButton({
 }
 
 // ❤️ Save button — stores provider in localStorage for customer dashboard
-// Requires auth: opens AuthModal if not signed in
 export function SaveButton({
   providerId,
   providerName,
@@ -81,7 +78,6 @@ export function SaveButton({
   whatsapp: string
 }) {
   const [saved, setSaved] = useState(false)
-  const [authOpen, setAuthOpen] = useState(false)
 
   useEffect(() => {
     try {
@@ -90,15 +86,7 @@ export function SaveButton({
     } catch {}
   }, [providerId])
 
-  async function toggle() {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      setAuthOpen(true)
-      return
-    }
-
+  function toggle() {
     try {
       const list = JSON.parse(localStorage.getItem('pawlocal_saved') ?? '[]') as {
         id: string; name: string; category_slug: string; whatsapp: string
@@ -115,21 +103,12 @@ export function SaveButton({
   }
 
   return (
-    <>
-      <button
-        onClick={toggle}
-        title={saved ? 'Remove from saved' : 'Save provider'}
-        className="flex items-center justify-center w-12 h-12 rounded-2xl border border-border bg-white transition-all hover:border-red-300 active:scale-95"
-      >
-        <span className="text-xl">{saved ? '❤️' : '🤍'}</span>
-      </button>
-
-      <AuthModal
-        open={authOpen}
-        onClose={() => setAuthOpen(false)}
-        message="Sign in to save providers"
-        redirectTo={typeof window !== 'undefined' ? window.location.pathname : undefined}
-      />
-    </>
+    <button
+      onClick={toggle}
+      title={saved ? 'Remove from saved' : 'Save provider'}
+      className="flex items-center justify-center w-12 h-12 rounded-2xl border border-border bg-white transition-all hover:border-red-300 active:scale-95"
+    >
+      <span className="text-xl">{saved ? '❤️' : '🤍'}</span>
+    </button>
   )
 }

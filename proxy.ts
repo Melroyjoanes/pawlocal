@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-const PROTECTED = [
-  '/my-account',
-  '/broadcast',
-  '/provider',  // /provider/[id]/dashboard and /provider/[id]/edit
-]
-
 function isProtected(pathname: string) {
   if (pathname.startsWith('/provider/') && (pathname.endsWith('/dashboard') || pathname.endsWith('/edit'))) return true
-  if (pathname === '/my-account' || pathname === '/broadcast') return true
+  if (pathname === '/my-account') return true
   return false
 }
 
@@ -50,7 +44,6 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     '/my-account',
-    '/broadcast',
     '/provider/:id/dashboard',
     '/provider/:id/edit',
   ],

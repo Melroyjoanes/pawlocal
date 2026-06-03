@@ -4,7 +4,6 @@ import MotionProvider from '@/components/MotionProvider'
 import OnboardingSheet from '@/components/OnboardingSheet'
 import ResponsePrompt from '@/components/ResponsePrompt'
 import LocationPicker from '@/components/LocationPicker'
-import UserMenu from '@/components/UserMenu'
 import HeaderSearch from '@/components/HeaderSearch'
 import './globals.css'
 
@@ -85,9 +84,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
               {/* Search — desktop inline, mobile icon */}
               <HeaderSearch />
-
-              {/* User menu (avatar when logged in, 👤 icon when logged out) */}
-              <UserMenu />
             </div>
           </header>
 

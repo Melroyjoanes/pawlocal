@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import LandingPage from '@/components/LandingPage'
-import AuthRequired from '@/components/AuthRequired'
 
 export const metadata: Metadata = {
   title: 'PawLocal — Pet Services in Juhu, Mumbai',
@@ -12,9 +11,9 @@ export const metadata: Metadata = {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ area?: string; auth_required?: string; next?: string }>
+  searchParams: Promise<{ area?: string }>
 }) {
-  const { area, auth_required, next } = await searchParams
+  const { area } = await searchParams
   const neighbourhood = area ?? 'Juhu'
 
   const supabase = await createClient()
@@ -47,7 +46,6 @@ export default async function HomePage({
 
   return (
     <>
-      <AuthRequired authRequired={auth_required} next={next} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

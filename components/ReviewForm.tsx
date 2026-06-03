@@ -2,8 +2,6 @@
 
 import { useState } from 'react'
 import { StarPicker } from './StarRating'
-import { createClient } from '@/lib/supabase/client'
-import AuthModal from '@/components/AuthModal'
 
 interface Props {
   providerId: string
@@ -17,26 +15,15 @@ export default function ReviewForm({ providerId }: Props) {
   const [comment, setComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]     = useState('')
-  const [authOpen, setAuthOpen] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!rating) { setError('Please pick a star rating'); return }
     setError('')
 
-    // Check auth before submitting
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      setAuthOpen(true)
-      return
-    }
-
     setSubmitting(true)
 
-    // Pre-fill phone from user's auth session if available and not already set
-    const resolvedPhone = phone.trim() || (user.phone ?? '') || null
+    const resolvedPhone = phone.trim() || null
 
     const res = await fetch('/api/reviews', {
       method: 'POST',
@@ -72,8 +59,7 @@ export default function ReviewForm({ providerId }: Props) {
   }
 
   return (
-    <>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         {/* Star picker */}
         <div>
           <p className="text-sm font-medium mb-2">Your rating *</p>
@@ -142,13 +128,5 @@ export default function ReviewForm({ providerId }: Props) {
           Reviews are verified before publishing.
         </p>
       </form>
-
-      <AuthModal
-        open={authOpen}
-        onClose={() => setAuthOpen(false)}
-        message="Sign in to leave a review"
-        redirectTo={typeof window !== 'undefined' ? window.location.pathname : undefined}
-      />
-    </>
   )
 }
