@@ -35,8 +35,6 @@ export default async function JoinSuccessPage({ searchParams }: Props) {
   const { name } = await searchParams
   const displayName = name ? decodeURIComponent(name) : null
 
-  const whatsappCta = `https://wa.me/919800000000?text=${encodeURIComponent('Hi PawLocal! I just listed my service')}`
-
   return (
     <div className="max-w-md mx-auto py-14 px-4">
       {/* Hero */}
@@ -112,16 +110,6 @@ export default async function JoinSuccessPage({ searchParams }: Props) {
           </div>
         </div>
       </div>
-
-      {/* WhatsApp CTA */}
-      <a
-        href={whatsappCta}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center justify-center gap-2.5 w-full py-4 rounded-2xl font-semibold text-white bg-green-600 hover:bg-green-700 active:bg-green-800 transition-colors mb-5"
-      >
-        <span>Say hi on WhatsApp</span>
-      </a>
 
       <div className="text-center">
         <Link
