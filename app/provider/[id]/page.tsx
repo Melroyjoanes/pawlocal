@@ -6,6 +6,7 @@ import type { ProviderWithPhotos, Review, TrainerMetadata } from '@/lib/supabase
 import { Stars } from '@/components/StarRating'
 import ReviewForm from '@/components/ReviewForm'
 import { TrackView, TrackButton, SaveButton } from '@/components/ProviderTracker'
+import WhatsAppContactButton from '@/components/WhatsAppContactButton'
 import VerificationBadge from '@/components/VerificationBadge'
 import TierExplainer from '@/components/TierExplainer'
 
@@ -275,7 +276,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
       )}
 
       {/* ── Reviews ────────────────────────────────────────────────── */}
-      <div className="mb-24">
+      <div id="review-section" className="mb-24">
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
             Reviews
@@ -329,17 +330,11 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
       >
         <div className="flex gap-3">
-          <TrackButton
+          <WhatsAppContactButton
             providerId={provider.id}
-            eventType="whatsapp_click"
             providerName={provider.name}
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 bg-green-600 active:bg-green-800 hover:bg-green-700 text-white py-4 rounded-2xl font-semibold text-center transition-colors flex items-center justify-center gap-2 min-h-[52px]"
-          >
-            💬 WhatsApp
-          </TrackButton>
+            whatsappUrl={whatsappUrl}
+          />
           {provider.phone ? (
             <TrackButton
               providerId={provider.id}
