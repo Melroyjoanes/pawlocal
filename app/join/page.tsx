@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CATEGORIES, JUHU_CENTER } from '@/lib/categories'
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps'
-import AddressAutocomplete from '@/components/AddressAutocomplete'
 
 // Insurance is an affiliate page — providers can't list there
 const SERVICE_CATEGORIES = CATEGORIES.filter((c) => c.slug !== 'insurance')
@@ -219,30 +218,32 @@ export default function JoinPage() {
             />
           </div>
 
-          {/* Address — autocomplete */}
+          {/* Address — plain text */}
           <div>
             <label className="block text-sm font-medium mb-1.5">Your address / area *</label>
-            <AddressAutocomplete
-              value={form.address}
-              onChange={(address) => setForm({ ...form, address })}
-              onPlaceSelect={(coords) => setPin(coords)}
+            <input
               required
+              type="text"
+              value={form.address}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+              className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+              placeholder="e.g. JVPD Scheme, Juhu, Mumbai 400049"
             />
             <p className="text-xs text-muted-foreground mt-1.5">
-              Start typing — select from the dropdown to pin your location automatically.
+              Then tap the map below to drop your pin.
             </p>
           </div>
 
-          {/* Map — visual confirmation, still clickable to adjust pin */}
+          {/* Map — tap to drop pin */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">Confirm your pin</label>
+            <label className="block text-sm font-medium mb-1.5">Drop your pin on the map *</label>
             <p className="text-xs text-muted-foreground mb-2">
-              The pin updates automatically when you pick an address. You can also tap the map to adjust.
+              Tap anywhere on the map to mark your exact location.
             </p>
-            <div className="h-48 rounded-xl overflow-hidden border border-border">
+            <div className="h-52 rounded-xl overflow-hidden border border-border">
               <Map
-                center={pin}
-                zoom={16}
+                defaultCenter={JUHU_CENTER}
+                defaultZoom={15}
                 mapId="2e772a5d74f171be6814c0ca"
                 className="w-full h-full"
                 gestureHandling="greedy"
