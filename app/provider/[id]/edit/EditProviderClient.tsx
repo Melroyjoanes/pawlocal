@@ -16,13 +16,7 @@ export default function EditProviderClient({
 }) {
   const router = useRouter()
 
-  // ── Step 1: verify WhatsApp ──────────────────────────────────
-  const [verified, setVerified] = useState(false)
-  const [whatsapp, setWhatsapp] = useState('')
-  const [verifyErr, setVerifyErr] = useState('')
-  const [verifying, setVerifying] = useState(false)
-
-  // ── Step 2: edit form state ──────────────────────────────────
+  // ── Edit form state ──────────────────────────────────────────
   const [priceMin, setPriceMin]     = useState(provider.price_min?.toString() ?? '')
   const [priceMax, setPriceMax]     = useState(provider.price_max?.toString() ?? '')
   const [priceUnit, setPriceUnit]   = useState(provider.price_unit ?? 'per session')
@@ -36,38 +30,6 @@ export default function EditProviderClient({
   const [saveErr, setSaveErr] = useState('')
   const [saved, setSaved]     = useState(false)
 
-  // ── Verify step ──────────────────────────────────────────────
-  async function handleVerify(e: React.FormEvent) {
-    e.preventDefault()
-    setVerifying(true)
-    setVerifyErr('')
-
-    // Quick client-side pre-check (actual check happens server-side)
-    const input = whatsapp.replace(/\D/g, '').replace(/^91/, '')
-    if (input.length < 10) {
-      setVerifyErr('Enter your 10-digit WhatsApp number')
-      setVerifying(false)
-      return
-    }
-
-    // Dry-run: try updating with no changes just to verify
-    const res = await fetch('/api/provider/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: provider.id, whatsapp, updates: {} }),
-    })
-    const json = await res.json()
-
-    if (!res.ok) {
-      setVerifyErr(json.error ?? 'Verification failed')
-      setVerifying(false)
-      return
-    }
-
-    setVerified(true)
-    setVerifying(false)
-  }
-
   // ── Save step ────────────────────────────────────────────────
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -79,7 +41,7 @@ export default function EditProviderClient({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id: provider.id,
-        whatsapp,
+        whatsapp: provider.whatsapp, // use existing whatsapp — no verify gate
         updates: {
           price_min:    priceMin ? Number(priceMin) : null,
           price_max:    priceMax ? Number(priceMax) : null,
@@ -108,74 +70,6 @@ export default function EditProviderClient({
   function toggleDay(day: string) {
     setWorkingDays(prev =>
       prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
-    )
-  }
-
-  // ── Render: verify step ──────────────────────────────────────
-  if (!verified) {
-    return (
-      <div className="max-w-md mx-auto py-12 px-4">
-        <a
-          href={`/provider/${provider.id}`}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
-        >
-          ← Back to listing
-        </a>
-
-        <div className="bg-white border border-border rounded-2xl p-7 shadow-sm">
-          {/* Header */}
-          <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-5"
-            style={{ backgroundColor: category.color + '18' }}
-          >
-            {category.icon}
-          </div>
-          <h1 className="text-xl font-bold text-slate-900 mb-1">Edit your listing</h1>
-          <p className="text-sm text-slate-500 mb-7">
-            Enter the WhatsApp number you registered with to verify it's you.
-          </p>
-
-          <form onSubmit={handleVerify} className="flex flex-col gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-                Your WhatsApp number
-              </label>
-              <div className="flex items-center gap-2 border border-border rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-amber-400 bg-white">
-                <span className="text-sm text-slate-400 font-medium">+91</span>
-                <input
-                  type="tel"
-                  value={whatsapp}
-                  onChange={e => setWhatsapp(e.target.value)}
-                  placeholder="98765 43210"
-                  className="flex-1 text-sm outline-none bg-transparent"
-                  required
-                />
-              </div>
-            </div>
-
-            {verifyErr && (
-              <p className="text-sm text-red-500 bg-red-50 rounded-xl px-4 py-2.5">{verifyErr}</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={verifying}
-              className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
-              style={{
-                background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
-                color: '#451A03',
-                boxShadow: '0 4px 0px rgba(120,53,15,0.28)',
-              }}
-            >
-              {verifying ? 'Verifying…' : 'Verify & Edit →'}
-            </button>
-          </form>
-        </div>
-
-        <p className="text-xs text-slate-400 text-center mt-5">
-          Only the registered provider can edit this listing.
-        </p>
-      </div>
     )
   }
 

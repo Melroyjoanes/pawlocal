@@ -14,6 +14,7 @@ export default function JoinPage() {
   const router = useRouter()
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
   const [pin, setPin] = useState(JUHU_CENTER)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -91,6 +92,7 @@ export default function JoinPage() {
     e.preventDefault()
     if (form.category_slugs.length === 0) return
     setSubmitting(true)
+    setSubmitError('')
     const metadata = isTrainer ? {
       training_methods: trainerMeta.training_methods,
       specialisations: trainerMeta.specialisations,
@@ -115,6 +117,9 @@ export default function JoinPage() {
     setSubmitting(false)
     if (res.ok) {
       router.push(`/join/success?name=${encodeURIComponent(form.name)}`)
+    } else {
+      const err = await res.json().catch(() => ({}))
+      setSubmitError(err.error ?? 'Something went wrong. Please try again or WhatsApp us.')
     }
   }
 
@@ -125,6 +130,12 @@ export default function JoinPage() {
         <p className="text-muted-foreground text-sm mb-8">
           Free forever. Takes 5 minutes. We&apos;ll review and go live within 24 hours.
         </p>
+
+        {submitError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600 mb-2">
+            {submitError}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
