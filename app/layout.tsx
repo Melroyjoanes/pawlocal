@@ -69,8 +69,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {/* Nav links — desktop */}
               <nav className="hidden md:flex items-center gap-1">
                 {[
-                  { href: '/map', label: '🗺 Map' },
-                  { href: '/broadcast', label: '📣 Broadcast' },
+                  { href: '/search', label: '🔍 Find' },
+                  { href: '/map', label: '🗺 Near me' },
+                  { href: '/broadcast', label: '📣 Post a request' },
                 ].map(({ href, label }) => (
                   <a
                     key={href}
@@ -87,20 +88,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
               {/* User menu (avatar when logged in, 👤 icon when logged out) */}
               <UserMenu />
-
-              {/* CTA */}
-              <a
-                href="/join"
-                className="flex items-center gap-1.5 text-sm font-bold px-4 py-2.5 rounded-full flex-shrink-0 transition-all hover:scale-105 active:scale-95"
-                style={{
-                  background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
-                  color: '#451A03',
-                  boxShadow: '0 4px 0px rgba(120,53,15,0.28), 0 8px 20px rgba(252,211,77,0.4)',
-                }}
-              >
-                <span className="hidden sm:inline">+ List free</span>
-                <span className="sm:hidden">+ List</span>
-              </a>
             </div>
           </header>
 
@@ -110,9 +97,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
               <p>© {new Date().getFullYear()} PawLocal · Juhu, Mumbai</p>
               <div className="flex items-center gap-4">
+                <a href="/search" className="hover:text-foreground transition-colors">Find services</a>
                 <a href="/map" className="hover:text-foreground transition-colors">All on map</a>
-                <a href="/broadcast" className="hover:text-foreground transition-colors">Broadcast</a>
-                <a href="/join" className="hover:text-foreground transition-colors">List your service</a>
+                <a href="/broadcast" className="hover:text-foreground transition-colors">Post a request</a>
                 <a href="/insurance" className="hover:text-foreground transition-colors">Pet insurance</a>
               </div>
             </div>

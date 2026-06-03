@@ -36,10 +36,13 @@ export default function AuthModal({ open, onClose, redirectTo, message }: AuthMo
   async function handleGoogle() {
     setLoading(true)
     setError('')
+    // Use NEXT_PUBLIC_SITE_URL if set (ensures production URL in all environments),
+    // otherwise fall back to current origin (works for local dev).
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo ?? window.location.pathname)}`,
+        redirectTo: `${baseUrl}/auth/callback?next=${encodeURIComponent(redirectTo ?? '/')}`,
       },
     })
     if (error) { setError(error.message); setLoading(false) }

@@ -319,8 +319,8 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
                 className="font-display leading-[1.06] text-slate-900 mb-5"
                 style={{ fontSize: 'clamp(2.6rem, 5.5vw, 4.8rem)' }}
               >
-                Every pet service<br />
-                <span style={{ color: '#D97706' }}>near you.</span>
+                Find trusted pet care<br />
+                <span style={{ color: '#D97706' }}>in Juhu.</span>
               </motion.h1>
 
               <motion.p
@@ -329,8 +329,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
                 transition={{ duration: 0.5, ease: EASE, delay: 0.18 }}
                 className="text-lg text-slate-500 leading-relaxed mb-8 max-w-lg mx-auto lg:mx-0"
               >
-                Verified vets, groomers, walkers &amp; trainers in {neighbourhood}.
-                WhatsApp them directly — zero booking fees.
+                Verified vets, groomers, dog walkers &amp; trainers. WhatsApp direct. No booking fees.
               </motion.p>
 
               <motion.div
@@ -339,8 +338,8 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
                 transition={{ duration: 0.45, ease: EASE, delay: 0.28 }}
                 className="flex flex-wrap gap-3 justify-center lg:justify-start mb-8"
               >
-                <ClayBtn href="/vet">Find a Service →</ClayBtn>
-                <ClayBtn href="/broadcast" ckey="white">📣 Post a Request</ClayBtn>
+                <ClayBtn href="/dog-walking">Browse services →</ClayBtn>
+                <ClayBtn href="/broadcast" ckey="white">Post a request</ClayBtn>
               </motion.div>
 
               {/* Trust pills */}
@@ -351,9 +350,9 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
                 className="flex flex-wrap gap-2 justify-center lg:justify-start"
               >
                 {[
-                  { label: '✓ Manually verified', ckey: 'amber' as CKey },
+                  { label: '✓ Verified providers', ckey: 'amber' as CKey },
                   { label: '💬 WhatsApp direct', ckey: 'mint' as CKey },
-                  { label: '₹0 booking fee', ckey: 'peach' as CKey },
+                  { label: '₹0 Booking fees', ckey: 'peach' as CKey },
                 ].map(({ label, ckey }) => (
                   <span key={label} className="text-xs font-semibold px-3 py-1.5" style={{ ...cs(ckey), borderRadius: 100, color: C[ckey].text as string }}>
                     {label}
@@ -598,7 +597,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
                             <div>
                               <p className="font-bold text-sm leading-tight" style={{ color: t.text }}>{cat.name}</p>
                               <p className="text-xs mt-0.5" style={{ color: t.text + '80' }}>
-                                {count ? `${count} providers` : 'Be first to join'}
+                                {count ? `${count} providers` : 'Coming soon'}
                               </p>
                             </div>
                           </div>
@@ -637,15 +636,15 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
       <section style={{ ...BLEED, background: 'white' }} className="py-10">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, ease: EASE }} className="text-center mb-8">
-            <p className="text-xs font-bold uppercase tracking-widest text-amber-400 mb-2">Three steps. That's it.</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-400 mb-2">Three steps. That&apos;s it.</p>
             <h2 className="font-display text-4xl text-slate-900">Simpler than ordering food</h2>
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {[
-              { emoji: '🔍', n: '01', title: 'Browse & compare', desc: 'Filter by category, read reviews, see prices. Every listing manually verified by our team before going live.', ck: 'amber' as CKey },
-              { emoji: '⭐', n: '02', title: 'Read real reviews', desc: 'Authentic reviews from real pet owners in Juhu. No fake ratings, no gaming the system. Ever.', ck: 'lavender' as CKey },
-              { emoji: '💬', n: '03', title: 'WhatsApp directly', desc: 'One tap — you talk straight to the provider. Zero commission, zero booking fee, zero drama.', ck: 'mint' as CKey },
+              { emoji: '🔍', n: '01', title: 'Browse', desc: 'Find services by category or search by name. Every listing is manually verified before going live.', ck: 'amber' as CKey },
+              { emoji: '💬', n: '02', title: 'Contact', desc: 'WhatsApp the provider directly — no middleman, no platform fee, no app to download.', ck: 'lavender' as CKey },
+              { emoji: '🐾', n: '03', title: 'Done', desc: 'Get your pet cared for. Zero fees, no app download, no account required.', ck: 'mint' as CKey },
             ].map(({ emoji, n, title, desc, ck }, i) => (
               <motion.div
                 key={n}
@@ -773,50 +772,51 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
       </section>
 
       {/* ╔══════════════════════════════════╗
-          ║  PROVIDER CTA                    ║
+          ║  WHY PET OWNERS LOVE PAWLOCAL    ║
           ╚══════════════════════════════════╝ */}
-      <section style={{ ...BLEED, background: C.pageBg }} className="py-10 pb-24 lg:pb-10 px-5 sm:px-8">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, ease: EASE }}
-            className="relative overflow-hidden p-8 sm:p-12"
-            style={{
-              background: 'linear-gradient(135deg, #FBBF24 0%, #D97706 100%)',
-              borderRadius: 32,
-              boxShadow: '0 10px 0px rgba(120,53,15,0.32), 0 20px 56px rgba(251,191,36,0.45)',
-            }}
-          >
-            {/* decorative blobs */}
-            <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-white opacity-[0.08] pointer-events-none" />
-            <div className="absolute bottom-0 left-1/3 w-40 h-40 rounded-full" style={{ background: '#FED7AA', opacity: 0.15, filter: 'blur(40px)' }} />
-            {/* paw prints decoration */}
-            <div className="absolute top-4 right-8 text-4xl opacity-10 select-none">🐾</div>
-            <div className="absolute bottom-4 right-24 text-3xl opacity-10 select-none">🐾</div>
-
-            <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-              <div>
-                <p className="text-amber-900/70 text-xs font-bold uppercase tracking-widest mb-2">For pet service providers</p>
-                <h2 className="font-display text-amber-950 mb-2" style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.75rem)' }}>Get found. Get clients.</h2>
-                <p className="text-amber-900/60 text-base max-w-sm">Free listing, forever. No commission. Live within 24 hours.</p>
-              </div>
-              <motion.div whileHover={{ y: -3, scale: 1.04 }} whileTap={{ y: 4 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }} className="flex-shrink-0">
-                <Link
-                  href="/join"
-                  className="inline-flex items-center gap-2 px-7 py-4 rounded-full text-sm font-bold"
-                  style={{
-                    background: 'linear-gradient(145deg, #ffffff 0%, #fffbf0 100%)',
-                    boxShadow: '0 6px 0px rgba(120,53,15,0.18), 0 12px 32px rgba(0,0,0,0.08)',
-                    color: '#92400E',
-                  }}
-                >
-                  List your service — Free →
-                </Link>
-              </motion.div>
-            </div>
+      <section style={{ ...BLEED, background: C.pageBg }} className="py-10 pb-24 lg:pb-10">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+          <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.45, ease: EASE }} className="text-center mb-8">
+            <p className="text-xs font-bold uppercase tracking-widest text-amber-400 mb-2">Built for pet parents</p>
+            <h2 className="font-display text-4xl text-slate-900">Why pet owners love PawLocal</h2>
           </motion.div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {[
+              {
+                emoji: '₹0',
+                title: 'Zero fees',
+                desc: 'Contact providers directly on WhatsApp. We never charge a booking fee — not now, not ever.',
+                ck: 'amber' as CKey,
+              },
+              {
+                emoji: '✅',
+                title: 'Verified providers',
+                desc: 'Every listing is manually reviewed by our team before going live. If they\'re listed, we\'d trust them with our own pet.',
+                ck: 'mint' as CKey,
+              },
+              {
+                emoji: '📍',
+                title: 'Juhu-first',
+                desc: 'Built for the Juhu community. We go deep, not wide. Expanding to Andheri and Versova soon.',
+                ck: 'lavender' as CKey,
+              },
+            ].map(({ emoji, title, desc, ck }, i) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, ease: EASE, delay: i * 0.1 }}
+              >
+                <ClayCard ckey={ck} className="p-7 h-full">
+                  <span className="text-3xl drop-shadow-sm block mb-4 font-bold" style={{ color: C[ck].text as string }}>{emoji}</span>
+                  <h3 className="text-lg font-bold mb-2.5 leading-tight" style={{ color: C[ck].text as string }}>{title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: (C[ck].text as string) + 'BB' }}>{desc}</p>
+                </ClayCard>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -837,9 +837,9 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
         }}
       >
         <div className="flex gap-3 px-4 pt-3 pb-3">
-          <Link href="/vet" className="flex-1 flex items-center justify-center py-3.5 rounded-2xl text-sm font-bold"
+          <Link href="/dog-walking" className="flex-1 flex items-center justify-center py-3.5 rounded-2xl text-sm font-bold"
             style={{ background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)', boxShadow: '0 4px 0px rgba(120,53,15,0.28)', color: '#451A03' }}>
-            Find a Service
+            Browse Services
           </Link>
           <Link href="/broadcast" className="flex-1 flex items-center justify-center py-3.5 rounded-2xl text-sm font-bold"
             style={{ ...cs('peach'), color: C.peach.text }}>
