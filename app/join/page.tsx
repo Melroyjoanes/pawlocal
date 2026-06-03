@@ -16,6 +16,7 @@ export default function JoinPage() {
   const [submitError, setSubmitError] = useState('')
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
   const [pin, setPin] = useState(JUHU_CENTER)
+  const [pinPlaced, setPinPlaced] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({
@@ -236,11 +237,15 @@ export default function JoinPage() {
 
           {/* Map — tap to drop pin */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">Drop your pin on the map *</label>
-            <p className="text-xs text-muted-foreground mb-2">
-              Tap anywhere on the map to mark your exact location.
-            </p>
-            <div className="h-52 rounded-xl overflow-hidden border border-border">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-sm font-medium">Pin your location on the map *</label>
+              {pinPlaced && (
+                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  ✓ Pin placed
+                </span>
+              )}
+            </div>
+            <div className={`relative h-52 rounded-xl overflow-hidden border-2 transition-colors ${pinPlaced ? 'border-emerald-400' : 'border-dashed border-amber-400'}`}>
               <Map
                 defaultCenter={JUHU_CENTER}
                 defaultZoom={15}
@@ -248,12 +253,28 @@ export default function JoinPage() {
                 className="w-full h-full"
                 gestureHandling="greedy"
                 onClick={(e) => {
-                  if (e.detail.latLng) setPin(e.detail.latLng)
+                  if (e.detail.latLng) {
+                    setPin(e.detail.latLng)
+                    setPinPlaced(true)
+                  }
                 }}
               >
                 <AdvancedMarker position={pin} />
               </Map>
+              {/* Overlay hint — only shown before pin is placed */}
+              {!pinPlaced && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="bg-amber-400 text-amber-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-bounce">
+                    👆 Tap to drop your pin
+                  </div>
+                </div>
+              )}
             </div>
+            {pinPlaced && (
+              <p className="text-xs text-slate-400 mt-1.5">
+                📍 {pin.lat.toFixed(5)}, {pin.lng.toFixed(5)} · tap again to adjust
+              </p>
+            )}
           </div>
 
           {/* Pricing */}

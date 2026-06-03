@@ -17,7 +17,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const body = await req.json()
 
-  type ProviderUpdate = { status?: 'approved' | 'rejected'; is_verified?: boolean; verification_tier?: string }
+  type ProviderUpdate = {
+    status?: 'approved' | 'rejected'
+    is_verified?: boolean
+    verification_tier?: string
+    lat?: number
+    lng?: number
+  }
   const update: ProviderUpdate = {}
 
   if ('status' in body) {
@@ -36,6 +42,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: 'Invalid verification_tier' }, { status: 400 })
     }
     update.verification_tier = body.verification_tier as string
+  }
+
+  if ('lat' in body && 'lng' in body) {
+    const lat = Number(body.lat)
+    const lng = Number(body.lng)
+    if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      update.lat = lat
+      update.lng = lng
+    }
   }
 
   if (Object.keys(update).length === 0) {

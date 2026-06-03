@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
 import type { CategoryConfig } from '@/lib/categories'
 
@@ -25,6 +26,12 @@ export default function EditProviderClient({
   const [hoursTo, setHoursTo]       = useState(provider.hours_to ?? '18:00')
   const [workingDays, setWorkingDays] = useState<string[]>(provider.working_days ?? [])
   const [phone, setPhone]           = useState(provider.phone ?? '')
+
+  // ── Photo state ─────────────────────────────────────────────────
+  const [photos, setPhotos] = useState(provider.provider_photos ?? [])
+  const [uploading, setUploading] = useState(false)
+  const [photoErr, setPhotoErr] = useState('')
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const [saving, setSaving]   = useState(false)
   const [saveErr, setSaveErr] = useState('')
@@ -65,6 +72,39 @@ export default function EditProviderClient({
     setSaved(true)
     setSaving(false)
     setTimeout(() => router.push(`/provider/${provider.id}`), 1200)
+  }
+
+  // ── Photo upload ─────────────────────────────────────────────────
+  async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []).slice(0, 3 - photos.length)
+    if (!files.length) return
+    setUploading(true)
+    setPhotoErr('')
+    const supabase = createClient()
+    const newPhotos = [...photos]
+    for (const file of files) {
+      const ext = file.name.split('.').pop()
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+      const { error } = await supabase.storage.from('provider-photos').upload(path, file)
+      if (error) { setPhotoErr('Upload failed — try again'); continue }
+      const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
+      // Insert photo row
+      const { data: photoRow } = await supabase
+        .from('provider_photos')
+        .insert({ provider_id: provider.id, url: data.publicUrl, is_primary: newPhotos.length === 0, sort_order: newPhotos.length })
+        .select()
+        .single()
+      if (photoRow) newPhotos.push(photoRow as typeof newPhotos[0])
+    }
+    setPhotos(newPhotos)
+    setUploading(false)
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  async function handleRemovePhoto(photoId: string) {
+    const supabase = createClient()
+    await supabase.from('provider_photos').delete().eq('id', photoId)
+    setPhotos((prev) => prev.filter((p) => p.id !== photoId))
   }
 
   function toggleDay(day: string) {
@@ -245,6 +285,51 @@ export default function EditProviderClient({
               className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
+        </div>
+
+        {/* Photos */}
+        <div className="bg-white border border-border rounded-2xl p-5">
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Photos</p>
+          <p className="text-xs text-slate-500 mb-3">Up to 3 photos · First photo is your profile picture</p>
+          <div className="flex gap-3 flex-wrap mb-3">
+            {photos.map((photo, i) => (
+              <div key={photo.id} className="relative w-20 h-20 rounded-xl overflow-hidden border border-border group">
+                <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                {i === 0 && (
+                  <span className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] text-center py-0.5 font-semibold">
+                    Profile
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleRemovePhoto(photo.id)}
+                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] items-center justify-center hidden group-hover:flex transition-all"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            {photos.length < 3 && (
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="w-20 h-20 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center text-slate-400 hover:border-[var(--pl-teal)] hover:text-[var(--pl-teal)] transition-colors gap-1"
+              >
+                <span className="text-xl">{uploading ? '…' : '+'}</span>
+                <span className="text-[10px] font-medium">Add photo</span>
+              </button>
+            )}
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handlePhotoUpload}
+          />
+          {photoErr && <p className="text-xs text-red-500">{photoErr}</p>}
         </div>
 
         {saveErr && (
