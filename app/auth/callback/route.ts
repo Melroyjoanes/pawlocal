@@ -1,30 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url)
-  const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') ?? '/'
-
-  // Always redirect to the production domain, never back to localhost
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || requestUrl.origin
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
+  const next = searchParams.get('next') ?? '/'
 
   if (code) {
-    // Build the redirect response first, then set auth cookies on it
-    const response = NextResponse.redirect(`${siteUrl}${next}`)
-
+    const cookieStore = await cookies()
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
-          getAll() {
-            return request.cookies.getAll()
-          },
+          getAll() { return cookieStore.getAll() },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options)
-            })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
           },
         },
       }
@@ -33,10 +27,23 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
-      return response
+      // Behind Vercel's load balancer, `origin` is http:// — use x-forwarded-host for https
+      const forwardedHost = request.headers.get('x-forwarded-host')
+      const isLocal = process.env.NODE_ENV === 'development'
+
+      if (isLocal) {
+        return NextResponse.redirect(`${origin}${next}`)
+      } else if (forwardedHost) {
+        return NextResponse.redirect(`https://${forwardedHost}${next}`)
+      } else {
+        // Fallback: use NEXT_PUBLIC_SITE_URL
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? origin
+        return NextResponse.redirect(`${siteUrl}${next}`)
+      }
     }
   }
 
-  // Something went wrong — go home with an error flag
+  // Auth failed — redirect home
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? origin
   return NextResponse.redirect(`${siteUrl}/?auth_error=true`)
 }
