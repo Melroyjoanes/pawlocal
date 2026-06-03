@@ -12,8 +12,9 @@ const MAP_CATEGORIES = CATEGORIES.filter((c) => c.slug !== 'insurance')
 export default function MapPage() {
   const [providers, setProviders] = useState<ProviderWithPhotos[]>([])
   const [loading, setLoading] = useState(true)
+  // Single-category mode — start with first category selected
   const [activeCategories, setActiveCategories] = useState<Set<string>>(
-    new Set(MAP_CATEGORIES.map((c) => c.slug))
+    new Set([MAP_CATEGORIES[0]?.slug ?? 'dog-walking'])
   )
   const [selectedProvider, setSelectedProvider] = useState<ProviderWithPhotos | null>(null)
 
@@ -30,18 +31,9 @@ export default function MapPage() {
       })
   }, [])
 
+  // Single-select: clicking a chip shows ONLY that category
   function toggleCategory(slug: string) {
-    setActiveCategories((prev) => {
-      const next = new Set(prev)
-      if (next.has(slug)) {
-        // Keep at least one active
-        if (next.size === 1) return prev
-        next.delete(slug)
-      } else {
-        next.add(slug)
-      }
-      return next
-    })
+    setActiveCategories(new Set([slug]))
   }
 
   const visibleProviders = providers.filter((p) => {
