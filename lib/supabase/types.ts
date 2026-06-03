@@ -43,6 +43,9 @@ export type Provider = {
   is_emergency: boolean
   neighbourhood: string
   created_at: string
+  is_available?: boolean
+  availability_note?: string | null
+  verification_tier?: string
 }
 
 export type Broadcast = {
@@ -127,6 +130,26 @@ type GenericRelationship = {
   referencedColumns: string[]
 }
 
+export type ProviderContact = {
+  id: string
+  provider_id: string
+  customer_id: string | null
+  session_token: string
+  responded: boolean | null
+  booked: boolean | null
+  prompt_sent_at: string | null
+  created_at: string
+}
+
+export type ProviderContactInsert = {
+  provider_id: string
+  customer_id?: string | null
+  session_token: string
+  responded?: boolean | null
+  booked?: boolean | null
+  prompt_sent_at?: string | null
+}
+
 export type Database = {
   public: {
     Tables: {
@@ -135,6 +158,7 @@ export type Database = {
       provider_photos: { Row: ProviderPhoto; Insert: ProviderPhotoInsert; Update: Partial<ProviderPhoto>; Relationships: GenericRelationship[] }
       broadcasts: { Row: Broadcast; Insert: Omit<Broadcast, 'id' | 'status' | 'created_at' | 'expires_at'>; Update: Partial<Broadcast>; Relationships: GenericRelationship[] }
       reviews: { Row: Review; Insert: ReviewInsert & { status?: string }; Update: Partial<Review>; Relationships: GenericRelationship[] }
+      provider_contacts: { Row: ProviderContact; Insert: ProviderContactInsert; Update: Partial<ProviderContact>; Relationships: GenericRelationship[] }
     }
     Views: Record<string, { Row: Record<string, unknown>; Relationships: GenericRelationship[] }>
     Functions: Record<string, { Args: Record<string, unknown>; Returns: unknown }>

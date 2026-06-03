@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CATEGORIES, JUHU_CENTER } from '@/lib/categories'
 import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps'
@@ -10,7 +11,7 @@ import AddressAutocomplete from '@/components/AddressAutocomplete'
 const SERVICE_CATEGORIES = CATEGORIES.filter((c) => c.slug !== 'insurance')
 
 export default function JoinPage() {
-  const [step, setStep] = useState<'form' | 'success'>('form')
+  const router = useRouter()
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [photoUrls, setPhotoUrls] = useState<string[]>([])
@@ -112,23 +113,9 @@ export default function JoinPage() {
       }),
     })
     setSubmitting(false)
-    if (res.ok) setStep('success')
-  }
-
-  if (step === 'success') {
-    return (
-      <div className="max-w-md mx-auto text-center py-20">
-        <div className="text-6xl mb-4">🎉</div>
-        <h1 className="text-2xl font-bold mb-2">You&apos;re in the queue!</h1>
-        <p className="text-muted-foreground">
-          We&apos;ll review your listing and WhatsApp you at{' '}
-          <strong>{form.whatsapp}</strong> within 24 hours once you&apos;re live.
-        </p>
-        <a href="/" className="mt-6 inline-block text-sm hover:underline" style={{ color: 'var(--pl-teal)' }}>
-          ← Back to home
-        </a>
-      </div>
-    )
+    if (res.ok) {
+      router.push(`/join/success?name=${encodeURIComponent(form.name)}`)
+    }
   }
 
   return (

@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { StarPicker } from './StarRating'
+import { createClient } from '@/lib/supabase/client'
+import AuthModal from '@/components/AuthModal'
 
 interface Props {
   providerId: string
@@ -15,12 +17,26 @@ export default function ReviewForm({ providerId }: Props) {
   const [comment, setComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]     = useState('')
+  const [authOpen, setAuthOpen] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!rating) { setError('Please pick a star rating'); return }
     setError('')
+
+    // Check auth before submitting
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      setAuthOpen(true)
+      return
+    }
+
     setSubmitting(true)
+
+    // Pre-fill phone from user's auth session if available and not already set
+    const resolvedPhone = phone.trim() || (user.phone ?? '') || null
 
     const res = await fetch('/api/reviews', {
       method: 'POST',
@@ -30,7 +46,7 @@ export default function ReviewForm({ providerId }: Props) {
         rating,
         comment: comment.trim() || null,
         reviewer_name: name.trim(),
-        reviewer_phone: phone.trim() || null,
+        reviewer_phone: resolvedPhone,
       }),
     })
 
@@ -56,74 +72,83 @@ export default function ReviewForm({ providerId }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      {/* Star picker */}
-      <div>
-        <p className="text-sm font-medium mb-2">Your rating *</p>
-        <StarPicker value={rating} onChange={setRating} />
-        {rating > 0 && (
-          <p className="text-xs text-muted-foreground mt-1.5">
-            {['', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'][rating]}
-          </p>
-        )}
-      </div>
+    <>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        {/* Star picker */}
+        <div>
+          <p className="text-sm font-medium mb-2">Your rating *</p>
+          <StarPicker value={rating} onChange={setRating} />
+          {rating > 0 && (
+            <p className="text-xs text-muted-foreground mt-1.5">
+              {['', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'][rating]}
+            </p>
+          )}
+        </div>
 
-      {/* Name */}
-      <div>
-        <label className="block text-sm font-medium mb-1.5">Your name *</label>
-        <input
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Priya Sharma"
-          className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
-        />
-      </div>
+        {/* Name */}
+        <div>
+          <label className="block text-sm font-medium mb-1.5">Your name *</label>
+          <input
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Priya Sharma"
+            className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+          />
+        </div>
 
-      {/* Phone (optional — helps us verify) */}
-      <div>
-        <label className="block text-sm font-medium mb-1.5">
-          Phone <span className="text-muted-foreground font-normal">(optional — helps verify)</span>
-        </label>
-        <input
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="98765 43210"
-          className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
-        />
-      </div>
+        {/* Phone (optional — helps us verify) */}
+        <div>
+          <label className="block text-sm font-medium mb-1.5">
+            Phone <span className="text-muted-foreground font-normal">(optional — helps verify)</span>
+          </label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="98765 43210"
+            className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+          />
+        </div>
 
-      {/* Comment */}
-      <div>
-        <label className="block text-sm font-medium mb-1.5">
-          Your experience <span className="text-muted-foreground font-normal">(optional)</span>
-        </label>
-        <textarea
-          maxLength={300}
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="How was the service? Would you recommend them?"
-          rows={3}
-          className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] resize-none bg-white"
-        />
-        <p className="text-xs text-muted-foreground mt-1 text-right">{comment.length}/300</p>
-      </div>
+        {/* Comment */}
+        <div>
+          <label className="block text-sm font-medium mb-1.5">
+            Your experience <span className="text-muted-foreground font-normal">(optional)</span>
+          </label>
+          <textarea
+            maxLength={300}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="How was the service? Would you recommend them?"
+            rows={3}
+            className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] resize-none bg-white"
+          />
+          <p className="text-xs text-muted-foreground mt-1 text-right">{comment.length}/300</p>
+        </div>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+        {error && <p className="text-sm text-red-500">{error}</p>}
 
-      <button
-        type="submit"
-        disabled={submitting || !rating || !name.trim()}
-        className="w-full text-white py-3.5 rounded-2xl font-semibold text-sm transition-colors disabled:opacity-50"
-        style={{ backgroundColor: 'var(--pl-teal)' }}
-      >
-        {submitting ? 'Submitting…' : 'Submit review'}
-      </button>
+        <button
+          type="submit"
+          disabled={submitting || !rating || !name.trim()}
+          className="w-full text-white py-3.5 rounded-2xl font-semibold text-sm transition-colors disabled:opacity-50"
+          style={{ backgroundColor: 'var(--pl-teal)' }}
+        >
+          {submitting ? 'Submitting…' : 'Submit review'}
+        </button>
 
-      <p className="text-xs text-center text-muted-foreground">
-        Reviews are verified before publishing.
-      </p>
-    </form>
+        <p className="text-xs text-center text-muted-foreground">
+          Reviews are verified before publishing.
+        </p>
+      </form>
+
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        message="Sign in to leave a review"
+        redirectTo={typeof window !== 'undefined' ? window.location.pathname : undefined}
+      />
+    </>
   )
 }

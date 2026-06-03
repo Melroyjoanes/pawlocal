@@ -2,7 +2,10 @@ import type { Metadata } from 'next'
 import { Inter, DM_Serif_Display } from 'next/font/google'
 import MotionProvider from '@/components/MotionProvider'
 import OnboardingSheet from '@/components/OnboardingSheet'
+import ResponsePrompt from '@/components/ResponsePrompt'
 import LocationPicker from '@/components/LocationPicker'
+import UserMenu from '@/components/UserMenu'
+import HeaderSearch from '@/components/HeaderSearch'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
@@ -68,7 +71,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {[
                   { href: '/map', label: '🗺 Map' },
                   { href: '/broadcast', label: '📣 Broadcast' },
-                  { href: '/account', label: '👤 Account' },
                 ].map(({ href, label }) => (
                   <a
                     key={href}
@@ -80,14 +82,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 ))}
               </nav>
 
-              {/* Account icon — mobile */}
-              <a
-                href="/account"
-                className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl text-slate-500 hover:bg-amber-50 transition-all flex-shrink-0"
-                aria-label="My account"
-              >
-                👤
-              </a>
+              {/* Search — desktop inline, mobile icon */}
+              <HeaderSearch />
+
+              {/* User menu (avatar when logged in, 👤 icon when logged out) */}
+              <UserMenu />
 
               {/* CTA */}
               <a
@@ -119,6 +118,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </footer>
           <OnboardingSheet />
+          <ResponsePrompt />
         </MotionProvider>
       </body>
     </html>

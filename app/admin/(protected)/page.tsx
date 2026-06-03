@@ -75,6 +75,17 @@ export default function AdminPage() {
     )
   }
 
+  async function setVerificationTier(id: string, tier: string) {
+    await fetch(`/api/admin/providers/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ verification_tier: tier }),
+    })
+    setProviders((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, verification_tier: tier } : p))
+    )
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -217,16 +228,27 @@ export default function AdminPage() {
                       </>
                     )}
                     {filter === 'approved' && (
-                      <button
-                        onClick={() => toggleVerified(p.id, p.is_verified)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-                          p.is_verified
-                            ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                        }`}
-                      >
-                        {p.is_verified ? '✓ Verified — click to remove' : '☆ Mark as Verified'}
-                      </button>
+                      <>
+                        <button
+                          onClick={() => toggleVerified(p.id, p.is_verified)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                            p.is_verified
+                              ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {p.is_verified ? '✓ Verified — click to remove' : '☆ Mark as Verified'}
+                        </button>
+                        <select
+                          value={p.verification_tier ?? 'contacted'}
+                          onChange={(e) => setVerificationTier(p.id, e.target.value)}
+                          className="px-3 py-2 rounded-lg text-sm font-medium border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition cursor-pointer"
+                        >
+                          <option value="contacted">Tier: Listed</option>
+                          <option value="verified">Tier: Verified</option>
+                          <option value="certified">Tier: Certified</option>
+                        </select>
+                      </>
                     )}
                     <a
                       href={`https://wa.me/91${p.whatsapp.replace(/\D/g, '')}`}

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
 import type { CategoryConfig } from '@/lib/categories'
+import VerificationBadge from '@/components/VerificationBadge'
 
 interface Props {
   provider: ProviderWithPhotos
@@ -50,16 +51,9 @@ export default function ProviderCard({ provider, category }: Props) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="font-semibold text-foreground leading-snug">{provider.name}</span>
-              {provider.is_verified && (
-                <span
-                  className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none flex-shrink-0"
-                  style={{
-                    backgroundColor: 'var(--pl-amber-light)',
-                    color: 'var(--pl-amber)',
-                  }}
-                >
-                  ✓ Verified
-                </span>
+              <VerificationBadge tier={(provider.verification_tier as 'contacted' | 'verified' | 'certified') ?? 'contacted'} />
+              {provider.is_available === false && (
+                <span className="text-xs text-red-500 flex-shrink-0">&#x25CF; Fully booked</span>
               )}
             </div>
             {provider.business_name && provider.business_name !== provider.name && (

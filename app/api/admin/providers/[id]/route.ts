@@ -17,7 +17,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const body = await req.json()
 
-  type ProviderUpdate = { status?: 'approved' | 'rejected'; is_verified?: boolean }
+  type ProviderUpdate = { status?: 'approved' | 'rejected'; is_verified?: boolean; verification_tier?: string }
   const update: ProviderUpdate = {}
 
   if ('status' in body) {
@@ -29,6 +29,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   if ('is_verified' in body) {
     update.is_verified = Boolean(body.is_verified)
+  }
+
+  if ('verification_tier' in body) {
+    if (!['contacted', 'verified', 'certified'].includes(body.verification_tier)) {
+      return NextResponse.json({ error: 'Invalid verification_tier' }, { status: 400 })
+    }
+    update.verification_tier = body.verification_tier as string
   }
 
   if (Object.keys(update).length === 0) {

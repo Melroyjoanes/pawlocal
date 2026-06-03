@@ -6,6 +6,8 @@ import type { ProviderWithPhotos, Review, TrainerMetadata } from '@/lib/supabase
 import { Stars } from '@/components/StarRating'
 import ReviewForm from '@/components/ReviewForm'
 import { TrackView, TrackButton, SaveButton } from '@/components/ProviderTracker'
+import VerificationBadge from '@/components/VerificationBadge'
+import TierExplainer from '@/components/TierExplainer'
 
 export async function generateMetadata(
   { params }: { params: Promise<{ id: string }> }
@@ -121,24 +123,28 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
             >
               {category.icon} {category.name}
             </span>
-            {provider.is_verified && (
-              <span
-                className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full border"
-                style={{
-                  backgroundColor: 'var(--pl-amber-light)',
-                  borderColor: 'oklch(0.88 0.12 75)',
-                  color: 'var(--pl-amber)',
-                }}
-              >
-                ✓ Verified by PawLocal
-              </span>
-            )}
+            <VerificationBadge tier={(provider.verification_tier as 'contacted' | 'verified' | 'certified') ?? 'contacted'} size="md" />
             {reviews.length > 0 && (
               <span className="text-amber-400">
                 <Stars rating={avgRating} count={reviews.length} size="sm" />
               </span>
             )}
           </div>
+
+          {/* Availability badge */}
+          {provider.is_available === false && (
+            <div className="mt-2 flex flex-col gap-0.5">
+              <span className="text-sm text-red-500 font-medium">&#x25CF; Fully booked</span>
+              {provider.availability_note && (
+                <span className="text-xs text-muted-foreground">{provider.availability_note}</span>
+              )}
+            </div>
+          )}
+
+          {/* Verification tier explainer */}
+          {(provider.verification_tier === 'verified' || provider.verification_tier === 'certified') && (
+            <TierExplainer tier={provider.verification_tier as 'verified' | 'certified'} />
+          )}
         </div>
       </div>
 
@@ -326,6 +332,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           <TrackButton
             providerId={provider.id}
             eventType="whatsapp_click"
+            providerName={provider.name}
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"

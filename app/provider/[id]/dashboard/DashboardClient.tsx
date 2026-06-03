@@ -3,6 +3,113 @@
 import { useState } from 'react'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
 import type { CategoryConfig } from '@/lib/categories'
+import VerificationBadge from '@/components/VerificationBadge'
+
+// ── Availability Toggle Card ─────────────────────────────────────
+function AvailabilityCard({ provider }: { provider: ProviderWithPhotos }) {
+  const [isAvailable, setIsAvailable] = useState(provider.is_available !== false)
+  const [note, setNote] = useState(provider.availability_note ?? '')
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleToggle(value: boolean) {
+    setIsAvailable(value)
+    setSaved(false)
+    setError('')
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    setSaved(false)
+    setError('')
+
+    const res = await fetch('/api/provider/availability', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider_id: provider.id,
+        is_available: isAvailable,
+        availability_note: note.trim() || null,
+      }),
+    })
+    const json = await res.json()
+    setSaving(false)
+
+    if (!res.ok) {
+      setError(json.error ?? 'Failed to save')
+      return
+    }
+    setSaved(true)
+  }
+
+  return (
+    <div className="bg-white border border-border rounded-2xl p-5 mb-5">
+      <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Availability</p>
+
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <p className="text-sm font-semibold text-slate-900">
+            {isAvailable ? 'Available for bookings' : 'Fully booked'}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {isAvailable ? 'Customers can contact you for new bookings.' : 'Shown as fully booked on your profile.'}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => handleToggle(!isAvailable)}
+          className={`relative inline-flex h-7 w-12 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+            isAvailable ? 'bg-emerald-500' : 'bg-red-400'
+          }`}
+          role="switch"
+          aria-checked={isAvailable}
+        >
+          <span
+            className={`inline-block h-6 w-6 rounded-full bg-white shadow transform transition-transform duration-200 ${
+              isAvailable ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </button>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-xs font-medium text-slate-600 mb-1.5">
+          Availability note <span className="text-muted-foreground font-normal">(optional)</span>
+        </label>
+        <input
+          type="text"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          maxLength={200}
+          placeholder="e.g. Back on June 15th"
+          className="w-full border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+        />
+      </div>
+
+      {error && (
+        <p className="text-sm text-red-500 bg-red-50 rounded-xl px-4 py-2.5 mb-3">{error}</p>
+      )}
+      {saved && (
+        <p className="text-sm text-emerald-600 bg-emerald-50 rounded-xl px-4 py-2.5 mb-3">Saved successfully.</p>
+      )}
+
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={saving}
+        className="w-full py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
+        style={{
+          background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+          color: '#451A03',
+          boxShadow: '0 4px 0px rgba(120,53,15,0.28)',
+        }}
+      >
+        {saving ? 'Saving…' : 'Save availability'}
+      </button>
+    </div>
+  )
+}
 
 // ── Points engine ────────────────────────────────────────────────
 function calcPoints(stats: Stats, provider: ProviderWithPhotos) {
@@ -58,6 +165,10 @@ interface Stats {
   reviews: number
   fiveStarReviews: number
   avgRating: number
+  totalContacted: number
+  responded: number
+  booked: number
+  responseRate: number | null
 }
 
 interface Props {
@@ -192,10 +303,13 @@ export default function DashboardClient({ provider, category, stats }: Props) {
           <h1 className="text-xl font-bold text-slate-900 leading-tight truncate">{provider.name}</h1>
           <p className="text-sm text-slate-400">{category.name} · dashboard</p>
         </div>
-        <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full shrink-0">
-          ✓ Verified
-        </span>
+        <div className="shrink-0">
+          <VerificationBadge tier={(provider.verification_tier as 'contacted' | 'verified' | 'certified') ?? 'contacted'} size="md" />
+        </div>
       </div>
+
+      {/* Availability toggle */}
+      <AvailabilityCard provider={provider} />
 
       {/* Level card */}
       <div
@@ -277,6 +391,25 @@ export default function DashboardClient({ provider, category, stats }: Props) {
             <p className="text-xs text-muted-foreground mb-1">Call clicks</p>
             <p className="text-2xl font-bold text-slate-900">{stats.calls}</p>
             <p className="text-xs text-muted-foreground mt-0.5">via profile page</p>
+          </div>
+          <div className="bg-white border border-border rounded-2xl p-4">
+            <p className="text-xs text-muted-foreground mb-1">Response rate</p>
+            {stats.totalContacted >= 5 && stats.responseRate !== null ? (
+              <>
+                <p className="text-2xl font-bold text-slate-900">{stats.responseRate}%</p>
+                <p className="text-xs text-emerald-600 mt-0.5">{stats.responded}/{stats.totalContacted} replied</p>
+              </>
+            ) : (
+              <>
+                <p className="text-lg font-semibold text-slate-400">—</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Not enough data yet</p>
+              </>
+            )}
+          </div>
+          <div className="bg-white border border-border rounded-2xl p-4">
+            <p className="text-xs text-muted-foreground mb-1">Bookings confirmed</p>
+            <p className="text-2xl font-bold text-slate-900">{stats.booked}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">via WhatsApp contact</p>
           </div>
         </div>
       )}

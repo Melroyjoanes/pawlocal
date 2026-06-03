@@ -37,7 +37,7 @@ export default async function ProviderDashboardPage({
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-  const [analyticsRes, reviewsRes] = await Promise.all([
+  const [analyticsRes, reviewsRes, contactsRes] = await Promise.all([
     supabase
       .from('provider_analytics')
       .select('event_type, created_at')
@@ -47,10 +47,15 @@ export default async function ProviderDashboardPage({
       .select('rating, status')
       .eq('provider_id', id)
       .eq('status', 'approved'),
+    supabase
+      .from('provider_contacts')
+      .select('responded, booked, created_at')
+      .eq('provider_id', id),
   ])
 
   const events = (analyticsRes.data ?? []) as { event_type: string; created_at: string }[]
   const reviews = (reviewsRes.data ?? []) as { rating: number; status: string }[]
+  const contactRows = (contactsRes.data ?? []) as { responded: boolean | null; booked: boolean | null; created_at: string }[]
 
   const views                = events.filter(e => e.event_type === 'view').length
   const viewsThisMonth       = events.filter(e => e.event_type === 'view' && e.created_at >= startOfMonth).length
@@ -63,6 +68,11 @@ export default async function ProviderDashboardPage({
     : 0
   const fiveStarReviews      = approvedReviews.filter(r => r.rating === 5).length
 
+  const totalContacted = contactRows.length
+  const responded      = contactRows.filter(c => c.responded === true).length
+  const booked         = contactRows.filter(c => c.booked === true).length
+  const responseRate   = totalContacted > 0 ? Math.round((responded / totalContacted) * 100) : null
+
   const stats = {
     views,
     viewsThisMonth,
@@ -72,6 +82,10 @@ export default async function ProviderDashboardPage({
     reviews: approvedReviews.length,
     fiveStarReviews,
     avgRating,
+    totalContacted,
+    responded,
+    booked,
+    responseRate,
   }
 
   return <DashboardClient provider={provider} category={category} stats={stats} />
