@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database, CategorySlug } from '@/lib/supabase/types'
+import { sendTelegramMessage } from '@/lib/telegram'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -69,33 +70,20 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Fire-and-forget admin notification — never blocks provider submission
-  if (process.env.RESEND_API_KEY) {
-    const primaryCategory = slugsArray[0] ?? category_slug
-    fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: 'PawLocal <onboarding@resend.dev>',
-        to: 'melroy@verfolia.com',
-        subject: `New provider joined: ${name}`,
-        html: `
-          <h2>New provider submitted on PawLocal</h2>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Business:</strong> ${business_name ?? 'N/A'}</p>
-          <p><strong>Category:</strong> ${primaryCategory}</p>
-          <p><strong>WhatsApp:</strong> ${whatsapp}</p>
-          <p><strong>Phone:</strong> ${phone ?? 'N/A'}</p>
-          <p><a href="https://pawlocal.in/admin">Review in admin dashboard →</a></p>
-        `,
-      }),
-    }).catch((err) => {
-      console.error('Failed to send admin notification email:', err)
-    })
-  }
+  // Fire-and-forget Telegram notification — never blocks provider submission
+  const primaryCategory = slugsArray[0] ?? category_slug
+  const categoryLabel = primaryCategory
+    .split('-')
+    .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+  await sendTelegramMessage(
+    `🐾 <b>New Provider Signup — PawLocal</b>\n\n` +
+    `Name: ${name}\n` +
+    `Category: ${categoryLabel}\n` +
+    `WhatsApp: ${whatsapp}\n` +
+    `Area: ${address}\n\n` +
+    `Review → https://pawlocal-ashen.vercel.app/admin`
+  )
 
   return NextResponse.json({ success: true, id: provider.id })
 }

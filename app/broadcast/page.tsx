@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { createClient } from '@/lib/supabase/client'
 import type { Broadcast } from '@/lib/supabase/types'
 
 const SERVICES = [
@@ -129,6 +130,7 @@ export default function BroadcastPage() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [filterService, setFilterService] = useState<string>('all')
+  const [matchingProviders, setMatchingProviders] = useState<any[]>([])
 
   useEffect(() => {
     fetch('/api/broadcasts')
@@ -165,9 +167,22 @@ export default function BroadcastPage() {
       return
     }
 
+    // Fetch matching providers before clearing form so we have service_slug
+    const submittedSlug = form.service_slug
     setSubmitted(true)
     setForm(EMPTY_FORM)
     setSubmitting(false)
+
+    // Load providers in this category to show in the confirmation
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('providers')
+      .select('id, name, provider_photos(*)')
+      .eq('status', 'approved')
+      .contains('category_slugs', [submittedSlug])
+      .limit(4)
+    setMatchingProviders(data ?? [])
+
     // Scroll to feed
     setTimeout(() => {
       document.getElementById('broadcast-feed')?.scrollIntoView({ behavior: 'smooth' })
@@ -208,15 +223,56 @@ export default function BroadcastPage() {
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="py-6 text-center"
+              className="py-8 text-center"
             >
               <div className="text-4xl mb-3">🎉</div>
-              <p className="font-semibold text-foreground mb-1">Your request is live!</p>
-              <p className="text-sm text-muted-foreground mb-4">
-                Providers near you will WhatsApp you directly. Expires in 48 hours.
+              <p className="font-semibold text-foreground mb-1 text-lg">Your request is live!</p>
+
+              {/* Provider avatars + count */}
+              <div className="mt-4 mb-5">
+                {matchingProviders.length > 0 ? (
+                  <div className="flex flex-col items-center gap-2">
+                    {/* Avatar stack */}
+                    <div className="flex items-center">
+                      {matchingProviders.slice(0, 3).map((prov, i) => {
+                        const primaryPhoto = Array.isArray(prov.provider_photos)
+                          ? prov.provider_photos.find((ph: any) => ph.is_primary) ?? prov.provider_photos[0]
+                          : null
+                        return (
+                          <div
+                            key={prov.id}
+                            className={`w-10 h-10 rounded-full border-2 border-white overflow-hidden flex items-center justify-center bg-[var(--pl-teal)]/10 flex-shrink-0 ${i > 0 ? '-ml-2' : ''}`}
+                          >
+                            {primaryPhoto?.url ? (
+                              <img src={primaryPhoto.url} alt={prov.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-base">🐾</span>
+                            )}
+                          </div>
+                        )
+                      })}
+                      {matchingProviders.length > 3 && (
+                        <div className="w-10 h-10 rounded-full border-2 border-white bg-slate-100 -ml-2 flex items-center justify-center flex-shrink-0">
+                          <span className="text-[11px] font-semibold text-slate-500">+{matchingProviders.length - 3}</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm font-semibold text-[var(--pl-teal)]">
+                      {matchingProviders.length} verified provider{matchingProviders.length !== 1 ? 's' : ''} in Juhu {matchingProviders.length !== 1 ? 'have' : 'has'} been notified
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm font-medium text-slate-600 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 max-w-xs mx-auto">
+                    We'll personally connect you with the right provider within 2 hours 🐾
+                  </p>
+                )}
+              </div>
+
+              <p className="text-sm text-muted-foreground mb-5">
+                Providers will WhatsApp you directly. Expires in 48 hours.
               </p>
               <button
-                onClick={() => setSubmitted(false)}
+                onClick={() => { setSubmitted(false); setMatchingProviders([]) }}
                 className="text-sm font-medium text-[var(--pl-teal)] hover:underline"
               >
                 Post another request

@@ -295,13 +295,40 @@ function ProviderCard({
 }
 
 // ── Broadcast card (admin view) ──────────────────────────────────
-function BroadcastAdminCard({ b }: { b: Broadcast }) {
+function BroadcastAdminCard({ b, providers }: { b: Broadcast; providers: any[] }) {
   const svc = SERVICE_LABELS[b.service_slug] ?? { label: b.service_slug, icon: '🐾' }
   const expired = isExpired(b.expires_at)
   const waLink = `https://wa.me/91${b.poster_whatsapp.replace(/\D/g, '').slice(-10)}`
   const waText = encodeURIComponent(
     `Hi ${b.poster_name}! I saw your request on PawLocal for ${svc.label}. Let me help connect you with the right provider. 🐾`
   )
+
+  // Match providers by category slug (check both category_slugs array and category_slug string)
+  const matchingProviders = providers.filter((p) => {
+    const slugs: string[] = Array.isArray(p.category_slugs)
+      ? p.category_slugs
+      : p.category_slug
+        ? [p.category_slug]
+        : []
+    return slugs.includes(b.service_slug)
+  }).slice(0, 4)
+
+  function buildNotifyLink(prov: any) {
+    const message = [
+      `Hi ${prov.name}! 🐾 New ${svc.label} request on PawLocal.`,
+      ``,
+      `Customer: ${b.poster_name} in ${b.area}`,
+      `When: ${b.date_needed}`,
+      `Pet: ${b.pet_description}`,
+      b.budget ? `Budget: ${b.budget}` : null,
+      ``,
+      `Reply to them: wa.me/91${b.poster_whatsapp.replace(/\D/g, '').slice(-10)}`,
+    ].filter(Boolean).join('\n')
+    const phone = (prov.whatsapp ?? '').replace(/\D/g, '').slice(-10)
+    // Guard: skip if phone is empty or too short (would produce an invalid WA link)
+    if (phone.length < 10) return null
+    return `https://wa.me/91${phone}?text=${encodeURIComponent(message)}`
+  }
 
   return (
     <div className={`bg-white border rounded-2xl p-4 ${expired ? 'opacity-50 border-border' : 'border-border'}`}>
@@ -335,7 +362,7 @@ function BroadcastAdminCard({ b }: { b: Broadcast }) {
         {b.notes && <p className="text-xs text-slate-500 italic mt-1">"{b.notes}"</p>}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <a
           href={`${waLink}?text=${waText}`}
           target="_blank"
@@ -353,6 +380,32 @@ function BroadcastAdminCard({ b }: { b: Broadcast }) {
           Find providers →
         </a>
       </div>
+
+      {/* Notify matching providers */}
+      {matchingProviders.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-border">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+            Notify these providers
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {matchingProviders.map((prov) => {
+              const link = buildNotifyLink(prov)
+              if (!link) return null
+              return (
+                <a
+                  key={prov.id}
+                  href={link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-xs font-medium bg-white hover:border-[var(--pl-teal)] hover:text-[var(--pl-teal)] transition-colors"
+                >
+                  💬 {prov.name}
+                </a>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -367,6 +420,7 @@ export default function AdminPage() {
   const [reviewsLoading, setReviewsLoading] = useState(false)
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([])
   const [broadcastsLoading, setBroadcastsLoading] = useState(false)
+  const [approvedProviders, setApprovedProviders] = useState<any[]>([])
   const [pendingCount, setPendingCount] = useState(0)
   const [broadcastCount, setBroadcastCount] = useState(0)
 
@@ -412,9 +466,22 @@ export default function AdminPage() {
 
   async function loadBroadcasts() {
     setBroadcastsLoading(true)
-    const res = await fetch('/api/admin/broadcasts')
-    const data = await res.json().catch(() => [])
+
+    // Run both fetches in parallel
+    const supabase = createClient()
+    const [broadcastRes, provResult] = await Promise.all([
+      fetch('/api/admin/broadcasts'),
+      supabase
+        .from('providers')
+        .select('id, name, whatsapp, category_slugs, category_slug, provider_photos(*)')
+        .eq('status', 'approved')
+        .limit(200), // safety ceiling as provider count grows
+    ])
+
+    const data = await broadcastRes.json().catch(() => [])
     setBroadcasts(Array.isArray(data) ? data : [])
+    setApprovedProviders(provResult.data ?? [])
+
     setBroadcastsLoading(false)
   }
 
@@ -603,7 +670,7 @@ export default function AdminPage() {
                     Active ({activeBroadcasts.length})
                   </p>
                   <div className="flex flex-col gap-3">
-                    {activeBroadcasts.map((b) => <BroadcastAdminCard key={b.id} b={b} />)}
+                    {activeBroadcasts.map((b) => <BroadcastAdminCard key={b.id} b={b} providers={approvedProviders} />)}
                   </div>
                 </div>
               )}
@@ -613,7 +680,7 @@ export default function AdminPage() {
                     Expired ({expiredBroadcasts.length})
                   </p>
                   <div className="flex flex-col gap-3">
-                    {expiredBroadcasts.map((b) => <BroadcastAdminCard key={b.id} b={b} />)}
+                    {expiredBroadcasts.map((b) => <BroadcastAdminCard key={b.id} b={b} providers={approvedProviders} />)}
                   </div>
                 </div>
               )}

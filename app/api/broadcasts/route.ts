@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database } from '@/lib/supabase/types'
+import { sendTelegramMessage } from '@/lib/telegram'
+
+const SERVICE_LABELS: Record<string, { icon: string; label: string }> = {
+  'dog-walking':  { icon: '🦮', label: 'Dog Walking' },
+  'grooming':     { icon: '✂️', label: 'Grooming' },
+  'vet':          { icon: '🏥', label: 'Vet' },
+  'pet-store':    { icon: '🛍️', label: 'Pet Store' },
+  'dog-training': { icon: '🎯', label: 'Dog Training' },
+}
 
 export async function GET() {
   const cookieStore = await cookies()
@@ -58,6 +67,23 @@ export async function POST(req: NextRequest) {
   } as never)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Telegram notification — awaited so Vercel runtime doesn't freeze mid-flight
+  const svc = SERVICE_LABELS[service_slug] ?? { icon: '🐾', label: service_slug }
+  const formattedPhone = digits.slice(-10).replace(/(\d{5})(\d{5})/, '$1 $2')
+  const msg = [
+    `📣 <b>New Broadcast — PawLocal</b>`,
+    ``,
+    `Service: ${svc.icon} ${svc.label}`,
+    `From: ${poster_name} · ${formattedPhone}`,
+    `Area: ${area.trim()} · When: ${date_needed.trim()}`,
+    `Pet: ${pet_description.trim()}`,
+    budget?.trim() ? `Budget: ${budget.trim()}` : null,
+    ``,
+    `Open Admin → https://pawlocal-ashen.vercel.app/admin`,
+  ].filter(Boolean).join('\n')
+
+  await sendTelegramMessage(msg)
 
   return NextResponse.json({ success: true })
 }
