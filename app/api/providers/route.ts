@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import type { Database, CategorySlug } from '@/lib/supabase/types'
-import { sendTelegramMessage } from '@/lib/telegram'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -70,20 +69,59 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Fire-and-forget Telegram notification — never blocks provider submission
-  const primaryCategory = slugsArray[0] ?? category_slug
-  const categoryLabel = primaryCategory
-    .split('-')
-    .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ')
-  await sendTelegramMessage(
-    `🐾 <b>New Provider Signup — PawLocal</b>\n\n` +
-    `Name: ${name}\n` +
-    `Category: ${categoryLabel}\n` +
-    `WhatsApp: ${whatsapp}\n` +
-    `Area: ${address}\n\n` +
-    `Review → https://pawlocal-ashen.vercel.app/admin`
-  )
+  // Email notification to admin — fire and forget, never blocks provider
+  if (process.env.RESEND_API_KEY) {
+    const primaryCategory = slugsArray[0] ?? category_slug
+    const categoryLabel = primaryCategory
+      .split('-')
+      .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ')
+    const adminUrl = `https://pawlocal-ashen.vercel.app/admin`
+    const profileUrl = `https://pawlocal-ashen.vercel.app/provider/${provider.id}`
+
+    fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: 'PawLocal <onboarding@resend.dev>',
+        to: 'melroy@verfolia.com',
+        subject: `🐾 New provider: ${name} (${categoryLabel})`,
+        html: `
+<!DOCTYPE html>
+<html>
+<body style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; background: #f8fafc; color: #1e293b;">
+
+  <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
+    <p style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; margin: 0 0 12px;">New Provider · PawLocal</p>
+    <h2 style="margin: 0 0 4px; font-size: 20px;">${name}</h2>
+    <p style="margin: 0; color: #64748b; font-size: 14px;">${categoryLabel}${business_name ? ` · ${business_name}` : ''}</p>
+  </div>
+
+  <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px; width: 100px;">WhatsApp</td><td style="padding: 6px 0; font-size: 14px; font-weight: 600;">${whatsapp}</td></tr>
+      <tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px;">Area</td><td style="padding: 6px 0; font-size: 14px;">${address}</td></tr>
+      ${price_min ? `<tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px;">Pricing</td><td style="padding: 6px 0; font-size: 14px;">₹${price_min}${price_max ? `–${price_max}` : ''} ${price_unit ?? ''}</td></tr>` : ''}
+      ${bio ? `<tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px; vertical-align: top;">Bio</td><td style="padding: 6px 0; font-size: 13px; color: #475569;">${bio}</td></tr>` : ''}
+    </table>
+  </div>
+
+  <a href="${adminUrl}" style="display: block; background: #0f172a; color: white; text-decoration: none; padding: 16px; border-radius: 12px; text-align: center; font-weight: 700; font-size: 16px; margin-bottom: 12px;">
+    ✓ Review &amp; Approve in Admin
+  </a>
+
+  <a href="${profileUrl}" style="display: block; background: white; color: #475569; text-decoration: none; padding: 12px; border-radius: 12px; text-align: center; font-size: 14px; border: 1px solid #e2e8f0;">
+    View Profile →
+  </a>
+
+</body>
+</html>`,
+      }),
+    }).catch(() => {})
+  }
 
   return NextResponse.json({ success: true, id: provider.id })
 }
