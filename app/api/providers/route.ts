@@ -71,9 +71,12 @@ export async function POST(req: NextRequest) {
   // Link the Google account that signed in during /join
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (sessionUser?.id && provider?.id) {
-    await (supabase.from('providers') as any)
+    const { error: linkError } = await (supabase.from('providers') as any)
       .update({ user_id: sessionUser.id })
       .eq('id', provider.id)
+    if (linkError) {
+      console.error('[providers/route] Failed to link user_id:', linkError.message)
+    }
   }
 
   if (photo_urls?.length > 0) {
