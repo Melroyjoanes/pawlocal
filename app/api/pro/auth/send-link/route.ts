@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'PawLocal <hello@pawlocal.in>',
+        from: 'PawLocal <onboarding@resend.dev>',
         to: email,
         subject: '🐾 Your PawLocal sign-in link',
         html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
           <p style="color:#94a3b8;font-size:12px;">If you didn't request this, ignore this email.</p>
         </div>`,
       }),
-    }).catch(() => {})
+    }).catch((e: unknown) => { console.error("[Resend] email failed:", e instanceof Error ? e.message : e) })
   }
 
   return NextResponse.json({ success: true })

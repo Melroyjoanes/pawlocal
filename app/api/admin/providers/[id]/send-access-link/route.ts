@@ -71,19 +71,21 @@ export async function POST(
   const magicLink = linkData.properties.action_link
   const firstName = (provider.name as string).split(' ')[0]
 
-  // Send via Resend
+  // Send via Resend — and log the actual response so failures appear in Vercel logs
+  let emailSent = false
   if (process.env.RESEND_API_KEY) {
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: 'PawLocal <hello@pawlocal.in>',
-        to: email,
-        subject: `🐾 Your PawLocal provider dashboard is ready, ${firstName}!`,
-        html: `
+    try {
+      const resendRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from: 'PawLocal <onboarding@resend.dev>',
+          to: email,
+          subject: `🐾 Your PawLocal provider dashboard is ready, ${firstName}!`,
+          html: `
 <div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;background:#FFFBEB;padding:32px 24px;border-radius:24px;">
   <div style="text-align:center;margin-bottom:28px;">
     <div style="font-size:48px;margin-bottom:12px;">🐾</div>
@@ -105,9 +107,22 @@ export async function POST(
     Next time: go to <strong>pawlocal-ashen.vercel.app/pro</strong> and enter this email to sign in.
   </p>
 </div>`,
-      }),
-    }).catch(() => {})
+        }),
+      })
+      const resendBody = await resendRes.json().catch(() => ({}))
+      if (!resendRes.ok) {
+        console.error('[Resend] send-access-link failed:', resendRes.status, JSON.stringify(resendBody))
+      } else {
+        emailSent = true
+        console.log('[Resend] send-access-link sent to', email, 'id:', resendBody.id)
+      }
+    } catch (e: unknown) {
+      console.error('[Resend] send-access-link exception:', e instanceof Error ? e.message : e)
+    }
+  } else {
+    console.warn('[send-access-link] RESEND_API_KEY not set — email skipped')
   }
 
-  return NextResponse.json({ success: true, email })
+  // Always return the magic link so admin can copy it as fallback if email fails
+  return NextResponse.json({ success: true, email, emailSent, magicLink })
 }

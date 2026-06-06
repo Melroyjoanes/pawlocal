@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
 </body>
 </html>`,
       }),
-    }).catch(() => {})
+    }).catch((e: unknown) => { console.error("[Resend] email failed:", e instanceof Error ? e.message : e) })
   }
 
   return NextResponse.json({ success: true, id: provider.id })

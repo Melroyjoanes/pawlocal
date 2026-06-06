@@ -96,10 +96,13 @@ function ProviderCard({
   const [sendingAccess, setSendingAccess] = useState(false)
   const [accessSent, setAccessSent] = useState(false)
   const [accessError, setAccessError] = useState<string | null>(null)
+  const [fallbackLink, setFallbackLink] = useState<string | null>(null)
+  const [linkCopied, setLinkCopied] = useState(false)
 
   async function sendAccessLink() {
     setSendingAccess(true)
     setAccessError(null)
+    setFallbackLink(null)
     try {
       const res = await fetch(`/api/admin/providers/${p.id}/send-access-link`, {
         method: 'POST',
@@ -108,14 +111,27 @@ function ProviderCard({
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed')
-      setAccessSent(true)
-      setShowAccessInput(false)
-      setTimeout(() => setAccessSent(false), 4000)
+      setAccessSent(data.emailSent)
+      if (!data.emailSent && data.magicLink) {
+        // Email failed — show the link so admin can copy and send manually
+        setFallbackLink(data.magicLink)
+      } else {
+        setShowAccessInput(false)
+        setTimeout(() => setAccessSent(false), 4000)
+      }
     } catch (err) {
       setAccessError(err instanceof Error ? err.message : 'Failed to send')
     } finally {
       setSendingAccess(false)
     }
+  }
+
+  function copyFallbackLink() {
+    if (!fallbackLink) return
+    navigator.clipboard.writeText(fallbackLink).then(() => {
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    })
   }
 
   const category = getCategoryBySlug(p.category_slug)
@@ -316,6 +332,26 @@ function ProviderCard({
           </div>
           {accessError && (
             <p className="text-xs text-red-600 mt-2">{accessError}</p>
+          )}
+          {/* Fallback: email failed, show link to copy manually */}
+          {fallbackLink && (
+            <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+              <p className="text-xs font-semibold text-amber-800 mb-2">
+                ⚠️ Email didn&apos;t send — copy this link and send via WhatsApp:
+              </p>
+              <div className="flex gap-2 items-center">
+                <code className="text-[10px] text-amber-700 bg-amber-100 rounded px-2 py-1 flex-1 truncate">
+                  {fallbackLink}
+                </code>
+                <button
+                  onClick={copyFallbackLink}
+                  className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 whitespace-nowrap"
+                >
+                  {linkCopied ? '✓ Copied!' : 'Copy'}
+                </button>
+              </div>
+              <p className="text-[10px] text-amber-600 mt-1.5">Link expires in 1 hour. Send it to them now.</p>
+            </div>
           )}
         </div>
       )}

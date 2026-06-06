@@ -37,7 +37,7 @@ async function sendLeadEmail(providerId: string) {
       'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
     },
     body: JSON.stringify({
-      from: 'PawLocal <hello@pawlocal.in>',
+      from: 'PawLocal <onboarding@resend.dev>',
       to: email,
       subject: `🐾 Someone is interested in your services, ${provider.name.split(' ')[0]}!`,
       html: `

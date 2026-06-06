@@ -99,7 +99,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
           },
           body: JSON.stringify({
-            from: 'PawLocal <hello@pawlocal.in>',
+            from: 'PawLocal <onboarding@resend.dev>',
             to: prov.email,
             subject: "You're approved on PawLocal — click to access your dashboard",
             html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; background: #f0fdfa; padding: 32px 24px; border-radius: 24px;">
@@ -116,7 +116,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">This link expires in 1 hour. If you didn't expect this email, you can safely ignore it.</p>
 </div>`,
           }),
-        }).catch(() => {})
+        }).catch((e: unknown) => { console.error("[Resend] email failed:", e instanceof Error ? e.message : e) })
       }
     } catch {}
   }
