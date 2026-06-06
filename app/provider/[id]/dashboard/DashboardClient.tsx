@@ -417,11 +417,25 @@ function getLevel(pts: number) {
   return { name: 'Bronze', emoji: '🥉', color: '#B45309', next: 'Silver', nextAt: 200 }
 }
 
+interface MatchingBroadcast {
+  id: string
+  service_slug: string
+  pet_description: string
+  area: string
+  date_needed: string
+  budget: string | null
+  poster_name: string
+  poster_whatsapp: string
+  created_at: string
+}
+
 interface Stats {
   views: number
   viewsThisMonth: number
+  viewsToday: number
   contacts: number
   contactsThisMonth: number
+  contactsToday: number
   calls: number
   reviews: number
   fiveStarReviews: number
@@ -438,13 +452,75 @@ interface Props {
   stats: Stats
   isClaimed: boolean
   isOwner: boolean
+  isDogWalker: boolean
+  greeting: string
+  firstName: string
+  matchingBroadcasts: MatchingBroadcast[]
+  latestReview: { id: string; rating: number; comment: string | null; reviewer_name: string; created_at: string } | null
 }
 
-export default function DashboardClient({ provider, category, stats, isClaimed, isOwner }: Props) {
-  // UUID in URL is the private key — only someone admin sent the link to can access this.
-  // isClaimed = provider has a Google account linked
-  // isOwner   = current session user owns this profile
+// ── Matching Broadcasts ──────────────────────────────────────────
+function MatchingBroadcasts({ broadcasts, category }: { broadcasts: MatchingBroadcast[], category: CategoryConfig }) {
+  if (broadcasts.length === 0) return null
 
+  function timeAgo(d: string) {
+    const diff = Date.now() - new Date(d).getTime()
+    const mins = Math.floor(diff / 60000)
+    if (mins < 1) return 'just now'
+    if (mins < 60) return `${mins}m ago`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs}h ago`
+    return `${Math.floor(hrs / 24)}d ago`
+  }
+
+  return (
+    <div className="mb-5">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+          📣 Matching requests ({broadcasts.length})
+        </p>
+        <a href="/broadcast" className="text-xs text-[var(--pl-teal)] font-medium hover:underline">
+          See all →
+        </a>
+      </div>
+      <div className="flex flex-col gap-2.5">
+        {broadcasts.map(b => {
+          const phone = b.poster_whatsapp.replace(/\D/g, '').slice(-10)
+          const waUrl = `https://wa.me/91${phone}?text=${encodeURIComponent(
+            `Hi ${b.poster_name}, I saw your request on PawLocal for ${b.pet_description} in ${b.area}. I can help! 🐾`
+          )}`
+          return (
+            <div key={b.id} className="bg-white border border-border rounded-2xl p-4">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-900 truncate">{b.pet_description}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    📍 {b.area} · 📅 {b.date_needed}
+                    {b.budget ? ` · 💰 ${b.budget}` : ''}
+                  </p>
+                </div>
+                <span className="text-xs text-muted-foreground flex-shrink-0">{timeAgo(b.created_at)}</span>
+              </div>
+              <a
+                href={waUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-2.5 text-sm font-semibold transition-colors"
+              >
+                💬 Reply to {b.poster_name}
+              </a>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+export default function DashboardClient({
+  provider, category, stats, isClaimed, isOwner,
+  isDogWalker, greeting, firstName, matchingBroadcasts, latestReview,
+}: Props) {
   const { pts, breakdown } = calcPoints(stats, provider)
   const level = getLevel(pts)
   const progressPct = level.nextAt
@@ -452,23 +528,51 @@ export default function DashboardClient({ provider, category, stats, isClaimed, 
     : 100
 
   return (
-    <div className="max-w-lg mx-auto py-10 px-4 pb-16">
-      {/* Back + sign out row */}
-      <div className="flex items-center justify-between mb-8">
-        <a
-          href={`/provider/${provider.id}`}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          ← Back to profile
-        </a>
-        {isOwner && <SignOutButton />}
+    <div className="max-w-lg mx-auto py-8 px-4 pb-20">
+
+      {/* Greeting + sign out */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <p className="text-xs text-muted-foreground">{greeting},</p>
+          <h1 className="text-2xl font-bold text-slate-900 leading-tight">{firstName} 👋</h1>
+        </div>
+        <div className="flex items-center gap-3">
+          {isOwner && <SignOutButton />}
+          <a
+            href={`/provider/${provider.id}`}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Profile
+          </a>
+        </div>
       </div>
 
-      {/* Claim banner — shown if profile not yet secured */}
+      {/* Claim banner */}
       <ClaimBanner providerId={provider.id} isClaimed={isClaimed} />
 
       {/* Profile card with completeness */}
       <ProfileCard provider={provider} category={category} stats={stats} />
+
+      {/* Dog walker hero — Start Walk */}
+      {isDogWalker && (
+        <div
+          className="rounded-2xl p-5 mb-5 text-white"
+          style={{ background: 'linear-gradient(135deg, #0F766E 0%, #0D9488 100%)' }}
+        >
+          <p className="text-xs font-semibold uppercase tracking-widest opacity-70 mb-1">Live walk tracking</p>
+          <p className="text-lg font-bold mb-1">Start a Walk</p>
+          <p className="text-sm opacity-80 mb-4 leading-relaxed">
+            Share your live location with the pet owner during the walk. They track in real time — just like Swiggy.
+          </p>
+          <a
+            href="#walk-tracking-coming-soon"
+            className="flex items-center justify-center gap-2 bg-white/20 hover:bg-white/30 border border-white/30 rounded-xl py-3 text-sm font-semibold transition-all"
+            onClick={e => { e.preventDefault(); alert('Walk tracking coming soon! Run the walk-tracking-migration.sql in Supabase first.') }}
+          >
+            🐾 Start a Walk
+          </a>
+        </div>
+      )}
 
       {/* Availability toggle */}
       <AvailabilityCard provider={provider} />
@@ -533,12 +637,22 @@ export default function DashboardClient({ provider, category, stats, isClaimed, 
       ) : (
         <div className="grid grid-cols-2 gap-3 mb-5">
           <div className="bg-white border border-border rounded-2xl p-4">
-            <p className="text-xs text-muted-foreground mb-1">Profile views</p>
+            <div className="flex items-start justify-between mb-1">
+              <p className="text-xs text-muted-foreground">Profile views</p>
+              {stats.viewsToday > 0 && (
+                <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-full">+{stats.viewsToday} today</span>
+              )}
+            </div>
             <p className="text-2xl font-bold text-slate-900">{stats.views}</p>
             <p className="text-xs text-emerald-600 mt-0.5">+{stats.viewsThisMonth} this month</p>
           </div>
           <div className="bg-white border border-border rounded-2xl p-4">
-            <p className="text-xs text-muted-foreground mb-1">WhatsApp contacts</p>
+            <div className="flex items-start justify-between mb-1">
+              <p className="text-xs text-muted-foreground">WhatsApp contacts</p>
+              {stats.contactsToday > 0 && (
+                <span className="text-xs font-semibold bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-full">+{stats.contactsToday} today</span>
+              )}
+            </div>
             <p className="text-2xl font-bold text-slate-900">{stats.contacts}</p>
             <p className="text-xs text-emerald-600 mt-0.5">+{stats.contactsThisMonth} this month</p>
           </div>
@@ -572,6 +686,40 @@ export default function DashboardClient({ provider, category, stats, isClaimed, 
             <p className="text-xs text-muted-foreground mb-1">Bookings confirmed</p>
             <p className="text-2xl font-bold text-slate-900">{stats.booked}</p>
             <p className="text-xs text-muted-foreground mt-0.5">via WhatsApp contact</p>
+          </div>
+        </div>
+      )}
+
+      {/* Matching broadcasts */}
+      <MatchingBroadcasts broadcasts={matchingBroadcasts} category={category} />
+
+      {/* Latest review */}
+      {latestReview && (
+        <div className="bg-white border border-border rounded-2xl p-5 mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Latest review</p>
+            <a href={`/provider/${provider.id}#reviews`} className="text-xs text-[var(--pl-teal)] font-medium hover:underline">
+              All {stats.reviews} →
+            </a>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center text-lg flex-shrink-0">⭐</div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <div className="flex">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <span key={i} className={`text-sm ${i < latestReview.rating ? 'text-amber-400' : 'text-slate-200'}`}>★</span>
+                  ))}
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(latestReview.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                </span>
+              </div>
+              {latestReview.comment && (
+                <p className="text-sm text-slate-700 leading-relaxed line-clamp-3">{latestReview.comment}</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">— {latestReview.reviewer_name}</p>
+            </div>
           </div>
         </div>
       )}

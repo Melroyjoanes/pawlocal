@@ -131,6 +131,22 @@ export default function BroadcastPage() {
   const [error, setError] = useState<string | null>(null)
   const [filterService, setFilterService] = useState<string>('all')
   const [matchingProviders, setMatchingProviders] = useState<any[]>([])
+  const [isSignedIn, setIsSignedIn] = useState(true) // optimistic, avoids flash
+  const [nudgeDismissed, setNudgeDismissed] = useState(false)
+
+  // Check auth for nudge
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      setIsSignedIn(!!data.user)
+      // Pre-fill name if signed in
+      if (data.user) {
+        const meta = data.user.user_metadata ?? {}
+        const fullName = meta.full_name ?? meta.name ?? ''
+        if (fullName) setForm(f => ({ ...f, poster_name: fullName }))
+      }
+    })
+  }, [])
 
   useEffect(() => {
     fetch('/api/broadcasts')
@@ -195,6 +211,24 @@ export default function BroadcastPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
+
+      {/* Soft sign-in nudge — only when not signed in and not dismissed */}
+      {!isSignedIn && !nudgeDismissed && (
+        <div className="flex items-center justify-between gap-3 bg-slate-50 border border-border rounded-2xl px-4 py-3 mb-5">
+          <p className="text-xs text-slate-700 leading-snug">
+            💡 <a href="/my-account" className="font-semibold text-[var(--pl-teal)] hover:underline">Sign in</a> to track your requests and see replies in one place
+          </p>
+          <button
+            type="button"
+            onClick={() => setNudgeDismissed(true)}
+            className="text-slate-400 hover:text-slate-600 text-sm flex-shrink-0"
+            aria-label="Dismiss"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Hero */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-3">

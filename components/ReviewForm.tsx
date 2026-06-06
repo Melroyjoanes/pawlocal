@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { StarPicker } from './StarRating'
+import { createClient } from '@/lib/supabase/client'
 
 interface Props {
   providerId: string
@@ -15,6 +16,20 @@ export default function ReviewForm({ providerId }: Props) {
   const [comment, setComment] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]     = useState('')
+  const [isVerified, setIsVerified] = useState(false)
+
+  // Detect auth and pre-fill name from Google profile
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        const meta = data.user.user_metadata ?? {}
+        const fullName = meta.full_name ?? meta.name ?? ''
+        if (fullName) setName(fullName)
+        setIsVerified(true)
+      }
+    })
+  }, [])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -60,6 +75,32 @@ export default function ReviewForm({ providerId }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
+        {/* Verified badge incentive — shown when signed in */}
+        {isVerified && (
+          <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2.5">
+            <span className="text-emerald-600 font-bold text-sm">✓</span>
+            <p className="text-xs text-emerald-800 font-medium leading-snug">
+              Signed-in reviews get a <strong>Verified</strong> badge — pet owners trust them more.
+            </p>
+          </div>
+        )}
+
+        {/* Soft nudge — shown when not signed in */}
+        {!isVerified && (
+          <div className="flex items-center justify-between bg-slate-50 border border-border rounded-xl px-3 py-2.5">
+            <p className="text-xs text-slate-600 leading-snug">
+              Sign in to get a ✓ <strong>Verified</strong> badge on your review
+            </p>
+            <a
+              href={`/my-account`}
+              className="text-xs font-semibold text-[var(--pl-teal)] hover:underline flex-shrink-0 ml-2"
+            >
+              Sign in →
+            </a>
+          </div>
+        )}
+
         {/* Star picker */}
         <div>
           <p className="text-sm font-medium mb-2">Your rating *</p>
@@ -71,9 +112,14 @@ export default function ReviewForm({ providerId }: Props) {
           )}
         </div>
 
-        {/* Name */}
+        {/* Name — pre-filled from Google if signed in */}
         <div>
-          <label className="block text-sm font-medium mb-1.5">Your name *</label>
+          <label className="block text-sm font-medium mb-1.5">
+            Your name *
+            {isVerified && (
+              <span className="ml-2 text-xs font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">✓ Verified</span>
+            )}
+          </label>
           <input
             required
             value={name}
