@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
 import type { CategoryConfig } from '@/lib/categories'
@@ -13,20 +13,113 @@ function ClaimBanner({ providerId, isClaimed }: { providerId: string; isClaimed:
   const searchParams = useSearchParams()
   const justClaimed = searchParams.get('claimed') === '1'
 
+  // Check if user is already signed in — they just need to link, not re-authenticate
+  const [signedInEmail, setSignedInEmail] = useState<string | null>(null)
+  const [signedInAvatar, setSignedInAvatar] = useState<string | null>(null)
+  const [authChecked, setAuthChecked] = useState(false)
+  const [linking, setLinking] = useState(false)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        const meta = data.user.user_metadata ?? {}
+        setSignedInEmail(data.user.email ?? meta.email ?? null)
+        setSignedInAvatar(meta.avatar_url ?? meta.picture ?? null)
+      }
+      setAuthChecked(true)
+    })
+  }, [])
+
   if (justClaimed) {
     return (
       <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-5 flex items-center gap-3">
         <span className="text-2xl">🎉</span>
         <div>
           <p className="text-sm font-semibold text-emerald-800">Profile secured!</p>
-          <p className="text-xs text-emerald-600 mt-0.5">Your Google account is now linked. Sign in anytime at <strong>pawlocal.in/dashboard</strong></p>
+          <p className="text-xs text-emerald-600 mt-0.5">
+            Your Google account is now linked. Sign in anytime at{' '}
+            <strong>pawlocal.in/dashboard</strong>
+          </p>
         </div>
       </div>
     )
   }
 
   if (isClaimed) return null
+  if (!authChecked) return null // avoid flash while checking
 
+  // ── Already signed in — just needs one tap to link ────────────
+  if (signedInEmail) {
+    return (
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5">
+        <div className="flex items-start gap-3 mb-4">
+          <span className="text-2xl">🔐</span>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-amber-900">Secure your profile</p>
+            <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+              Link your Google account so you can access this dashboard from any device — no link needed.
+            </p>
+          </div>
+        </div>
+
+        {/* Show which account is signed in */}
+        <div className="flex items-center gap-3 bg-white border border-amber-200 rounded-xl px-4 py-3 mb-3">
+          {signedInAvatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={signedInAvatar} alt="" className="w-7 h-7 rounded-full flex-shrink-0" />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center text-xs font-bold text-amber-700 flex-shrink-0">
+              {signedInEmail[0].toUpperCase()}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-slate-500">Signed in as</p>
+            <p className="text-sm font-semibold text-slate-800 truncate">{signedInEmail}</p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          disabled={linking}
+          onClick={() => {
+            setLinking(true)
+            window.location.href = `/provider/${providerId}/claim`
+          }}
+          className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl px-4 py-3 text-sm font-semibold transition-all disabled:opacity-60 shadow-sm"
+        >
+          {linking ? (
+            <>
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Linking…
+            </>
+          ) : (
+            '🔗 Link this account to my profile'
+          )}
+        </button>
+
+        <p className="text-xs text-amber-600 text-center mt-2">
+          Not you?{' '}
+          <button
+            type="button"
+            className="underline"
+            onClick={async () => {
+              const supabase = createClient()
+              await supabase.auth.signOut()
+              window.location.reload()
+            }}
+          >
+            Sign out first
+          </button>
+        </p>
+      </div>
+    )
+  }
+
+  // ── Not signed in — full Google OAuth flow ────────────────────
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5">
       <div className="flex items-start gap-3 mb-4">
