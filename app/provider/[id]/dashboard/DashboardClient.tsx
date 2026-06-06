@@ -9,10 +9,8 @@ import GoogleSignInButton from '@/components/GoogleSignInButton'
 import { createClient } from '@/lib/supabase/client'
 
 // ── Claim Banner ─────────────────────────────────────────────────
+// Called from ClaimFirst (unclaimed) and from the main dashboard (just claimed)
 function ClaimBanner({ providerId, isClaimed }: { providerId: string; isClaimed: boolean }) {
-  const searchParams = useSearchParams()
-  const justClaimed = searchParams.get('claimed') === '1'
-
   // Check if user is already signed in — they just need to link, not re-authenticate
   const [signedInEmail, setSignedInEmail] = useState<string | null>(null)
   const [signedInAvatar, setSignedInAvatar] = useState<string | null>(null)
@@ -30,21 +28,6 @@ function ClaimBanner({ providerId, isClaimed }: { providerId: string; isClaimed:
       setAuthChecked(true)
     })
   }, [])
-
-  if (justClaimed) {
-    return (
-      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-5 flex items-center gap-3">
-        <span className="text-2xl">🎉</span>
-        <div>
-          <p className="text-sm font-semibold text-emerald-800">Profile secured!</p>
-          <p className="text-xs text-emerald-600 mt-0.5">
-            Your Google account is now linked. Sign in anytime at{' '}
-            <strong>pawlocal.in/dashboard</strong>
-          </p>
-        </div>
-      </div>
-    )
-  }
 
   if (isClaimed) return null
   if (!authChecked) return null // avoid flash while checking
@@ -517,6 +500,81 @@ function MatchingBroadcasts({ broadcasts, category }: { broadcasts: MatchingBroa
   )
 }
 
+// ── Claim-first full-page experience ─────────────────────────────
+function ClaimFirst({ provider, category, isClaimed }: { provider: ProviderWithPhotos; category: CategoryConfig; isClaimed: boolean }) {
+  const primaryPhoto = provider.provider_photos.find(p => p.is_primary) ?? provider.provider_photos[0]
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-b from-slate-50 to-white">
+      <div className="w-full max-w-md">
+
+        {/* Provider identity */}
+        <div className="text-center mb-8">
+          <div className="w-20 h-20 rounded-3xl overflow-hidden mx-auto mb-4 shadow-lg border-2 border-white">
+            {primaryPhoto ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={primaryPhoto.url} alt={provider.name} className="w-full h-full object-cover" />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center text-3xl"
+                style={{ backgroundColor: category.color + '18' }}
+              >
+                {category.icon}
+              </div>
+            )}
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900">{provider.name}</h1>
+          <p className="text-sm text-slate-500 mt-1">
+            <span style={{ color: category.color }}>{category.icon} {category.name}</span>
+            {' · PawLocal'}
+          </p>
+        </div>
+
+        {/* Claim card */}
+        <div className="bg-white rounded-3xl border border-border shadow-sm p-6 mb-4">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+              <span className="text-xl">🔐</span>
+            </div>
+            <div>
+              <p className="font-bold text-slate-900 text-sm">This is your profile</p>
+              <p className="text-xs text-slate-500 leading-snug mt-0.5">
+                Sign in to manage it — view contacts, update availability, track stats.
+              </p>
+            </div>
+          </div>
+
+          {/* How it works — Uber-style 3 steps */}
+          <div className="flex flex-col gap-3 mb-6">
+            {[
+              { icon: '🔗', title: 'Sign in with Google', desc: 'One tap. No new password needed.' },
+              { icon: '⚡', title: 'Instantly linked', desc: 'Your profile is secured to your account.' },
+              { icon: '📊', title: 'Manage everything', desc: 'Availability, stats, and leads — in one place.' },
+            ].map((step, i) => (
+              <div key={i} className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-base flex-shrink-0">
+                  {step.icon}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">{step.title}</p>
+                  <p className="text-xs text-slate-500">{step.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ClaimBanner handles the actual auth logic */}
+          <ClaimBanner providerId={provider.id} isClaimed={isClaimed} />
+        </div>
+
+        <a href={`/provider/${provider.id}`} className="block text-center text-xs text-slate-400 hover:text-slate-600 transition-colors">
+          View your public profile →
+        </a>
+      </div>
+    </div>
+  )
+}
+
 export default function DashboardClient({
   provider, category, stats, isClaimed, isOwner,
   isDogWalker, greeting, firstName, matchingBroadcasts, latestReview,
@@ -526,6 +584,13 @@ export default function DashboardClient({
   const progressPct = level.nextAt
     ? Math.min(100, Math.round((pts / level.nextAt) * 100))
     : 100
+  const searchParams = useSearchParams()
+  const justClaimed = searchParams.get('claimed') === '1'
+
+  // If not claimed and not just-claimed: show focused claim page, not the full dashboard
+  if (!isClaimed && !justClaimed) {
+    return <ClaimFirst provider={provider} category={category} isClaimed={isClaimed} />
+  }
 
   return (
     <div className="max-w-lg mx-auto py-8 px-4 pb-20">
@@ -547,7 +612,21 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* Claim banner */}
+      {/* Just claimed — celebration banner */}
+      {justClaimed && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-5 flex items-center gap-3">
+          <span className="text-2xl">🎉</span>
+          <div>
+            <p className="text-sm font-semibold text-emerald-800">Profile secured!</p>
+            <p className="text-xs text-emerald-600 mt-0.5">
+              Your Google account is now linked. Access your dashboard anytime at{' '}
+              <strong>pawlocal.in/dashboard</strong>
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Claim banner (only shown if somehow not claimed) */}
       <ClaimBanner providerId={provider.id} isClaimed={isClaimed} />
 
       {/* Profile card with completeness */}

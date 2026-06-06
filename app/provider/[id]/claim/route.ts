@@ -98,8 +98,9 @@ export async function GET(
     .update({ user_id: user.id })
     .eq('id', id)
 
-  // Redirect to dashboard with success flag
+  // First-time claim → go to setup wizard to complete profile
+  // (setup=1 activates the 3-step wizard in edit page)
   return NextResponse.redirect(
-    `${SITE}/provider/${id}/dashboard?claimed=1`
+    `${SITE}/provider/${id}/edit?setup=1`
   )
 }

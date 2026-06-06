@@ -3,184 +3,239 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { CATEGORIES, JUHU_CENTER } from '@/lib/categories'
-import { APIProvider, Map, AdvancedMarker } from '@vis.gl/react-google-maps'
+import { CATEGORIES } from '@/lib/categories'
 
 // Insurance is an affiliate page — providers can't list there
 const SERVICE_CATEGORIES = CATEGORIES.filter((c) => c.slug !== 'insurance')
 
+const MUMBAI_AREAS = [
+  'Juhu', 'Andheri West', 'Andheri East', 'Bandra', 'Khar',
+  'Santacruz', 'Vile Parle', 'Versova', 'JVLR', 'Lokhandwala',
+  'Oshiwara', 'DN Nagar', 'Goregaon West', 'Malad West',
+]
+
+const STEPS = ['Who are you?', 'What you offer', 'Done!']
+
 export default function JoinPage() {
   const router = useRouter()
+  const [step, setStep] = useState(0)
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
-  const [photoUrls, setPhotoUrls] = useState<string[]>([])
-  const [pin, setPin] = useState(JUHU_CENTER)
-  const [pinPlaced, setPinPlaced] = useState(false)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [form, setForm] = useState({
     name: '',
-    business_name: '',
-    category_slugs: ['dog-walking'] as string[],
     whatsapp: '',
-    phone: '',
-    address: '',
-    price_min: '',
-    price_max: '',
-    price_unit: 'per session',
-    hours_from: '09:00',
-    hours_to: '18:00',
-    bio: '',
-    is_emergency: false,
+    area: '',
+    category_slugs: [] as string[],
   })
-
-  // Trainer-specific metadata (shown only when dog-training is selected)
-  const [trainerMeta, setTrainerMeta] = useState({
-    training_methods: [] as string[],
-    specialisations: [] as string[],
-    session_format: '',
-    certifications: '',
-    breeds: '',
-  })
-
-  const isTrainer = form.category_slugs.includes('dog-training')
-
-  function toggleChip<T extends string>(
-    list: T[],
-    value: T,
-    setter: (fn: (prev: typeof list) => typeof list) => void
-  ) {
-    setter((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-    )
-  }
 
   function toggleCategory(slug: string) {
-    setForm((prev) => {
+    setForm(prev => {
       const has = prev.category_slugs.includes(slug)
-      if (has && prev.category_slugs.length === 1) return prev // need at least one
       return {
         ...prev,
         category_slugs: has
-          ? prev.category_slugs.filter((s) => s !== slug)
+          ? prev.category_slugs.filter(s => s !== slug)
           : [...prev.category_slugs, slug],
       }
     })
   }
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []).slice(0, 3)
-    if (!files.length) return
+    const file = e.target.files?.[0]
+    if (!file) return
     setUploading(true)
     const supabase = createClient()
-    const urls: string[] = []
-    for (const file of files) {
-      const ext = file.name.split('.').pop()
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-      const { error } = await supabase.storage.from('provider-photos').upload(path, file)
-      if (!error) {
-        const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
-        urls.push(data.publicUrl)
-      }
+    const ext = file.name.split('.').pop()
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+    const { error } = await supabase.storage.from('provider-photos').upload(path, file)
+    if (!error) {
+      const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
+      setPhotoUrl(data.publicUrl)
     }
-    setPhotoUrls((prev) => [...prev, ...urls].slice(0, 3))
     setUploading(false)
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSubmit() {
     if (form.category_slugs.length === 0) return
     setSubmitting(true)
     setSubmitError('')
-    const metadata = isTrainer ? {
-      training_methods: trainerMeta.training_methods,
-      specialisations: trainerMeta.specialisations,
-      session_format: trainerMeta.session_format || null,
-      certifications: trainerMeta.certifications.trim() || null,
-      breeds: trainerMeta.breeds.trim() || null,
-    } : null
 
     const res = await fetch('/api/providers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        ...form,
+        name: form.name,
+        whatsapp: form.whatsapp,
         category_slug: form.category_slugs[0],
-        lat: pin.lat,
-        lng: pin.lng,
-        photo_urls: photoUrls,
-        metadata,
-        is_emergency: form.is_emergency,
+        category_slugs: form.category_slugs,
+        area: form.area,
+        address: form.area + ', Mumbai',
+        photo_urls: photoUrl ? [photoUrl] : [],
+        // Defaults — provider completes these in setup wizard after approval
+        price_min: null,
+        price_max: null,
+        bio: null,
+        lat: 19.1075, // Juhu centre — provider refines in edit
+        lng: 72.8263,
       }),
     })
+
     setSubmitting(false)
     if (res.ok) {
       router.push(`/join/success?name=${encodeURIComponent(form.name)}`)
     } else {
       const err = await res.json().catch(() => ({}))
-      setSubmitError(err.error ?? 'Something went wrong. Please try again or WhatsApp us.')
+      setSubmitError(err.error ?? 'Something went wrong. Please try again.')
     }
   }
 
+  const canNext0 = form.name.trim().length >= 2 && form.whatsapp.replace(/\D/g, '').length >= 10
+  const canNext1 = form.category_slugs.length > 0 && form.area.length > 0
+  const canSubmit = canNext0 && canNext1
+
   return (
-    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
-      <div className="max-w-xl mx-auto pb-12">
-        <h1 className="text-2xl font-bold mb-1">List your service</h1>
-        <p className="text-muted-foreground text-sm mb-8">
-          Free forever. Takes 5 minutes. We&apos;ll review and go live within 24 hours.
+    <div className="max-w-md mx-auto py-10 px-4 pb-20">
+
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-5">
+          {STEPS.map((s, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                  i < step ? 'bg-emerald-500 text-white' :
+                  i === step ? 'bg-[var(--pl-teal)] text-white' :
+                  'bg-slate-100 text-slate-400'
+                }`}
+              >
+                {i < step ? '✓' : i + 1}
+              </div>
+              <span className={`text-xs font-medium hidden sm:block ${i === step ? 'text-slate-900' : 'text-slate-400'}`}>
+                {s}
+              </span>
+              {i < STEPS.length - 1 && <div className="w-6 h-px bg-slate-200 mx-1" />}
+            </div>
+          ))}
+        </div>
+
+        <h1 className="text-2xl font-bold text-slate-900 leading-tight">
+          {step === 0 ? 'Tell us about yourself' : 'What do you offer?'}
+        </h1>
+        <p className="text-sm text-slate-500 mt-1">
+          {step === 0
+            ? 'Takes 2 minutes. Free forever. We review and call you within 24 hours.'
+            : 'Select your services and area. You\'ll complete your full profile after approval.'}
         </p>
+      </div>
 
-        {submitError && (
-          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600 mb-2">
-            {submitError}
+      {submitError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600 mb-5">
+          {submitError}
+        </div>
+      )}
+
+      {/* Step 0 — Identity */}
+      {step === 0 && (
+        <div className="flex flex-col gap-5">
+
+          {/* Photo — optional, first thing so it's social */}
+          <div className="flex items-center gap-4">
+            <div
+              onClick={() => fileRef.current?.click()}
+              className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-[var(--pl-teal)] transition-colors overflow-hidden flex-shrink-0 bg-slate-50"
+            >
+              {photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+              ) : uploading ? (
+                <span className="text-sm text-slate-400">…</span>
+              ) : (
+                <>
+                  <span className="text-2xl mb-0.5">📷</span>
+                  <span className="text-[10px] font-medium text-slate-400">Add photo</span>
+                </>
+              )}
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-slate-800">Profile photo</p>
+              <p className="text-xs text-slate-500 mt-0.5 leading-snug">
+                Optional but recommended — providers with photos get 3× more contacts.
+              </p>
+            </div>
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
           </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">Your name *</label>
+            <label className="block text-sm font-medium mb-1.5 text-slate-700">Your name *</label>
             <input
               required
+              autoFocus
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={e => setForm({ ...form, name: e.target.value })}
               className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
               placeholder="Ravi Kumar"
             />
           </div>
 
-          {/* Business name */}
+          {/* WhatsApp */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">Business name (optional)</label>
-            <input
-              value={form.business_name}
-              onChange={(e) => setForm({ ...form, business_name: e.target.value })}
-              className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
-              placeholder="Ravi&apos;s Dog Walk"
-            />
+            <label className="block text-sm font-medium mb-1.5 text-slate-700">WhatsApp number *</label>
+            <div className="flex items-center border border-border rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-[var(--pl-teal)] bg-white gap-2">
+              <span className="text-sm text-slate-400 font-medium">+91</span>
+              <input
+                required
+                type="tel"
+                value={form.whatsapp}
+                onChange={e => setForm({ ...form, whatsapp: e.target.value })}
+                className="flex-1 text-sm outline-none bg-transparent"
+                placeholder="98765 43210"
+              />
+            </div>
+            <p className="text-xs text-slate-400 mt-1.5">Pet owners will reach you here. Shown on your profile.</p>
           </div>
 
-          {/* Service type — multi-select chips */}
+          <button
+            type="button"
+            disabled={!canNext0}
+            onClick={() => setStep(1)}
+            className="w-full py-4 rounded-2xl font-bold text-sm transition-all disabled:opacity-40 mt-2"
+            style={{
+              background: canNext0 ? 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)' : '#F1F5F9',
+              color: canNext0 ? '#451A03' : '#94A3B8',
+              boxShadow: canNext0 ? '0 4px 0px rgba(120,53,15,0.28)' : 'none',
+            }}
+          >
+            Continue →
+          </button>
+        </div>
+      )}
+
+      {/* Step 1 — Services + Area */}
+      {step === 1 && (
+        <div className="flex flex-col gap-5">
+
+          {/* Service type */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">
-              Service type * <span className="text-muted-foreground font-normal">(select all that apply)</span>
+            <label className="block text-sm font-medium mb-2 text-slate-700">
+              What services do you offer? * <span className="text-muted-foreground font-normal">(select all that apply)</span>
             </label>
             <div className="flex flex-wrap gap-2">
-              {SERVICE_CATEGORIES.map((c) => {
+              {SERVICE_CATEGORIES.map(c => {
                 const selected = form.category_slugs.includes(c.slug)
                 return (
                   <button
                     key={c.slug}
                     type="button"
                     onClick={() => toggleCategory(c.slug)}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium border transition-all ${
-                      selected
-                        ? 'text-white border-transparent'
-                        : 'bg-white text-foreground border-border hover:border-[var(--pl-teal)]'
+                    className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-sm font-medium border transition-all ${
+                      selected ? 'text-white border-transparent' : 'bg-white text-foreground border-border hover:border-[var(--pl-teal)]'
                     }`}
-                    style={selected ? { backgroundColor: 'var(--pl-teal)', borderColor: 'var(--pl-teal)' } : {}}
+                    style={selected ? { backgroundColor: 'var(--pl-teal)' } : {}}
                   >
                     <span>{c.icon}</span>
                     <span>{c.name}</span>
@@ -189,313 +244,60 @@ export default function JoinPage() {
                 )
               })}
             </div>
-            {form.category_slugs.length === 0 && (
-              <p className="text-xs text-red-500 mt-1.5">Please select at least one service type.</p>
-            )}
           </div>
 
-          {/* WhatsApp */}
+          {/* Area */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">WhatsApp number *</label>
-            <input
+            <label className="block text-sm font-medium mb-1.5 text-slate-700">Your area *</label>
+            <select
               required
-              type="tel"
-              value={form.whatsapp}
-              onChange={(e) => setForm({ ...form, whatsapp: e.target.value })}
+              value={form.area}
+              onChange={e => setForm({ ...form, area: e.target.value })}
               className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
-              placeholder="98765 43210"
-            />
+            >
+              <option value="">Select your area</option>
+              {MUMBAI_AREAS.map(a => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </select>
           </div>
 
-          {/* Phone */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Phone (optional)</label>
-            <input
-              type="tel"
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
-              placeholder="98765 43210"
-            />
-          </div>
-
-          {/* Address — plain text */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Your address / area *</label>
-            <input
-              required
-              type="text"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-              className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
-              placeholder="e.g. JVPD Scheme, Juhu, Mumbai 400049"
-            />
-            <p className="text-xs text-muted-foreground mt-1.5">
-              Then tap the map below to drop your pin.
+          {/* Trust note */}
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <p className="text-xs text-amber-800 leading-relaxed">
+              📋 <strong>What happens next:</strong> We review your application and WhatsApp you within 24 hours. After approval, you'll get a link to complete your full profile — pricing, bio, hours, and more.
             </p>
           </div>
 
-          {/* Map — tap to drop pin */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-sm font-medium">Pin your location on the map *</label>
-              {pinPlaced && (
-                <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                  ✓ Pin placed
-                </span>
-              )}
-            </div>
-            <div className={`relative h-52 rounded-xl overflow-hidden border-2 transition-colors ${pinPlaced ? 'border-emerald-400' : 'border-dashed border-amber-400'}`}>
-              <Map
-                defaultCenter={JUHU_CENTER}
-                defaultZoom={15}
-                mapId="2e772a5d74f171be6814c0ca"
-                className="w-full h-full"
-                gestureHandling="greedy"
-                onClick={(e) => {
-                  if (e.detail.latLng) {
-                    setPin(e.detail.latLng)
-                    setPinPlaced(true)
-                  }
-                }}
-              >
-                <AdvancedMarker position={pin} />
-              </Map>
-              {/* Overlay hint — only shown before pin is placed */}
-              {!pinPlaced && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="bg-amber-400 text-amber-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-bounce">
-                    👆 Tap to drop your pin
-                  </div>
-                </div>
-              )}
-            </div>
-            {pinPlaced && (
-              <p className="text-xs text-slate-400 mt-1.5">
-                📍 {pin.lat.toFixed(5)}, {pin.lng.toFixed(5)} · tap again to adjust
-              </p>
-            )}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setStep(0)}
+              className="px-5 py-4 rounded-2xl font-semibold text-sm border border-border text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              ← Back
+            </button>
+            <button
+              type="button"
+              disabled={!canSubmit || submitting}
+              onClick={handleSubmit}
+              className="flex-1 py-4 rounded-2xl font-bold text-sm transition-all disabled:opacity-40"
+              style={{
+                background: canSubmit ? 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)' : '#F1F5F9',
+                color: canSubmit ? '#451A03' : '#94A3B8',
+                boxShadow: canSubmit ? '0 4px 0px rgba(120,53,15,0.28)' : 'none',
+              }}
+            >
+              {submitting ? 'Submitting…' : "Submit — it's free 🐾"}
+            </button>
           </div>
+        </div>
+      )}
 
-          {/* Pricing */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Min price (₹)</label>
-              <input
-                type="number"
-                value={form.price_min}
-                onChange={(e) => setForm({ ...form, price_min: e.target.value })}
-                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
-                placeholder="300"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Max price (₹)</label>
-              <input
-                type="number"
-                value={form.price_max}
-                onChange={(e) => setForm({ ...form, price_max: e.target.value })}
-                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
-                placeholder="600"
-              />
-            </div>
-          </div>
-
-          {/* Hours */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Opens at</label>
-              <input
-                type="time"
-                value={form.hours_from}
-                onChange={(e) => setForm({ ...form, hours_from: e.target.value })}
-                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Closes at</label>
-              <input
-                type="time"
-                value={form.hours_to}
-                onChange={(e) => setForm({ ...form, hours_to: e.target.value })}
-                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
-              />
-            </div>
-          </div>
-
-          {/* Emergency tag — vets only */}
-          {form.category_slugs.includes('vet') && (
-            <label className="flex items-start gap-3 cursor-pointer group">
-              <input
-                type="checkbox"
-                checked={form.is_emergency}
-                onChange={(e) => setForm({ ...form, is_emergency: e.target.checked })}
-                className="mt-0.5 w-4 h-4 rounded accent-[var(--pl-teal)]"
-              />
-              <div>
-                <p className="text-sm font-medium text-foreground">We offer 24hr / emergency services</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Tick this only if you genuinely have emergency or after-hours availability.
-                  This helps pet owners find you during urgent situations.
-                </p>
-              </div>
-            </label>
-          )}
-
-          {/* Bio */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Short bio (max 200 chars)</label>
-            <textarea
-              maxLength={200}
-              value={form.bio}
-              onChange={(e) => setForm({ ...form, bio: e.target.value })}
-              className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] resize-none bg-white"
-              rows={3}
-              placeholder="I&apos;ve walked 50+ dogs in Juhu for 3 years. Trained in basic pet first aid."
-            />
-            <p className="text-xs text-muted-foreground mt-1 text-right">{form.bio.length}/200</p>
-          </div>
-
-          {/* ── Trainer-specific fields (shown only when Dog Training selected) ── */}
-          {isTrainer && (
-            <div className="flex flex-col gap-5 border border-border rounded-2xl p-5 bg-white">
-              <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                🎯 Dog Trainer details
-                <span className="text-xs font-normal text-muted-foreground">helps owners find the right fit</span>
-              </p>
-
-              {/* Training methods */}
-              <div>
-                <label className="block text-sm font-medium mb-1.5">
-                  Training method <span className="text-muted-foreground font-normal">(select all that apply)</span>
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {['Positive Reinforcement', 'Clicker Training', 'Balanced', 'Board & Train'].map((m) => {
-                    const selected = trainerMeta.training_methods.includes(m)
-                    return (
-                      <button
-                        key={m} type="button"
-                        onClick={() => toggleChip(trainerMeta.training_methods, m, (fn) => setTrainerMeta(p => ({ ...p, training_methods: fn(p.training_methods) })))}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${selected ? 'text-white border-transparent' : 'bg-white text-foreground border-border hover:border-[var(--pl-teal)]'}`}
-                        style={selected ? { backgroundColor: 'var(--pl-teal)' } : {}}
-                      >{m}</button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Specialisations */}
-              <div>
-                <label className="block text-sm font-medium mb-1.5">
-                  I specialise in <span className="text-muted-foreground font-normal">(select all that apply)</span>
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {['Puppy Training', 'Basic Obedience', 'Aggression Rehab', 'Separation Anxiety', 'Competitive Obedience', 'Trick Training'].map((s) => {
-                    const selected = trainerMeta.specialisations.includes(s)
-                    return (
-                      <button
-                        key={s} type="button"
-                        onClick={() => toggleChip(trainerMeta.specialisations, s, (fn) => setTrainerMeta(p => ({ ...p, specialisations: fn(p.specialisations) })))}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${selected ? 'text-white border-transparent' : 'bg-white text-foreground border-border hover:border-[var(--pl-teal)]'}`}
-                        style={selected ? { backgroundColor: 'var(--pl-teal)' } : {}}
-                      >{s}</button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Session format */}
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Session format</label>
-                <div className="flex flex-wrap gap-2">
-                  {['Home visits', 'Training centre', 'Group classes', 'Online'].map((f) => {
-                    const selected = trainerMeta.session_format === f
-                    return (
-                      <button
-                        key={f} type="button"
-                        onClick={() => setTrainerMeta(p => ({ ...p, session_format: selected ? '' : f }))}
-                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${selected ? 'text-white border-transparent' : 'bg-white text-foreground border-border hover:border-[var(--pl-teal)]'}`}
-                        style={selected ? { backgroundColor: 'var(--pl-teal)' } : {}}
-                      >{f}</button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Breeds */}
-              <div>
-                <label className="block text-sm font-medium mb-1.5">
-                  Breeds you work with <span className="text-muted-foreground font-normal">(optional)</span>
-                </label>
-                <input
-                  value={trainerMeta.breeds}
-                  onChange={(e) => setTrainerMeta(p => ({ ...p, breeds: e.target.value }))}
-                  className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
-                  placeholder="Labrador, German Shepherd, Golden Retriever..."
-                />
-              </div>
-
-              {/* Certifications */}
-              <div>
-                <label className="block text-sm font-medium mb-1.5">
-                  Certifications <span className="text-muted-foreground font-normal">(optional)</span>
-                </label>
-                <input
-                  value={trainerMeta.certifications}
-                  onChange={(e) => setTrainerMeta(p => ({ ...p, certifications: e.target.value }))}
-                  className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
-                  placeholder="CPDT-KA, KPA-CTP..."
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Photos */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Photos (up to 3)</label>
-            <p className="text-xs text-muted-foreground mb-2">First photo will be your profile picture</p>
-            <div className="flex gap-3 flex-wrap">
-              {photoUrls.map((url, i) => (
-                <div key={i} className="w-20 h-20 rounded-xl overflow-hidden border border-border">
-                  <img src={url} alt="" className="w-full h-full object-cover" />
-                </div>
-              ))}
-              {photoUrls.length < 3 && (
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  disabled={uploading}
-                  className="w-20 h-20 rounded-xl border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-2xl hover:border-[var(--pl-teal)] transition-colors"
-                >
-                  {uploading ? '…' : '+'}
-                </button>
-              )}
-            </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handlePhotoUpload}
-            />
-          </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={submitting || uploading || form.category_slugs.length === 0}
-            className="w-full text-white py-4 rounded-2xl font-semibold text-base transition-colors disabled:opacity-50"
-            style={{ backgroundColor: 'var(--pl-teal)' }}
-          >
-            {submitting ? 'Submitting…' : "Submit for review — it's free"}
-          </button>
-
-          <p className="text-xs text-center text-muted-foreground">
-            We review every listing manually. You&apos;ll hear from us on WhatsApp within 24 hours.
-          </p>
-        </form>
-      </div>
-    </APIProvider>
+      <p className="text-xs text-center text-slate-400 mt-6">
+        Already listed?{' '}
+        <a href="/my-listing" className="underline hover:text-slate-600">Access your dashboard →</a>
+      </p>
+    </div>
   )
 }

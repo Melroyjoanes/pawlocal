@@ -169,22 +169,38 @@ export default function CategoryPage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: EASE_OUT_QUART }}
-          className="py-20 text-center"
+          className="py-10 flex flex-col items-center"
         >
-          <p className="text-muted-foreground mb-4">
-            {emergencyOnly
-              ? 'No 24hr / emergency vets listed yet.'
-              : 'No providers listed yet in this area.'}
+          <p className="text-3xl mb-3">🔍</p>
+          <p className="font-semibold text-slate-800 mb-1">
+            {emergencyOnly ? 'No 24hr / emergency vets listed yet.' : `No ${category.name.toLowerCase()}s listed in ${neighbourhood} yet.`}
           </p>
-          {!emergencyOnly && (
+          <p className="text-sm text-slate-500 mb-6 text-center max-w-xs">
+            {emergencyOnly
+              ? 'Try removing the emergency filter to see all vets.'
+              : 'Post a free broadcast — providers nearby will reach out to you directly.'}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
+            {!emergencyOnly && (
+              <a
+                href="/broadcast"
+                className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm transition-all"
+                style={{
+                  background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+                  color: '#451A03',
+                  boxShadow: '0 4px 0px rgba(120,53,15,0.22)',
+                }}
+              >
+                📣 Post a request
+              </a>
+            )}
             <a
               href="/join"
-              className="text-sm font-medium transition-colors hover:opacity-80"
-              style={{ color: 'var(--pl-teal)' }}
+              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-sm border border-border text-slate-700 hover:bg-muted transition-colors"
             >
-              Be the first to list →
+              List your service →
             </a>
-          )}
+          </div>
         </motion.div>
       ) : (
         <AnimatePresence mode="wait">
@@ -211,6 +227,34 @@ export default function CategoryPage() {
                   <ProviderCard provider={p} category={category} />
                 </motion.div>
               ))}
+
+              {/* Broadcast CTA — always shown after the list */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, ease: EASE_OUT_QUART, delay: 0.3 }}
+                className="rounded-2xl border-2 border-dashed border-amber-200 bg-amber-50 p-5 flex flex-col sm:flex-row sm:items-center gap-4"
+              >
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-amber-900 mb-1">
+                    📣 Can't find the right {category.name.toLowerCase()}?
+                  </p>
+                  <p className="text-xs text-amber-700 leading-relaxed">
+                    Post a free request — verified providers near you reply on WhatsApp. No booking fee, no middleman.
+                  </p>
+                </div>
+                <a
+                  href="/broadcast"
+                  className="flex-shrink-0 flex items-center justify-center gap-1.5 px-5 py-3 rounded-xl font-bold text-sm transition-all"
+                  style={{
+                    background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+                    color: '#451A03',
+                    boxShadow: '0 4px 0px rgba(120,53,15,0.2)',
+                  }}
+                >
+                  Post a request →
+                </a>
+              </motion.div>
             </motion.div>
           ) : (
             <motion.div

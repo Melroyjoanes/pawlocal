@@ -4,8 +4,15 @@ import { getCategoryBySlug } from '@/lib/categories'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
 import EditProviderClient from './EditProviderClient'
 
-export default async function EditProviderPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditProviderPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ setup?: string }>
+}) {
   const { id } = await params
+  const { setup } = await searchParams
   const supabase = await createClient()
 
   const { data } = await supabase
@@ -21,5 +28,5 @@ export default async function EditProviderPage({ params }: { params: Promise<{ i
   const category = getCategoryBySlug(provider.category_slug)
   if (!category) notFound()
 
-  return <EditProviderClient provider={provider} category={category} />
+  return <EditProviderClient provider={provider} category={category} setupMode={setup === '1'} />
 }

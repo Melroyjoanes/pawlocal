@@ -8,14 +8,24 @@ import type { CategoryConfig } from '@/lib/categories'
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
+const SETUP_STEPS = [
+  { key: 'photo',    label: 'Profile photo', icon: '📷', tip: 'Providers with photos get 3× more contacts' },
+  { key: 'bio',      label: 'About you',     icon: '✍️',  tip: 'Tell pet owners why they should trust you' },
+  { key: 'pricing',  label: 'Pricing',       icon: '💰',  tip: '70% of pet owners filter by price first' },
+]
+
 export default function EditProviderClient({
   provider,
   category,
+  setupMode = false,
 }: {
   provider: ProviderWithPhotos
   category: CategoryConfig
+  setupMode?: boolean
 }) {
   const router = useRouter()
+  const [setupStep, setSetupStep] = useState(0) // only used in setupMode
+  const [setupDone, setSetupDone] = useState(false)
 
   // ── Edit form state ──────────────────────────────────────────
   const [priceMin, setPriceMin]     = useState(provider.price_min?.toString() ?? '')
@@ -110,6 +120,255 @@ export default function EditProviderClient({
   function toggleDay(day: string) {
     setWorkingDays(prev =>
       prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    )
+  }
+
+  // ── Render: setup wizard (shown after claiming) ──────────────
+  if (setupMode && !setupDone) {
+    const profileUrl = `https://pawlocal.in/provider/${provider.id}`
+    const waShareUrl = `https://wa.me/?text=${encodeURIComponent(
+      `Hi! I just listed my ${category.name.toLowerCase()} services on PawLocal 🐾\nCheck my profile: ${profileUrl}`
+    )}`
+
+    if (setupStep === SETUP_STEPS.length) {
+      // Done screen — share your profile
+      return (
+        <div className="max-w-md mx-auto py-14 px-4 text-center">
+          <div className="text-5xl mb-4">🎉</div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">You're all set!</h1>
+          <p className="text-sm text-slate-500 mb-8 leading-relaxed">
+            Your profile is live on PawLocal. Share it on WhatsApp — your first customer is one message away.
+          </p>
+
+          {/* Profile link */}
+          <div className="bg-white border border-border rounded-2xl p-5 mb-5 text-left">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Your profile link</p>
+            <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-4 py-3">
+              <a
+                href={`/provider/${provider.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-[var(--pl-teal)] underline underline-offset-2 flex-1 truncate"
+              >
+                pawlocal.in/provider/{provider.id.slice(0, 8)}…
+              </a>
+              <button
+                type="button"
+                onClick={() => navigator.clipboard.writeText(profileUrl).then(() => alert('Link copied!'))}
+                className="text-xs text-slate-400 hover:text-slate-700 transition-colors flex-shrink-0"
+              >
+                📋 Copy
+              </button>
+            </div>
+          </div>
+
+          {/* Share CTA */}
+          <a
+            href={waShareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white rounded-2xl py-4 font-bold text-sm mb-4 transition-colors"
+          >
+            💬 Share on WhatsApp
+          </a>
+
+          <button
+            type="button"
+            onClick={() => router.push(`/provider/${provider.id}/dashboard`)}
+            className="w-full py-3.5 rounded-2xl font-semibold text-sm border border-border text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            Go to my dashboard →
+          </button>
+        </div>
+      )
+    }
+
+    const currentStep = SETUP_STEPS[setupStep]
+
+    return (
+      <div className="max-w-md mx-auto py-10 px-4">
+
+        {/* Progress indicator */}
+        <div className="flex items-center gap-2 mb-8">
+          {SETUP_STEPS.map((s, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
+                  i < setupStep ? 'bg-emerald-500 text-white' :
+                  i === setupStep ? 'bg-[var(--pl-teal)] text-white' :
+                  'bg-slate-100 text-slate-400'
+                }`}
+              >
+                {i < setupStep ? '✓' : s.icon}
+              </div>
+              {i < SETUP_STEPS.length - 1 && (
+                <div className={`w-8 h-0.5 ${i < setupStep ? 'bg-emerald-400' : 'bg-slate-200'}`} />
+              )}
+            </div>
+          ))}
+          <span className="ml-auto text-xs text-slate-400">{setupStep + 1} of {SETUP_STEPS.length}</span>
+        </div>
+
+        <div className="mb-1">
+          <span className="text-xs font-bold uppercase tracking-widest text-[var(--pl-teal)]">Setup</span>
+        </div>
+        <h1 className="text-2xl font-bold text-slate-900 mb-1">{currentStep.label}</h1>
+        <p className="text-sm text-slate-500 mb-7">💡 {currentStep.tip}</p>
+
+        {/* Step: Photo */}
+        {setupStep === 0 && (
+          <div className="flex flex-col gap-5">
+            <div className="bg-white border border-border rounded-2xl p-5">
+              <div className="flex gap-3 flex-wrap mb-4">
+                {photos.map((photo, i) => (
+                  <div key={photo.id} className="relative w-24 h-24 rounded-xl overflow-hidden border border-border group">
+                    <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                    {i === 0 && (
+                      <span className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[9px] text-center py-0.5 font-semibold">Profile</span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhoto(photo.id)}
+                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] hidden group-hover:flex items-center justify-center"
+                    >✕</button>
+                  </div>
+                ))}
+                {photos.length < 3 && (
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    disabled={uploading}
+                    className="w-24 h-24 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center text-slate-400 hover:border-[var(--pl-teal)] hover:text-[var(--pl-teal)] transition-colors gap-1"
+                  >
+                    <span className="text-2xl">{uploading ? '…' : '+'}</span>
+                    <span className="text-[10px] font-medium">Add photo</span>
+                  </button>
+                )}
+              </div>
+              <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
+              {photoErr && <p className="text-xs text-red-500">{photoErr}</p>}
+            </div>
+            <div className="flex gap-3">
+              {photos.length === 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSetupStep(s => s + 1)}
+                  className="flex-1 py-3.5 rounded-2xl text-sm font-medium text-slate-500 border border-border hover:bg-slate-50 transition-colors"
+                >
+                  Skip for now
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setSetupStep(s => s + 1)}
+                disabled={uploading}
+                className="flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all"
+                style={{
+                  background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+                  color: '#451A03',
+                  boxShadow: '0 4px 0px rgba(120,53,15,0.28)',
+                }}
+              >
+                {photos.length > 0 ? 'Continue →' : 'Continue →'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step: Bio */}
+        {setupStep === 1 && (
+          <div className="flex flex-col gap-5">
+            <div className="bg-white border border-border rounded-2xl p-5">
+              <textarea
+                value={bio}
+                onChange={e => setBio(e.target.value)}
+                rows={5}
+                placeholder={`E.g. "I've been walking dogs in ${category.name === 'Dog Walking' ? 'Juhu' : 'Mumbai'} for 3 years. I treat every pet like my own — gentle, reliable, and always on time."`}
+                maxLength={800}
+                className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-400"
+              />
+              <p className="text-xs text-slate-400 mt-1.5 text-right">{bio.length}/800</p>
+            </div>
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setSetupStep(s => s - 1)} className="px-5 py-3.5 rounded-2xl text-sm border border-border text-slate-600 hover:bg-slate-50 transition-colors">← Back</button>
+              <button
+                type="button"
+                onClick={() => setSetupStep(s => s + 1)}
+                className="flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all"
+                style={{ background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)', color: '#451A03', boxShadow: '0 4px 0px rgba(120,53,15,0.28)' }}
+              >
+                {bio.trim() ? 'Continue →' : 'Skip for now →'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step: Pricing */}
+        {setupStep === 2 && (
+          <div className="flex flex-col gap-5">
+            <div className="bg-white border border-border rounded-2xl p-5 flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Min price (₹)</label>
+                  <input type="number" value={priceMin} onChange={e => setPriceMin(e.target.value)} placeholder="300" className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">Max price (₹)</label>
+                  <input type="number" value={priceMax} onChange={e => setPriceMax(e.target.value)} placeholder="600" className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Price unit</label>
+                <select value={priceUnit} onChange={e => setPriceUnit(e.target.value)} className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white">
+                  <option>per session</option>
+                  <option>per hour</option>
+                  <option>per visit</option>
+                  <option>per month</option>
+                  <option>per day</option>
+                  <option>per grooming</option>
+                  <option>per consultation</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setSetupStep(s => s - 1)} className="px-5 py-3.5 rounded-2xl text-sm border border-border text-slate-600 hover:bg-slate-50 transition-colors">← Back</button>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={async () => {
+                  setSaving(true)
+                  const res = await fetch('/api/provider/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      id: provider.id,
+                      whatsapp: provider.whatsapp,
+                      updates: {
+                        bio: bio.trim() || null,
+                        price_min: priceMin ? Number(priceMin) : null,
+                        price_max: priceMax ? Number(priceMax) : null,
+                        price_unit: priceUnit,
+                      },
+                    }),
+                  })
+                  setSaving(false)
+                  if (res.ok) {
+                    setSetupStep(SETUP_STEPS.length) // done screen
+                  } else {
+                    const json = await res.json()
+                    setSaveErr(json.error ?? 'Could not save')
+                  }
+                }}
+                className="flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all disabled:opacity-50"
+                style={{ background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)', color: '#451A03', boxShadow: '0 4px 0px rgba(120,53,15,0.28)' }}
+              >
+                {saving ? 'Saving…' : 'Save & finish 🎉'}
+              </button>
+            </div>
+            {saveErr && <p className="text-sm text-red-500 bg-red-50 rounded-xl px-4 py-2.5">{saveErr}</p>}
+          </div>
+        )}
+      </div>
     )
   }
 
