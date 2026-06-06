@@ -6,34 +6,51 @@ import type { User } from '@supabase/supabase-js'
 
 export default function AuthNavItem() {
   const [user, setUser] = useState<User | null>(null)
+  const [isProvider, setIsProvider] = useState(false)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
-    // Get initial session
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
+
+    async function load(u: User | null) {
+      setUser(u)
+      if (u?.email) {
+        // Check if this user is an approved provider — single indexed query
+        const { data } = await supabase
+          .from('providers')
+          .select('id')
+          .eq('email', u.email)
+          .eq('status', 'approved')
+          .maybeSingle()
+        setIsProvider(!!data)
+      } else {
+        setIsProvider(false)
+      }
       setReady(true)
-    })
-    // Listen for changes (sign-in/out)
+    }
+
+    supabase.auth.getUser().then(({ data }) => load(data.user))
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+      load(session?.user ?? null)
     })
     return () => subscription.unsubscribe()
   }, [])
 
-  if (!ready) return null // avoid flash
+  if (!ready) return null
 
   if (user) {
     const avatar = user.user_metadata?.avatar_url ?? user.user_metadata?.picture
     const name = user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? ''
     const initials = name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+    // Providers go to their dashboard, pet owners go to account
+    const accountHref = isProvider ? '/pro/dashboard' : '/account'
 
     return (
       <a
-        href="/account"
+        href={accountHref}
         className="flex items-center gap-2 rounded-xl px-2.5 py-1.5 hover:bg-amber-50 transition-all"
-        title={name}
+        title={isProvider ? 'Provider dashboard' : name}
       >
         {avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -44,7 +61,7 @@ export default function AuthNavItem() {
           </div>
         )}
         <span className="text-sm font-medium text-slate-700 hidden sm:block max-w-[100px] truncate">
-          {name.split(' ')[0]}
+          {isProvider ? 'My dashboard' : name.split(' ')[0]}
         </span>
       </a>
     )
