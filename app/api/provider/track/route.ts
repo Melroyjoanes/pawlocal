@@ -8,27 +8,42 @@ function adminClient() {
   )
 }
 
+// Module-level dedup: key = "ip:provider_id:event_type:YYYY-MM-DD"
+// Prevents spam clicks from counting as multiple analytics events
+const recentEvents = new Map<string, number>()
+const DEDUP_WINDOW_MS = 30 * 60 * 1000 // 30 minutes
+
+function isDuplicate(ip: string, providerId: string, eventType: string): boolean {
+  const day = new Date().toISOString().slice(0, 10)
+  const key = `${ip}:${providerId}:${eventType}:${day}`
+  const last = recentEvents.get(key)
+  if (last && Date.now() - last < DEDUP_WINDOW_MS) return true
+  recentEvents.set(key, Date.now())
+  // Clean old entries every ~100 inserts to prevent memory leak
+  if (recentEvents.size > 5000) {
+    const cutoff = Date.now() - DEDUP_WINDOW_MS
+    for (const [k, v] of recentEvents.entries()) {
+      if (v < cutoff) recentEvents.delete(k)
+    }
+  }
+  return false
+}
+
 async function sendLeadEmail(providerId: string) {
   if (!process.env.RESEND_API_KEY) return
 
   const supabase = adminClient()
 
-  // Fetch provider + linked user
-  const { data: provider } = await supabase
-    .from('providers')
-    .select('id, name, category_slug, user_id, whatsapp')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: provider } = await (supabase.from('providers') as any)
+    .select('id, name, category_slug, email')
     .eq('id', providerId)
     .single()
 
-  if (!provider?.user_id) return // not claimed yet — can't email
+  if (!provider?.email) return // not claimed yet — can't email
 
-  // Get user's email from Supabase auth
-  const { data: { user } } = await supabase.auth.admin.getUserById(provider.user_id)
-  const email = user?.email
-  if (!email) return
-
-  const profileUrl = `https://pawlocal.in/provider/${providerId}`
-  const dashboardUrl = `https://pawlocal.in/provider/${providerId}/dashboard`
+  const profileUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app'}/provider/${providerId}`
+  const dashboardUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app'}/pro/dashboard`
 
   await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -38,7 +53,7 @@ async function sendLeadEmail(providerId: string) {
     },
     body: JSON.stringify({
       from: 'PawLocal <onboarding@resend.dev>',
-      to: email,
+      to: provider.email,
       subject: `🐾 Someone is interested in your services, ${provider.name.split(' ')[0]}!`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; background: #FFFBEB; padding: 32px 24px; border-radius: 24px;">
@@ -64,22 +79,20 @@ async function sendLeadEmail(providerId: string) {
             </ul>
           </div>
 
-          <div style="display: flex; gap: 12px; margin-bottom: 24px;">
-            <a href="${dashboardUrl}" style="flex: 1; display: block; text-align: center; background: linear-gradient(160deg, #FCD34D, #F59E0B); color: #451A03; font-weight: 700; font-size: 14px; padding: 14px; border-radius: 12px; text-decoration: none;">
-              View Dashboard →
-            </a>
-            <a href="${profileUrl}" style="flex: 1; display: block; text-align: center; background: white; color: #374151; font-weight: 600; font-size: 14px; padding: 14px; border-radius: 12px; text-decoration: none; border: 1px solid #E5E7EB;">
-              View Profile
-            </a>
-          </div>
+          <a href="${dashboardUrl}" style="display: block; text-align: center; background: oklch(0.48 0.17 196); color: white; font-weight: 700; font-size: 14px; padding: 14px; border-radius: 12px; text-decoration: none; margin-bottom: 12px;">
+            View Dashboard →
+          </a>
+          <a href="${profileUrl}" style="display: block; text-align: center; background: white; color: #374151; font-weight: 600; font-size: 14px; padding: 14px; border-radius: 12px; text-decoration: none; border: 1px solid #E5E7EB;">
+            View Profile
+          </a>
 
-          <p style="font-size: 12px; color: #9CA3AF; text-align: center; margin: 0;">
-            PawLocal · Juhu, Mumbai · <a href="${profileUrl}" style="color: #9CA3AF;">Unsubscribe</a>
+          <p style="font-size: 12px; color: #9CA3AF; text-align: center; margin-top: 20px; margin-bottom: 0;">
+            PawLocal · Juhu, Mumbai
           </p>
         </div>
       `,
     }),
-  }).catch(() => {}) // non-critical — don't fail the track event
+  }).catch(() => {})
 }
 
 export async function POST(req: NextRequest) {
@@ -88,6 +101,15 @@ export async function POST(req: NextRequest) {
 
     if (!provider_id || !['view', 'whatsapp_click', 'call_click'].includes(event_type)) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
+    }
+
+    // Get client IP for dedup
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      ?? req.headers.get('x-real-ip')
+      ?? 'unknown'
+
+    if (isDuplicate(ip, provider_id, event_type)) {
+      return NextResponse.json({ ok: true, deduped: true })
     }
 
     const supabase = adminClient()
@@ -101,7 +123,6 @@ export async function POST(req: NextRequest) {
 
     // Send lead notification email when someone clicks WhatsApp
     if (event_type === 'whatsapp_click') {
-      // Fire-and-forget — don't await, don't block the response
       sendLeadEmail(provider_id).catch(() => {})
     }
 

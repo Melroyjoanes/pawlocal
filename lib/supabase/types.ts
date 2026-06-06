@@ -142,9 +142,35 @@ export type WalkSession = {
   current_lng: number | null
   last_location_at: string | null
   walk_events: WalkEvent[]
+  distance_km: number | null
+  step_count: number | null
   started_at: string
   ended_at: string | null
   created_at: string
+}
+
+export type ProviderBooking = {
+  id: string
+  provider_id: string
+  date: string            // YYYY-MM-DD
+  service: string
+  owner_name: string
+  pet_name: string
+  duration_min: number
+  amount_inr: number
+  notes: string | null
+  created_at: string
+}
+
+export type ProviderBookingInsert = {
+  provider_id: string
+  date: string
+  service: string
+  owner_name?: string
+  pet_name?: string
+  duration_min?: number
+  amount_inr?: number
+  notes?: string | null
 }
 
 type GenericRelationship = {

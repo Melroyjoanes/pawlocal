@@ -51,7 +51,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // Detect /pro and /admin routes — they have their own isolated shells
   const headersList = await headers()
   const pathname = headersList.get('x-pathname') ?? ''
-  const isIsolated = pathname.startsWith('/pro') || pathname.startsWith('/admin')
+  const isIsolated = pathname.startsWith('/pro') || pathname.startsWith('/admin') || pathname.startsWith('/track')
 
   return (
     <html lang="en" className={`${inter.variable} ${dmSerif.variable}`}>

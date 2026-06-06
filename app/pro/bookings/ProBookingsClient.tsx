@@ -1,27 +1,28 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 type Booking = {
   id: string
-  date: string        // YYYY-MM-DD
+  date: string           // YYYY-MM-DD
   service: string
-  ownerName: string
-  petName: string
-  duration: number    // minutes
-  amount: number      // ₹
-  notes: string
+  owner_name: string
+  pet_name: string
+  duration_min: number
+  amount_inr: number
+  notes: string | null
+  created_at: string
 }
 
 const SERVICE_LABELS: Record<string, string> = {
-  'dog-walking': '🦮 Dog Walking',
-  'grooming': '✂️ Grooming',
-  'vet': '🏥 Vet Visit',
-  'pet-store': '🛒 Pet Store',
+  'dog-walking':  '🦮 Dog Walking',
+  'grooming':     '✂️ Grooming',
+  'vet':          '🏥 Vet Visit',
+  'pet-store':    '🛒 Pet Store',
   'dog-training': '🎓 Dog Training',
-  'insurance': '🛡 Insurance',
-  'other': '📌 Other',
+  'insurance':    '🛡 Insurance',
+  'other':        '📌 Other',
 }
 
 const EASE = [0.25, 0.46, 0.45, 0.94] as const
@@ -50,70 +51,87 @@ interface Props {
 }
 
 export default function ProBookingsClient({ providerId, firstName, categorySlugs }: Props) {
-  const STORAGE_KEY = `pawlocal_bookings_${providerId}`
-
   const [bookings, setBookings] = useState<Booking[]>([])
+  const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
     date: new Date().toISOString().split('T')[0],
     service: categorySlugs[0] ?? 'dog-walking',
-    ownerName: '',
-    petName: '',
-    duration: '60',
-    amount: '',
+    owner_name: '',
+    pet_name: '',
+    duration_min: '60',
+    amount_inr: '',
     notes: '',
   })
 
-  // Load from localStorage on mount
-  useEffect(() => {
+  // ─── Load bookings from API ───────────────────────────────────────────────
+
+  const loadBookings = useCallback(async () => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) setBookings(JSON.parse(raw))
-    } catch { /* empty */ }
-  }, [STORAGE_KEY])
+      const res = await fetch('/api/pro/bookings')
+      if (res.ok) {
+        const data = await res.json()
+        setBookings(Array.isArray(data) ? data : [])
+      }
+    } catch { /* silent */ }
+    setLoading(false)
+  }, [])
 
-  function save(updated: Booking[]) {
-    setBookings(updated)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-  }
+  useEffect(() => { loadBookings() }, [loadBookings])
 
-  function handleSubmit(e: React.FormEvent) {
+  // ─── Submit new booking ───────────────────────────────────────────────────
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSaving(true)
-    const booking: Booking = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      date: form.date,
-      service: form.service,
-      ownerName: form.ownerName.trim(),
-      petName: form.petName.trim(),
-      duration: parseInt(form.duration, 10) || 0,
-      amount: parseFloat(form.amount) || 0,
-      notes: form.notes.trim(),
-    }
-    const updated = [booking, ...bookings]
-    save(updated)
-    setForm({
-      date: new Date().toISOString().split('T')[0],
-      service: categorySlugs[0] ?? 'dog-walking',
-      ownerName: '', petName: '', duration: '60', amount: '', notes: '',
-    })
-    setShowForm(false)
+    try {
+      const res = await fetch('/api/pro/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: form.date,
+          service: form.service,
+          owner_name: form.owner_name.trim(),
+          pet_name: form.pet_name.trim(),
+          duration_min: parseInt(form.duration_min, 10) || 0,
+          amount_inr: parseFloat(form.amount_inr) || 0,
+          notes: form.notes.trim() || null,
+        }),
+      })
+      if (res.ok) {
+        const booking = await res.json()
+        setBookings(prev => [booking, ...prev])
+        setForm({
+          date: new Date().toISOString().split('T')[0],
+          service: categorySlugs[0] ?? 'dog-walking',
+          owner_name: '', pet_name: '', duration_min: '60', amount_inr: '', notes: '',
+        })
+        setShowForm(false)
+      }
+    } catch { /* silent */ }
     setSaving(false)
   }
 
-  function deleteBooking(id: string) {
-    save(bookings.filter(b => b.id !== id))
+  // ─── Delete booking ───────────────────────────────────────────────────────
+
+  async function deleteBooking(id: string) {
+    setBookings(prev => prev.filter(b => b.id !== id))
+    try {
+      await fetch(`/api/pro/bookings/${id}`, { method: 'DELETE' })
+    } catch { /* silent — optimistic delete */ }
   }
 
-  // Monthly stats
+  // ─── Stats ────────────────────────────────────────────────────────────────
+
   const mk = thisMonthKey()
   const thisMonth = bookings.filter(b => b.date.startsWith(mk))
-  const monthlyEarnings = thisMonth.reduce((s, b) => s + b.amount, 0)
+  const monthlyEarnings = thisMonth.reduce((s, b) => s + b.amount_inr, 0)
   const monthlyCount = thisMonth.length
-  const monthlyHours = Math.round(thisMonth.reduce((s, b) => s + b.duration, 0) / 60 * 10) / 10
+  const monthlyHours = Math.round(thisMonth.reduce((s, b) => s + b.duration_min, 0) / 60 * 10) / 10
 
-  // Group by month for display
+  // ─── Grouping ─────────────────────────────────────────────────────────────
+
   const grouped: Record<string, Booking[]> = {}
   for (const b of bookings) {
     const key = b.date.slice(0, 7)
@@ -121,6 +139,8 @@ export default function ProBookingsClient({ providerId, firstName, categorySlugs
     grouped[key].push(b)
   }
   const monthKeys = Object.keys(grouped).sort((a, b) => b.localeCompare(a))
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-dvh bg-stone-50 pb-24">
@@ -174,7 +194,13 @@ export default function ProBookingsClient({ providerId, firstName, categorySlugs
         </motion.div>
 
         {/* Booking list */}
-        {bookings.length === 0 ? (
+        {loading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white rounded-2xl border border-border p-4 animate-pulse h-20" />
+            ))}
+          </div>
+        ) : bookings.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -203,7 +229,7 @@ export default function ProBookingsClient({ providerId, firstName, categorySlugs
               <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-3">
                 {monthLabel(grouped[mk][0].date)}
                 <span className="ml-2 font-normal normal-case text-stone-400">
-                  · ₹{grouped[mk].reduce((s, b) => s + b.amount, 0).toLocaleString('en-IN')} earned
+                  · ₹{grouped[mk].reduce((s, b) => s + b.amount_inr, 0).toLocaleString('en-IN')} earned
                 </span>
               </p>
               <div className="space-y-2">
@@ -220,17 +246,17 @@ export default function ProBookingsClient({ providerId, firstName, categorySlugs
                         <span className="text-xs text-stone-400">{formatDate(b.date)}</span>
                       </div>
                       <div className="flex items-center gap-3 text-sm">
-                        {b.petName && <span className="font-medium text-stone-800">🐾 {b.petName}</span>}
-                        {b.ownerName && <span className="text-stone-500">{b.ownerName}</span>}
+                        {b.pet_name && <span className="font-medium text-stone-800">🐾 {b.pet_name}</span>}
+                        {b.owner_name && <span className="text-stone-500">{b.owner_name}</span>}
                       </div>
                       <div className="flex items-center gap-3 mt-1 text-xs text-stone-400">
-                        {b.duration > 0 && <span>⏱ {b.duration} min</span>}
+                        {b.duration_min > 0 && <span>⏱ {b.duration_min} min</span>}
                         {b.notes && <span className="truncate">{b.notes}</span>}
                       </div>
                     </div>
                     <div className="flex-shrink-0 text-right">
-                      {b.amount > 0 && (
-                        <p className="font-bold text-stone-900">₹{b.amount.toLocaleString('en-IN')}</p>
+                      {b.amount_inr > 0 && (
+                        <p className="font-bold text-stone-900">₹{b.amount_inr.toLocaleString('en-IN')}</p>
                       )}
                       <button
                         onClick={() => deleteBooking(b.id)}
@@ -267,7 +293,6 @@ export default function ProBookingsClient({ providerId, firstName, categorySlugs
               style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)', maxHeight: '90dvh', overflowY: 'auto' }}
             >
               <div className="max-w-lg mx-auto px-5 pt-5 pb-6">
-                {/* Drag handle */}
                 <div className="w-10 h-1 rounded-full bg-stone-200 mx-auto mb-5" />
                 <h2 className="text-lg font-bold text-stone-900 mb-5">Log a booking</h2>
 
@@ -305,8 +330,8 @@ export default function ProBookingsClient({ providerId, firstName, categorySlugs
                       <input
                         type="text"
                         placeholder="Bruno"
-                        value={form.petName}
-                        onChange={e => setForm(f => ({ ...f, petName: e.target.value }))}
+                        value={form.pet_name}
+                        onChange={e => setForm(f => ({ ...f, pet_name: e.target.value }))}
                         className="w-full border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
                       />
                     </div>
@@ -315,8 +340,8 @@ export default function ProBookingsClient({ providerId, firstName, categorySlugs
                       <input
                         type="text"
                         placeholder="Priya"
-                        value={form.ownerName}
-                        onChange={e => setForm(f => ({ ...f, ownerName: e.target.value }))}
+                        value={form.owner_name}
+                        onChange={e => setForm(f => ({ ...f, owner_name: e.target.value }))}
                         className="w-full border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
                       />
                     </div>
@@ -330,8 +355,8 @@ export default function ProBookingsClient({ providerId, firstName, categorySlugs
                         type="number"
                         placeholder="60"
                         min="1"
-                        value={form.duration}
-                        onChange={e => setForm(f => ({ ...f, duration: e.target.value }))}
+                        value={form.duration_min}
+                        onChange={e => setForm(f => ({ ...f, duration_min: e.target.value }))}
                         className="w-full border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
                       />
                     </div>
@@ -341,8 +366,8 @@ export default function ProBookingsClient({ providerId, firstName, categorySlugs
                         type="number"
                         placeholder="500"
                         min="0"
-                        value={form.amount}
-                        onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+                        value={form.amount_inr}
+                        onChange={e => setForm(f => ({ ...f, amount_inr: e.target.value }))}
                         className="w-full border border-border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
                       />
                     </div>

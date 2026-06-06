@@ -15,6 +15,10 @@ export async function PATCH(
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
   )
 
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (user.email !== process.env.ADMIN_EMAIL) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   const { status } = await req.json()
   if (!['approved', 'rejected'].includes(status)) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 })

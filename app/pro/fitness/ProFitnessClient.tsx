@@ -3,19 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-type WalkSession = {
-  id: string
-  date: string         // ISO date string
-  startTime: string    // ISO
-  endTime: string      // ISO
-  duration_min: number
-  distance_km: number
-  steps: number        // estimated
-  dogName: string
-}
-
 // ─── Haversine distance (km) ─────────────────────────────────────────────────
 
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -28,9 +15,7 @@ function haversine(lat1: number, lon1: number, lat2: number, lon2: number): numb
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-// 1 km ≈ 1350 steps for an average walk pace
 const STEPS_PER_KM = 1350
-
 const EASE = [0.25, 0.46, 0.45, 0.94] as const
 
 function formatDuration(seconds: number) {
@@ -47,12 +32,20 @@ function formatDate(iso: string) {
   })
 }
 
+type WalkHistoryItem = {
+  id: string
+  pet_name: string | null
+  started_at: string
+  ended_at: string | null
+  distance_km: number | null
+  step_count: number | null
+  walk_events: { type: string }[]
+}
+
 function thisMonthKey() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 interface Props {
   providerId: string
@@ -60,45 +53,59 @@ interface Props {
 }
 
 export default function ProFitnessClient({ providerId, firstName }: Props) {
-  const STORAGE_KEY = `pawlocal_walks_${providerId}`
-
-  // Walk history
-  const [walks, setWalks] = useState<WalkSession[]>([])
+  // History (from Supabase)
+  const [walks, setWalks] = useState<WalkHistoryItem[]>([])
+  const [historyLoading, setHistoryLoading] = useState(true)
 
   // Active walk state
   const [isWalking, setIsWalking] = useState(false)
-  const [elapsed, setElapsed] = useState(0)       // seconds
-  const [distance, setDistance] = useState(0)     // km
+  const [elapsed, setElapsed] = useState(0)
+  const [distance, setDistance] = useState(0)
   const [gpsError, setGpsError] = useState<string | null>(null)
   const [dogName, setDogName] = useState('')
   const [showEndPrompt, setShowEndPrompt] = useState(false)
+  const [saving, setSaving] = useState(false)
 
-  // Refs for walk tracking
+  // Supabase session tracking
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
+  const [trackingUrl, setTrackingUrl] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  // Events (pee/poop)
+  const [events, setEvents] = useState<{ type: 'pee' | 'poop'; ts: string }[]>([])
+
+  // Refs
   const watchIdRef = useRef<number | null>(null)
   const lastPosRef = useRef<{ lat: number; lon: number } | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTimeRef = useRef<string | null>(null)
   const distanceRef = useRef(0)
+  const locationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const sessionIdRef = useRef<string | null>(null)
+  const currentPosRef = useRef<{ lat: number; lon: number } | null>(null)
 
-  // Load history
-  useEffect(() => {
+  // ─── Load history from Supabase ───────────────────────────────────────────
+
+  const loadHistory = useCallback(async () => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) setWalks(JSON.parse(raw))
-    } catch { /* empty */ }
-  }, [STORAGE_KEY])
+      const res = await fetch('/api/pro/walks')
+      if (res.ok) {
+        const data = await res.json()
+        setWalks(Array.isArray(data) ? data.filter((w: WalkHistoryItem) => w.ended_at) : [])
+      }
+    } catch { /* silent */ }
+    setHistoryLoading(false)
+  }, [])
 
-  function saveWalks(updated: WalkSession[]) {
-    setWalks(updated)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-  }
+  useEffect(() => { loadHistory() }, [loadHistory])
 
-  // GPS position handler
+  // ─── GPS position handler ─────────────────────────────────────────────────
+
   const onPosition = useCallback((pos: GeolocationPosition) => {
     const { latitude, longitude } = pos.coords
+    currentPosRef.current = { lat: latitude, lon: longitude }
     if (lastPosRef.current) {
       const d = haversine(lastPosRef.current.lat, lastPosRef.current.lon, latitude, longitude)
-      // Filter out GPS noise — ignore jumps < 2m or > 100m in one update
       if (d > 0.002 && d < 0.1) {
         distanceRef.current += d
         setDistance(Math.round(distanceRef.current * 100) / 100)
@@ -107,13 +114,33 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
     lastPosRef.current = { lat: latitude, lon: longitude }
   }, [])
 
-  function startWalk() {
+  // ─── Start walk ───────────────────────────────────────────────────────────
+
+  async function startWalk() {
     setGpsError(null)
     distanceRef.current = 0
     lastPosRef.current = null
+    currentPosRef.current = null
     startTimeRef.current = new Date().toISOString()
     setDistance(0)
     setElapsed(0)
+    setEvents([])
+
+    // Create Supabase session
+    try {
+      const res = await fetch('/api/pro/walks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pet_name: null }),
+      })
+      if (res.ok) {
+        const { session, trackingUrl: url } = await res.json()
+        setActiveSessionId(session.id)
+        sessionIdRef.current = session.id
+        setTrackingUrl(url)
+      }
+    } catch { /* fail silently — walk still works locally */ }
+
     setIsWalking(true)
 
     // Start timer
@@ -127,14 +154,30 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
         onPosition,
         (err) => {
           console.warn('[GPS]', err.message)
-          setGpsError('GPS unavailable — distance will be entered manually')
+          setGpsError('GPS unavailable — distance will be 0')
         },
         { enableHighAccuracy: true, maximumAge: 3000, timeout: 10000 }
       )
     } else {
-      setGpsError('GPS not supported — distance will be entered manually')
+      setGpsError('GPS not supported on this device')
     }
+
+    // Send location to Supabase every 10 seconds
+    locationIntervalRef.current = setInterval(async () => {
+      const sid = sessionIdRef.current
+      const pos = currentPosRef.current
+      if (!sid || !pos) return
+      try {
+        await fetch(`/api/pro/walks/${sid}/location`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lat: pos.lat, lng: pos.lon }),
+        })
+      } catch { /* silent */ }
+    }, 10000)
   }
+
+  // ─── Stop walk ────────────────────────────────────────────────────────────
 
   function stopWalk() {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null }
@@ -142,49 +185,114 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
       navigator.geolocation?.clearWatch(watchIdRef.current)
       watchIdRef.current = null
     }
+    if (locationIntervalRef.current) { clearInterval(locationIntervalRef.current); locationIntervalRef.current = null }
     setShowEndPrompt(true)
   }
 
-  function saveWalk(manualDistance?: number) {
-    const finalDistance = gpsError && manualDistance != null ? manualDistance : distanceRef.current
-    const session: WalkSession = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      date: new Date().toISOString(),
-      startTime: startTimeRef.current ?? new Date().toISOString(),
-      endTime: new Date().toISOString(),
-      duration_min: Math.round(elapsed / 60),
-      distance_km: Math.round(finalDistance * 100) / 100,
-      steps: Math.round(finalDistance * STEPS_PER_KM),
-      dogName: dogName.trim(),
+  // ─── Save walk ────────────────────────────────────────────────────────────
+
+  async function saveWalk() {
+    setSaving(true)
+    const finalDistance = Math.round(distanceRef.current * 100) / 100
+    const finalSteps = Math.round(finalDistance * STEPS_PER_KM)
+    const sid = sessionIdRef.current
+
+    if (sid) {
+      // Update pet_name and end the session in Supabase
+      try {
+        // If dogName was given, start a new session with the pet name — or just end with stats
+        await fetch(`/api/pro/walks/${sid}/end`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            distance_km: finalDistance,
+            step_count: finalSteps,
+          }),
+        })
+      } catch { /* silent */ }
     }
-    saveWalks([session, ...walks])
+
+    await loadHistory()
     setIsWalking(false)
     setShowEndPrompt(false)
     setElapsed(0)
     setDistance(0)
     setDogName('')
+    setActiveSessionId(null)
+    sessionIdRef.current = null
+    setTrackingUrl(null)
+    setEvents([])
     distanceRef.current = 0
+    setSaving(false)
   }
 
-  function discardWalk() {
+  // ─── Discard walk ─────────────────────────────────────────────────────────
+
+  async function discardWalk() {
+    const sid = sessionIdRef.current
+    if (sid) {
+      // End the session with 0 distance
+      fetch(`/api/pro/walks/${sid}/end`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ distance_km: 0, step_count: 0 }),
+      }).catch(() => {})
+    }
     setIsWalking(false)
     setShowEndPrompt(false)
     setElapsed(0)
     setDistance(0)
     setDogName('')
+    setActiveSessionId(null)
+    sessionIdRef.current = null
+    setTrackingUrl(null)
+    setEvents([])
     distanceRef.current = 0
   }
 
-  // Monthly stats
+  // ─── Pee / Poop buttons ───────────────────────────────────────────────────
+
+  async function logEvent(type: 'pee' | 'poop') {
+    const ev = { type, ts: new Date().toISOString() }
+    setEvents(prev => [...prev, ev])
+    const sid = sessionIdRef.current
+    if (sid) {
+      const pos = currentPosRef.current
+      fetch(`/api/pro/walks/${sid}/event`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, lat: pos?.lat, lng: pos?.lon }),
+      }).catch(() => {})
+    }
+  }
+
+  // ─── Copy tracking URL ────────────────────────────────────────────────────
+
+  function copyLink() {
+    if (!trackingUrl) return
+    navigator.clipboard.writeText(trackingUrl).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  // ─── Monthly stats ────────────────────────────────────────────────────────
+
   const mk = thisMonthKey()
-  const thisMonth = walks.filter(w => w.date.startsWith(mk))
-  const monthKm = thisMonth.reduce((s, w) => s + w.distance_km, 0)
-  const monthSteps = thisMonth.reduce((s, w) => s + w.steps, 0)
+  const thisMonth = walks.filter(w => w.started_at.startsWith(mk))
+  const monthKm = thisMonth.reduce((s, w) => s + (w.distance_km ?? 0), 0)
+  const monthSteps = thisMonth.reduce((s, w) => s + (w.step_count ?? 0), 0)
   const monthWalks = thisMonth.length
-  const monthMinutes = thisMonth.reduce((s, w) => s + w.duration_min, 0)
+  const monthMinutes = thisMonth.reduce((s, w) => {
+    if (!w.started_at || !w.ended_at) return s
+    return s + Math.round((new Date(w.ended_at).getTime() - new Date(w.started_at).getTime()) / 60000)
+  }, 0)
 
-  // Live steps estimate
   const liveSteps = Math.round(distance * STEPS_PER_KM)
+  const peeCount = events.filter(e => e.type === 'pee').length
+  const poopCount = events.filter(e => e.type === 'poop').length
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-dvh bg-stone-50 pb-28">
@@ -199,7 +307,7 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
 
       <main className="max-w-lg mx-auto px-4 py-5 space-y-5">
 
-        {/* Monthly summary strip */}
+        {/* Monthly stats */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -256,7 +364,7 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
                   <p className="text-3xl font-bold text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>
                     {distance.toFixed(2)}
                   </p>
-                  <p className="text-emerald-300 text-xs mt-1">km walked</p>
+                  <p className="text-emerald-300 text-xs mt-1">km</p>
                 </div>
                 <div>
                   <p className="text-3xl font-bold text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>
@@ -266,8 +374,36 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
                 </div>
               </div>
 
+              {/* Pee / Poop buttons */}
+              <div className="flex gap-3 mb-4">
+                <button
+                  onClick={() => logEvent('pee')}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold bg-white/15 text-white hover:bg-white/20 transition-colors"
+                >
+                  💧 Pee {peeCount > 0 && <span className="text-emerald-300 text-xs">×{peeCount}</span>}
+                </button>
+                <button
+                  onClick={() => logEvent('poop')}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold bg-white/15 text-white hover:bg-white/20 transition-colors"
+                >
+                  💩 Poop {poopCount > 0 && <span className="text-emerald-300 text-xs">×{poopCount}</span>}
+                </button>
+              </div>
+
+              {/* Live tracking link */}
+              {trackingUrl && (
+                <button
+                  onClick={copyLink}
+                  className="w-full mb-3 py-2.5 rounded-xl text-xs font-semibold bg-white/10 text-emerald-200 hover:bg-white/20 transition-colors text-left px-3 flex items-center gap-2"
+                >
+                  <span className="text-base">📍</span>
+                  <span className="flex-1 truncate">{copied ? '✓ Link copied!' : 'Share live location'}</span>
+                  <span className="text-emerald-400 text-xs shrink-0">Tap to copy →</span>
+                </button>
+              )}
+
               {gpsError && (
-                <p className="text-amber-300 text-xs text-center mb-4 bg-amber-400/10 rounded-xl px-3 py-2">
+                <p className="text-amber-300 text-xs text-center mb-3 bg-amber-400/10 rounded-xl px-3 py-2">
                   ⚠ {gpsError}
                 </p>
               )}
@@ -297,8 +433,11 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
                 🦮
               </motion.div>
               <h2 className="text-lg font-bold text-stone-900 mb-1">Ready for a walk?</h2>
-              <p className="text-sm text-stone-400 mb-5">
-                GPS tracks your distance automatically.<br />Steps are calculated at 1,350 per km.
+              <p className="text-sm text-stone-400 mb-1">
+                GPS tracks your distance automatically.
+              </p>
+              <p className="text-xs text-stone-300 mb-5">
+                A live tracking link is generated — share it with the pet owner!
               </p>
               <button
                 onClick={startWalk}
@@ -312,7 +451,13 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
         </AnimatePresence>
 
         {/* Walk history */}
-        {walks.length > 0 && (
+        {historyLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-white rounded-2xl border border-border p-4 animate-pulse h-16" />
+            ))}
+          </div>
+        ) : walks.length > 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -320,37 +465,44 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
           >
             <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-3">Recent walks</p>
             <div className="space-y-2">
-              {walks.slice(0, 20).map((w, i) => (
-                <div key={w.id} className="bg-white rounded-2xl border border-border p-4 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-lg flex-shrink-0">
-                    🦮
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
+              {walks.slice(0, 20).map((w, i) => {
+                const durationMin = w.started_at && w.ended_at
+                  ? Math.round((new Date(w.ended_at).getTime() - new Date(w.started_at).getTime()) / 60000)
+                  : 0
+                const pees = w.walk_events?.filter(e => e.type === 'pee').length ?? 0
+                const poops = w.walk_events?.filter(e => e.type === 'poop').length ?? 0
+                return (
+                  <div key={w.id} className="bg-white rounded-2xl border border-border p-4 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-lg flex-shrink-0">
+                      🦮
+                    </div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-stone-800">
-                        {w.dogName ? `Walk with ${w.dogName}` : `Walk #${walks.length - i}`}
+                        {w.pet_name ? `Walk with ${w.pet_name}` : `Walk #${walks.length - i}`}
+                      </p>
+                      <p className="text-xs text-stone-400 mt-0.5">
+                        {formatDate(w.started_at)}
+                        {(pees > 0 || poops > 0) && ` · 💧${pees} 💩${poops}`}
                       </p>
                     </div>
-                    <p className="text-xs text-stone-400 mt-0.5">{formatDate(w.date)}</p>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-sm font-bold text-stone-900">{(w.distance_km ?? 0).toFixed(2)} km</p>
+                      <p className="text-[10px] text-stone-400">{(w.step_count ?? 0).toLocaleString('en-IN')} steps · {durationMin}min</p>
+                    </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-bold text-stone-900">{w.distance_km.toFixed(2)} km</p>
-                    <p className="text-[10px] text-stone-400">{w.steps.toLocaleString('en-IN')} steps · {w.duration_min}min</p>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </motion.div>
-        )}
-
-        {walks.length === 0 && !isWalking && (
+        ) : !isWalking ? (
           <div className="bg-white rounded-2xl border border-border p-6 text-center">
             <p className="text-stone-400 text-sm">Your walk history will appear here.</p>
           </div>
-        )}
+        ) : null}
+
       </main>
 
-      {/* End walk prompt — dog name + manual distance if GPS failed */}
+      {/* End walk prompt */}
       <AnimatePresence>
         {showEndPrompt && (
           <>
@@ -371,6 +523,7 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
               <div className="max-w-lg mx-auto px-5 pt-5 pb-6">
                 <div className="w-10 h-1 rounded-full bg-stone-200 mx-auto mb-5" />
                 <h2 className="text-lg font-bold text-stone-900 mb-1">Walk complete! 🎉</h2>
+
                 <div className="flex items-center gap-6 my-4 text-center">
                   <div>
                     <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>{formatDuration(elapsed)}</p>
@@ -386,6 +539,19 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
                   </div>
                 </div>
 
+                {(peeCount > 0 || poopCount > 0) && (
+                  <div className="flex gap-3 mb-4 text-center">
+                    <div className="flex-1 bg-stone-50 rounded-xl py-2">
+                      <p className="text-lg">💧</p>
+                      <p className="text-xs text-stone-500 font-medium">{peeCount} pee{peeCount !== 1 ? 's' : ''}</p>
+                    </div>
+                    <div className="flex-1 bg-stone-50 rounded-xl py-2">
+                      <p className="text-lg">💩</p>
+                      <p className="text-xs text-stone-500 font-medium">{poopCount} poop{poopCount !== 1 ? 's' : ''}</p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-4">
                   <label className="text-xs font-semibold text-stone-500 block mb-1.5">Dog&apos;s name (optional)</label>
                   <input
@@ -400,16 +566,18 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
                 <div className="flex gap-3">
                   <button
                     onClick={discardWalk}
-                    className="flex-1 py-3 rounded-xl text-sm font-semibold text-stone-500 border border-border hover:bg-stone-50 transition-colors"
+                    disabled={saving}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold text-stone-500 border border-border hover:bg-stone-50 transition-colors disabled:opacity-50"
                   >
                     Discard
                   </button>
                   <button
-                    onClick={() => saveWalk()}
-                    className="flex-2 flex-1 py-3 rounded-xl text-sm font-bold text-white"
+                    onClick={saveWalk}
+                    disabled={saving}
+                    className="flex-1 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-60"
                     style={{ backgroundColor: 'oklch(0.48 0.17 196)', flexGrow: 2 }}
                   >
-                    Save walk ✓
+                    {saving ? 'Saving…' : 'Save walk ✓'}
                   </button>
                 </div>
               </div>

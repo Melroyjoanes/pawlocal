@@ -32,6 +32,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Provider not found' }, { status: 404 })
   }
 
+  // Dedup: if a phone number is provided, check if they already reviewed this provider
+  if (reviewer_phone?.trim()) {
+    const phone = reviewer_phone.trim()
+    const { data: existing } = await supabase
+      .from('reviews')
+      .select('id')
+      .eq('provider_id', provider_id)
+      .eq('reviewer_phone', phone)
+      .limit(1)
+      .single()
+
+    if (existing) {
+      return NextResponse.json({ error: 'You have already submitted a review for this provider' }, { status: 409 })
+    }
+  }
+
   const { error } = await supabase.from('reviews').insert({
     provider_id,
     rating: Number(rating),
