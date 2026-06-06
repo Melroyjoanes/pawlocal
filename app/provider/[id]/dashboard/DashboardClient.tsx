@@ -1,9 +1,74 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
 import type { CategoryConfig } from '@/lib/categories'
 import VerificationBadge from '@/components/VerificationBadge'
+import GoogleSignInButton from '@/components/GoogleSignInButton'
+import { createClient } from '@/lib/supabase/client'
+
+// ── Claim Banner ─────────────────────────────────────────────────
+function ClaimBanner({ providerId, isClaimed }: { providerId: string; isClaimed: boolean }) {
+  const searchParams = useSearchParams()
+  const justClaimed = searchParams.get('claimed') === '1'
+
+  if (justClaimed) {
+    return (
+      <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-5 flex items-center gap-3">
+        <span className="text-2xl">🎉</span>
+        <div>
+          <p className="text-sm font-semibold text-emerald-800">Profile secured!</p>
+          <p className="text-xs text-emerald-600 mt-0.5">Your Google account is now linked. Sign in anytime at <strong>pawlocal.in/dashboard</strong></p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isClaimed) return null
+
+  return (
+    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-5">
+      <div className="flex items-start gap-3 mb-4">
+        <span className="text-2xl">🔐</span>
+        <div>
+          <p className="text-sm font-bold text-amber-900">Secure your profile</p>
+          <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+            Link your Google account so you can access this dashboard from any device — no link needed.
+          </p>
+        </div>
+      </div>
+      <GoogleSignInButton
+        redirectNext={`/provider/${providerId}/claim`}
+        label="Sign in with Google to secure profile"
+        className="w-full flex items-center justify-center gap-3 border border-amber-300 bg-white hover:bg-amber-50 rounded-xl px-4 py-3 text-sm font-semibold text-slate-800 transition-all shadow-sm"
+      />
+    </div>
+  )
+}
+
+// ── Sign Out Button ───────────────────────────────────────────────
+function SignOutButton() {
+  const [loading, setLoading] = useState(false)
+
+  async function handleSignOut() {
+    setLoading(true)
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    window.location.href = '/'
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleSignOut}
+      disabled={loading}
+      className="text-xs text-slate-400 hover:text-red-500 transition-colors disabled:opacity-50"
+    >
+      {loading ? 'Signing out…' : '← Sign out'}
+    </button>
+  )
+}
 
 // ── Availability Toggle Card ─────────────────────────────────────
 function AvailabilityCard({ provider }: { provider: ProviderWithPhotos }) {
@@ -175,13 +240,15 @@ interface Props {
   provider: ProviderWithPhotos
   category: CategoryConfig
   stats: Stats
+  isClaimed: boolean
+  isOwner: boolean
 }
 
-export default function DashboardClient({ provider, category, stats }: Props) {
-  // No auth gate — the UUID in the URL is the private key.
-  // Only someone you (admin) sent the link to can access this.
+export default function DashboardClient({ provider, category, stats, isClaimed, isOwner }: Props) {
+  // UUID in URL is the private key — only someone admin sent the link to can access this.
+  // isClaimed = provider has a Google account linked
+  // isOwner   = current session user owns this profile
 
-  // ── Dashboard ────────────────────────────────────────────────
   const { pts, breakdown } = calcPoints(stats, provider)
   const level = getLevel(pts)
   const progressPct = level.nextAt
@@ -190,12 +257,19 @@ export default function DashboardClient({ provider, category, stats }: Props) {
 
   return (
     <div className="max-w-lg mx-auto py-10 px-4 pb-16">
-      <a
-        href={`/provider/${provider.id}`}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
-      >
-        ← Back to profile
-      </a>
+      {/* Back + sign out row */}
+      <div className="flex items-center justify-between mb-8">
+        <a
+          href={`/provider/${provider.id}`}
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          ← Back to profile
+        </a>
+        {isOwner && <SignOutButton />}
+      </div>
+
+      {/* Claim banner — shown if profile not yet secured */}
+      <ClaimBanner providerId={provider.id} isClaimed={isClaimed} />
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-7">

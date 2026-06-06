@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 function isProtected(pathname: string) {
-  if (pathname === '/my-account') return true
-  return false
+  // Auth-required routes
+  if (pathname === '/my-account') return { redirect: '/?auth_required=1' }
+  if (pathname.startsWith('/dashboard')) return { redirect: '/account?reason=provider' }
+  return null
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  if (!isProtected(pathname)) return NextResponse.next()
+  const protection = isProtected(pathname)
+  if (!protection) return NextResponse.next()
 
   let response = NextResponse.next({ request })
 
@@ -31,9 +34,9 @@ export async function proxy(request: NextRequest) {
 
   if (!user) {
     const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = '/'
-    redirectUrl.searchParams.set('auth_required', '1')
-    redirectUrl.searchParams.set('next', pathname)
+    const [redirectPath, qs] = protection.redirect.split('?')
+    redirectUrl.pathname = redirectPath
+    redirectUrl.search = qs ? `?${qs}&next=${encodeURIComponent(pathname)}` : `?next=${encodeURIComponent(pathname)}`
     return NextResponse.redirect(redirectUrl)
   }
 
@@ -41,5 +44,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/my-account'],
+  matcher: ['/my-account', '/dashboard/:path*'],
 }

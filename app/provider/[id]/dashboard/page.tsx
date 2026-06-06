@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import { getCategoryBySlug } from '@/lib/categories'
 import type { ProviderWithPhotos, Review } from '@/lib/supabase/types'
 import DashboardClient from './DashboardClient'
@@ -29,9 +30,14 @@ export default async function ProviderDashboardPage({
 
   if (!data) notFound()
 
-  const provider = data as unknown as ProviderWithPhotos
+  const provider = data as unknown as ProviderWithPhotos & { user_id?: string | null }
   const category = getCategoryBySlug(provider.category_slug)
   if (!category) notFound()
+
+  // Check if current auth user is the owner
+  const serverClient = await createServerClient()
+  const { data: { user } } = await serverClient.auth.getUser()
+  const isOwner = !!user && user.id === provider.user_id
 
   // Fetch analytics — silently skip if table doesn't exist yet
   const now = new Date()
@@ -88,5 +94,15 @@ export default async function ProviderDashboardPage({
     responseRate,
   }
 
-  return <DashboardClient provider={provider} category={category} stats={stats} />
+  const isClaimed = !!provider.user_id
+
+  return (
+    <DashboardClient
+      provider={provider}
+      category={category}
+      stats={stats}
+      isClaimed={isClaimed}
+      isOwner={isOwner}
+    />
+  )
 }

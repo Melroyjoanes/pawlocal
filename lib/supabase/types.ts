@@ -122,6 +122,29 @@ export type ProviderPhotoInsert = {
   sort_order: number
 }
 
+export type WalkEvent = {
+  type: 'pee' | 'poop'
+  ts: string
+  lat?: number
+  lng?: number
+}
+
+export type WalkSession = {
+  id: string
+  provider_id: string
+  share_token: string
+  pet_name: string | null
+  customer_name: string | null
+  status: 'active' | 'completed'
+  current_lat: number | null
+  current_lng: number | null
+  last_location_at: string | null
+  walk_events: WalkEvent[]
+  started_at: string
+  ended_at: string | null
+  created_at: string
+}
+
 type GenericRelationship = {
   foreignKeyName: string
   columns: string[]
@@ -159,6 +182,7 @@ export type Database = {
       broadcasts: { Row: Broadcast; Insert: Omit<Broadcast, 'id' | 'status' | 'created_at' | 'expires_at'>; Update: Partial<Broadcast>; Relationships: GenericRelationship[] }
       reviews: { Row: Review; Insert: ReviewInsert & { status?: string }; Update: Partial<Review>; Relationships: GenericRelationship[] }
       provider_contacts: { Row: ProviderContact; Insert: ProviderContactInsert; Update: Partial<ProviderContact>; Relationships: GenericRelationship[] }
+      walk_sessions: { Row: WalkSession; Insert: Omit<WalkSession, 'id' | 'status' | 'current_lat' | 'current_lng' | 'last_location_at' | 'walk_events' | 'ended_at' | 'created_at'>; Update: Partial<WalkSession>; Relationships: GenericRelationship[] }
     }
     Views: Record<string, { Row: Record<string, unknown>; Relationships: GenericRelationship[] }>
     Functions: Record<string, { Args: Record<string, unknown>; Returns: unknown }>

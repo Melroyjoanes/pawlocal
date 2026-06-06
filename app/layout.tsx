@@ -5,6 +5,7 @@ import OnboardingSheet from '@/components/OnboardingSheet'
 import ResponsePrompt from '@/components/ResponsePrompt'
 import LocationPicker from '@/components/LocationPicker'
 import HeaderSearch from '@/components/HeaderSearch'
+import AuthNavItem from '@/components/AuthNavItem'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
@@ -84,6 +85,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
               {/* Search — desktop inline, mobile icon */}
               <HeaderSearch />
+
+              {/* Auth — sign in / avatar */}
+              <AuthNavItem />
             </div>
           </header>
 
