@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 // Service-role client bypasses RLS — safe to use server-side only
 function adminClient() {
@@ -11,10 +13,33 @@ function adminClient() {
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Verify the caller is authenticated via session cookie
+    const cookieStore = await cookies()
+    const supabaseAuth = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll: () => cookieStore.getAll(),
+          setAll: (cookiesToSet) => {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {}
+          },
+        },
+      }
+    )
+
+    const { data: { user } } = await supabaseAuth.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
+    }
+
     const body = await req.json()
-    const { id, whatsapp, updates } = body as {
+    const { id, updates } = body as {
       id: string
-      whatsapp: string          // used to prove ownership
       updates: {
         price_min?: number | null
         price_max?: number | null
@@ -27,16 +52,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (!id || !whatsapp) {
-      return NextResponse.json({ error: 'Missing id or whatsapp' }, { status: 400 })
+    if (!id) {
+      return NextResponse.json({ error: 'Missing provider id' }, { status: 400 })
     }
 
     const supabase = adminClient()
 
-    // 1. Verify the WhatsApp number matches the stored record
+    // 2. Fetch the provider and verify ownership
     const { data: provider, error: fetchErr } = await supabase
       .from('providers')
-      .select('id, whatsapp, status')
+      .select('id, user_id, status')
       .eq('id', id)
       .single()
 
@@ -44,19 +69,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Provider not found' }, { status: 404 })
     }
 
-    // Normalize both numbers — strip non-digits for comparison
-    const storedNum = provider.whatsapp.replace(/\D/g, '').replace(/^91/, '')
-    const inputNum  = whatsapp.replace(/\D/g, '').replace(/^91/, '')
-
-    if (storedNum !== inputNum) {
-      return NextResponse.json({ error: 'WhatsApp number does not match our records' }, { status: 403 })
-    }
-
     if (provider.status !== 'approved') {
       return NextResponse.json({ error: 'This listing is not yet approved' }, { status: 403 })
     }
 
-    // 2. Sanitise the allowed update fields — never allow status/is_verified/name changes
+    // Ownership check: must be the linked account
+    if (provider.user_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    // 3. Sanitise the allowed update fields — never allow status/is_verified/name changes
     const safe: Record<string, unknown> = {}
     if (updates.price_min  !== undefined) safe.price_min  = updates.price_min  === null ? null : Number(updates.price_min)
     if (updates.price_max  !== undefined) safe.price_max  = updates.price_max  === null ? null : Number(updates.price_max)
@@ -73,7 +95,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
     }
 
-    // 3. Apply the update
+    // 4. Apply the update
     const { error: updateErr } = await supabase
       .from('providers')
       .update(safe)
@@ -84,7 +106,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true })
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }

@@ -15,6 +15,10 @@ export default async function EditProviderPage({
   const { setup } = await searchParams
   const supabase = await createClient()
 
+  // Check who's signed in (proxy already ensures someone IS signed in)
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) notFound()
+
   const { data } = await supabase
     .from('providers')
     .select('*, provider_photos(*)')
@@ -24,9 +28,20 @@ export default async function EditProviderPage({
 
   if (!data) notFound()
 
-  const provider = data as unknown as ProviderWithPhotos
+  const provider = data as unknown as ProviderWithPhotos & { user_id?: string | null }
   const category = getCategoryBySlug(provider.category_slug)
   if (!category) notFound()
 
-  return <EditProviderClient provider={provider} category={category} setupMode={setup === '1'} />
+  // Owner check: only the linked Google account may edit
+  // Unclaimed providers (user_id = null) are accessible during setup flow
+  const isClaimed = !!provider.user_id
+  const isOwner = isClaimed && provider.user_id === user.id
+  const isSetupFlow = setup === '1' && !isClaimed
+
+  if (isClaimed && !isOwner) {
+    // Someone else's profile — hard 404, no information leak
+    notFound()
+  }
+
+  return <EditProviderClient provider={provider} category={category} setupMode={isSetupFlow || setup === '1'} />
 }

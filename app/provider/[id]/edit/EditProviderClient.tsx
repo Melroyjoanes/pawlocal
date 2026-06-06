@@ -58,7 +58,6 @@ export default function EditProviderClient({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id: provider.id,
-        whatsapp: provider.whatsapp, // use existing whatsapp — no verify gate
         updates: {
           price_min:    priceMin ? Number(priceMin) : null,
           price_max:    priceMax ? Number(priceMax) : null,
@@ -342,7 +341,6 @@ export default function EditProviderClient({
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       id: provider.id,
-                      whatsapp: provider.whatsapp,
                       updates: {
                         bio: bio.trim() || null,
                         price_min: priceMin ? Number(priceMin) : null,

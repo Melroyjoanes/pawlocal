@@ -435,11 +435,81 @@ interface Props {
   stats: Stats
   isClaimed: boolean
   isOwner: boolean
+  wrongAccount: boolean
   isDogWalker: boolean
   greeting: string
   firstName: string
   matchingBroadcasts: MatchingBroadcast[]
   latestReview: { id: string; rating: number; comment: string | null; reviewer_name: string; created_at: string } | null
+}
+
+// ── Wrong account screen ─────────────────────────────────────────
+function WrongAccount({ provider, category }: { provider: ProviderWithPhotos; category: CategoryConfig }) {
+  const [loading, setLoading] = useState(false)
+
+  async function handleSwitch() {
+    setLoading(true)
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    window.location.href = `/?auth_required=1&next=${encodeURIComponent(`/provider/${provider.id}/dashboard`)}`
+  }
+
+  const primaryPhoto = provider.provider_photos.find(p => p.is_primary) ?? provider.provider_photos[0]
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-b from-slate-50 to-white">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <div className="text-5xl mb-4">🔒</div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Wrong account</h1>
+          <p className="text-sm text-slate-500 leading-relaxed">
+            <strong>{provider.name}</strong> is linked to a different Google account.
+            Sign in with the account that owns this profile.
+          </p>
+        </div>
+
+        {/* Mini provider card */}
+        <div className="bg-white border border-border rounded-2xl p-4 mb-6 flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-stone-100">
+            {primaryPhoto ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={primaryPhoto.url} alt={provider.name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-2xl" style={{ backgroundColor: category.color + '18' }}>
+                {category.icon}
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-slate-900 truncate">{provider.name}</p>
+            <p className="text-xs text-muted-foreground" style={{ color: category.color }}>{category.icon} {category.name}</p>
+          </div>
+          <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full flex-shrink-0">Claimed</span>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleSwitch}
+          disabled={loading}
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm mb-3 transition-all disabled:opacity-60"
+          style={{
+            background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+            color: '#451A03',
+            boxShadow: '0 4px 0px rgba(120,53,15,0.28)',
+          }}
+        >
+          {loading ? 'Signing out…' : '🔄 Sign in with a different account'}
+        </button>
+
+        <a
+          href={`/provider/${provider.id}`}
+          className="block text-center text-sm text-slate-500 hover:text-slate-700 transition-colors"
+        >
+          View public profile →
+        </a>
+      </div>
+    </div>
+  )
 }
 
 // ── Matching Broadcasts ──────────────────────────────────────────
@@ -576,7 +646,7 @@ function ClaimFirst({ provider, category, isClaimed }: { provider: ProviderWithP
 }
 
 export default function DashboardClient({
-  provider, category, stats, isClaimed, isOwner,
+  provider, category, stats, isClaimed, isOwner, wrongAccount,
   isDogWalker, greeting, firstName, matchingBroadcasts, latestReview,
 }: Props) {
   const { pts, breakdown } = calcPoints(stats, provider)
@@ -586,6 +656,11 @@ export default function DashboardClient({
     : 100
   const searchParams = useSearchParams()
   const justClaimed = searchParams.get('claimed') === '1'
+
+  // Wrong account: signed in but this profile belongs to someone else
+  if (wrongAccount) {
+    return <WrongAccount provider={provider} category={category} />
+  }
 
   // If not claimed and not just-claimed: show focused claim page, not the full dashboard
   if (!isClaimed && !justClaimed) {

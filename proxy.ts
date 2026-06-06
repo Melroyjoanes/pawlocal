@@ -5,6 +5,8 @@ function isProtected(pathname: string) {
   // Auth-required routes
   if (pathname === '/my-account') return { redirect: '/?auth_required=1' }
   if (pathname.startsWith('/dashboard')) return { redirect: '/account?reason=provider' }
+  // Provider edit requires auth — ownership check happens in the page itself
+  if (/^\/provider\/[^/]+\/edit/.test(pathname)) return { redirect: '/?auth_required=1' }
   return null
 }
 
@@ -44,5 +46,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/my-account', '/dashboard/:path*'],
+  matcher: ['/my-account', '/dashboard/:path*', '/provider/:id/edit'],
 }

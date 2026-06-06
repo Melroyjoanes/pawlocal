@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { getCategoryBySlug } from '@/lib/categories'
@@ -46,6 +46,16 @@ export default async function ProviderDashboardPage({
   const serverClient = await createServerClient()
   const { data: { user } } = await serverClient.auth.getUser()
   const isOwner = !!user && user.id === provider.user_id
+  const isClaimed = !!provider.user_id
+
+  // If claimed and no user is signed in → redirect to sign-in flow
+  // (unclaimed providers are handled by ClaimFirst in DashboardClient)
+  if (isClaimed && !user) {
+    redirect(`/?auth_required=1&next=${encodeURIComponent(`/provider/${id}/dashboard`)}`)
+  }
+
+  // If claimed but signed-in user is NOT the owner → show WrongAccount screen
+  const wrongAccount = isClaimed && !!user && !isOwner
 
   // Date helpers
   const now = new Date()
@@ -121,7 +131,6 @@ export default async function ProviderDashboardPage({
     totalContacted, responded, booked, responseRate,
   }
 
-  const isClaimed   = !!provider.user_id
   const isDogWalker = providerSlugs.includes('dog-walking')
   const firstName   = (user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? provider.name)
     .split(' ')[0]
@@ -135,6 +144,7 @@ export default async function ProviderDashboardPage({
       stats={stats}
       isClaimed={isClaimed}
       isOwner={isOwner}
+      wrongAccount={wrongAccount}
       isDogWalker={isDogWalker}
       greeting={greeting()}
       firstName={firstName}
