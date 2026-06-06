@@ -570,13 +570,18 @@ function MatchingBroadcasts({ broadcasts, category }: { broadcasts: MatchingBroa
   )
 }
 
-// ── Claim-first full-page experience ─────────────────────────────
-function ClaimFirst({ provider, category, isClaimed }: { provider: ProviderWithPhotos; category: CategoryConfig; isClaimed: boolean }) {
+// ── Provider-only locked screen (unclaimed profile) ──────────────
+// Shown when someone visits a dashboard that hasn't been linked yet.
+// Self-service claiming is disabled — admin links accounts manually.
+function ProviderOnly({ provider, category }: { provider: ProviderWithPhotos; category: CategoryConfig }) {
   const primaryPhoto = provider.provider_photos.find(p => p.is_primary) ?? provider.provider_photos[0]
+  const adminWa = 'https://wa.me/919082980099?text=' + encodeURIComponent(
+    `Hi! I'm ${provider.name} listed on PawLocal. I'd like to access my dashboard.`
+  )
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 bg-gradient-to-b from-slate-50 to-white">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-sm">
 
         {/* Provider identity */}
         <div className="text-center mb-8">
@@ -585,61 +590,37 @@ function ClaimFirst({ provider, category, isClaimed }: { provider: ProviderWithP
               // eslint-disable-next-line @next/next/no-img-element
               <img src={primaryPhoto.url} alt={provider.name} className="w-full h-full object-cover" />
             ) : (
-              <div
-                className="w-full h-full flex items-center justify-center text-3xl"
-                style={{ backgroundColor: category.color + '18' }}
-              >
+              <div className="w-full h-full flex items-center justify-center text-3xl" style={{ backgroundColor: category.color + '18' }}>
                 {category.icon}
               </div>
             )}
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">{provider.name}</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            <span style={{ color: category.color }}>{category.icon} {category.name}</span>
-            {' · PawLocal'}
+          <h1 className="text-xl font-bold text-slate-900">{provider.name}</h1>
+          <p className="text-sm mt-1" style={{ color: category.color }}>{category.icon} {category.name}</p>
+        </div>
+
+        <div className="bg-white border border-border rounded-3xl shadow-sm p-6 mb-4 text-center">
+          <div className="text-4xl mb-4">🔒</div>
+          <h2 className="font-bold text-slate-900 mb-2">Provider dashboard</h2>
+          <p className="text-sm text-slate-500 leading-relaxed mb-6">
+            This dashboard is only accessible to the registered service provider.
+            If this is your listing, message us on WhatsApp and we'll get you set up.
           </p>
+          <a
+            href={adminWa}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white rounded-2xl py-3.5 font-bold text-sm transition-colors mb-3"
+          >
+            💬 Message PawLocal to get access
+          </a>
+          <a
+            href={`/provider/${provider.id}`}
+            className="block text-sm text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            View public profile →
+          </a>
         </div>
-
-        {/* Claim card */}
-        <div className="bg-white rounded-3xl border border-border shadow-sm p-6 mb-4">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center flex-shrink-0">
-              <span className="text-xl">🔐</span>
-            </div>
-            <div>
-              <p className="font-bold text-slate-900 text-sm">This is your profile</p>
-              <p className="text-xs text-slate-500 leading-snug mt-0.5">
-                Sign in to manage it — view contacts, update availability, track stats.
-              </p>
-            </div>
-          </div>
-
-          {/* How it works — Uber-style 3 steps */}
-          <div className="flex flex-col gap-3 mb-6">
-            {[
-              { icon: '🔗', title: 'Sign in with Google', desc: 'One tap. No new password needed.' },
-              { icon: '⚡', title: 'Instantly linked', desc: 'Your profile is secured to your account.' },
-              { icon: '📊', title: 'Manage everything', desc: 'Availability, stats, and leads — in one place.' },
-            ].map((step, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-base flex-shrink-0">
-                  {step.icon}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-800">{step.title}</p>
-                  <p className="text-xs text-slate-500">{step.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* ClaimBanner handles the actual auth logic */}
-          <ClaimBanner providerId={provider.id} isClaimed={isClaimed} />
-        </div>
-
-        <a href={`/provider/${provider.id}`} className="block text-center text-xs text-slate-400 hover:text-slate-600 transition-colors">
-          View your public profile →
-        </a>
       </div>
     </div>
   )
@@ -662,9 +643,10 @@ export default function DashboardClient({
     return <WrongAccount provider={provider} category={category} />
   }
 
-  // If not claimed and not just-claimed: show focused claim page, not the full dashboard
-  if (!isClaimed && !justClaimed) {
-    return <ClaimFirst provider={provider} category={category} isClaimed={isClaimed} />
+  // If not claimed: show locked screen — self-service claiming is disabled
+  // Admin links accounts manually via Supabase; provider messages admin on WhatsApp
+  if (!isClaimed) {
+    return <ProviderOnly provider={provider} category={category} />
   }
 
   return (
@@ -687,22 +669,18 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* Just claimed — celebration banner */}
+      {/* First-time access celebration */}
       {justClaimed && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-5 flex items-center gap-3">
           <span className="text-2xl">🎉</span>
           <div>
-            <p className="text-sm font-semibold text-emerald-800">Profile secured!</p>
+            <p className="text-sm font-semibold text-emerald-800">Welcome to your dashboard!</p>
             <p className="text-xs text-emerald-600 mt-0.5">
-              Your Google account is now linked. Access your dashboard anytime at{' '}
-              <strong>pawlocal.in/dashboard</strong>
+              Access your dashboard anytime at <strong>pawlocal.in/dashboard</strong>
             </p>
           </div>
         </div>
       )}
-
-      {/* Claim banner (only shown if somehow not claimed) */}
-      <ClaimBanner providerId={provider.id} isClaimed={isClaimed} />
 
       {/* Profile card with completeness */}
       <ProfileCard provider={provider} category={category} stats={stats} />

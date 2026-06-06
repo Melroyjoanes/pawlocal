@@ -48,13 +48,12 @@ export default async function ProviderDashboardPage({
   const isOwner = !!user && user.id === provider.user_id
   const isClaimed = !!provider.user_id
 
-  // If claimed and no user is signed in → redirect to sign-in flow
-  // (unclaimed providers are handled by ClaimFirst in DashboardClient)
+  // If claimed and no user is signed in → redirect to sign-in
   if (isClaimed && !user) {
     redirect(`/?auth_required=1&next=${encodeURIComponent(`/provider/${id}/dashboard`)}`)
   }
 
-  // If claimed but signed-in user is NOT the owner → show WrongAccount screen
+  // If claimed but wrong user → WrongAccount screen
   const wrongAccount = isClaimed && !!user && !isOwner
 
   // Date helpers

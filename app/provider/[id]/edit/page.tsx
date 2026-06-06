@@ -33,15 +33,14 @@ export default async function EditProviderPage({
   if (!category) notFound()
 
   // Owner check: only the linked Google account may edit
-  // Unclaimed providers (user_id = null) are accessible during setup flow
+  // Unclaimed profiles are not editable from the web — admin links accounts first
   const isClaimed = !!provider.user_id
   const isOwner = isClaimed && provider.user_id === user.id
-  const isSetupFlow = setup === '1' && !isClaimed
 
-  if (isClaimed && !isOwner) {
-    // Someone else's profile — hard 404, no information leak
+  if (!isClaimed || !isOwner) {
+    // Not claimed, or claimed by someone else — hard 404, no information leak
     notFound()
   }
 
-  return <EditProviderClient provider={provider} category={category} setupMode={isSetupFlow || setup === '1'} />
+  return <EditProviderClient provider={provider} category={category} setupMode={setup === '1'} />
 }
