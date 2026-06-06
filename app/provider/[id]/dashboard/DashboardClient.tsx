@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
 import type { CategoryConfig } from '@/lib/categories'
-import VerificationBadge from '@/components/VerificationBadge'
+import VerificationBadge from '@/components/VerificationBadge' // used in ProfileCard
 import GoogleSignInButton from '@/components/GoogleSignInButton'
 import { createClient } from '@/lib/supabase/client'
 
@@ -176,6 +176,109 @@ function AvailabilityCard({ provider }: { provider: ProviderWithPhotos }) {
   )
 }
 
+// ── Profile Card ─────────────────────────────────────────────────
+function ProfileCard({
+  provider,
+  category,
+  stats,
+}: {
+  provider: ProviderWithPhotos
+  category: CategoryConfig
+  stats: Stats
+}) {
+  const primaryPhoto = provider.provider_photos.find(p => p.is_primary) ?? provider.provider_photos[0]
+
+  // Completeness checks
+  const checks = [
+    { label: 'Profile photo',  done: provider.provider_photos.length > 0,  tip: 'Add a photo so customers recognise you' },
+    { label: 'Bio written',    done: !!provider.bio,                        tip: 'Tell customers about your experience' },
+    { label: 'Pricing set',    done: !!provider.price_min,                  tip: 'Add pricing to attract more leads' },
+    { label: 'Hours set',      done: !!provider.hours_from,                 tip: 'Show when you\'re available' },
+    { label: 'Verified',       done: !!provider.is_verified,                tip: 'Get verified by PawLocal for more trust' },
+  ]
+  const donePct = Math.round((checks.filter(c => c.done).length / checks.length) * 100)
+  const firstMissing = checks.find(c => !c.done)
+
+  return (
+    <div className="bg-white border border-border rounded-2xl p-5 mb-5">
+      {/* Provider identity */}
+      <div className="flex items-center gap-4 mb-4">
+        <div className="w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 bg-stone-100">
+          {primaryPhoto ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={primaryPhoto.url} alt={provider.name} className="w-full h-full object-cover" />
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center text-3xl"
+              style={{ backgroundColor: category.color + '18' }}
+            >
+              {category.icon}
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-slate-900 truncate">{provider.name}</p>
+          {provider.business_name && provider.business_name !== provider.name && (
+            <p className="text-xs text-muted-foreground truncate">{provider.business_name}</p>
+          )}
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span
+              className="text-xs font-medium px-2 py-0.5 rounded-full"
+              style={{ backgroundColor: category.color + '18', color: category.color }}
+            >
+              {category.icon} {category.name}
+            </span>
+            {stats.reviews > 0 && (
+              <span className="text-xs text-amber-500 font-medium">
+                ⭐ {stats.avgRating.toFixed(1)} ({stats.reviews})
+              </span>
+            )}
+          </div>
+        </div>
+        <a
+          href={`/provider/${provider.id}`}
+          className="text-xs text-[var(--pl-teal)] font-medium hover:underline flex-shrink-0"
+        >
+          View →
+        </a>
+      </div>
+
+      {/* Profile completeness */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-xs font-semibold text-slate-600">Profile completeness</p>
+          <p className="text-xs font-bold" style={{ color: donePct === 100 ? '#059669' : '#D97706' }}>
+            {donePct}%
+          </p>
+        </div>
+        <div className="w-full bg-slate-100 rounded-full h-2 mb-2">
+          <div
+            className="h-2 rounded-full transition-all duration-500"
+            style={{
+              width: `${donePct}%`,
+              background: donePct === 100 ? '#059669' : 'linear-gradient(90deg, #F59E0B, #D97706)',
+            }}
+          />
+        </div>
+        {donePct < 100 && firstMissing && (
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-slate-500">💡 {firstMissing.tip}</p>
+            <a
+              href={`/provider/${provider.id}/edit`}
+              className="text-xs font-semibold text-[var(--pl-teal)] hover:underline flex-shrink-0 ml-2"
+            >
+              Fix →
+            </a>
+          </div>
+        )}
+        {donePct === 100 && (
+          <p className="text-xs text-emerald-600 font-medium">✨ Profile is complete!</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Points engine ────────────────────────────────────────────────
 function calcPoints(stats: Stats, provider: ProviderWithPhotos) {
   let pts = 0
@@ -271,22 +374,8 @@ export default function DashboardClient({ provider, category, stats, isClaimed, 
       {/* Claim banner — shown if profile not yet secured */}
       <ClaimBanner providerId={provider.id} isClaimed={isClaimed} />
 
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-7">
-        <div
-          className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
-          style={{ backgroundColor: category.color + '18' }}
-        >
-          {category.icon}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-bold text-slate-900 leading-tight truncate">{provider.name}</h1>
-          <p className="text-sm text-slate-400">{category.name} · dashboard</p>
-        </div>
-        <div className="shrink-0">
-          <VerificationBadge tier={(provider.verification_tier as 'contacted' | 'verified' | 'certified') ?? 'contacted'} size="md" />
-        </div>
-      </div>
+      {/* Profile card with completeness */}
+      <ProfileCard provider={provider} category={category} stats={stats} />
 
       {/* Availability toggle */}
       <AvailabilityCard provider={provider} />

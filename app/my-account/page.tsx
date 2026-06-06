@@ -74,6 +74,7 @@ export default async function MyAccountPage() {
       savedProviders={savedProviders}
       userDisplay={userDisplay}
       userAvatar={userAvatar}
+      userId={user.id}
     />
   )
 }

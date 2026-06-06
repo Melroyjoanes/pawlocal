@@ -11,7 +11,7 @@ interface Props {
 
 export default function GoogleSignInButton({
   redirectNext = '/',
-  label = 'Continue with Google',
+  label = 'Sign in · Sign up with Google',
   className,
 }: Props) {
   const [loading, setLoading] = useState(false)
