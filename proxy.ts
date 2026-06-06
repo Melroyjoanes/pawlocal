@@ -2,22 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
 function isProtected(pathname: string) {
-  // Auth-required routes
   if (pathname === '/my-account') return { redirect: '/?auth_required=1' }
   if (pathname.startsWith('/dashboard')) return { redirect: '/account?reason=provider' }
-  // Provider edit requires auth — ownership check happens in the page itself
   if (/^\/provider\/[^/]+\/edit/.test(pathname)) return { redirect: '/?auth_required=1' }
-  // Provider app — /pro/* (but not /pro login page itself)
   if (pathname.startsWith('/pro/')) return { redirect: '/pro' }
   return null
 }
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const protection = isProtected(pathname)
-  if (!protection) return NextResponse.next()
 
+  // Always set x-pathname so the root layout can detect /pro, /admin, /track
+  // and suppress the customer header/footer for those isolated shells.
   let response = NextResponse.next({ request })
+  response.headers.set('x-pathname', pathname)
+
+  const protection = isProtected(pathname)
+  if (!protection) return response
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,6 +29,7 @@ export async function proxy(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({ request })
+          response.headers.set('x-pathname', pathname)
           cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
         },
       },
@@ -48,5 +50,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/my-account', '/dashboard/:path*', '/provider/:id/edit', '/pro/:path*'],
+  // Broad matcher so x-pathname is set on every page request.
+  // Auth-gating logic only activates for the specific routes checked in isProtected().
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.ico$|.*\\.svg$).*)'],
 }
