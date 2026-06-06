@@ -90,6 +90,34 @@ function ProviderCard({
   const [savingCoords, setSavingCoords] = useState(false)
   const [coordSaved, setCoordSaved] = useState(false)
 
+  // Access link state
+  const [showAccessInput, setShowAccessInput] = useState(false)
+  const [accessEmail, setAccessEmail] = useState((p as unknown as { email?: string }).email ?? '')
+  const [sendingAccess, setSendingAccess] = useState(false)
+  const [accessSent, setAccessSent] = useState(false)
+  const [accessError, setAccessError] = useState<string | null>(null)
+
+  async function sendAccessLink() {
+    setSendingAccess(true)
+    setAccessError(null)
+    try {
+      const res = await fetch(`/api/admin/providers/${p.id}/send-access-link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: accessEmail }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed')
+      setAccessSent(true)
+      setShowAccessInput(false)
+      setTimeout(() => setAccessSent(false), 4000)
+    } catch (err) {
+      setAccessError(err instanceof Error ? err.message : 'Failed to send')
+    } finally {
+      setSendingAccess(false)
+    }
+  }
+
   const category = getCategoryBySlug(p.category_slug)
   const primaryPhoto = p.provider_photos?.find((ph) => ph.is_primary) ?? p.provider_photos?.[0]
   const profileUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://pawlocal-ashen.vercel.app'}/provider/${p.id}`
@@ -194,6 +222,18 @@ function ProviderCard({
               💬 Notify on WA
             </a>
 
+            {/* Send /pro access link */}
+            <button
+              onClick={() => setShowAccessInput((v) => !v)}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold border transition-all ${
+                accessSent
+                  ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
+                  : 'bg-white border-border text-slate-700 hover:border-slate-400'
+              }`}
+            >
+              {accessSent ? '✓ Link sent!' : '🔑 Send Access'}
+            </button>
+
             {/* Verified toggle */}
             <button
               onClick={() => onVerifiedChange(p.id, !p.is_verified)}
@@ -247,6 +287,38 @@ function ProviderCard({
           💬 Chat
         </a>
       </div>
+
+      {/* Access link email input (expandable) */}
+      {showAccessInput && filter === 'approved' && (
+        <div className="px-4 pb-4 border-t border-border pt-3">
+          <p className="text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Send /pro dashboard access</p>
+          <p className="text-xs text-slate-400 mb-3">
+            Enter their email → they get a magic sign-in link. Next time they go to <strong>/pro</strong> and enter this email.
+          </p>
+          <div className="flex gap-2 items-end flex-wrap">
+            <div className="flex-1 min-w-48">
+              <label className="block text-[11px] font-medium text-slate-500 mb-1">Email address</label>
+              <input
+                type="email"
+                value={accessEmail}
+                onChange={(e) => setAccessEmail(e.target.value)}
+                placeholder="provider@gmail.com"
+                className="w-full border border-border rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)]"
+              />
+            </div>
+            <button
+              onClick={sendAccessLink}
+              disabled={sendingAccess || !accessEmail.includes('@')}
+              className="px-3.5 py-1.5 rounded-lg text-sm font-semibold bg-[var(--pl-teal)] text-white hover:opacity-90 disabled:opacity-50 transition-all"
+            >
+              {sendingAccess ? 'Sending…' : 'Send link'}
+            </button>
+          </div>
+          {accessError && (
+            <p className="text-xs text-red-600 mt-2">{accessError}</p>
+          )}
+        </div>
+      )}
 
       {/* Coordinate editor (expandable) */}
       {showCoords && filter === 'approved' && (
