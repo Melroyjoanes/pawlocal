@@ -6,7 +6,6 @@ import { createClient } from '@/lib/supabase/client'
 import { CATEGORIES } from '@/lib/categories'
 import GoogleSignInButton from '@/components/GoogleSignInButton'
 
-// Insurance is an affiliate page — providers can't list there
 const SERVICE_CATEGORIES = CATEGORIES.filter((c) => c.slug !== 'insurance')
 
 const MUMBAI_AREAS = [
@@ -15,7 +14,14 @@ const MUMBAI_AREAS = [
   'Oshiwara', 'DN Nagar', 'Goregaon West', 'Malad West',
 ]
 
-const STEPS = ['Sign in', 'Who are you?', 'What you offer', 'Done!']
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+const PRICE_UNITS = [
+  'per session', 'per hour', 'per visit', 'per month',
+  'per day', 'per grooming', 'per consultation',
+]
+
+const STEPS = ['Sign in', 'About you', 'Your services', 'Done!']
 
 export default function JoinPage() {
   const router = useRouter()
@@ -32,14 +38,25 @@ export default function JoinPage() {
   const [googleAvatar, setGoogleAvatar] = useState<string | null>(null)
   const [googleEmail, setGoogleEmail] = useState('')
 
+  // Form state — all fields
   const [form, setForm] = useState({
     name: '',
+    business_name: '',
     whatsapp: '',
+    phone: '',
+    bio: '',
     area: '',
     category_slugs: [] as string[],
+    price_min: '',
+    price_max: '',
+    price_unit: 'per session',
+    hours_from: '09:00',
+    hours_to: '18:00',
+    working_days: [] as string[],
+    is_emergency: false,
   })
 
-  // On mount: check if already signed in (e.g. returning from OAuth)
+  // On mount: check if already signed in (returning from OAuth)
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data }) => {
@@ -49,9 +66,7 @@ export default function JoinPage() {
         setGoogleName(name)
         setGoogleEmail(data.user.email ?? '')
         setGoogleAvatar(meta.avatar_url ?? meta.picture ?? null)
-        // Pre-fill name from Google
         setForm(prev => ({ ...prev, name: prev.name || name }))
-        // Skip the sign-in step — they're already signed in
         setStep(prev => prev === 0 ? 1 : prev)
       }
       setAuthChecked(true)
@@ -59,15 +74,21 @@ export default function JoinPage() {
   }, [])
 
   function toggleCategory(slug: string) {
-    setForm(prev => {
-      const has = prev.category_slugs.includes(slug)
-      return {
-        ...prev,
-        category_slugs: has
-          ? prev.category_slugs.filter(s => s !== slug)
-          : [...prev.category_slugs, slug],
-      }
-    })
+    setForm(prev => ({
+      ...prev,
+      category_slugs: prev.category_slugs.includes(slug)
+        ? prev.category_slugs.filter(s => s !== slug)
+        : [...prev.category_slugs, slug],
+    }))
+  }
+
+  function toggleDay(day: string) {
+    setForm(prev => ({
+      ...prev,
+      working_days: prev.working_days.includes(day)
+        ? prev.working_days.filter(d => d !== day)
+        : [...prev.working_days, day],
+    }))
   }
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -94,16 +115,23 @@ export default function JoinPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        name: form.name,
-        whatsapp: form.whatsapp,
+        name: form.name.trim(),
+        business_name: form.business_name.trim() || null,
+        whatsapp: form.whatsapp.trim(),
+        phone: form.phone.trim() || null,
+        bio: form.bio.trim() || null,
         category_slug: form.category_slugs[0],
         category_slugs: form.category_slugs,
         area: form.area,
         address: form.area + ', Mumbai',
         photo_urls: photoUrl ? [photoUrl] : [],
-        price_min: null,
-        price_max: null,
-        bio: null,
+        price_min: form.price_min ? Number(form.price_min) : null,
+        price_max: form.price_max ? Number(form.price_max) : null,
+        price_unit: form.price_unit,
+        hours_from: form.hours_from,
+        hours_to: form.hours_to,
+        working_days: form.working_days,
+        is_emergency: form.is_emergency,
         lat: 19.1075,
         lng: 72.8263,
       }),
@@ -118,11 +146,12 @@ export default function JoinPage() {
     }
   }
 
+  // Validation
   const canNext1 = form.name.trim().length >= 2 && form.whatsapp.replace(/\D/g, '').length >= 10
-  const canNext2 = form.category_slugs.length > 0 && form.area.length > 0
-  const canSubmit = canNext1 && canNext2
+  const canSubmit = canNext1 && form.category_slugs.length > 0 && form.area.length > 0
 
-  // Show nothing until we've checked auth (avoids flash of sign-in screen)
+  const hasVet = form.category_slugs.includes('vet')
+
   if (!authChecked) {
     return (
       <div className="max-w-md mx-auto py-20 px-4 flex justify-center">
@@ -134,21 +163,18 @@ export default function JoinPage() {
   return (
     <div className="max-w-md mx-auto py-10 px-4 pb-20">
 
-      {/* Header */}
+      {/* Progress bar */}
       <div className="mb-8">
-        {/* Progress steps — skip step 0 in display once signed in */}
         <div className="flex items-center gap-2 mb-5">
           {STEPS.slice(1).map((s, i) => {
-            const realStep = i + 1 // steps 1, 2, 3
+            const realStep = i + 1
             return (
               <div key={i} className="flex items-center gap-2">
-                <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                    step > realStep ? 'bg-emerald-500 text-white' :
-                    step === realStep ? 'bg-[var(--pl-teal)] text-white' :
-                    'bg-slate-100 text-slate-400'
-                  }`}
-                >
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                  step > realStep ? 'bg-emerald-500 text-white' :
+                  step === realStep ? 'bg-[var(--pl-teal)] text-white' :
+                  'bg-slate-100 text-slate-400'
+                }`}>
                   {step > realStep ? '✓' : i + 1}
                 </div>
                 <span className={`text-xs font-medium hidden sm:block ${step === realStep ? 'text-slate-900' : 'text-slate-400'}`}>
@@ -160,24 +186,12 @@ export default function JoinPage() {
           })}
         </div>
 
-        {step === 0 && (
-          <>
-            <h1 className="text-2xl font-bold text-slate-900 leading-tight">List your services free</h1>
-            <p className="text-sm text-slate-500 mt-1">Sign in with Google first — takes 10 seconds.</p>
-          </>
-        )}
-        {step === 1 && (
-          <>
-            <h1 className="text-2xl font-bold text-slate-900 leading-tight">Tell us about yourself</h1>
-            <p className="text-sm text-slate-500 mt-1">Takes 2 minutes. Free forever. We review and call you within 24 hours.</p>
-          </>
-        )}
-        {step === 2 && (
-          <>
-            <h1 className="text-2xl font-bold text-slate-900 leading-tight">What do you offer?</h1>
-            <p className="text-sm text-slate-500 mt-1">Select your services and area. You'll complete your full profile after approval.</p>
-          </>
-        )}
+        {step === 0 && <h1 className="text-2xl font-bold text-slate-900">List your services free</h1>}
+        {step === 0 && <p className="text-sm text-slate-500 mt-1">Sign in with Google first — takes 10 seconds.</p>}
+        {step === 1 && <h1 className="text-2xl font-bold text-slate-900">About you</h1>}
+        {step === 1 && <p className="text-sm text-slate-500 mt-1">Tell us about yourself and your experience.</p>}
+        {step === 2 && <h1 className="text-2xl font-bold text-slate-900">Your services</h1>}
+        {step === 2 && <p className="text-sm text-slate-500 mt-1">What you offer, where, and at what price.</p>}
       </div>
 
       {submitError && (
@@ -186,7 +200,7 @@ export default function JoinPage() {
         </div>
       )}
 
-      {/* Step 0 — Google sign-in */}
+      {/* ── Step 0: Google sign-in ── */}
       {step === 0 && (
         <div className="flex flex-col gap-5">
           <div className="bg-white border border-border rounded-2xl p-6">
@@ -211,7 +225,7 @@ export default function JoinPage() {
         </div>
       )}
 
-      {/* Step 1 — Identity */}
+      {/* ── Step 1: About you ── */}
       {step === 1 && (
         <div className="flex flex-col gap-5">
 
@@ -235,67 +249,115 @@ export default function JoinPage() {
           )}
 
           {/* Photo */}
-          <div className="flex items-center gap-4">
-            <div
-              onClick={() => fileRef.current?.click()}
-              className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-[var(--pl-teal)] transition-colors overflow-hidden flex-shrink-0 bg-slate-50"
-            >
-              {photoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={photoUrl} alt="" className="w-full h-full object-cover" />
-              ) : uploading ? (
-                <span className="text-sm text-slate-400">…</span>
-              ) : (
-                <>
-                  <span className="text-2xl mb-0.5">📷</span>
-                  <span className="text-[10px] font-medium text-slate-400">Add photo</span>
-                </>
-              )}
+          <div className="bg-white border border-border rounded-2xl p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Profile photo</p>
+            <div className="flex items-center gap-4">
+              <div
+                onClick={() => fileRef.current?.click()}
+                className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:border-[var(--pl-teal)] transition-colors overflow-hidden flex-shrink-0 bg-slate-50"
+              >
+                {photoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={photoUrl} alt="" className="w-full h-full object-cover" />
+                ) : uploading ? (
+                  <span className="text-sm text-slate-400">…</span>
+                ) : (
+                  <>
+                    <span className="text-2xl mb-0.5">📷</span>
+                    <span className="text-[10px] font-medium text-slate-400">Add photo</span>
+                  </>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-slate-800">Profile photo</p>
+                <p className="text-xs text-slate-500 mt-0.5 leading-snug">
+                  Recommended — providers with photos get 3× more contacts.
+                </p>
+              </div>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-semibold text-slate-800">Profile photo</p>
-              <p className="text-xs text-slate-500 mt-0.5 leading-snug">
-                Optional but recommended — providers with photos get 3× more contacts.
-              </p>
-            </div>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
           </div>
 
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-slate-700">Your name *</label>
-            <input
-              required
-              autoFocus
-              value={form.name}
-              onChange={e => setForm({ ...form, name: e.target.value })}
-              className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
-              placeholder="Ravi Kumar"
-            />
-          </div>
+          {/* Basic info */}
+          <div className="bg-white border border-border rounded-2xl p-5 flex flex-col gap-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Basic info</p>
 
-          {/* WhatsApp */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-slate-700">WhatsApp number *</label>
-            <div className="flex items-center border border-border rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-[var(--pl-teal)] bg-white gap-2">
-              <span className="text-sm text-slate-400 font-medium">+91</span>
+            <div>
+              <label className="block text-sm font-medium mb-1.5 text-slate-700">Your full name *</label>
               <input
                 required
-                type="tel"
-                value={form.whatsapp}
-                onChange={e => setForm({ ...form, whatsapp: e.target.value })}
-                className="flex-1 text-sm outline-none bg-transparent"
-                placeholder="98765 43210"
+                autoFocus
+                value={form.name}
+                onChange={e => setForm({ ...form, name: e.target.value })}
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+                placeholder="Ravi Kumar"
               />
             </div>
-            <p className="text-xs text-slate-400 mt-1.5">Pet owners will reach you here. Shown on your profile.</p>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5 text-slate-700">
+                Business / clinic name <span className="text-slate-400 font-normal">(optional)</span>
+              </label>
+              <input
+                value={form.business_name}
+                onChange={e => setForm({ ...form, business_name: e.target.value })}
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+                placeholder="e.g. Happy Paws Clinic"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5 text-slate-700">WhatsApp number *</label>
+              <div className="flex items-center border border-border rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-[var(--pl-teal)] bg-white gap-2">
+                <span className="text-sm text-slate-400 font-medium">+91</span>
+                <input
+                  required
+                  type="tel"
+                  value={form.whatsapp}
+                  onChange={e => setForm({ ...form, whatsapp: e.target.value })}
+                  className="flex-1 text-sm outline-none bg-transparent"
+                  placeholder="98765 43210"
+                />
+              </div>
+              <p className="text-xs text-slate-400 mt-1">Pet owners will reach you here. Shown on your profile.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5 text-slate-700">
+                Phone number <span className="text-slate-400 font-normal">(optional — if different from WhatsApp)</span>
+              </label>
+              <div className="flex items-center border border-border rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-[var(--pl-teal)] bg-white gap-2">
+                <span className="text-sm text-slate-400 font-medium">+91</span>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={e => setForm({ ...form, phone: e.target.value })}
+                  className="flex-1 text-sm outline-none bg-transparent"
+                  placeholder="98765 43210"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div className="bg-white border border-border rounded-2xl p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">About you</p>
+            <textarea
+              value={form.bio}
+              onChange={e => setForm({ ...form, bio: e.target.value })}
+              rows={4}
+              maxLength={800}
+              placeholder="Tell pet owners about your experience, qualifications, and what makes you stand out…"
+              className="w-full border border-border rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+            />
+            <p className="text-xs text-slate-400 mt-1 text-right">{form.bio.length}/800</p>
           </div>
 
           <button
             type="button"
             disabled={!canNext1}
             onClick={() => setStep(2)}
-            className="w-full py-4 rounded-2xl font-bold text-sm transition-all disabled:opacity-40 mt-2"
+            className="w-full py-4 rounded-2xl font-bold text-sm transition-all disabled:opacity-40"
             style={{
               background: canNext1 ? 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)' : '#F1F5F9',
               color: canNext1 ? '#451A03' : '#94A3B8',
@@ -307,15 +369,15 @@ export default function JoinPage() {
         </div>
       )}
 
-      {/* Step 2 — Services + Area */}
+      {/* ── Step 2: Services ── */}
       {step === 2 && (
         <div className="flex flex-col gap-5">
 
-          {/* Service type */}
-          <div>
-            <label className="block text-sm font-medium mb-2 text-slate-700">
-              What services do you offer? * <span className="text-muted-foreground font-normal">(select all that apply)</span>
-            </label>
+          {/* Services */}
+          <div className="bg-white border border-border rounded-2xl p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
+              Services offered * <span className="font-normal text-slate-400 normal-case tracking-normal">(select all that apply)</span>
+            </p>
             <div className="flex flex-wrap gap-2">
               {SERVICE_CATEGORIES.map(c => {
                 const selected = form.category_slugs.includes(c.slug)
@@ -338,9 +400,34 @@ export default function JoinPage() {
             </div>
           </div>
 
+          {/* 24hr Emergency — only if vet selected */}
+          {hasVet && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-red-800">24hr / Emergency clinic?</p>
+                  <p className="text-xs text-red-600 mt-0.5">Toggle on if you handle emergencies outside regular hours.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm(prev => ({ ...prev, is_emergency: !prev.is_emergency }))}
+                  className={`relative inline-flex h-7 w-12 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ${
+                    form.is_emergency ? 'bg-red-600' : 'bg-slate-300'
+                  }`}
+                  role="switch"
+                  aria-checked={form.is_emergency}
+                >
+                  <span className={`inline-block h-6 w-6 rounded-full bg-white shadow transform transition-transform duration-200 ${
+                    form.is_emergency ? 'translate-x-5' : 'translate-x-0'
+                  }`} />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Area */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-slate-700">Your area *</label>
+          <div className="bg-white border border-border rounded-2xl p-5">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">Service area *</p>
             <select
               required
               value={form.area}
@@ -352,6 +439,88 @@ export default function JoinPage() {
                 <option key={a} value={a}>{a}</option>
               ))}
             </select>
+          </div>
+
+          {/* Pricing */}
+          <div className="bg-white border border-border rounded-2xl p-5 flex flex-col gap-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Pricing <span className="font-normal normal-case tracking-normal text-slate-400">(optional — you can add this later)</span></p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Min price (₹)</label>
+                <input
+                  type="number"
+                  value={form.price_min}
+                  onChange={e => setForm({ ...form, price_min: e.target.value })}
+                  placeholder="e.g. 300"
+                  className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Max price (₹)</label>
+                <input
+                  type="number"
+                  value={form.price_max}
+                  onChange={e => setForm({ ...form, price_max: e.target.value })}
+                  placeholder="e.g. 600"
+                  className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-1.5">Price unit</label>
+              <select
+                value={form.price_unit}
+                onChange={e => setForm({ ...form, price_unit: e.target.value })}
+                className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+              >
+                {PRICE_UNITS.map(u => <option key={u}>{u}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Hours */}
+          <div className="bg-white border border-border rounded-2xl p-5 flex flex-col gap-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Availability <span className="font-normal normal-case tracking-normal text-slate-400">(optional)</span></p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Opens at</label>
+                <input
+                  type="time"
+                  value={form.hours_from}
+                  onChange={e => setForm({ ...form, hours_from: e.target.value })}
+                  className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1.5">Closes at</label>
+                <input
+                  type="time"
+                  value={form.hours_to}
+                  onChange={e => setForm({ ...form, hours_to: e.target.value })}
+                  className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-600 mb-2">Working days</label>
+              <div className="flex gap-2 flex-wrap">
+                {DAYS.map(day => (
+                  <button
+                    key={day}
+                    type="button"
+                    onClick={() => toggleDay(day)}
+                    className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all"
+                    style={
+                      form.working_days.includes(day)
+                        ? { background: '#FCD34D', color: '#451A03', borderColor: '#F59E0B' }
+                        : { background: 'white', color: '#64748B', borderColor: '#E2E8F0' }
+                    }
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Trust note */}
@@ -385,6 +554,11 @@ export default function JoinPage() {
           </div>
         </div>
       )}
+
+      <p className="text-xs text-center text-slate-400 mt-6">
+        Already listed?{' '}
+        <a href="/my-listing" className="underline hover:text-slate-600">Access your dashboard →</a>
+      </p>
     </div>
   )
 }
