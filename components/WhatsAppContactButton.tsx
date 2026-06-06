@@ -6,14 +6,13 @@ import { createClient } from '@/lib/supabase/client'
 interface Props {
   providerId: string
   providerName: string
-  whatsappUrl: string
 }
 
-export default function WhatsAppContactButton({ providerId, providerName, whatsappUrl }: Props) {
+export default function WhatsAppContactButton({ providerId, providerName }: Props) {
   const storageKey = `pawlocal_contacted_${providerId}`
   const [hasContacted, setHasContacted] = useState(false)
   const [showNudge, setShowNudge] = useState(false)
-  const [isSignedIn, setIsSignedIn] = useState(true) // optimistic — check async
+  const [isSignedIn, setIsSignedIn] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
@@ -29,23 +28,20 @@ export default function WhatsAppContactButton({ providerId, providerName, whatsa
     document.getElementById('review-section')?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
-    e.preventDefault()
-    // Mark as contacted
+  function handleContact() {
     localStorage.setItem(storageKey, '1')
     setHasContacted(true)
-    // Show nudge briefly, then open WhatsApp
     setShowNudge(true)
     setTimeout(() => {
       setShowNudge(false)
-      window.open(whatsappUrl, '_blank', 'noopener,noreferrer')
-    }, 2200)
+      window.open(`/api/provider/whatsapp-redirect/${providerId}`, '_blank', 'noopener,noreferrer')
+    }, 1800)
   }
 
   return (
     <div className="flex flex-col gap-2 flex-1">
-      {/* "You've contacted" reminder — shown on return visits */}
-      {hasContacted && !showNudge && (
+      {/* "You've contacted" reminder — only for signed-in users */}
+      {hasContacted && !showNudge && isSignedIn && (
         <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
           <span className="text-xs text-amber-700">You contacted {providerName} 👋</span>
           <button
@@ -57,42 +53,37 @@ export default function WhatsAppContactButton({ providerId, providerName, whatsa
         </div>
       )}
 
-      {/* Nudge toast — shown for ~2s after tapping */}
+      {/* Nudge toast shown briefly after tapping */}
       {showNudge && (
         <div className="flex flex-col gap-1.5 bg-slate-900 text-white rounded-xl px-4 py-3 text-xs font-medium">
           <span>💬 Opening WhatsApp…</span>
-          {authChecked && !isSignedIn && (
-            <span className="opacity-80">
-              💡 <a href="/my-account" className="underline font-semibold" onClick={e => e.stopPropagation()}>Sign in</a> to save {providerName} and get notified about deals
-            </span>
-          )}
-          {(isSignedIn || !authChecked) && (
-            <span className="opacity-70">After your session, come back and share how it went 🌟</span>
-          )}
+          <span className="opacity-70">After your session, come back and share how it went 🌟</span>
         </div>
       )}
 
-      {/* Soft sign-in nudge strip — only when not signed in, shown once after first contact */}
-      {authChecked && !isSignedIn && hasContacted && !showNudge && (
-        <div className="flex items-center justify-between bg-slate-50 border border-border rounded-xl px-3 py-2">
-          <p className="text-xs text-slate-600">Save {providerName} to your account</p>
-          <a
-            href="/my-account"
-            className="text-xs font-semibold text-[var(--pl-teal)] hover:underline flex-shrink-0 ml-2"
-          >
-            Sign in →
-          </a>
-        </div>
+      {/* Main CTA — gated by auth */}
+      {!authChecked ? (
+        /* Loading skeleton — prevents flashing wrong button */
+        <div className="w-full h-[52px] rounded-2xl bg-stone-100 animate-pulse" />
+      ) : isSignedIn ? (
+        /* Signed-in — direct contact via server-side redirect (real number never in HTML) */
+        <button
+          type="button"
+          onClick={handleContact}
+          className="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-4 rounded-2xl font-semibold transition-colors min-h-[52px]"
+        >
+          💬 WhatsApp
+        </button>
+      ) : (
+        /* Not signed in — show sign-in gate */
+        <a
+          href={`/account?next=/provider/${providerId}`}
+          className="flex flex-col items-center justify-center gap-0.5 w-full bg-[var(--pl-teal)] hover:opacity-90 active:opacity-80 text-white py-3 rounded-2xl font-semibold transition-all min-h-[52px]"
+        >
+          <span className="text-sm font-bold">🔒 Sign in to contact</span>
+          <span className="text-[10px] opacity-80 font-normal">Free · Takes 30 seconds</span>
+        </a>
       )}
-
-      {/* WhatsApp button */}
-      <a
-        href={whatsappUrl}
-        onClick={handleClick}
-        className="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white py-4 rounded-2xl font-semibold transition-colors min-h-[52px]"
-      >
-        💬 WhatsApp
-      </a>
     </div>
   )
 }

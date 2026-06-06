@@ -31,6 +31,9 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
   const { id } = await params
   const supabase = await createClient()
 
+  // Check if the current session user is the provider themselves
+  const { data: { user } } = await supabase.auth.getUser()
+
   const { data } = await supabase
     .from('providers')
     .select('*, provider_photos(*)')
@@ -41,6 +44,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
   if (!data) notFound()
 
   const provider = data as unknown as ProviderWithPhotos
+  const isOwner = !!user?.email && user.email === (provider as unknown as { email?: string }).email
   const category = getCategoryBySlug(provider.category_slug)
   if (!category) notFound()
 
@@ -63,7 +67,6 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
     .filter((p) => !p.is_primary)
     .sort((a, b) => a.sort_order - b.sort_order)
 
-  const whatsappUrl = `https://wa.me/91${provider.whatsapp.replace(/\D/g, '')}`
   const shareUrl = `https://wa.me/?text=${encodeURIComponent(
     `🐾 Check out ${provider.name} for ${category.name} near Juhu!\n\nhttps://pawlocal-ashen.vercel.app/provider/${provider.id}`
   )}`
@@ -304,11 +307,22 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           </p>
         )}
 
-        {/* Write a review */}
-        <div className="border border-border rounded-2xl p-5">
-          <h3 className="font-semibold text-foreground mb-4">Write a review</h3>
-          <ReviewForm providerId={provider.id} />
-        </div>
+        {/* Write a review — hidden from the provider themselves */}
+        {isOwner ? (
+          <div className="border border-border rounded-2xl p-5 bg-stone-50 text-center">
+            <p className="text-sm text-muted-foreground">
+              This is your profile.{' '}
+              <a href="/pro/profile" className="text-[var(--pl-teal)] font-semibold hover:underline">
+                Edit it here →
+              </a>
+            </p>
+          </div>
+        ) : (
+          <div className="border border-border rounded-2xl p-5">
+            <h3 className="font-semibold text-foreground mb-4">Write a review</h3>
+            <ReviewForm providerId={provider.id} />
+          </div>
+        )}
       </div>
 
       {/* Sticky CTA — clears iOS home indicator via safe-area-inset */}
@@ -316,57 +330,69 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         className="sticky bottom-0 -mx-4 px-4 pt-3 bg-background/95 backdrop-blur-sm flex flex-col gap-2"
         style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
       >
-        <div className="flex gap-3">
-          <WhatsAppContactButton
-            providerId={provider.id}
-            providerName={provider.name}
-            whatsappUrl={whatsappUrl}
-          />
-          {provider.phone ? (
-            <TrackButton
-              providerId={provider.id}
-              eventType="call_click"
-              href={`tel:${provider.phone}`}
-              className="flex-1 bg-white border border-border text-foreground py-4 rounded-2xl font-semibold text-center hover:bg-muted active:bg-muted transition-colors flex items-center justify-center gap-2 min-h-[52px]"
-            >
-              📞 Call
-            </TrackButton>
-          ) : (
-            <SaveButton
-              providerId={provider.id}
-              providerName={provider.name}
-              categorySlug={provider.category_slug}
-              whatsapp={provider.whatsapp}
-            />
-          )}
-        </div>
-        {provider.phone && (
-          <div className="flex gap-3">
-            <SaveButton
-              providerId={provider.id}
-              providerName={provider.name}
-              categorySlug={provider.category_slug}
-              whatsapp={provider.whatsapp}
-            />
-            <a
-              href={shareUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors py-1"
-            >
-              ↗ Share on WhatsApp
-            </a>
-          </div>
-        )}
-        {!provider.phone && (
+        {isOwner ? (
+          /* Provider viewing their own profile — show edit shortcut instead of contact CTAs */
           <a
-            href={shareUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors py-1"
+            href="/pro/profile"
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-sm text-white transition-all"
+            style={{ backgroundColor: 'oklch(0.48 0.17 196)' }}
           >
-            ↗ Share on WhatsApp
+            ✏️ Edit your profile
           </a>
+        ) : (
+          <>
+            <div className="flex gap-3">
+              <WhatsAppContactButton
+                providerId={provider.id}
+                providerName={provider.name}
+              />
+              {provider.phone ? (
+                <TrackButton
+                  providerId={provider.id}
+                  eventType="call_click"
+                  href={`tel:${provider.phone}`}
+                  className="flex-1 bg-white border border-border text-foreground py-4 rounded-2xl font-semibold text-center hover:bg-muted active:bg-muted transition-colors flex items-center justify-center gap-2 min-h-[52px]"
+                >
+                  📞 Call
+                </TrackButton>
+              ) : (
+                <SaveButton
+                  providerId={provider.id}
+                  providerName={provider.name}
+                  categorySlug={provider.category_slug}
+                  whatsapp={provider.whatsapp}
+                />
+              )}
+            </div>
+            {provider.phone && (
+              <div className="flex gap-3">
+                <SaveButton
+                  providerId={provider.id}
+                  providerName={provider.name}
+                  categorySlug={provider.category_slug}
+                  whatsapp={provider.whatsapp}
+                />
+                <a
+                  href={shareUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors py-1"
+                >
+                  ↗ Share on WhatsApp
+                </a>
+              </div>
+            )}
+            {!provider.phone && (
+              <a
+                href={shareUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors py-1"
+              >
+                ↗ Share on WhatsApp
+              </a>
+            )}
+          </>
         )}
       </div>
     </div>

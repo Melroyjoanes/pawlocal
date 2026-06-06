@@ -17,6 +17,7 @@ export default function ReviewForm({ providerId }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]     = useState('')
   const [isVerified, setIsVerified] = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
 
   // Detect auth and pre-fill name from Google profile
   useEffect(() => {
@@ -28,6 +29,7 @@ export default function ReviewForm({ providerId }: Props) {
         if (fullName) setName(fullName)
         setIsVerified(true)
       }
+      setAuthChecked(true)
     })
   }, [])
 
@@ -38,7 +40,7 @@ export default function ReviewForm({ providerId }: Props) {
 
     setSubmitting(true)
 
-    const resolvedPhone = phone.trim() || null
+    const resolvedPhone = phone.trim()
 
     const res = await fetch('/api/reviews', {
       method: 'POST',
@@ -87,14 +89,14 @@ export default function ReviewForm({ providerId }: Props) {
         )}
 
         {/* Soft nudge — shown when not signed in */}
-        {!isVerified && (
-          <div className="flex items-center justify-between bg-slate-50 border border-border rounded-xl px-3 py-2.5">
-            <p className="text-xs text-slate-600 leading-snug">
-              Sign in to get a ✓ <strong>Verified</strong> badge on your review
+        {authChecked && !isVerified && (
+          <div className="flex items-center justify-between bg-teal-50 border border-teal-200 rounded-xl px-3 py-2.5">
+            <p className="text-xs text-teal-800 leading-snug">
+              ✓ <strong>Sign in</strong> to get a Verified badge and have your review published faster
             </p>
             <a
-              href={`/my-account`}
-              className="text-xs font-semibold text-[var(--pl-teal)] hover:underline flex-shrink-0 ml-2"
+              href={`/account?next=${typeof window !== 'undefined' ? window.location.pathname : ''}`}
+              className="text-xs font-bold text-[var(--pl-teal)] hover:underline flex-shrink-0 ml-2 whitespace-nowrap"
             >
               Sign in →
             </a>
@@ -129,18 +131,21 @@ export default function ReviewForm({ providerId }: Props) {
           />
         </div>
 
-        {/* Phone (optional — helps us verify) */}
+        {/* Phone (required — helps us verify) */}
         <div>
           <label className="block text-sm font-medium mb-1.5">
-            Phone <span className="text-muted-foreground font-normal">(optional — helps verify)</span>
+            Mobile number <span className="text-red-500">*</span>
+            <span className="text-muted-foreground font-normal text-xs"> — used to verify, never shown publicly</span>
           </label>
           <input
             type="tel"
+            required
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="98765 43210"
             className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
           />
+          <p className="text-xs text-muted-foreground mt-1">Indian mobile number · 10 digits</p>
         </div>
 
         {/* Comment */}
@@ -163,7 +168,7 @@ export default function ReviewForm({ providerId }: Props) {
 
         <button
           type="submit"
-          disabled={submitting || !rating || !name.trim()}
+          disabled={submitting || !rating || !name.trim() || !phone.trim()}
           className="w-full text-white py-3.5 rounded-2xl font-semibold text-sm transition-colors disabled:opacity-50"
           style={{ backgroundColor: 'var(--pl-teal)' }}
         >
@@ -171,7 +176,7 @@ export default function ReviewForm({ providerId }: Props) {
         </button>
 
         <p className="text-xs text-center text-muted-foreground">
-          Reviews are verified before publishing.
+          Reviews are verified within 24 hours. Your number is never shown publicly.
         </p>
       </form>
   )

@@ -69,20 +69,37 @@ export default function MyAccountClient({
   const [savingName, setSavingName] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
 
-  // Hydrate saved providers from localStorage
+  // Hydrate saved providers from API (signed-in users) with localStorage fallback
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('pawlocal_saved') ?? '[]') as SavedProvider[]
-      setSavedProviders(saved)
-    } catch {
-      setSavedProviders([])
-    }
+    fetch('/api/customer/saved')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setSavedProviders(data)
+          // Sync to localStorage for offline access
+          localStorage.setItem('pawlocal_saved', JSON.stringify(data))
+        } else {
+          // Fallback: load from localStorage
+          try {
+            const local = JSON.parse(localStorage.getItem('pawlocal_saved') ?? '[]')
+            if (Array.isArray(local)) setSavedProviders(local)
+          } catch { /* ignore */ }
+        }
+      })
+      .catch(() => {
+        try {
+          const local = JSON.parse(localStorage.getItem('pawlocal_saved') ?? '[]')
+          if (Array.isArray(local)) setSavedProviders(local)
+        } catch { /* ignore */ }
+      })
   }, [])
 
   function removeSaved(id: string) {
     const updated = savedProviders.filter(p => p.id !== id)
     setSavedProviders(updated)
     localStorage.setItem('pawlocal_saved', JSON.stringify(updated))
+    // Also remove from DB
+    fetch(`/api/customer/saved/${id}`, { method: 'DELETE' }).catch(() => {/* ignore */})
   }
 
   async function handleSaveName() {

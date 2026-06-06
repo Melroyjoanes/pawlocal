@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
 
 type Props = {
@@ -25,6 +26,11 @@ export default function ProProfileClient({ provider }: Props) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [photoUploading, setPhotoUploading] = useState(false)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(
+    provider.provider_photos?.find(p => p.is_primary)?.url ?? provider.provider_photos?.[0]?.url ?? null
+  )
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Form state — seeded from provider
   const [form, setForm] = useState({
@@ -51,6 +57,34 @@ export default function ProProfileClient({ provider }: Props) {
     }))
   }
 
+  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) {
+      setSaveError('Photo must be under 5 MB')
+      return
+    }
+    setPhotoUploading(true)
+    setSaveError(null)
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop() ?? 'jpg'
+      const path = `${provider.id}/${Date.now()}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('provider-photos')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage
+        .from('provider-photos')
+        .getPublicUrl(path)
+      setPhotoUrl(publicUrl)
+    } catch {
+      setSaveError('Photo upload failed. Try again.')
+    } finally {
+      setPhotoUploading(false)
+    }
+  }
+
   async function handleSave() {
     setSaving(true)
     setSaveError(null)
@@ -71,6 +105,7 @@ export default function ProProfileClient({ provider }: Props) {
           hours_to: form.hours_to,
           working_days: form.working_days,
           is_emergency: form.is_emergency,
+          photo_url: photoUrl,
         }),
       })
       if (!res.ok) {
@@ -190,6 +225,48 @@ export default function ProProfileClient({ provider }: Props) {
           {saveError}
         </div>
       )}
+
+      {/* Photo upload */}
+      <div className="bg-white rounded-2xl border border-border p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">Profile Photo</p>
+        <div className="flex items-center gap-4">
+          {/* Preview */}
+          <div className="w-20 h-20 rounded-2xl bg-stone-100 flex-shrink-0 overflow-hidden relative">
+            {photoUploading ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="w-6 h-6 border-2 border-[var(--pl-teal)] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={photoUrl} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-3xl">🐾</div>
+            )}
+          </div>
+          {/* Controls */}
+          <div className="flex-1">
+            <p className="text-sm text-stone-600 mb-2">
+              {photoUrl ? 'Looking good! Tap to change.' : 'Add a photo to build trust with customers.'}
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handlePhotoSelect}
+            />
+            <button
+              type="button"
+              disabled={photoUploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="px-4 py-2 rounded-xl border-2 border-[var(--pl-teal)] text-[var(--pl-teal)] text-sm font-semibold hover:bg-teal-50 transition-colors disabled:opacity-50"
+            >
+              {photoUploading ? 'Uploading…' : photoUrl ? '📷 Change photo' : '📷 Add photo'}
+            </button>
+            <p className="text-xs text-muted-foreground mt-1.5">JPG, PNG or WebP · Max 5 MB</p>
+          </div>
+        </div>
+      </div>
 
       {/* Basic info */}
       <div className="bg-white rounded-2xl border border-border p-5 shadow-sm space-y-4">

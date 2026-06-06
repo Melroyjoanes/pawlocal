@@ -38,7 +38,7 @@ function timeLeft(expiresAt: string): string {
   return `${hrs}h left`
 }
 
-function BroadcastCard({ b }: { b: Broadcast }) {
+function BroadcastCard({ b, isSignedIn }: { b: Broadcast; isSignedIn?: boolean }) {
   const service = SERVICES.find((s) => s.slug === b.service_slug)
   const waLink = `https://wa.me/91${b.poster_whatsapp.replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(
     `Hi ${b.poster_name}, I saw your request on PawLocal for ${service?.label ?? b.service_slug}. I can help! 🐾`
@@ -84,18 +84,27 @@ function BroadcastCard({ b }: { b: Broadcast }) {
       </div>
 
       {/* CTA */}
-      <a
-        href={waLink}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:bg-[#20b558] transition-colors"
-      >
-        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-          <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.533 5.859L.054 23.454a.75.75 0 0 0 .918.918l5.595-1.479A11.934 11.934 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.9 0-3.68-.51-5.21-1.4l-.374-.22-3.878 1.024 1.024-3.878-.22-.374A9.974 9.974 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
-        </svg>
-        Reply to {b.poster_name}
-      </a>
+      {isSignedIn ? (
+        <a
+          href={waLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:bg-[#20b558] transition-colors"
+        >
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.533 5.859L.054 23.454a.75.75 0 0 0 .918.918l5.595-1.479A11.934 11.934 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.9 0-3.68-.51-5.21-1.4l-.374-.22-3.878 1.024 1.024-3.878-.22-.374A9.974 9.974 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+          </svg>
+          Reply to {b.poster_name}
+        </a>
+      ) : (
+        <a
+          href="/account?next=/broadcast"
+          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-slate-100 text-slate-500 text-sm font-medium border border-border"
+        >
+          🔒 Sign in to reply
+        </a>
+      )}
     </motion.div>
   )
 }
@@ -131,7 +140,8 @@ export default function BroadcastPage() {
   const [error, setError] = useState<string | null>(null)
   const [filterService, setFilterService] = useState<string>('all')
   const [matchingProviders, setMatchingProviders] = useState<any[]>([])
-  const [isSignedIn, setIsSignedIn] = useState(true) // optimistic, avoids flash
+  const [isSignedIn, setIsSignedIn] = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
   const [nudgeDismissed, setNudgeDismissed] = useState(false)
 
   // Check auth for nudge
@@ -145,6 +155,7 @@ export default function BroadcastPage() {
         const fullName = meta.full_name ?? meta.name ?? ''
         if (fullName) setForm(f => ({ ...f, poster_name: fullName }))
       }
+      setAuthChecked(true)
     })
   }, [])
 
@@ -213,7 +224,7 @@ export default function BroadcastPage() {
     <div className="max-w-2xl mx-auto">
 
       {/* Soft sign-in nudge — only when not signed in and not dismissed */}
-      {!isSignedIn && !nudgeDismissed && (
+      {authChecked && !isSignedIn && !nudgeDismissed && (
         <div className="flex items-center justify-between gap-3 bg-slate-50 border border-border rounded-2xl px-4 py-3 mb-5">
           <p className="text-xs text-slate-700 leading-snug">
             💡 <a href="/my-account" className="font-semibold text-[var(--pl-teal)] hover:underline">Sign in</a> to track your requests and see replies in one place
@@ -250,6 +261,25 @@ export default function BroadcastPage() {
       <div className="bg-white rounded-2xl border border-border p-5 mb-8">
         <h2 className="text-base font-semibold mb-4">Post a Request</h2>
 
+        {!authChecked ? (
+          <div className="h-48 animate-pulse bg-stone-50 rounded-xl" />
+        ) : !isSignedIn ? (
+          <div className="py-10 text-center">
+            <div className="text-4xl mb-3">🔒</div>
+            <p className="font-semibold text-slate-900 mb-1">Sign in to post a request</p>
+            <p className="text-sm text-slate-500 mb-5 max-w-xs mx-auto">
+              Your number is only shared with verified providers who reply — never publicly visible.
+            </p>
+            <a
+              href="/account?next=/broadcast"
+              className="inline-block px-6 py-3 rounded-xl font-bold text-sm text-white"
+              style={{ backgroundColor: 'oklch(0.48 0.17 196)' }}
+            >
+              Sign in free →
+            </a>
+            <p className="text-xs text-muted-foreground mt-3">Takes 30 seconds · No password</p>
+          </div>
+        ) : (
         <AnimatePresence mode="wait">
           {submitted ? (
             <motion.div
@@ -459,6 +489,7 @@ export default function BroadcastPage() {
             </motion.form>
           )}
         </AnimatePresence>
+        )}
       </div>
 
       {/* Live feed */}
@@ -516,7 +547,7 @@ export default function BroadcastPage() {
         ) : (
           <div className="space-y-3">
             {filtered.map((b) => (
-              <BroadcastCard key={b.id} b={b} />
+              <BroadcastCard key={b.id} b={b} isSignedIn={isSignedIn} />
             ))}
           </div>
         )}

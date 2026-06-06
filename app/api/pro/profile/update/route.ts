@@ -40,6 +40,7 @@ export async function PATCH(req: NextRequest) {
     name, business_name, whatsapp, phone, bio,
     price_min, price_max, price_unit,
     hours_from, hours_to, working_days, is_emergency,
+    photo_url,
   } = body
 
   if (!name || !whatsapp) {
@@ -66,6 +67,36 @@ export async function PATCH(req: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  // If a new photo URL was provided, upsert it as the primary photo
+  if (photo_url && typeof photo_url === 'string' && photo_url.startsWith('http')) {
+    // Remove old primary flag
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (admin.from('provider_photos') as any)
+      .update({ is_primary: false })
+      .eq('provider_id', provider.id)
+
+    // Check if this URL already exists in provider_photos
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existing } = await (admin.from('provider_photos') as any)
+      .select('id')
+      .eq('provider_id', provider.id)
+      .eq('url', photo_url)
+      .maybeSingle()
+
+    if (existing) {
+      // Mark it as primary
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (admin.from('provider_photos') as any)
+        .update({ is_primary: true })
+        .eq('id', existing.id)
+    } else {
+      // Insert new primary photo
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (admin.from('provider_photos') as any)
+        .insert({ provider_id: provider.id, url: photo_url, is_primary: true, sort_order: 0 })
+    }
   }
 
   return NextResponse.json({ success: true })

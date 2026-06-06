@@ -171,6 +171,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid WhatsApp number' }, { status: 400 })
   }
 
+  // Require auth to post
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Please sign in to post a broadcast' }, { status: 401 })
+  }
+
   const { error } = await supabase.from('broadcasts').insert({
     service_slug,
     pet_description: pet_description.trim(),
@@ -180,6 +186,7 @@ export async function POST(req: NextRequest) {
     poster_name: poster_name.trim(),
     poster_whatsapp: digits,
     notes: notes?.trim() || null,
+    user_id: user.id,
   } as never)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
