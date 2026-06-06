@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { ProviderWithPhotos, Review } from '@/lib/supabase/types'
 import { getCategoryBySlug } from '@/lib/categories'
@@ -46,18 +46,6 @@ function isExpired(expiresAt: string) {
   return new Date(expiresAt).getTime() < Date.now()
 }
 
-// ── Copy-with-feedback hook ──────────────────────────────────────
-function useCopy() {
-  const [copiedId, setCopiedId] = useState<string | null>(null)
-  const copy = useCallback((id: string, text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedId(id)
-      setTimeout(() => setCopiedId(null), 2000)
-    })
-  }, [])
-  return { copiedId, copy }
-}
-
 // ── Tier badge ───────────────────────────────────────────────────
 function TierBadge({ tier }: { tier: string }) {
   if (tier === 'certified')
@@ -83,7 +71,6 @@ function ProviderCard({
   onTierChange: (id: string, tier: string) => void
   onCoordsSaved: (id: string, lat: number, lng: number) => void
 }) {
-  const { copiedId, copy } = useCopy()
   const [showCoords, setShowCoords] = useState(false)
   const [lat, setLat] = useState(String(p.lat ?? ''))
   const [lng, setLng] = useState(String(p.lng ?? ''))
@@ -98,6 +85,9 @@ function ProviderCard({
   const [accessError, setAccessError] = useState<string | null>(null)
   const [fallbackLink, setFallbackLink] = useState<string | null>(null)
   const [linkCopied, setLinkCopied] = useState(false)
+
+  // Settings panel state (approved cards only)
+  const [showSettings, setShowSettings] = useState(false)
 
   async function sendAccessLink() {
     setSendingAccess(true)
@@ -137,10 +127,7 @@ function ProviderCard({
   const category = getCategoryBySlug(p.category_slug)
   const primaryPhoto = p.provider_photos?.find((ph) => ph.is_primary) ?? p.provider_photos?.[0]
   const profileUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://pawlocal-ashen.vercel.app'}/provider/${p.id}`
-  const waNotifyText = encodeURIComponent(
-    `Hi ${p.name}! 🎉 Your listing on PawLocal is live.\n\nView & manage your profile here:\n${profileUrl}\n\nThis link is your personal dashboard — bookmark it!\n\n- Team PawLocal 🐾`
-  )
-  const waNotifyUrl = `https://wa.me/91${p.whatsapp.replace(/\D/g, '').slice(-10)}?text=${waNotifyText}`
+  const waDirectUrl = `https://wa.me/91${p.whatsapp.replace(/\D/g, '').slice(-10)}`
 
   async function saveCoords() {
     setSavingCoords(true)
@@ -156,7 +143,8 @@ function ProviderCard({
   }
 
   return (
-    <div className="bg-white border border-border rounded-2xl overflow-hidden">
+    <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
+      {/* Provider info row */}
       <div className="p-4 flex gap-3 items-start">
         {/* Avatar */}
         <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100 flex items-center justify-center text-2xl">
@@ -193,118 +181,163 @@ function ProviderCard({
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="px-4 pb-4 flex flex-wrap gap-2">
-        {/* Pending actions */}
-        {filter === 'pending' && (
-          <>
-            <button
-              onClick={() => onStatusChange(p.id, 'approved')}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 transition-colors"
-            >
-              ✓ Approve
-            </button>
-            <button
-              onClick={() => onStatusChange(p.id, 'rejected')}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 border border-red-200 transition-colors"
-            >
-              ✗ Reject
-            </button>
-          </>
-        )}
+      {/* ── PENDING actions ── */}
+      {filter === 'pending' && (
+        <div className="border-t border-border px-4 py-3 flex gap-3">
+          <button
+            onClick={() => onStatusChange(p.id, 'approved')}
+            className="flex-1 py-3 rounded-xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-600 transition-colors min-h-[44px]"
+          >
+            ✓ Approve
+          </button>
+          <button
+            onClick={() => onStatusChange(p.id, 'rejected')}
+            className="px-4 py-3 rounded-xl text-red-500 text-sm font-medium border border-red-200 bg-red-50 hover:bg-red-100 transition-colors min-h-[44px]"
+          >
+            Reject
+          </button>
+        </div>
+      )}
 
-        {/* Approved actions */}
-        {filter === 'approved' && (
-          <>
-            {/* Copy dashboard link */}
+      {/* ── APPROVED actions ── */}
+      {filter === 'approved' && (
+        <div className="border-t border-border px-4 py-3">
+          {/* Primary 3-button row */}
+          <div className="flex gap-2">
+            {/* Send Dashboard — primary teal */}
             <button
-              onClick={() => copy(p.id, profileUrl)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold border transition-all ${
-                copiedId === p.id
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                  : 'bg-white border-border text-slate-700 hover:border-slate-400'
+              onClick={() => {
+                setShowAccessInput((v) => !v)
+                setShowSettings(false)
+              }}
+              className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all min-h-[44px] ${
+                accessSent
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-[var(--pl-teal)] text-white hover:opacity-90'
               }`}
             >
-              {copiedId === p.id ? '✓ Copied!' : '🔗 Copy Link'}
+              {accessSent ? '✓ Sent!' : '🔑 Send Dashboard'}
             </button>
 
-            {/* WhatsApp notify */}
+            {/* WhatsApp direct */}
             <a
-              href={waNotifyUrl}
+              href={waDirectUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#25D366] text-white text-sm font-semibold hover:bg-[#20b558] transition-colors"
+              className="w-12 h-12 rounded-xl bg-[#25D366] text-white flex items-center justify-center text-lg hover:bg-[#20b558] transition-colors min-h-[44px] flex-shrink-0"
+              title="WhatsApp provider"
             >
-              💬 Notify on WA
+              💬
             </a>
 
-            {/* Send /pro access link */}
-            <button
-              onClick={() => setShowAccessInput((v) => !v)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold border transition-all ${
-                accessSent
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-700'
-                  : 'bg-white border-border text-slate-700 hover:border-slate-400'
-              }`}
+            {/* View profile */}
+            <a
+              href={profileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-lg hover:bg-slate-200 transition-colors min-h-[44px] flex-shrink-0"
+              title="View public profile"
             >
-              {accessSent ? '✓ Link sent!' : '🔑 Send Access'}
-            </button>
+              👁
+            </a>
+          </div>
 
-            {/* Verified toggle */}
-            <button
-              onClick={() => onVerifiedChange(p.id, !p.is_verified)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold border transition-all ${
-                p.is_verified
-                  ? 'bg-amber-50 border-amber-300 text-amber-700'
-                  : 'bg-white border-border text-slate-500 hover:border-slate-400'
-              }`}
-            >
-              {p.is_verified ? '★ Verified' : '☆ Verify'}
-            </button>
+          {/* Settings toggle */}
+          <button
+            onClick={() => {
+              setShowSettings((v) => !v)
+              setShowAccessInput(false)
+            }}
+            className="w-full mt-2 py-2 text-xs text-slate-400 flex items-center justify-center gap-1 hover:text-slate-600 transition-colors"
+          >
+            ⚙️ Settings {showSettings ? '▲' : '▼'}
+          </button>
 
-            {/* Tier select */}
-            <select
-              value={p.verification_tier ?? 'contacted'}
-              onChange={(e) => onTierChange(p.id, e.target.value)}
-              className="px-3 py-2 rounded-xl text-sm border border-border bg-white text-slate-700 hover:border-slate-400 cursor-pointer transition-colors"
-            >
-              <option value="contacted">Tier: Listed</option>
-              <option value="verified">Tier: Verified</option>
-              <option value="certified">Tier: Certified</option>
-            </select>
+          {/* Settings panel */}
+          {showSettings && (
+            <div className="mt-2 pt-3 border-t border-border space-y-4">
+              {/* Tier select */}
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Tier</label>
+                <select
+                  value={p.verification_tier ?? 'contacted'}
+                  onChange={(e) => onTierChange(p.id, e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl text-sm border border-border bg-white text-slate-700 hover:border-slate-400 cursor-pointer transition-colors"
+                >
+                  <option value="contacted">Listed</option>
+                  <option value="verified">Verified</option>
+                  <option value="certified">Certified</option>
+                </select>
+              </div>
 
-            {/* Fix Location */}
-            <button
-              onClick={() => setShowCoords((v) => !v)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold border border-border text-slate-500 hover:border-slate-400 bg-white transition-colors"
-            >
-              📍 Fix Pin
-            </button>
-          </>
-        )}
+              {/* Verified toggle */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-700">Verified badge</span>
+                <button
+                  onClick={() => onVerifiedChange(p.id, !p.is_verified)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    p.is_verified ? 'bg-amber-400' : 'bg-slate-200'
+                  }`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                    p.is_verified ? 'translate-x-6' : 'translate-x-1'
+                  }`} />
+                </button>
+              </div>
 
-        {/* Always: view profile */}
-        <a
-          href={profileUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium border border-border text-slate-500 hover:border-slate-400 bg-white transition-colors"
-        >
-          👁 Profile
-        </a>
+              {/* Fix Pin */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Fix Map Pin</label>
+                  <a
+                    href={`https://maps.google.com/?q=${p.lat},${p.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-[var(--pl-teal)] underline"
+                  >
+                    Open Maps ↗
+                  </a>
+                </div>
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <label className="block text-[11px] text-slate-400 mb-1">Lat</label>
+                    <input
+                      type="text"
+                      value={lat}
+                      onChange={(e) => setLat(e.target.value)}
+                      placeholder="19.1075"
+                      className="w-full border border-border rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)]"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="block text-[11px] text-slate-400 mb-1">Lng</label>
+                    <input
+                      type="text"
+                      value={lng}
+                      onChange={(e) => setLng(e.target.value)}
+                      placeholder="72.8263"
+                      className="w-full border border-border rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)]"
+                    />
+                  </div>
+                  <button
+                    onClick={saveCoords}
+                    disabled={savingCoords}
+                    className={`px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                      coordSaved
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-[var(--pl-teal)] text-white hover:opacity-90'
+                    } disabled:opacity-50`}
+                  >
+                    {savingCoords ? 'Saving…' : coordSaved ? '✓ Saved' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
-        {/* Always: direct WA */}
-        <a
-          href={`https://wa.me/91${p.whatsapp.replace(/\D/g, '').slice(-10)}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium border border-border text-slate-500 hover:border-slate-400 bg-white transition-colors"
-        >
-          💬 Chat
-        </a>
-      </div>
-
-      {/* Access link email input (expandable) */}
+      {/* ── Send Dashboard email form (expandable) ── */}
       {showAccessInput && filter === 'approved' && (
         <div className="px-4 pb-4 border-t border-border pt-3">
           <p className="text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Send /pro dashboard access</p>
@@ -353,49 +386,6 @@ function ProviderCard({
               <p className="text-[10px] text-amber-600 mt-1.5">Link expires in 1 hour. Send it to them now.</p>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Coordinate editor (expandable) */}
-      {showCoords && filter === 'approved' && (
-        <div className="px-4 pb-4 border-t border-border pt-3">
-          <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-wide">Fix map pin coordinates</p>
-          <p className="text-xs text-slate-400 mb-3">
-            Open <a href={`https://maps.google.com/?q=${p.lat},${p.lng}`} target="_blank" rel="noopener noreferrer" className="underline text-[var(--pl-teal)]">Google Maps</a>, right-click the correct location → copy coordinates → paste below.
-          </p>
-          <div className="flex gap-2 items-end flex-wrap">
-            <div>
-              <label className="block text-[11px] font-medium text-slate-500 mb-1">Latitude</label>
-              <input
-                type="text"
-                value={lat}
-                onChange={(e) => setLat(e.target.value)}
-                placeholder="19.1075"
-                className="w-28 border border-border rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)]"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-medium text-slate-500 mb-1">Longitude</label>
-              <input
-                type="text"
-                value={lng}
-                onChange={(e) => setLng(e.target.value)}
-                placeholder="72.8263"
-                className="w-28 border border-border rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)]"
-              />
-            </div>
-            <button
-              onClick={saveCoords}
-              disabled={savingCoords}
-              className={`px-3.5 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
-                coordSaved
-                  ? 'bg-emerald-500 text-white'
-                  : 'bg-[var(--pl-teal)] text-white hover:opacity-90'
-              } disabled:opacity-50`}
-            >
-              {savingCoords ? 'Saving…' : coordSaved ? '✓ Saved' : 'Save Pin'}
-            </button>
-          </div>
         </div>
       )}
     </div>
@@ -642,7 +632,7 @@ export default function AdminPage() {
   const expiredBroadcasts = broadcasts.filter((b) => isExpired(b.expires_at))
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-lg mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

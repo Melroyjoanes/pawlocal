@@ -6,7 +6,7 @@ import type { ProviderWithPhotos, Review, TrainerMetadata } from '@/lib/supabase
 import { Stars } from '@/components/StarRating'
 import ReviewForm from '@/components/ReviewForm'
 import { TrackView, TrackButton, SaveButton } from '@/components/ProviderTracker'
-import WhatsAppContactButton from '@/components/WhatsAppContactButton'
+import BookingRequestTrigger from '@/components/BookingRequestTrigger'
 import VerificationBadge from '@/components/VerificationBadge'
 import TierExplainer from '@/components/TierExplainer'
 
@@ -342,9 +342,11 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         ) : (
           <>
             <div className="flex gap-3">
-              <WhatsAppContactButton
+              <BookingRequestTrigger
                 providerId={provider.id}
                 providerName={provider.name}
+                providerWhatsapp={provider.whatsapp}
+                categorySlug={provider.category_slug}
               />
               {provider.phone ? (
                 <TrackButton
