@@ -821,6 +821,30 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
       </section>
 
       {/* ╔══════════════════════════════════╗
+          ║  PROVIDER DISCLAIMER             ║
+          ╚══════════════════════════════════╝ */}
+      <section style={{ ...BLEED, background: 'white', borderTop: '1px solid #FDE68A' }} className="py-5">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, ease: EASE }}
+          className="max-w-7xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-5 text-center sm:text-left"
+        >
+          <span className="text-xl">🐾</span>
+          <p className="text-sm text-slate-400">
+            Offering pet care services in Juhu?{' '}
+            <Link
+              href="/join"
+              className="font-semibold text-amber-600 hover:text-amber-700 underline underline-offset-2 transition-colors"
+            >
+              List your services — it&apos;s free →
+            </Link>
+          </p>
+        </motion.div>
+      </section>
+
+      {/* ╔══════════════════════════════════╗
           ║  MOBILE STICKY BAR               ║
           ╚══════════════════════════════════╝ */}
       <motion.div

@@ -135,9 +135,11 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           {/* Availability badge */}
           {provider.is_available === false && (
             <div className="mt-2 flex flex-col gap-0.5">
-              <span className="text-sm text-red-500 font-medium">&#x25CF; Fully booked</span>
+              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+                ⏸ Currently unavailable
+              </span>
               {provider.availability_note && (
-                <span className="text-xs text-muted-foreground">{provider.availability_note}</span>
+                <span className="text-xs text-muted-foreground mt-0.5">{provider.availability_note}</span>
               )}
             </div>
           )}

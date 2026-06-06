@@ -1,7 +1,9 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import type { Provider } from '@/lib/supabase/types'
 
@@ -54,11 +56,38 @@ function formatDate(dateStr: string) {
 
 export default function ProDashboardClient({ provider, stats, broadcasts, firstName }: Props) {
   const router = useRouter()
+  const [isAvailable, setIsAvailable] = useState<boolean>(
+    (provider as unknown as { is_available?: boolean }).is_available !== false
+  )
+  const [toggling, setToggling] = useState(false)
 
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/pro')
+  }
+
+  async function handleAvailabilityToggle() {
+    if (toggling) return
+    setToggling(true)
+    const next = !isAvailable
+    setIsAvailable(next) // optimistic
+    try {
+      const res = await fetch('/api/pro/availability/toggle', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_available: next }),
+      })
+      if (!res.ok) {
+        setIsAvailable(!next) // revert on error
+        console.error('[availability toggle] failed:', await res.text())
+      }
+    } catch (e) {
+      setIsAvailable(!next)
+      console.error('[availability toggle] exception:', e)
+    } finally {
+      setToggling(false)
+    }
   }
 
   // Profile completeness checks
@@ -100,6 +129,59 @@ export default function ProDashboardClient({ provider, stats, broadcasts, firstN
             Here&apos;s how your profile is doing.
           </p>
         </div>
+
+        {/* ── Availability toggle (Rapido ON DUTY model) ─────────────── */}
+        <motion.div
+          layout
+          className="rounded-2xl border p-4 flex items-center justify-between gap-4"
+          style={{
+            background: isAvailable
+              ? 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)'
+              : 'linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)',
+            borderColor: isAvailable ? '#6EE7B7' : '#E2E8F0',
+            transition: 'background 0.4s ease, border-color 0.4s ease',
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <motion.div
+              animate={{ scale: isAvailable ? [1, 1.15, 1] : 1 }}
+              transition={{ duration: 0.4 }}
+              className="text-2xl"
+            >
+              {isAvailable ? '🟢' : '⚫'}
+            </motion.div>
+            <div>
+              <p className="font-bold text-sm text-stone-900">
+                {isAvailable ? 'Taking bookings' : 'Not available'}
+              </p>
+              <p className="text-xs text-stone-500 mt-0.5">
+                {isAvailable
+                  ? 'Pet owners can contact you'
+                  : 'Your profile shows "Currently unavailable"'}
+              </p>
+            </div>
+          </div>
+
+          {/* Toggle switch */}
+          <button
+            onClick={handleAvailabilityToggle}
+            disabled={toggling}
+            aria-label={isAvailable ? 'Set unavailable' : 'Set available'}
+            className="relative flex-shrink-0 focus:outline-none"
+          >
+            <div
+              className="w-14 h-7 rounded-full transition-colors duration-300"
+              style={{ backgroundColor: isAvailable ? '#10B981' : '#CBD5E1' }}
+            />
+            <motion.div
+              layout
+              animate={{ x: isAvailable ? 28 : 2 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+              className="absolute top-1 w-5 h-5 bg-white rounded-full shadow-md"
+              style={{ originX: 0.5, originY: 0.5 }}
+            />
+          </button>
+        </motion.div>
 
         {/* Stats row */}
         <div>

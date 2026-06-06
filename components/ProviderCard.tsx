@@ -53,7 +53,9 @@ export default function ProviderCard({ provider, category }: Props) {
               <span className="font-semibold text-foreground leading-snug">{provider.name}</span>
               <VerificationBadge tier={(provider.verification_tier as 'contacted' | 'verified' | 'certified') ?? 'contacted'} />
               {provider.is_available === false && (
-                <span className="text-xs text-red-500 flex-shrink-0">&#x25CF; Fully booked</span>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 border border-slate-200 flex-shrink-0">
+                  Currently unavailable
+                </span>
               )}
             </div>
             {provider.business_name && provider.business_name !== provider.name && (
