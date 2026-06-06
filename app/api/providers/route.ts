@@ -5,6 +5,16 @@ import type { Database, CategorySlug } from '@/lib/supabase/types'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
+
+  // Read session to capture the submitting user's ID (server-side — not client-supplied)
+  const authClient = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
+  )
+  const { data: { user: sessionUser } } = await authClient.auth.getUser()
+
+  // Admin client for writes (bypasses RLS)
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -57,6 +67,14 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Link the Google account that signed in during /join
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if (sessionUser?.id && provider?.id) {
+    await (supabase.from('providers') as any)
+      .update({ user_id: sessionUser.id })
+      .eq('id', provider.id)
+  }
 
   if (photo_urls?.length > 0) {
     await supabase.from('provider_photos').insert(

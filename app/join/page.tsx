@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CATEGORIES } from '@/lib/categories'
+import GoogleSignInButton from '@/components/GoogleSignInButton'
 
 // Insurance is an affiliate page — providers can't list there
 const SERVICE_CATEGORIES = CATEGORIES.filter((c) => c.slug !== 'insurance')
@@ -14,7 +15,7 @@ const MUMBAI_AREAS = [
   'Oshiwara', 'DN Nagar', 'Goregaon West', 'Malad West',
 ]
 
-const STEPS = ['Who are you?', 'What you offer', 'Done!']
+const STEPS = ['Sign in', 'Who are you?', 'What you offer', 'Done!']
 
 export default function JoinPage() {
   const router = useRouter()
@@ -25,12 +26,37 @@ export default function JoinPage() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
+  // Google account state
+  const [authChecked, setAuthChecked] = useState(false)
+  const [googleName, setGoogleName] = useState('')
+  const [googleAvatar, setGoogleAvatar] = useState<string | null>(null)
+  const [googleEmail, setGoogleEmail] = useState('')
+
   const [form, setForm] = useState({
     name: '',
     whatsapp: '',
     area: '',
     category_slugs: [] as string[],
   })
+
+  // On mount: check if already signed in (e.g. returning from OAuth)
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        const meta = data.user.user_metadata ?? {}
+        const name = meta.full_name ?? meta.name ?? ''
+        setGoogleName(name)
+        setGoogleEmail(data.user.email ?? '')
+        setGoogleAvatar(meta.avatar_url ?? meta.picture ?? null)
+        // Pre-fill name from Google
+        setForm(prev => ({ ...prev, name: prev.name || name }))
+        // Skip the sign-in step — they're already signed in
+        setStep(prev => prev === 0 ? 1 : prev)
+      }
+      setAuthChecked(true)
+    })
+  }, [])
 
   function toggleCategory(slug: string) {
     setForm(prev => {
@@ -75,11 +101,10 @@ export default function JoinPage() {
         area: form.area,
         address: form.area + ', Mumbai',
         photo_urls: photoUrl ? [photoUrl] : [],
-        // Defaults — provider completes these in setup wizard after approval
         price_min: null,
         price_max: null,
         bio: null,
-        lat: 19.1075, // Juhu centre — provider refines in edit
+        lat: 19.1075,
         lng: 72.8263,
       }),
     })
@@ -93,43 +118,66 @@ export default function JoinPage() {
     }
   }
 
-  const canNext0 = form.name.trim().length >= 2 && form.whatsapp.replace(/\D/g, '').length >= 10
-  const canNext1 = form.category_slugs.length > 0 && form.area.length > 0
-  const canSubmit = canNext0 && canNext1
+  const canNext1 = form.name.trim().length >= 2 && form.whatsapp.replace(/\D/g, '').length >= 10
+  const canNext2 = form.category_slugs.length > 0 && form.area.length > 0
+  const canSubmit = canNext1 && canNext2
+
+  // Show nothing until we've checked auth (avoids flash of sign-in screen)
+  if (!authChecked) {
+    return (
+      <div className="max-w-md mx-auto py-20 px-4 flex justify-center">
+        <div className="w-6 h-6 border-2 border-[var(--pl-teal)] border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-md mx-auto py-10 px-4 pb-20">
 
       {/* Header */}
       <div className="mb-8">
+        {/* Progress steps — skip step 0 in display once signed in */}
         <div className="flex items-center gap-2 mb-5">
-          {STEPS.map((s, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <div
-                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                  i < step ? 'bg-emerald-500 text-white' :
-                  i === step ? 'bg-[var(--pl-teal)] text-white' :
-                  'bg-slate-100 text-slate-400'
-                }`}
-              >
-                {i < step ? '✓' : i + 1}
+          {STEPS.slice(1).map((s, i) => {
+            const realStep = i + 1 // steps 1, 2, 3
+            return (
+              <div key={i} className="flex items-center gap-2">
+                <div
+                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                    step > realStep ? 'bg-emerald-500 text-white' :
+                    step === realStep ? 'bg-[var(--pl-teal)] text-white' :
+                    'bg-slate-100 text-slate-400'
+                  }`}
+                >
+                  {step > realStep ? '✓' : i + 1}
+                </div>
+                <span className={`text-xs font-medium hidden sm:block ${step === realStep ? 'text-slate-900' : 'text-slate-400'}`}>
+                  {s}
+                </span>
+                {i < STEPS.slice(1).length - 2 && <div className="w-6 h-px bg-slate-200 mx-1" />}
               </div>
-              <span className={`text-xs font-medium hidden sm:block ${i === step ? 'text-slate-900' : 'text-slate-400'}`}>
-                {s}
-              </span>
-              {i < STEPS.length - 1 && <div className="w-6 h-px bg-slate-200 mx-1" />}
-            </div>
-          ))}
+            )
+          })}
         </div>
 
-        <h1 className="text-2xl font-bold text-slate-900 leading-tight">
-          {step === 0 ? 'Tell us about yourself' : 'What do you offer?'}
-        </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          {step === 0
-            ? 'Takes 2 minutes. Free forever. We review and call you within 24 hours.'
-            : 'Select your services and area. You\'ll complete your full profile after approval.'}
-        </p>
+        {step === 0 && (
+          <>
+            <h1 className="text-2xl font-bold text-slate-900 leading-tight">List your services free</h1>
+            <p className="text-sm text-slate-500 mt-1">Sign in with Google first — takes 10 seconds.</p>
+          </>
+        )}
+        {step === 1 && (
+          <>
+            <h1 className="text-2xl font-bold text-slate-900 leading-tight">Tell us about yourself</h1>
+            <p className="text-sm text-slate-500 mt-1">Takes 2 minutes. Free forever. We review and call you within 24 hours.</p>
+          </>
+        )}
+        {step === 2 && (
+          <>
+            <h1 className="text-2xl font-bold text-slate-900 leading-tight">What do you offer?</h1>
+            <p className="text-sm text-slate-500 mt-1">Select your services and area. You'll complete your full profile after approval.</p>
+          </>
+        )}
       </div>
 
       {submitError && (
@@ -138,11 +186,55 @@ export default function JoinPage() {
         </div>
       )}
 
-      {/* Step 0 — Identity */}
+      {/* Step 0 — Google sign-in */}
       {step === 0 && (
         <div className="flex flex-col gap-5">
+          <div className="bg-white border border-border rounded-2xl p-6">
+            <div className="flex flex-col gap-3 mb-6">
+              {[
+                { icon: '🔐', text: 'Your account is secured — only you can edit your profile' },
+                { icon: '📊', text: 'Access your dashboard, stats, and leads anytime' },
+                { icon: '🚫', text: 'No one else can claim your listing' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="text-xl">{item.icon}</span>
+                  <p className="text-sm text-slate-700">{item.text}</p>
+                </div>
+              ))}
+            </div>
+            <GoogleSignInButton redirectNext="/join" label="Continue with Google" />
+          </div>
+          <p className="text-xs text-center text-slate-400">
+            Already listed?{' '}
+            <a href="/my-listing" className="underline hover:text-slate-600">Access your dashboard →</a>
+          </p>
+        </div>
+      )}
 
-          {/* Photo — optional, first thing so it's social */}
+      {/* Step 1 — Identity */}
+      {step === 1 && (
+        <div className="flex flex-col gap-5">
+
+          {/* Signed in as */}
+          {googleEmail && (
+            <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+              {googleAvatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={googleAvatar} alt="" className="w-8 h-8 rounded-full flex-shrink-0" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-700 flex-shrink-0">
+                  {googleEmail[0]?.toUpperCase()}
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-emerald-800">Signed in as</p>
+                <p className="text-sm text-emerald-700 truncate">{googleEmail}</p>
+              </div>
+              <span className="text-emerald-500 text-lg flex-shrink-0">✓</span>
+            </div>
+          )}
+
+          {/* Photo */}
           <div className="flex items-center gap-4">
             <div
               onClick={() => fileRef.current?.click()}
@@ -201,13 +293,13 @@ export default function JoinPage() {
 
           <button
             type="button"
-            disabled={!canNext0}
-            onClick={() => setStep(1)}
+            disabled={!canNext1}
+            onClick={() => setStep(2)}
             className="w-full py-4 rounded-2xl font-bold text-sm transition-all disabled:opacity-40 mt-2"
             style={{
-              background: canNext0 ? 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)' : '#F1F5F9',
-              color: canNext0 ? '#451A03' : '#94A3B8',
-              boxShadow: canNext0 ? '0 4px 0px rgba(120,53,15,0.28)' : 'none',
+              background: canNext1 ? 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)' : '#F1F5F9',
+              color: canNext1 ? '#451A03' : '#94A3B8',
+              boxShadow: canNext1 ? '0 4px 0px rgba(120,53,15,0.28)' : 'none',
             }}
           >
             Continue →
@@ -215,8 +307,8 @@ export default function JoinPage() {
         </div>
       )}
 
-      {/* Step 1 — Services + Area */}
-      {step === 1 && (
+      {/* Step 2 — Services + Area */}
+      {step === 2 && (
         <div className="flex flex-col gap-5">
 
           {/* Service type */}
@@ -265,14 +357,14 @@ export default function JoinPage() {
           {/* Trust note */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
             <p className="text-xs text-amber-800 leading-relaxed">
-              📋 <strong>What happens next:</strong> We review your application and WhatsApp you within 24 hours. After approval, you'll get a link to complete your full profile — pricing, bio, hours, and more.
+              📋 <strong>What happens next:</strong> We review your application within 24 hours. Once approved, you'll get an email and can access your dashboard immediately at <strong>pawlocal.in/dashboard</strong>.
             </p>
           </div>
 
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => setStep(0)}
+              onClick={() => setStep(1)}
               className="px-5 py-4 rounded-2xl font-semibold text-sm border border-border text-slate-600 hover:bg-slate-50 transition-colors"
             >
               ← Back
@@ -293,11 +385,6 @@ export default function JoinPage() {
           </div>
         </div>
       )}
-
-      <p className="text-xs text-center text-slate-400 mt-6">
-        Already listed?{' '}
-        <a href="/my-listing" className="underline hover:text-slate-600">Access your dashboard →</a>
-      </p>
     </div>
   )
 }

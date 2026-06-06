@@ -8,25 +8,25 @@ const TIMELINE = [
   {
     icon: '✓',
     label: 'Application submitted',
-    description: 'Your listing is in our review queue.',
+    description: 'Your listing is in our review queue. Your Google account is already linked.',
     done: true,
   },
   {
     icon: '○',
     label: 'Under review',
-    description: 'Our team reviews every listing manually — usually within 24–48 hours.',
+    description: 'Our team reviews every listing manually — usually within 24 hours.',
     done: false,
   },
   {
     icon: '○',
-    label: 'WhatsApp confirmation',
-    description: "We'll send you a WhatsApp message once your listing goes live.",
+    label: 'You get an email',
+    description: "We'll email you the moment your profile goes live.",
     done: false,
   },
   {
     icon: '○',
-    label: 'Go live and claim your dashboard',
-    description: 'Your profile appears on PawLocal. Claim your dashboard to track views and contacts.',
+    label: 'Access your dashboard',
+    description: 'Visit pawlocal.in/dashboard — you\'ll land straight on your profile. No extra steps.',
     done: false,
   },
 ]
