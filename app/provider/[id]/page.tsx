@@ -149,21 +149,6 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
-      {/* Provider links row */}
-      <div className="flex items-center gap-2 mb-6">
-        <a
-          href={`/provider/${provider.id}/edit`}
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors border border-border rounded-full px-3 py-1.5"
-        >
-          ✏️ Edit listing
-        </a>
-        <a
-          href={`/provider/${provider.id}/dashboard`}
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors border border-border rounded-full px-3 py-1.5"
-        >
-          📊 My dashboard
-        </a>
-      </div>
 
       {/* Bio */}
       {provider.bio && (
