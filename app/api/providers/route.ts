@@ -6,14 +6,6 @@ import type { Database, CategorySlug } from '@/lib/supabase/types'
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
 
-  // Read session to capture the submitting user's ID (server-side — not client-supplied)
-  const authClient = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
-  )
-  const { data: { user: sessionUser } } = await authClient.auth.getUser()
-
   // Admin client for writes (bypasses RLS)
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,7 +20,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json()
   const {
-    name, business_name, category_slug, category_slugs, whatsapp, phone,
+    name, email, business_name, category_slug, category_slugs, whatsapp, phone,
     lat, lng, address, price_min, price_max, price_unit,
     hours_from, hours_to, bio, photo_urls, metadata, is_emergency,
   } = body
@@ -42,10 +34,11 @@ export async function POST(req: NextRequest) {
     ? category_slugs
     : [category_slug]
 
-  const { data: provider, error } = await supabase
-    .from('providers')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: provider, error } = await (supabase.from('providers') as any)
     .insert({
       name,
+      email: email || null,
       business_name: business_name || null,
       category_slug: category_slug as CategorySlug,
       category_slugs: slugsArray,
@@ -67,17 +60,6 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  // Link the Google account that signed in during /join
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (sessionUser?.id && provider?.id) {
-    const { error: linkError } = await (supabase.from('providers') as any)
-      .update({ user_id: sessionUser.id })
-      .eq('id', provider.id)
-    if (linkError) {
-      console.error('[providers/route] Failed to link user_id:', linkError.message)
-    }
-  }
 
   if (photo_urls?.length > 0) {
     await supabase.from('provider_photos').insert(
@@ -123,7 +105,8 @@ export async function POST(req: NextRequest) {
 
   <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
     <table style="width: 100%; border-collapse: collapse;">
-      <tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px; width: 100px;">WhatsApp</td><td style="padding: 6px 0; font-size: 14px; font-weight: 600;">${whatsapp}</td></tr>
+      <tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px; width: 100px;">Email</td><td style="padding: 6px 0; font-size: 14px; font-weight: 600;">${email || '—'}</td></tr>
+      <tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px;">WhatsApp</td><td style="padding: 6px 0; font-size: 14px; font-weight: 600;">${whatsapp}</td></tr>
       <tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px;">Area</td><td style="padding: 6px 0; font-size: 14px;">${address}</td></tr>
       ${price_min ? `<tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px;">Pricing</td><td style="padding: 6px 0; font-size: 14px;">₹${price_min}${price_max ? `–${price_max}` : ''} ${price_unit ?? ''}</td></tr>` : ''}
       ${bio ? `<tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px; vertical-align: top;">Bio</td><td style="padding: 6px 0; font-size: 13px; color: #475569;">${bio}</td></tr>` : ''}

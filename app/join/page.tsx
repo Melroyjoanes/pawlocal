@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CATEGORIES } from '@/lib/categories'
-import GoogleSignInButton from '@/components/GoogleSignInButton'
 
 const SERVICE_CATEGORIES = CATEGORIES.filter((c) => c.slug !== 'insurance')
 
@@ -21,26 +20,21 @@ const PRICE_UNITS = [
   'per day', 'per grooming', 'per consultation',
 ]
 
-const STEPS = ['Sign in', 'About you', 'Your services', 'Done!']
+const STEPS = ['About you', 'Your services', 'Done!']
 
 export default function JoinPage() {
   const router = useRouter()
-  const [step, setStep] = useState(0)
+  const [step, setStep] = useState(1)
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // Google account state
-  const [authChecked, setAuthChecked] = useState(false)
-  const [googleName, setGoogleName] = useState('')
-  const [googleAvatar, setGoogleAvatar] = useState<string | null>(null)
-  const [googleEmail, setGoogleEmail] = useState('')
-
   // Form state — all fields
   const [form, setForm] = useState({
     name: '',
+    email: '',
     business_name: '',
     whatsapp: '',
     phone: '',
@@ -55,23 +49,6 @@ export default function JoinPage() {
     working_days: [] as string[],
     is_emergency: false,
   })
-
-  // On mount: check if already signed in (returning from OAuth)
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        const meta = data.user.user_metadata ?? {}
-        const name = meta.full_name ?? meta.name ?? ''
-        setGoogleName(name)
-        setGoogleEmail(data.user.email ?? '')
-        setGoogleAvatar(meta.avatar_url ?? meta.picture ?? null)
-        setForm(prev => ({ ...prev, name: prev.name || name }))
-        setStep(prev => prev === 0 ? 1 : prev)
-      }
-      setAuthChecked(true)
-    })
-  }, [])
 
   function toggleCategory(slug: string) {
     setForm(prev => ({
@@ -116,6 +93,7 @@ export default function JoinPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: form.name.trim(),
+        email: form.email.trim() || null,
         business_name: form.business_name.trim() || null,
         whatsapp: form.whatsapp.trim(),
         phone: form.phone.trim() || null,
@@ -147,18 +125,10 @@ export default function JoinPage() {
   }
 
   // Validation
-  const canNext1 = form.name.trim().length >= 2 && form.whatsapp.replace(/\D/g, '').length >= 10
+  const canNext1 = form.name.trim().length >= 2 && form.whatsapp.replace(/\D/g, '').length >= 10 && form.email.includes('@')
   const canSubmit = canNext1 && form.category_slugs.length > 0 && form.area.length > 0
 
   const hasVet = form.category_slugs.includes('vet')
-
-  if (!authChecked) {
-    return (
-      <div className="max-w-md mx-auto py-20 px-4 flex justify-center">
-        <div className="w-6 h-6 border-2 border-[var(--pl-teal)] border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
 
   return (
     <div className="max-w-md mx-auto py-10 px-4 pb-20">
@@ -166,7 +136,7 @@ export default function JoinPage() {
       {/* Progress bar */}
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-5">
-          {STEPS.slice(1).map((s, i) => {
+          {STEPS.slice(0, 2).map((s, i) => {
             const realStep = i + 1
             return (
               <div key={i} className="flex items-center gap-2">
@@ -180,14 +150,12 @@ export default function JoinPage() {
                 <span className={`text-xs font-medium hidden sm:block ${step === realStep ? 'text-slate-900' : 'text-slate-400'}`}>
                   {s}
                 </span>
-                {i < STEPS.slice(1).length - 2 && <div className="w-6 h-px bg-slate-200 mx-1" />}
+                {i < 1 && <div className="w-6 h-px bg-slate-200 mx-1" />}
               </div>
             )
           })}
         </div>
 
-        {step === 0 && <h1 className="text-2xl font-bold text-slate-900">List your services free</h1>}
-        {step === 0 && <p className="text-sm text-slate-500 mt-1">Sign in with Google first — takes 10 seconds.</p>}
         {step === 1 && <h1 className="text-2xl font-bold text-slate-900">About you</h1>}
         {step === 1 && <p className="text-sm text-slate-500 mt-1">Tell us about yourself and your experience.</p>}
         {step === 2 && <h1 className="text-2xl font-bold text-slate-900">Your services</h1>}
@@ -200,53 +168,9 @@ export default function JoinPage() {
         </div>
       )}
 
-      {/* ── Step 0: Google sign-in ── */}
-      {step === 0 && (
-        <div className="flex flex-col gap-5">
-          <div className="bg-white border border-border rounded-2xl p-6">
-            <div className="flex flex-col gap-3 mb-6">
-              {[
-                { icon: '🔐', text: 'Your account is secured — only you can edit your profile' },
-                { icon: '📊', text: 'Access your dashboard, stats, and leads anytime' },
-                { icon: '🚫', text: 'No one else can claim your listing' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <span className="text-xl">{item.icon}</span>
-                  <p className="text-sm text-slate-700">{item.text}</p>
-                </div>
-              ))}
-            </div>
-            <GoogleSignInButton redirectNext="/join" label="Continue with Google" />
-          </div>
-          <p className="text-xs text-center text-slate-400">
-            Already listed?{' '}
-            <a href="/my-listing" className="underline hover:text-slate-600">Access your dashboard →</a>
-          </p>
-        </div>
-      )}
-
       {/* ── Step 1: About you ── */}
       {step === 1 && (
         <div className="flex flex-col gap-5">
-
-          {/* Signed in as */}
-          {googleEmail && (
-            <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
-              {googleAvatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={googleAvatar} alt="" className="w-8 h-8 rounded-full flex-shrink-0" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-sm font-bold text-emerald-700 flex-shrink-0">
-                  {googleEmail[0]?.toUpperCase()}
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-emerald-800">Signed in as</p>
-                <p className="text-sm text-emerald-700 truncate">{googleEmail}</p>
-              </div>
-              <span className="text-emerald-500 text-lg flex-shrink-0">✓</span>
-            </div>
-          )}
 
           {/* Photo */}
           <div className="bg-white border border-border rounded-2xl p-5">
@@ -292,6 +216,19 @@ export default function JoinPage() {
                 className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
                 placeholder="Ravi Kumar"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1.5 text-slate-700">Email address *</label>
+              <input
+                required
+                type="email"
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white"
+                placeholder="you@gmail.com"
+              />
+              <p className="text-xs text-slate-400 mt-1">You'll use this to log in to your provider dashboard.</p>
             </div>
 
             <div>
@@ -526,7 +463,7 @@ export default function JoinPage() {
           {/* Trust note */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
             <p className="text-xs text-amber-800 leading-relaxed">
-              📋 <strong>What happens next:</strong> We review your application within 24 hours. Once approved, you'll get an email and can access your dashboard immediately at <strong>pawlocal.in/dashboard</strong>.
+              📋 <strong>What happens next:</strong> We review your application within 24 hours. Once approved, you'll receive a sign-in link at your email to access your provider dashboard.
             </p>
           </div>
 
@@ -557,7 +494,7 @@ export default function JoinPage() {
 
       <p className="text-xs text-center text-slate-400 mt-6">
         Already listed?{' '}
-        <a href="/my-listing" className="underline hover:text-slate-600">Access your dashboard →</a>
+        <a href="/pro" className="underline hover:text-slate-600">Access your dashboard →</a>
       </p>
     </div>
   )

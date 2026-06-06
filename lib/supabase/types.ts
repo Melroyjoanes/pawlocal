@@ -34,6 +34,7 @@ export type Provider = {
   hours_to: string
   working_days: string[]
   bio: string | null
+  email: string | null
   status: 'pending' | 'approved' | 'rejected'
   is_verified: boolean
   source: string
@@ -92,6 +93,7 @@ export type ProviderInsert = {
   hours_to?: string
   working_days?: string[]
   bio?: string | null
+  email?: string | null
   metadata?: TrainerMetadata | null
   is_emergency?: boolean
 }
