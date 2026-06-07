@@ -52,8 +52,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
-  const { data, error } = await supabase
-    .from('booking_requests')
+  // Use admin client for the INSERT — the anon client's SELECT policies reference
+  // auth.users directly (booking_provider_select), causing "permission denied for
+  // table users" when .select() is chained after .insert().
+  const admin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (admin.from('booking_requests') as any)
     .insert({
       provider_id,
       customer_id: user.id,
@@ -64,19 +72,14 @@ export async function POST(req: NextRequest) {
       time_needed: time_needed ?? '',
       notes: notes ?? null,
     })
-    .select()
+    .select('id')
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Fetch provider via admin client (service role) — number never sent to client
-  const admin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
-
-  const { data: provider } = await admin
-    .from('providers')
+  // Fetch provider — number never sent to client
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: provider } = await (admin.from('providers') as any)
     .select('whatsapp, name')
     .eq('id', provider_id)
     .eq('status', 'approved')
@@ -92,7 +95,7 @@ export async function POST(req: NextRequest) {
     .replace(/\b\w/g, (c: string) => c.toUpperCase())
 
   const petLine = pet_name ? `${pet_name} (${pet_type})` : `(${pet_type})`
-  const refCode = `#PL-${data.id.replace(/-/g, '').slice(0, 6).toUpperCase()}`
+  const refCode = `#PL-${(data.id as string).replace(/-/g, '').slice(0, 6).toUpperCase()}`
 
   const lines = [
     `Hi ${provider.name}! I found you on PawLocal 🐾`,
@@ -107,8 +110,16 @@ export async function POST(req: NextRequest) {
     `Ref: ${refCode}`,
   ].filter((l): l is string => l !== null).join('\n')
 
-  const digits = provider.whatsapp.replace(/\D/g, '').slice(-10)
+  const digits = (provider.whatsapp as string).replace(/\D/g, '').slice(-10)
   const whatsapp_url = `https://wa.me/91${digits}?text=${encodeURIComponent(lines)}`
+
+  // Track whatsapp_click analytics — this is the activation event
+  // Fire-and-forget, don't block the response
+  admin
+    .from('provider_analytics')
+    .insert({ provider_id, event_type: 'whatsapp_click' })
+    .then(() => {})
+    .catch(() => {})
 
   return NextResponse.json({ booking_id: data.id, whatsapp_url })
 }
