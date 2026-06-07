@@ -7,9 +7,16 @@ interface Props {
   next?: string
 }
 
+// Customer-context URLs — when `next` starts with these, hide the provider role options
+const CUSTOMER_PATHS = ['/provider/', '/broadcast', '/my-account', '/search', '/dog-', '/grooming', '/vets', '/pet-store', '/dog-training', '/insurance']
+
 export default function AccountClient({ reason, next }: Props) {
   const isProviderFlow = reason === 'provider'
-  const redirectNext = next ?? (isProviderFlow ? '/dashboard' : '/my-account')
+
+  // If the user came from a customer-facing page, never show provider options
+  const isCustomerContext = !isProviderFlow && next != null && CUSTOMER_PATHS.some(p => next.startsWith(p))
+
+  const redirectNext = next ?? (isProviderFlow ? '/pro/dashboard' : '/my-account')
 
   return (
     <div className="max-w-md mx-auto py-14 px-4">
@@ -21,11 +28,13 @@ export default function AccountClient({ reason, next }: Props) {
         <p className="text-sm text-slate-500">
           {isProviderFlow
             ? 'Sign in to access your dashboard and manage your listing.'
-            : 'Sign in to save providers, post requests, and leave reviews.'}
+            : isCustomerContext
+              ? 'Quick sign in to continue — free, takes 10 seconds.'
+              : 'Sign in to save providers, post requests, and leave reviews.'}
         </p>
       </div>
 
-      {/* Single Google sign-in — works for both owners and providers */}
+      {/* Google sign-in */}
       <div className="bg-white border border-border rounded-2xl p-6 shadow-sm mb-4">
         <GoogleSignInButton
           redirectNext={redirectNext}
@@ -33,9 +42,9 @@ export default function AccountClient({ reason, next }: Props) {
         />
       </div>
 
-      {!isProviderFlow && (
+      {/* Role selection — only show when NOT in a customer context and NOT in provider flow */}
+      {!isProviderFlow && !isCustomerContext && (
         <>
-          {/* Or choose a role */}
           <div className="flex items-center gap-3 mb-4">
             <div className="flex-1 h-px bg-border" />
             <span className="text-xs text-muted-foreground">or browse without signing in</span>
@@ -43,7 +52,6 @@ export default function AccountClient({ reason, next }: Props) {
           </div>
 
           <div className="flex flex-col gap-3">
-            {/* Pet Owner — no account needed to browse */}
             <a
               href="/my-account"
               className="group bg-white border-2 border-border hover:border-[var(--pl-teal)] rounded-2xl p-5 transition-all hover:shadow-md"
@@ -62,9 +70,8 @@ export default function AccountClient({ reason, next }: Props) {
               </div>
             </a>
 
-            {/* Provider */}
             <a
-              href="/my-listing"
+              href="/pro"
               className="group bg-white border-2 border-border hover:border-[var(--pl-teal)] rounded-2xl p-5 transition-all hover:shadow-md"
             >
               <div className="flex items-center gap-4">
@@ -75,21 +82,21 @@ export default function AccountClient({ reason, next }: Props) {
                   <h2 className="text-base font-bold text-slate-900 group-hover:text-[var(--pl-teal)] transition-colors">
                     I'm a service provider
                   </h2>
-                  <p className="text-xs text-slate-500 mt-0.5">Dashboard, stats, live walk tracking</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Dashboard, stats, manage your listing</p>
                 </div>
                 <span className="text-slate-300 group-hover:text-[var(--pl-teal)] transition-colors">→</span>
               </div>
             </a>
           </div>
+
+          <p className="text-xs text-slate-400 text-center mt-6">
+            New provider?{' '}
+            <a href="/join" className="text-[var(--pl-amber)] font-semibold hover:underline">
+              List your service for free →
+            </a>
+          </p>
         </>
       )}
-
-      <p className="text-xs text-slate-400 text-center mt-6">
-        New provider?{' '}
-        <a href="/join" className="text-[var(--pl-amber)] font-semibold hover:underline">
-          List your service for free →
-        </a>
-      </p>
     </div>
   )
 }

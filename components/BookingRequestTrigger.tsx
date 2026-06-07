@@ -6,11 +6,10 @@ import BookingRequestSheet from './BookingRequestSheet'
 interface Props {
   providerId: string
   providerName: string
-  providerWhatsapp: string
   categorySlug: string
 }
 
-export default function BookingRequestTrigger({ providerId, providerName, providerWhatsapp, categorySlug }: Props) {
+export default function BookingRequestTrigger({ providerId, providerName, categorySlug }: Props) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -27,7 +26,6 @@ export default function BookingRequestTrigger({ providerId, providerName, provid
         onClose={() => setOpen(false)}
         providerId={providerId}
         providerName={providerName}
-        providerWhatsapp={providerWhatsapp}
         categorySlug={categorySlug}
       />
     </>

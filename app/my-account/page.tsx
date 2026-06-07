@@ -65,6 +65,19 @@ export default async function MyAccountPage() {
     reviews = (data ?? []) as unknown as typeof reviews
   }
 
+  // Fetch booking requests
+  const { data: bookingRequestsRaw } = await supabase
+    .from('booking_requests')
+    .select('*, providers(name, category_slug)')
+    .eq('customer_id', user.id)
+    .order('created_at', { ascending: false })
+
+  const bookingRequests: {
+    id: string; provider_id: string; service_slug: string; pet_name: string;
+    pet_type: string; date_needed: string; time_needed: string; notes: string | null;
+    status: string; created_at: string; providers?: { name: string; category_slug: string };
+  }[] = (bookingRequestsRaw ?? []) as unknown as typeof bookingRequests
+
   // Saved providers come from localStorage — server can't read it, so pass empty array
   // MyAccountClient will hydrate from localStorage on mount
   const savedProviders: SavedProvider[] = []
@@ -82,6 +95,7 @@ export default async function MyAccountPage() {
       broadcasts={broadcasts}
       reviews={reviews}
       savedProviders={savedProviders}
+      bookingRequests={bookingRequests}
       userDisplay={userDisplay}
       userAvatar={userAvatar}
       userId={user.id}

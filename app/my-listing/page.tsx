@@ -21,11 +21,11 @@ export default async function MyListingPage() {
     const { data: provider } = await admin
       .from('providers')
       .select('id')
-      .eq('user_id', user.id)
+      .eq('email', user.email)
       .single()
 
     if (provider) {
-      redirect(`/provider/${provider.id}/dashboard`)
+      redirect(`/pro/profile`)
     }
   }
 

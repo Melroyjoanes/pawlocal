@@ -72,11 +72,14 @@ export function SaveButton({
   providerName,
   categorySlug,
   whatsapp,
+  showLabel = false,
 }: {
   providerId: string
   providerName: string
   categorySlug: string
   whatsapp: string
+  /** When true renders as flex-1 icon+text button for the secondary CTA row */
+  showLabel?: boolean
 }) {
   const [saved, setSaved] = useState(false)
   const [showSaveNudge, setShowSaveNudge] = useState(false)
@@ -121,7 +124,7 @@ export function SaveButton({
   }
 
   return (
-    <div className="flex flex-col items-end gap-1.5">
+    <div className={`relative flex flex-col gap-1.5 ${showLabel ? 'flex-1' : ''}`}>
       {/* Sign-in nudge tooltip */}
       {showSaveNudge && (
         <div className="absolute bottom-14 right-0 bg-slate-900 text-white text-xs rounded-xl px-3 py-2 w-52 shadow-lg z-10 leading-snug">
@@ -132,9 +135,14 @@ export function SaveButton({
       <button
         onClick={toggle}
         title={saved ? 'Remove from saved' : 'Save provider'}
-        className="flex items-center justify-center w-12 h-12 rounded-2xl border border-border bg-white transition-all hover:border-red-300 active:scale-95 relative"
+        className={
+          showLabel
+            ? 'w-full flex items-center justify-center gap-1.5 py-3 rounded-2xl border border-border bg-white text-sm font-medium text-muted-foreground hover:border-red-300 hover:text-red-500 active:scale-95 transition-all'
+            : 'flex items-center justify-center w-12 h-12 rounded-2xl border border-border bg-white transition-all hover:border-red-300 active:scale-95'
+        }
       >
-        <span className="text-xl">{saved ? '❤️' : '🤍'}</span>
+        <span className={showLabel ? 'text-base' : 'text-xl'}>{saved ? '❤️' : '🤍'}</span>
+        {showLabel && <span>{saved ? 'Saved' : 'Save'}</span>}
       </button>
     </div>
   )

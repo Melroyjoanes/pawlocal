@@ -70,60 +70,7 @@ export async function POST(
   }
 
   const magicLink = linkData.properties.action_link
-  const firstName = (provider.name as string).split(' ')[0]
 
-  // Send via Resend — and log the actual response so failures appear in Vercel logs
-  let emailSent = false
-  if (process.env.RESEND_API_KEY) {
-    try {
-      const resendRes = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-        },
-        body: JSON.stringify({
-          from: 'PawLocal <onboarding@resend.dev>',
-          to: email,
-          subject: `🐾 Your PawLocal provider dashboard is ready, ${firstName}!`,
-          html: `
-<div style="font-family:-apple-system,sans-serif;max-width:480px;margin:0 auto;background:#FFFBEB;padding:32px 24px;border-radius:24px;">
-  <div style="text-align:center;margin-bottom:28px;">
-    <div style="font-size:48px;margin-bottom:12px;">🐾</div>
-    <h1 style="font-size:22px;font-weight:800;color:#451A03;margin:0 0 8px;">Welcome to PawLocal, ${firstName}!</h1>
-    <p style="font-size:14px;color:#78716C;margin:0;">Click below to access your provider dashboard. This link expires in 1 hour.</p>
-  </div>
-  <a href="${magicLink}" style="display:block;text-align:center;background:linear-gradient(160deg,#FCD34D,#F59E0B);color:#451A03;font-weight:700;font-size:15px;padding:16px;border-radius:12px;text-decoration:none;margin-bottom:20px;">
-    Open my dashboard →
-  </a>
-  <div style="background:white;border-radius:16px;padding:20px;border:1px solid #E5E7EB;margin-bottom:16px;">
-    <p style="font-size:13px;color:#6B7280;margin:0 0 8px;font-weight:600;">From your dashboard you can:</p>
-    <ul style="font-size:13px;color:#374151;margin:0;padding-left:20px;line-height:2;">
-      <li>See how many people viewed your profile</li>
-      <li>Reply to pet owner requests in your area</li>
-      <li>Update your bio, pricing and availability</li>
-    </ul>
-  </div>
-  <p style="font-size:12px;color:#9CA3AF;text-align:center;margin:0;">
-    Next time: go to <strong>pawlocal-ashen.vercel.app/pro</strong> and enter this email to sign in.
-  </p>
-</div>`,
-        }),
-      })
-      const resendBody = await resendRes.json().catch(() => ({}))
-      if (!resendRes.ok) {
-        console.error('[Resend] send-access-link failed:', resendRes.status, JSON.stringify(resendBody))
-      } else {
-        emailSent = true
-        console.log('[Resend] send-access-link sent to', email, 'id:', resendBody.id)
-      }
-    } catch (e: unknown) {
-      console.error('[Resend] send-access-link exception:', e instanceof Error ? e.message : e)
-    }
-  } else {
-    console.warn('[send-access-link] RESEND_API_KEY not set — email skipped')
-  }
-
-  // Always return the magic link so admin can copy it as fallback if email fails
-  return NextResponse.json({ success: true, email, emailSent, magicLink })
+  // Return the magic link — admin sends it to the provider via WhatsApp
+  return NextResponse.json({ success: true, email, magicLink })
 }

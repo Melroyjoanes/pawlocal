@@ -9,7 +9,6 @@ interface Props {
   onClose: () => void
   providerId: string
   providerName: string
-  providerWhatsapp: string  // still needed to open WA — but this comes from the server component and the real redirect will happen
   categorySlug: string
 }
 
@@ -21,7 +20,7 @@ const TIME_SLOTS = [
 ]
 
 export default function BookingRequestSheet({
-  isOpen, onClose, providerId, providerName, providerWhatsapp, categorySlug,
+  isOpen, onClose, providerId, providerName, categorySlug,
 }: Props) {
   const [isSignedIn, setIsSignedIn] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
@@ -34,6 +33,7 @@ export default function BookingRequestSheet({
   })
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isOpen) return
@@ -48,6 +48,7 @@ export default function BookingRequestSheet({
   useEffect(() => {
     if (!isOpen) {
       setSubmitted(false)
+      setSubmitError(null)
       setForm({ pet_name: '', pet_type: 'Dog', date_needed: '', time_needed: 'Flexible', notes: '' })
     }
   }, [isOpen])
@@ -55,10 +56,11 @@ export default function BookingRequestSheet({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setSubmitting(true)
+    setSubmitError(null)
 
-    // Log request in DB
+    let whatsapp_url: string | null = null
     try {
-      await fetch('/api/booking-requests', {
+      const res = await fetch('/api/booking-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -67,30 +69,30 @@ export default function BookingRequestSheet({
           ...form,
         }),
       })
+
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        setSubmitError(json.error ?? 'Something went wrong. Please try again.')
+        setSubmitting(false)
+        return
+      }
+
+      const json = await res.json()
+      whatsapp_url = json.whatsapp_url ?? null
     } catch {
-      // Non-blocking — still open WhatsApp even if logging fails
+      setSubmitError('Network error. Please check your connection and try again.')
+      setSubmitting(false)
+      return
     }
-
-    // Build pre-filled WhatsApp message
-    const lines = [
-      `Hi ${providerName}! I found you on PawLocal 🐾`,
-      ``,
-      `📋 *Service Request*`,
-      `Pet: ${form.pet_name || 'Not specified'} (${form.pet_type})`,
-      `When: ${form.date_needed}`,
-      `Time: ${form.time_needed}`,
-      form.notes ? `Notes: ${form.notes}` : null,
-    ].filter(Boolean).join('\n')
-
-    const digits = providerWhatsapp.replace(/\D/g, '').slice(-10)
-    const waUrl = `https://wa.me/91${digits}?text=${encodeURIComponent(lines)}`
 
     setSubmitting(false)
     setSubmitted(true)
 
     // Open WhatsApp after brief success moment
     setTimeout(() => {
-      window.open(waUrl, '_blank', 'noopener,noreferrer')
+      if (whatsapp_url) {
+        window.open(whatsapp_url, '_blank', 'noopener,noreferrer')
+      }
       onClose()
     }, 1500)
   }
@@ -254,6 +256,12 @@ export default function BookingRequestSheet({
                       className="w-full border border-stone-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)] bg-white resize-none"
                     />
                   </div>
+
+                  {submitError && (
+                    <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                      {submitError}
+                    </p>
+                  )}
 
                   <button
                     type="submit"

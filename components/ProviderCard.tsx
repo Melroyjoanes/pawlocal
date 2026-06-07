@@ -52,6 +52,11 @@ export default function ProviderCard({ provider, category }: Props) {
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="font-semibold text-foreground leading-snug">{provider.name}</span>
               <VerificationBadge tier={(provider.verification_tier as 'contacted' | 'verified' | 'certified') ?? 'contacted'} />
+              {(provider as any).intro_video_url && (
+                <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-pink-50 text-pink-600 border border-pink-100">
+                  📹 Video
+                </span>
+              )}
               {provider.is_available === false && (
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 border border-slate-200 flex-shrink-0">
                   Currently unavailable

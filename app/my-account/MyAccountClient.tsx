@@ -30,10 +30,25 @@ interface SavedProvider {
   whatsapp: string
 }
 
+interface BookingRequest {
+  id: string
+  provider_id: string
+  service_slug: string
+  pet_name: string
+  pet_type: string
+  date_needed: string
+  time_needed: string
+  notes: string | null
+  status: string
+  created_at: string
+  providers?: { name: string; category_slug: string }
+}
+
 interface Props {
   broadcasts: Broadcast[]
   reviews: Review[]
   savedProviders: SavedProvider[]
+  bookingRequests: BookingRequest[]
   userDisplay: string
   userAvatar?: string | null
   userId: string
@@ -58,10 +73,10 @@ const CATEGORY_COLORS: Record<string, string> = {
 }
 
 export default function MyAccountClient({
-  broadcasts, reviews, savedProviders: initialSaved,
+  broadcasts, reviews, savedProviders: initialSaved, bookingRequests,
   userDisplay, userAvatar, userId,
 }: Props) {
-  const [tab, setTab] = useState<'broadcasts' | 'saved' | 'reviews'>('broadcasts')
+  const [tab, setTab] = useState<'broadcasts' | 'saved' | 'reviews' | 'bookings'>('broadcasts')
   const [savedProviders, setSavedProviders] = useState<SavedProvider[]>(initialSaved)
   const [displayName, setDisplayName] = useState(userDisplay)
   const [editingName, setEditingName] = useState(false)
@@ -212,18 +227,19 @@ export default function MyAccountClient({
       </div>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-4 gap-3 mb-6">
         {[
-          { label: 'Broadcasts', count: broadcasts.length, emoji: '📣' },
-          { label: 'Saved', count: savedProviders.length, emoji: '❤️' },
-          { label: 'Reviews', count: reviews.length, emoji: '⭐' },
-        ].map(({ label, count, emoji }) => (
+          { label: 'Broadcasts', value: 'broadcasts', count: broadcasts.length, emoji: '📣' },
+          { label: 'Saved', value: 'saved', count: savedProviders.length, emoji: '❤️' },
+          { label: 'Reviews', value: 'reviews', count: reviews.length, emoji: '⭐' },
+          { label: 'Bookings', value: 'bookings', count: bookingRequests.length, emoji: '📅' },
+        ].map(({ label, value, count, emoji }) => (
           <button
             key={label}
             type="button"
-            onClick={() => setTab(label.toLowerCase() as typeof tab)}
+            onClick={() => setTab(value as typeof tab)}
             className={`bg-white border rounded-xl p-3 text-center transition-all ${
-              tab === label.toLowerCase()
+              tab === value
                 ? 'border-[var(--pl-teal)] shadow-sm'
                 : 'border-border hover:border-slate-300'
             }`}
@@ -237,7 +253,7 @@ export default function MyAccountClient({
 
       {/* Tabs */}
       <div className="flex gap-1 bg-slate-100 rounded-xl p-1 mb-6">
-        {(['broadcasts', 'saved', 'reviews'] as const).map(t => (
+        {(['broadcasts', 'saved', 'reviews', 'bookings'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -245,7 +261,7 @@ export default function MyAccountClient({
               tab === t ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            {t === 'broadcasts' ? '📣 Broadcasts' : t === 'saved' ? '❤️ Saved' : '⭐ Reviews'}
+            {t === 'broadcasts' ? '📣 Broadcasts' : t === 'saved' ? '❤️ Saved' : t === 'reviews' ? '⭐ Reviews' : '📅 Bookings'}
           </button>
         ))}
       </div>
@@ -386,6 +402,56 @@ export default function MyAccountClient({
                 {r.comment && <p className="text-sm text-slate-600 leading-relaxed">{r.comment}</p>}
               </div>
             ))
+          )}
+        </div>
+      )}
+
+      {/* Tab: Bookings */}
+      {tab === 'bookings' && (
+        <div className="flex flex-col gap-3">
+          {bookingRequests.length === 0 ? (
+            <div className="bg-white border border-border rounded-2xl p-8 text-center">
+              <p className="text-3xl mb-3">📅</p>
+              <p className="font-semibold text-slate-900 mb-1">No booking requests yet</p>
+              <p className="text-sm text-slate-500">Send a booking request from any provider profile.</p>
+            </div>
+          ) : (
+            bookingRequests.map(b => {
+              const statusStyles =
+                b.status === 'confirmed' ? 'bg-emerald-50 text-emerald-700' :
+                b.status === 'declined'  ? 'bg-red-50 text-red-600' :
+                'bg-teal-50 text-teal-700'
+              return (
+                <div key={b.id} className="bg-white border border-border rounded-2xl p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <a
+                      href={`/provider/${b.provider_id}`}
+                      className="text-sm font-semibold text-slate-900 hover:text-[var(--pl-teal)] transition-colors"
+                    >
+                      {b.providers?.name ?? 'Provider'}
+                    </a>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${statusStyles}`}>
+                      {b.status}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-600 mb-1 capitalize">
+                    {b.service_slug.replace(/-/g, ' ')}
+                  </p>
+                  {b.pet_name && (
+                    <p className="text-sm text-slate-500 mb-1">
+                      {b.pet_type ? `${b.pet_type} named ${b.pet_name}` : b.pet_name}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <span>📅 {b.date_needed}</span>
+                    {b.time_needed && <span>🕐 {b.time_needed}</span>}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    {new Date(b.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+              )
+            })
           )}
         </div>
       )}

@@ -1,6 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+
+export async function GET() {
+  const cookieStore = await cookies()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => cookieStore.getAll(),
+        setAll: (c) => c.forEach(({ name, value, options }) => cookieStore.set(name, value, options)),
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { data, error } = await supabase
+    .from('booking_requests')
+    .select('*, providers(name, category_slug)')
+    .eq('customer_id', user.id)
+    .order('created_at', { ascending: false })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json(data ?? [])
+}
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -41,5 +68,47 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true, id: data.id })
+
+  // Fetch provider via admin client (service role) — number never sent to client
+  const admin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  const { data: provider } = await admin
+    .from('providers')
+    .select('whatsapp, name')
+    .eq('id', provider_id)
+    .eq('status', 'approved')
+    .single()
+
+  if (!provider?.whatsapp) {
+    return NextResponse.json({ error: 'Provider not found or has no WhatsApp' }, { status: 404 })
+  }
+
+  // Build WhatsApp message — URL constructed server-side, number never exposed
+  const serviceName = service_slug
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (c: string) => c.toUpperCase())
+
+  const petLine = pet_name ? `${pet_name} (${pet_type})` : `(${pet_type})`
+  const refCode = `#PL-${data.id.replace(/-/g, '').slice(0, 6).toUpperCase()}`
+
+  const lines = [
+    `Hi ${provider.name}! I found you on PawLocal 🐾`,
+    ``,
+    `📋 *Service Request*`,
+    `Service: ${serviceName}`,
+    `Pet: ${petLine}`,
+    `Date: ${date_needed}`,
+    `Time: ${time_needed}`,
+    notes ? `Notes: ${notes}` : null,
+    ``,
+    `Ref: ${refCode}`,
+  ].filter((l): l is string => l !== null).join('\n')
+
+  const digits = provider.whatsapp.replace(/\D/g, '').slice(-10)
+  const whatsapp_url = `https://wa.me/91${digits}?text=${encodeURIComponent(lines)}`
+
+  return NextResponse.json({ booking_id: data.id, whatsapp_url })
 }

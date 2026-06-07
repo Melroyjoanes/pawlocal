@@ -178,7 +178,6 @@ function ProviderPopup({
 }) {
   const primaryPhoto =
     provider.provider_photos?.find((p) => p.is_primary) ?? provider.provider_photos?.[0]
-  const whatsappUrl = `https://wa.me/91${provider.whatsapp.replace(/\D/g, '')}`
 
   return (
     <div className="flex gap-3 min-w-[220px] max-w-[280px] font-sans">
@@ -232,7 +231,7 @@ function ProviderPopup({
         {/* CTAs */}
         <div className="flex gap-2 mt-2">
           <a
-            href={whatsappUrl}
+            href={`/api/provider/whatsapp-redirect/${provider.id}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 text-[11px] font-semibold text-white px-2.5 py-1.5 rounded-full bg-green-600 hover:bg-green-700 transition-colors"

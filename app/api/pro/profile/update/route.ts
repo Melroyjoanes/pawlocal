@@ -41,6 +41,8 @@ export async function PATCH(req: NextRequest) {
     price_min, price_max, price_unit,
     hours_from, hours_to, working_days, is_emergency,
     photo_url,
+    experience_years, languages, pet_types_handled, neighbourhood_tags, intro_note,
+    intro_video_url,
   } = body
 
   if (!name || !whatsapp) {
@@ -62,6 +64,12 @@ export async function PATCH(req: NextRequest) {
       hours_to: hours_to ?? '18:00',
       working_days: working_days ?? [],
       is_emergency: is_emergency ?? false,
+      experience_years: experience_years != null ? Number(experience_years) : null,
+      languages: languages ?? null,
+      pet_types_handled: pet_types_handled ?? null,
+      neighbourhood_tags: neighbourhood_tags ?? null,
+      intro_note: intro_note ?? null,
+      intro_video_url: intro_video_url && typeof intro_video_url === 'string' && intro_video_url !== '' ? intro_video_url : null,
     })
     .eq('id', provider.id)
 

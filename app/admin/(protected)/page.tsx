@@ -77,57 +77,50 @@ function ProviderCard({
   const [savingCoords, setSavingCoords] = useState(false)
   const [coordSaved, setCoordSaved] = useState(false)
 
-  // Access link state
-  const [showAccessInput, setShowAccessInput] = useState(false)
-  const [accessEmail, setAccessEmail] = useState((p as unknown as { email?: string }).email ?? '')
+  // Dashboard access state
+  const providerEmail = (p as unknown as { email?: string }).email ?? ''
   const [sendingAccess, setSendingAccess] = useState(false)
   const [accessSent, setAccessSent] = useState(false)
   const [accessError, setAccessError] = useState<string | null>(null)
-  const [fallbackLink, setFallbackLink] = useState<string | null>(null)
-  const [linkCopied, setLinkCopied] = useState(false)
 
   // Settings panel state (approved cards only)
   const [showSettings, setShowSettings] = useState(false)
 
-  async function sendAccessLink() {
+  async function sendDashboardWhatsApp() {
+    if (!providerEmail) {
+      setAccessError('No email on record. Add one in Supabase first.')
+      return
+    }
     setSendingAccess(true)
     setAccessError(null)
-    setFallbackLink(null)
     try {
       const res = await fetch(`/api/admin/providers/${p.id}/send-access-link`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: accessEmail }),
+        body: JSON.stringify({ email: providerEmail }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed')
-      setAccessSent(data.emailSent)
-      if (!data.emailSent && data.magicLink) {
-        // Email failed — show the link so admin can copy and send manually
-        setFallbackLink(data.magicLink)
-      } else {
-        setShowAccessInput(false)
-        setTimeout(() => setAccessSent(false), 4000)
-      }
+      const firstName = p.name.split(' ')[0]
+      const waText = encodeURIComponent(
+        `Hi ${firstName}! Your PawLocal provider dashboard is ready 🐾\n\nClick this link to sign in and manage your profile, update availability, and see who contacted you:\n${data.magicLink}\n\n(Link expires in 1 hour. Next time just go to pawlocal-ashen.vercel.app/pro)`
+      )
+      const digits = p.whatsapp.replace(/\D/g, '').slice(-10)
+      window.open(`https://wa.me/91${digits}?text=${waText}`, '_blank', 'noopener,noreferrer')
+      setAccessSent(true)
+      setTimeout(() => setAccessSent(false), 5000)
     } catch (err) {
-      setAccessError(err instanceof Error ? err.message : 'Failed to send')
+      setAccessError(err instanceof Error ? err.message : 'Failed')
     } finally {
       setSendingAccess(false)
     }
   }
 
-  function copyFallbackLink() {
-    if (!fallbackLink) return
-    navigator.clipboard.writeText(fallbackLink).then(() => {
-      setLinkCopied(true)
-      setTimeout(() => setLinkCopied(false), 2000)
-    })
-  }
-
   const category = getCategoryBySlug(p.category_slug)
   const primaryPhoto = p.provider_photos?.find((ph) => ph.is_primary) ?? p.provider_photos?.[0]
   const profileUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://pawlocal-ashen.vercel.app'}/provider/${p.id}`
-  const waDirectUrl = `https://wa.me/91${p.whatsapp.replace(/\D/g, '').slice(-10)}`
+  const waDigits = p.whatsapp?.replace(/\D/g, '').slice(-10) ?? ''
+  const waDirectUrl = waDigits ? `https://wa.me/91${waDigits}` : null
 
   async function saveCoords() {
     setSavingCoords(true)
@@ -204,31 +197,35 @@ function ProviderCard({
         <div className="border-t border-border px-4 py-3">
           {/* Primary 3-button row */}
           <div className="flex gap-2">
-            {/* Send Dashboard — primary teal */}
+            {/* Send Dashboard — generates magic link, opens WhatsApp */}
             <button
-              onClick={() => {
-                setShowAccessInput((v) => !v)
-                setShowSettings(false)
-              }}
-              className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all min-h-[44px] ${
+              onClick={sendDashboardWhatsApp}
+              disabled={sendingAccess}
+              className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all min-h-[44px] disabled:opacity-60 ${
                 accessSent
                   ? 'bg-emerald-500 text-white'
                   : 'bg-[var(--pl-teal)] text-white hover:opacity-90'
               }`}
             >
-              {accessSent ? '✓ Sent!' : '🔑 Send Dashboard'}
+              {sendingAccess ? '⏳ Generating…' : accessSent ? '✓ WhatsApp opened!' : '🔑 Send Dashboard'}
             </button>
 
             {/* WhatsApp direct */}
-            <a
-              href={waDirectUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-12 h-12 rounded-xl bg-[#25D366] text-white flex items-center justify-center text-lg hover:bg-[#20b558] transition-colors min-h-[44px] flex-shrink-0"
-              title="WhatsApp provider"
-            >
-              💬
-            </a>
+            {waDirectUrl ? (
+              <a
+                href={waDirectUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-12 h-12 rounded-xl bg-[#25D366] text-white flex items-center justify-center text-lg hover:bg-[#20b558] transition-colors min-h-[44px] flex-shrink-0"
+                title="WhatsApp provider"
+              >
+                💬
+              </a>
+            ) : (
+              <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-300 flex items-center justify-center text-lg flex-shrink-0" title="No WhatsApp on record">
+                💬
+              </div>
+            )}
 
             {/* View profile */}
             <a
@@ -337,55 +334,10 @@ function ProviderCard({
         </div>
       )}
 
-      {/* ── Send Dashboard email form (expandable) ── */}
-      {showAccessInput && filter === 'approved' && (
-        <div className="px-4 pb-4 border-t border-border pt-3">
-          <p className="text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Send /pro dashboard access</p>
-          <p className="text-xs text-slate-400 mb-3">
-            Enter their email → they get a magic sign-in link. Next time they go to <strong>/pro</strong> and enter this email.
-          </p>
-          <div className="flex gap-2 items-end flex-wrap">
-            <div className="flex-1 min-w-48">
-              <label className="block text-[11px] font-medium text-slate-500 mb-1">Email address</label>
-              <input
-                type="email"
-                value={accessEmail}
-                onChange={(e) => setAccessEmail(e.target.value)}
-                placeholder="provider@gmail.com"
-                className="w-full border border-border rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--pl-teal)]"
-              />
-            </div>
-            <button
-              onClick={sendAccessLink}
-              disabled={sendingAccess || !accessEmail.includes('@')}
-              className="px-3.5 py-1.5 rounded-lg text-sm font-semibold bg-[var(--pl-teal)] text-white hover:opacity-90 disabled:opacity-50 transition-all"
-            >
-              {sendingAccess ? 'Sending…' : 'Send link'}
-            </button>
-          </div>
-          {accessError && (
-            <p className="text-xs text-red-600 mt-2">{accessError}</p>
-          )}
-          {/* Fallback: email failed, show link to copy manually */}
-          {fallbackLink && (
-            <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
-              <p className="text-xs font-semibold text-amber-800 mb-2">
-                ⚠️ Email didn&apos;t send — copy this link and send via WhatsApp:
-              </p>
-              <div className="flex gap-2 items-center">
-                <code className="text-[10px] text-amber-700 bg-amber-100 rounded px-2 py-1 flex-1 truncate">
-                  {fallbackLink}
-                </code>
-                <button
-                  onClick={copyFallbackLink}
-                  className="text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 whitespace-nowrap"
-                >
-                  {linkCopied ? '✓ Copied!' : 'Copy'}
-                </button>
-              </div>
-              <p className="text-[10px] text-amber-600 mt-1.5">Link expires in 1 hour. Send it to them now.</p>
-            </div>
-          )}
+      {/* Error state for dashboard send */}
+      {accessError && filter === 'approved' && (
+        <div className="px-4 pb-3 border-t border-border pt-2">
+          <p className="text-xs text-red-600">⚠️ {accessError}</p>
         </div>
       )}
     </div>

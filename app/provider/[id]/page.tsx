@@ -61,6 +61,22 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
     : 0
 
+  // Trust signals: jobs completed
+  const { count: jobsCompleted } = await supabase
+    .from('booking_requests')
+    .select('*', { count: 'exact', head: true })
+    .eq('provider_id', id)
+    .eq('status', 'completed')
+
+  const { count: walksCompleted } = await (supabase as any)
+    .from('walk_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('provider_id', provider.id)
+    .eq('status', 'completed')
+
+  const totalJobs = (jobsCompleted ?? 0) + (walksCompleted ?? 0)
+  const memberSince = new Date(provider.created_at).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+
   const primaryPhoto =
     provider.provider_photos.find((p) => p.is_primary) ?? provider.provider_photos[0]
   const galleryPhotos = provider.provider_photos
@@ -128,6 +144,11 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
               {category.icon} {category.name}
             </span>
             <VerificationBadge tier={(provider.verification_tier as 'contacted' | 'verified' | 'certified') ?? 'contacted'} size="md" />
+            {(provider as unknown as { intro_video_url?: string | null }).intro_video_url && (
+              <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-pink-50 text-pink-600 border border-pink-100">
+                📹 Video
+              </span>
+            )}
             {reviews.length > 0 && (
               <span className="text-amber-400">
                 <Stars rating={avgRating} count={reviews.length} size="sm" />
@@ -147,6 +168,18 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
             </div>
           )}
 
+          {/* Trust signals: jobs done + member since */}
+          <div className="flex flex-wrap items-center gap-1.5 mt-2">
+            {totalJobs > 0 && (
+              <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-600">
+                ✓ {totalJobs} jobs done
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-600">
+              🗓 Member since {memberSince}
+            </span>
+          </div>
+
           {/* Verification tier explainer */}
           {(provider.verification_tier === 'verified' || provider.verification_tier === 'certified') && (
             <TierExplainer tier={provider.verification_tier as 'verified' | 'certified'} />
@@ -154,6 +187,52 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         </div>
       </div>
 
+      {/* Trust section */}
+      {(() => {
+        const p = provider as unknown as {
+          intro_note?: string | null
+          experience_years?: number | null
+          languages?: string[] | null
+          neighbourhood_tags?: string[] | null
+          pet_types_handled?: string[] | null
+        }
+        const petEmoji: Record<string, string> = {
+          Dog: '🐕', Cat: '🐈', Bird: '🦜', Rabbit: '🐇',
+          Hamster: '🐹', Fish: '🐠', Reptile: '🦎',
+        }
+        const chips: string[] = []
+        if (p.experience_years) chips.push(`${p.experience_years} yrs experience`)
+        if (p.languages?.length) chips.push(p.languages.join(' · '))
+        if (p.neighbourhood_tags?.length) chips.push(p.neighbourhood_tags.join(' · '))
+        const hasTrust = p.intro_note || chips.length > 0 || (p.pet_types_handled?.length ?? 0) > 0
+        if (!hasTrust) return null
+        return (
+          <div className="mb-7">
+            {p.intro_note && (
+              <p className="border-l-4 border-teal-400 pl-3 italic text-base text-stone-700 leading-snug mb-4">
+                {p.intro_note}
+              </p>
+            )}
+            {chips.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {chips.map(chip => (
+                  <span key={chip} className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-600">
+                    {chip}
+                  </span>
+                ))}
+              </div>
+            )}
+            {(p.pet_types_handled?.length ?? 0) > 0 && (
+              <p className="text-xs text-stone-500">
+                Works with:{' '}
+                {p.pet_types_handled!.map((pet, i) => (
+                  <span key={pet}>{i > 0 && ' · '}{petEmoji[pet] ?? ''} {pet}s</span>
+                ))}
+              </p>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Bio */}
       {provider.bio && (
@@ -265,6 +344,58 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         </div>
       )}
 
+      {/* ── Intro video ─────────────────────────────────────────────── */}
+      {(() => {
+        const videoUrl = (provider as unknown as { intro_video_url?: string | null }).intro_video_url
+        if (!videoUrl) return null
+
+        function getVideoEmbed(url: string): { type: 'youtube' | 'loom' | 'instagram', embedUrl?: string } {
+          if (url.includes('youtu.be') || url.includes('youtube.com')) {
+            const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+            return { type: 'youtube', embedUrl: match ? `https://www.youtube.com/embed/${match[1]}` : undefined }
+          }
+          if (url.includes('loom.com')) {
+            const embedUrl = url.replace('/share/', '/embed/')
+            return { type: 'loom', embedUrl }
+          }
+          if (url.includes('instagram.com')) {
+            return { type: 'instagram' }
+          }
+          return { type: 'youtube' }
+        }
+
+        const video = getVideoEmbed(videoUrl)
+
+        return (
+          <div className="mb-7">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+              Meet {provider.name.split(' ')[0]}
+            </p>
+            {video.type === 'instagram' ? (
+              <a
+                href={videoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-3 w-full py-5 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-sm hover:opacity-90 transition-opacity"
+              >
+                <span className="text-xl">▶</span>
+                Watch on Instagram
+              </a>
+            ) : video.embedUrl ? (
+              <div className="aspect-video rounded-2xl overflow-hidden bg-stone-100">
+                <iframe
+                  src={video.embedUrl}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                  title={`Intro video by ${provider.name}`}
+                />
+              </div>
+            ) : null}
+          </div>
+        )
+      })()}
+
       {/* ── Reviews ────────────────────────────────────────────────── */}
       <div id="review-section" className="mb-24">
         <div className="flex items-center justify-between mb-5">
@@ -341,59 +472,43 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           </a>
         ) : (
           <>
-            <div className="flex gap-3">
+            {/* Primary row: booking button (full width) + compact call button if phone exists */}
+            <div className="flex gap-2">
               <BookingRequestTrigger
                 providerId={provider.id}
                 providerName={provider.name}
-                providerWhatsapp={provider.whatsapp}
                 categorySlug={provider.category_slug}
               />
-              {provider.phone ? (
+              {provider.phone && (
                 <TrackButton
                   providerId={provider.id}
                   eventType="call_click"
                   href={`tel:${provider.phone}`}
-                  className="flex-1 bg-white border border-border text-foreground py-4 rounded-2xl font-semibold text-center hover:bg-muted active:bg-muted transition-colors flex items-center justify-center gap-2 min-h-[52px]"
+                  className="w-12 h-12 flex-shrink-0 bg-white border border-border text-foreground rounded-2xl font-semibold hover:bg-muted active:bg-muted transition-colors flex items-center justify-center"
                 >
-                  📞 Call
+                  📞
                 </TrackButton>
-              ) : (
-                <SaveButton
-                  providerId={provider.id}
-                  providerName={provider.name}
-                  categorySlug={provider.category_slug}
-                  whatsapp={provider.whatsapp}
-                />
               )}
             </div>
-            {provider.phone && (
-              <div className="flex gap-3">
-                <SaveButton
-                  providerId={provider.id}
-                  providerName={provider.name}
-                  categorySlug={provider.category_slug}
-                  whatsapp={provider.whatsapp}
-                />
-                <a
-                  href={shareUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors py-1"
-                >
-                  ↗ Share on WhatsApp
-                </a>
-              </div>
-            )}
-            {!provider.phone && (
+
+            {/* Secondary row: Save (left) + Share (right) — equal width, lighter styling */}
+            <div className="flex gap-2">
+              <SaveButton
+                providerId={provider.id}
+                providerName={provider.name}
+                categorySlug={provider.category_slug}
+                whatsapp={provider.whatsapp}
+                showLabel
+              />
               <a
                 href={shareUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-green-600 transition-colors py-1"
+                className="flex-1 flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground bg-white border border-border rounded-2xl py-3 hover:text-green-600 hover:border-green-200 transition-colors"
               >
-                ↗ Share on WhatsApp
+                ↗ Share
               </a>
-            )}
+            </div>
           </>
         )}
       </div>

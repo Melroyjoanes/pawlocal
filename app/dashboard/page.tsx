@@ -34,13 +34,13 @@ export default async function DashboardPage() {
   const { data: provider } = await admin
     .from('providers')
     .select('id, status')
-    .eq('user_id', user.id)
+    .eq('email', user.email)
     .single()
 
   // Linked provider — route based on their approval status
   if (provider) {
     if (provider.status === 'approved') {
-      redirect(`/provider/${provider.id}/dashboard`)
+      redirect(`/pro/profile`)
     }
     // Pending — show "under review" screen right here (no redirect to dashboard URL)
     const firstName = userName.split(' ')[0] || 'there'

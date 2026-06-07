@@ -40,6 +40,10 @@ export default async function AccountPage({
     }
 
     // Non-provider signed in — send them to the right place
+    // Respect `next` if it's a safe customer URL (not /pro or /admin)
+    if (next && !next.startsWith('/pro') && !next.startsWith('/admin') && next !== '/my-account') {
+      redirect(next)
+    }
     if (reason === 'provider' || next === '/dashboard') {
       redirect('/dashboard')
     }

@@ -2,17 +2,33 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-
-const NAV = [
-  { href: '/pro/dashboard', label: 'Home',     icon: '🏠' },
-  { href: '/pro/bookings',  label: 'Bookings', icon: '📒' },
-  { href: '/pro/fitness',   label: 'Fitness',  icon: '🏃' },
-  { href: '/pro/leads',     label: 'Leads',    icon: '📋' },
-  { href: '/pro/profile',   label: 'Profile',  icon: '👤' },
-]
+import { useState, useEffect } from 'react'
+import { t, type Lang } from '@/lib/pro-translations'
 
 export default function ProBottomNav() {
   const pathname = usePathname()
+  const [lang, setLang] = useState<Lang>('en')
+
+  useEffect(() => {
+    const stored = localStorage.getItem('pro_lang') as Lang | null
+    if (stored === 'hi' || stored === 'mr') setLang(stored)
+    // Listen for storage changes in case another tab updates it
+    function onStorage(e: StorageEvent) {
+      if (e.key === 'pro_lang' && (e.newValue === 'en' || e.newValue === 'hi' || e.newValue === 'mr')) {
+        setLang(e.newValue as Lang)
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
+  const NAV = [
+    { href: '/pro/dashboard', label: t(lang, 'nav_dashboard'), icon: '🏠' },
+    { href: '/pro/bookings',  label: t(lang, 'nav_bookings'),  icon: '📒' },
+    { href: '/pro/fitness',   label: t(lang, 'nav_fitness'),   icon: '🏃' },
+    { href: '/pro/leads',     label: t(lang, 'nav_leads'),     icon: '📋' },
+    { href: '/pro/profile',   label: t(lang, 'nav_profile'),   icon: '👤' },
+  ]
 
   return (
     <nav
