@@ -1,29 +1,26 @@
 /**
- * /dashboard — Auth-gated provider hub
+ * /dashboard — Auth-gated routing page
  *
- * Signed in + linked provider     → redirect to their dashboard
- * Signed in + role = pet_owner    → redirect to /my-account
- * Signed in + no role set (new)   → show role picker
- * Signed in + role = provider     → show "find your listing"
- * Not signed in                   → proxy.ts redirects to /account
+ * Signed in + approved provider   → redirect to /pro/profile
+ * Signed in + pending provider    → show pending screen
+ * Signed in + no provider record  → redirect to /my-account
+ * Not signed in                   → redirect to /account
  */
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
-import RolePicker from '@/components/RolePicker'
 
 export default async function DashboardPage() {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/account?reason=provider&next=/dashboard')
+    redirect('/account')
   }
 
   const meta = user.user_metadata ?? {}
   const userName: string = meta.full_name ?? meta.name ?? user.email ?? ''
-  const userAvatar: string | null = meta.avatar_url ?? meta.picture ?? null
 
   // Check if they have a linked provider profile
   const admin = createClient(
@@ -82,16 +79,6 @@ export default async function DashboardPage() {
     )
   }
 
-  // No provider linked — check role
-  if (meta.pawlocal_role === 'pet_owner') {
-    redirect('/my-account')
-  }
-
-  // Role already picked as provider but no profile linked yet
-  if (meta.pawlocal_role === 'provider') {
-    redirect('/my-listing')
-  }
-
-  // Brand new user — show role picker
-  return <RolePicker userName={userName} userAvatar={userAvatar} />
+  // No provider record — send to customer account
+  redirect('/my-account')
 }

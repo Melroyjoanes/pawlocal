@@ -180,27 +180,19 @@ export default function CategoryPage() {
               ? 'Try removing the emergency filter to see all vets.'
               : 'Post a free broadcast — providers nearby will reach out to you directly.'}
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 w-full max-w-sm">
-            {!emergencyOnly && (
-              <a
-                href="/broadcast"
-                className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm transition-all"
-                style={{
-                  background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
-                  color: '#451A03',
-                  boxShadow: '0 4px 0px rgba(120,53,15,0.22)',
-                }}
-              >
-                📣 Post a request
-              </a>
-            )}
+          {!emergencyOnly && (
             <a
-              href="/join"
-              className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-sm border border-border text-slate-700 hover:bg-muted transition-colors"
+              href="/broadcast"
+              className="flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl font-bold text-sm transition-all"
+              style={{
+                background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+                color: '#451A03',
+                boxShadow: '0 4px 0px rgba(120,53,15,0.22)',
+              }}
             >
-              List your service →
+              📣 Post a request
             </a>
-          </div>
+          )}
         </motion.div>
       ) : (
         <AnimatePresence mode="wait">

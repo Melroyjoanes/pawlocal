@@ -833,13 +833,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
         >
           <span className="text-xl">🐾</span>
           <p className="text-sm text-slate-400">
-            Offering pet care services in Juhu?{' '}
-            <Link
-              href="/join"
-              className="font-semibold text-amber-600 hover:text-amber-700 underline underline-offset-2 transition-colors"
-            >
-              List your services — it&apos;s free →
-            </Link>
+            Juhu&apos;s most trusted pet services directory — every listing verified by our team.
           </p>
         </motion.div>
       </section>

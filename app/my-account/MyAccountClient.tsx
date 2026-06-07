@@ -456,13 +456,6 @@ export default function MyAccountClient({
         </div>
       )}
 
-      {/* Footer — switch role */}
-      <div className="mt-10 pt-6 border-t border-border text-center">
-        <p className="text-xs text-slate-400 mb-2">Are you a service provider?</p>
-        <a href="/my-listing" className="text-xs font-semibold text-[var(--pl-teal)] hover:underline">
-          Access provider dashboard →
-        </a>
-      </div>
     </div>
   )
 }
