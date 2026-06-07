@@ -82,6 +82,7 @@ export default async function ProDashboardPage() {
       stats={{ viewsThisMonth, whatsappTapsThisMonth, totalViews }}
       broadcasts={broadcasts}
       firstName={firstName}
+      providerName={provider.name as string}
     />
   )
 }

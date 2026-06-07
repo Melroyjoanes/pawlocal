@@ -344,13 +344,31 @@ function ProviderCard({
 }
 
 // ── Broadcast card (admin view) ──────────────────────────────────
-function BroadcastAdminCard({ b, providers }: { b: Broadcast; providers: any[] }) {
+function BroadcastAdminCard({ b, providers, onClose }: { b: Broadcast; providers: any[]; onClose: (id: string) => void }) {
   const svc = SERVICE_LABELS[b.service_slug] ?? { label: b.service_slug, icon: '🐾' }
   const expired = isExpired(b.expires_at)
+  const [closing, setClosing] = useState(false)
+  const [closed, setClosed] = useState(b.status === 'closed')
   const waLink = `https://wa.me/91${b.poster_whatsapp.replace(/\D/g, '').slice(-10)}`
   const waText = encodeURIComponent(
     `Hi ${b.poster_name}! I saw your request on PawLocal for ${svc.label}. Let me help connect you with the right provider. 🐾`
   )
+
+  async function handleClose() {
+    if (closing || closed) return
+    setClosing(true)
+    try {
+      await fetch(`/api/admin/broadcasts/${b.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'closed' }),
+      })
+      setClosed(true)
+      onClose(b.id)
+    } finally {
+      setClosing(false)
+    }
+  }
 
   // Match providers by category slug (check both category_slugs array and category_slug string)
   const matchingProviders = providers.filter((p) => {
@@ -428,6 +446,20 @@ function BroadcastAdminCard({ b, providers }: { b: Broadcast; providers: any[] }
         >
           Find providers →
         </a>
+        {!expired && !closed && (
+          <button
+            onClick={handleClose}
+            disabled={closing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 text-red-600 bg-red-50 text-xs font-semibold hover:bg-red-100 transition-colors disabled:opacity-50"
+          >
+            {closing ? '…' : '✕ Close'}
+          </button>
+        )}
+        {closed && (
+          <span className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-xs font-medium">
+            ✓ Closed
+          </span>
+        )}
       </div>
 
       {/* Notify matching providers */}
@@ -784,7 +816,7 @@ export default function AdminPage() {
                     Active ({activeBroadcasts.length})
                   </p>
                   <div className="flex flex-col gap-3">
-                    {activeBroadcasts.map((b) => <BroadcastAdminCard key={b.id} b={b} providers={approvedProviders} />)}
+                    {activeBroadcasts.map((b) => <BroadcastAdminCard key={b.id} b={b} providers={approvedProviders} onClose={(id) => setBroadcasts(prev => prev.filter(x => x.id !== id))} />)}
                   </div>
                 </div>
               )}
@@ -794,7 +826,7 @@ export default function AdminPage() {
                     Expired ({expiredBroadcasts.length})
                   </p>
                   <div className="flex flex-col gap-3">
-                    {expiredBroadcasts.map((b) => <BroadcastAdminCard key={b.id} b={b} providers={approvedProviders} />)}
+                    {expiredBroadcasts.map((b) => <BroadcastAdminCard key={b.id} b={b} providers={approvedProviders} onClose={(id) => setBroadcasts(prev => prev.filter(x => x.id !== id))} />)}
                   </div>
                 </div>
               )}

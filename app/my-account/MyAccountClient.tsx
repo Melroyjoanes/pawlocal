@@ -82,10 +82,11 @@ function EmptyState({ emoji, title, sub, cta, ctaHref }: {
 }
 
 export default function MyAccountClient({
-  broadcasts, reviews, savedProviders: initialSaved, bookingRequests,
+  broadcasts: initialBroadcasts, reviews, savedProviders: initialSaved, bookingRequests,
   userDisplay, userAvatar,
 }: Props) {
   const [tab, setTab] = useState<Tab>('broadcasts')
+  const [broadcasts, setBroadcasts] = useState<Broadcast[]>(initialBroadcasts)
   const [savedProviders, setSavedProviders] = useState<SavedProvider[]>(initialSaved)
   const [displayName, setDisplayName] = useState(userDisplay)
   const [editingName, setEditingName] = useState(false)
@@ -130,6 +131,15 @@ export default function MyAccountClient({
     setDisplayName(nameInput.trim())
     setSavingName(false)
     setEditingName(false)
+  }
+
+  async function closeBroadcast(id: string) {
+    // Optimistic remove
+    setBroadcasts(prev => prev.filter(b => b.id !== id))
+    fetch(`/api/broadcasts/${id}`, { method: 'DELETE' }).catch(() => {
+      // Restore on failure
+      setBroadcasts(initialBroadcasts)
+    })
   }
 
   async function handleSignOut() {
@@ -303,10 +313,21 @@ export default function MyAccountClient({
                           <p className="font-semibold text-slate-900 text-sm">
                             {SERVICE_LABELS[b.service_slug] ?? b.service_slug}
                           </p>
-                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full flex-shrink-0 capitalize"
-                            style={{ background: s.bg, color: s.color }}>
-                            {b.status}
-                          </span>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full capitalize"
+                              style={{ background: s.bg, color: s.color }}>
+                              {b.status}
+                            </span>
+                            {b.status === 'active' && (
+                              <button
+                                onClick={() => closeBroadcast(b.id)}
+                                className="w-6 h-6 rounded-full bg-slate-100 text-slate-400 text-xs hover:bg-red-50 hover:text-red-500 transition-colors flex items-center justify-center"
+                                title="Close broadcast"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </div>
                         </div>
                         <p className="text-sm text-slate-600 mb-2 leading-relaxed">{b.pet_description}</p>
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
