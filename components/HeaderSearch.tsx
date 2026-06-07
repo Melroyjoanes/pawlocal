@@ -41,7 +41,7 @@ export default function HeaderSearch() {
       <button
         onClick={() => setOpen(true)}
         aria-label="Open search"
-        className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl border border-border bg-white text-base hover:border-[var(--pl-teal)] transition-colors"
+        className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl text-base hover:bg-amber-50 transition-colors"
       >
         🔍
       </button>
