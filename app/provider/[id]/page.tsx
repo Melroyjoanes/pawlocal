@@ -4,10 +4,10 @@ import { createClient } from '@/lib/supabase/server'
 import { getCategoryBySlug } from '@/lib/categories'
 import type { ProviderWithPhotos, Review, TrainerMetadata } from '@/lib/supabase/types'
 import { Stars } from '@/components/StarRating'
-import { TrackView, TrackButton, SaveButton } from '@/components/ProviderTracker'
-import BookingRequestTrigger from '@/components/BookingRequestTrigger'
+import { TrackView } from '@/components/ProviderTracker'
 import VerificationBadge from '@/components/VerificationBadge'
 import TierExplainer from '@/components/TierExplainer'
+import ProviderCTABar from '@/components/ProviderCTABar'
 
 export async function generateMetadata(
   { params }: { params: Promise<{ id: string }> }
@@ -429,58 +429,16 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
 
       </div>
 
-      {/* ── Sticky CTA ───────────────────────────────────────────────── */}
-      <div
-        className="sticky bottom-0 -mx-4 px-4 pt-3 bg-background/95 backdrop-blur-sm flex flex-col gap-2 border-t border-border/50"
-        style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
-      >
-        {isOwner ? (
-          <a
-            href="/pro/profile"
-            className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-sm text-white transition-all"
-            style={{ backgroundColor: 'oklch(0.48 0.17 196)' }}
-          >
-            ✏️ Edit your profile
-          </a>
-        ) : (
-          <>
-            <div className="flex gap-2">
-              <BookingRequestTrigger
-                providerId={provider.id}
-                providerName={provider.name}
-                categorySlug={provider.category_slug}
-              />
-              {provider.phone && (
-                <TrackButton
-                  providerId={provider.id}
-                  eventType="call_click"
-                  href={`tel:${provider.phone}`}
-                  className="w-12 h-12 flex-shrink-0 bg-white border border-border text-foreground rounded-2xl font-semibold hover:bg-muted active:bg-muted transition-colors flex items-center justify-center"
-                >
-                  📞
-                </TrackButton>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <SaveButton
-                providerId={provider.id}
-                providerName={provider.name}
-                categorySlug={provider.category_slug}
-                whatsapp={provider.whatsapp}
-                showLabel
-              />
-              <a
-                href={shareUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground bg-white border border-border rounded-2xl py-3 hover:text-green-600 hover:border-green-200 transition-colors"
-              >
-                ↗ Share
-              </a>
-            </div>
-          </>
-        )}
-      </div>
+      {/* ── Sticky CTA — auth-gated ──────────────────────────────────── */}
+      <ProviderCTABar
+        providerId={provider.id}
+        providerName={provider.name}
+        categorySlug={provider.category_slug}
+        whatsapp={provider.whatsapp}
+        phone={provider.phone}
+        isOwner={isOwner}
+        shareUrl={shareUrl}
+      />
     </div>
   )
 }
