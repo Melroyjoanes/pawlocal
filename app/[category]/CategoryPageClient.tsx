@@ -11,21 +11,29 @@ import dynamic from 'next/dynamic'
 
 const ProviderMap = dynamic(() => import('@/components/ProviderMap'), { ssr: false })
 
-// Skeleton card shown while loading
+// Skeleton card shown while loading — clay style
 function ProviderCardSkeleton() {
   return (
-    <div className="flex gap-4 bg-white p-4 rounded-2xl border border-border animate-pulse">
-      <div className="w-[88px] h-[88px] rounded-xl bg-stone-200 flex-shrink-0" />
+    <div
+      className="flex gap-4 p-4 animate-pulse"
+      style={{
+        background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
+        boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -3px 0 rgba(0,0,0,0.06), 0 8px 24px rgba(15,45,50,0.08)',
+        border: '1px solid rgba(226,220,200,0.7)',
+        borderRadius: 24,
+      }}
+    >
+      <div className="w-[88px] h-[88px] flex-shrink-0 rounded-[20px] bg-amber-100/60" />
       <div className="flex-1">
         <div className="flex items-start justify-between gap-2">
-          <div className="h-4 bg-stone-200 rounded-full w-2/5" />
-          <div className="h-4 bg-stone-200 rounded-full w-1/6" />
+          <div className="h-4 bg-amber-100/70 rounded-full w-2/5" />
+          <div className="h-8 w-16 bg-amber-100/60 rounded-xl" />
         </div>
-        <div className="h-3 bg-stone-200 rounded-full w-1/3 mt-2" />
-        <div className="h-3 bg-stone-200 rounded-full w-3/5 mt-1.5" />
+        <div className="h-3 bg-stone-200/60 rounded-full w-1/3 mt-2" />
+        <div className="h-3 bg-stone-200/60 rounded-full w-3/5 mt-1.5" />
         <div className="flex gap-2 mt-3">
-          <div className="h-7 bg-stone-200 rounded-full w-24" />
-          <div className="h-7 bg-stone-200 rounded-full w-16" />
+          <div className="h-7 bg-green-100/70 rounded-full w-24" />
+          <div className="h-7 bg-stone-100/70 rounded-full w-16" />
         </div>
       </div>
     </div>
@@ -101,17 +109,24 @@ export default function CategoryPage() {
       {/* Header */}
       <div className="flex items-center gap-4 mb-7">
         <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-          style={{ backgroundColor: category.color + '18' }}
+          className="w-14 h-14 rounded-[18px] flex items-center justify-center text-2xl flex-shrink-0"
+          style={{
+            background: `linear-gradient(145deg, ${category.color}18 0%, ${category.color}30 100%)`,
+            boxShadow: `inset 0 1.5px 0 rgba(255,255,255,0.9), inset 0 -2.5px 0 ${category.color}28, 0 8px 20px ${category.color}22`,
+            border: `1px solid ${category.color}25`,
+          }}
         >
           {category.icon}
         </div>
         <div>
-          <h1 className="text-xl font-bold text-foreground font-display">{category.name}</h1>
-          <p className="text-sm text-muted-foreground">{category.tagline} · {neighbourhood}, Mumbai</p>
+          <h1 className="text-xl font-bold text-slate-900 font-display">{category.name}</h1>
+          <p className="text-sm text-slate-400 mt-0.5">{category.tagline} · {neighbourhood}, Mumbai</p>
         </div>
         {!loading && (
-          <span className="ml-auto text-xs text-muted-foreground">
+          <span
+            className="ml-auto text-xs font-bold px-3 py-1.5 clay-badge-amber"
+            style={{ color: '#78350F' }}
+          >
             {displayedProviders.length} {displayedProviders.length === 1 ? 'result' : 'results'}
           </span>
         )}
@@ -121,33 +136,52 @@ export default function CategoryPage() {
       {slug === 'vet' && (
         <button
           onClick={() => setEmergencyOnly((v) => !v)}
-          className={`flex items-center gap-1.5 mb-4 px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-            emergencyOnly
-              ? 'bg-red-600 text-white border-red-600'
-              : 'bg-white text-red-600 border-red-200 hover:border-red-400'
-          }`}
+          className="flex items-center gap-1.5 mb-4 px-4 py-2 text-sm font-bold transition-all"
+          style={emergencyOnly ? {
+            background: 'linear-gradient(160deg, #FCA5A5 0%, #EF4444 100%)',
+            color: '#fff',
+            borderRadius: 9999,
+            boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(127,29,29,0.35), 0 8px 20px rgba(239,68,68,0.38)',
+            border: '1px solid rgba(252,165,165,0.3)',
+          } : {
+            background: 'linear-gradient(160deg, #FFF1F2 0%, #FECDD3 100%)',
+            color: '#BE123C',
+            borderRadius: 9999,
+            boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.9), inset 0 -2.5px 0 rgba(159,18,57,0.15), 0 6px 16px rgba(254,205,211,0.55)',
+            border: '1px solid rgba(254,205,211,0.8)',
+          }}
         >
           🚨 24hr / Emergency only
         </button>
       )}
 
-      {/* View toggle */}
-      <div className="flex gap-1.5 mb-6 p-1 bg-muted rounded-xl w-fit">
+      {/* View toggle — clay segmented control */}
+      <div
+        className="flex gap-1 mb-6 p-1 w-fit"
+        style={{
+          background: 'linear-gradient(160deg, #FEF3C7 0%, #FDE68A 100%)',
+          boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.7), inset 0 -2px 0 rgba(161,98,7,0.15), 0 4px 12px rgba(253,230,138,0.5)',
+          border: '1px solid rgba(253,230,138,0.7)',
+          borderRadius: 16,
+        }}
+      >
         {(['list', 'map'] as const).map((v) => (
           <button
             key={v}
             onClick={() => setView(v)}
-            className={`relative px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              view === v
-                ? 'text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
+            className="relative px-5 py-1.5 text-sm font-semibold transition-all"
+            style={{ borderRadius: 12, color: view === v ? '#78350F' : '#92400E' }}
           >
             {view === v && (
               <motion.span
                 layoutId="view-pill"
-                className="absolute inset-0 bg-white rounded-lg shadow-sm"
-                transition={{ duration: 0.18, ease: EASE_OUT_QUART }}
+                className="absolute inset-0"
+                style={{
+                  background: 'linear-gradient(160deg, #ffffff 0%, #fffdf5 100%)',
+                  borderRadius: 12,
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -2px 0 rgba(0,0,0,0.07), 0 4px 10px rgba(0,0,0,0.09)',
+                }}
+                transition={{ duration: 0.2, ease: EASE_OUT_QUART }}
               />
             )}
             <span className="relative z-10">
