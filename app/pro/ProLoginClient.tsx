@@ -10,9 +10,12 @@ export default function ProLoginClient() {
   const [sent, setSent]     = useState(false)
   const [error, setError]   = useState<'not_registered' | 'generic' | null>(null)
 
-  // Read ?status=pending from URL (server sets this after OAuth for pending providers)
-  const isPending = typeof window !== 'undefined'
-    && new URLSearchParams(window.location.search).get('status') === 'pending'
+  // Read ?status from URL (server sets this after OAuth)
+  const urlStatus = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('status')
+    : null
+  const isPending   = urlStatus === 'pending'
+  const isNoAccount = urlStatus === 'no_account'
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true)
@@ -69,12 +72,38 @@ export default function ProLoginClient() {
             </p>
           </div>
 
+          {/* No provider account — customer accidentally landed here */}
+          {isNoAccount && (
+            <div className="mb-4 bg-blue-50 border border-blue-200 rounded-2xl px-4 py-4 text-sm text-blue-800 text-center">
+              <div className="text-2xl mb-2">👋</div>
+              <p className="font-semibold mb-1">No provider account found</p>
+              <p className="text-blue-700 text-xs mb-3">
+                This Google account isn&apos;t registered as a provider. Are you a pet owner looking for services?
+              </p>
+              <div className="flex flex-col gap-2">
+                <a
+                  href="/my-account"
+                  className="block w-full py-2.5 rounded-xl bg-white border border-blue-200 text-blue-700 text-xs font-bold hover:bg-blue-50 transition-colors"
+                >
+                  ← Back to customer sign-in
+                </a>
+                <a
+                  href="/join"
+                  className="block w-full py-2.5 rounded-xl text-xs font-bold text-white transition-opacity hover:opacity-90"
+                  style={{ backgroundColor: 'oklch(0.48 0.17 196)' }}
+                >
+                  Apply as a provider →
+                </a>
+              </div>
+            </div>
+          )}
+
           {/* Pending state */}
           {isPending && (
             <div className="mb-4 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-4 text-sm text-amber-800 text-center">
               <div className="text-2xl mb-2">⏳</div>
               <p className="font-semibold mb-1">Application under review</p>
-              <p className="text-amber-700 text-xs">We received your application. You'll get an email once approved — usually within 24 hours.</p>
+              <p className="text-amber-700 text-xs">We received your application. You&apos;ll get an email once approved — usually within 24 hours.</p>
             </div>
           )}
 

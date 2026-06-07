@@ -64,12 +64,17 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${base}/pro?status=pending`)
       }
       // rejected — fall through to customer redirect
-    } else if (next.startsWith('/pro')) {
-      // 🆕 They tried to log in as a provider but have no record — send to join
-      // Pass their Google name + email as query params for pre-fill
+    } else if (next === '/pro/register') {
+      // 🆕 New provider registration via Google (from /join page GoogleJoinButton)
+      // Pre-fill name + email in the join form
       const name  = encodeURIComponent(user.user_metadata?.full_name ?? user.user_metadata?.name ?? '')
       const email = encodeURIComponent(user.email)
       return NextResponse.redirect(`${base}/join?from=google&name=${name}&email=${email}`)
+    } else if (next.startsWith('/pro')) {
+      // ⚠️ User clicked Google on the /pro login page but has no provider account
+      // Could be a customer who accidentally landed on the pro login — send them back
+      // to /pro with a clear error rather than dumping them into the registration form
+      return NextResponse.redirect(`${base}/pro?status=no_account`)
     }
   }
 

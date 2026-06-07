@@ -32,7 +32,7 @@ function GoogleJoinButton() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/pro/dashboard`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/pro/register`,
         queryParams: { access_type: 'offline', prompt: 'select_account' },
       },
     })
