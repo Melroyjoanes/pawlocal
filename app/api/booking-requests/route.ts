@@ -115,11 +115,9 @@ export async function POST(req: NextRequest) {
 
   // Track whatsapp_click analytics — this is the activation event
   // Fire-and-forget, don't block the response
-  admin
+  void admin
     .from('provider_analytics')
     .insert({ provider_id, event_type: 'whatsapp_click' })
-    .then(() => {})
-    .catch(() => {})
 
   return NextResponse.json({ booking_id: data.id, whatsapp_url })
 }
