@@ -11,9 +11,9 @@ import AccountClient from './AccountClient'
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ reason?: string; next?: string }>
+  searchParams: Promise<{ next?: string }>
 }) {
-  const { reason, next } = await searchParams
+  const { next } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -44,11 +44,8 @@ export default async function AccountPage({
     if (next && !next.startsWith('/pro') && !next.startsWith('/admin') && next !== '/my-account') {
       redirect(next)
     }
-    if (reason === 'provider' || next === '/dashboard') {
-      redirect('/dashboard')
-    }
     redirect('/my-account')
   }
 
-  return <AccountClient reason={reason} next={next} />
+  return <AccountClient next={next} />
 }
