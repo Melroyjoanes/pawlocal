@@ -49,22 +49,30 @@ export default function ProviderCTABar({
     }
   }
 
-  function executeAction(action: 'whatsapp' | 'call' | 'save') {
-    if (action === 'whatsapp') {
-      // Track + redirect via server auth-gated route
+  function track(event_type: 'whatsapp_click' | 'call_click') {
+    // sendBeacon is guaranteed to fire even when the page navigates away (call clicks).
+    // Falls back to fetch for browsers without sendBeacon support.
+    const payload = JSON.stringify({ provider_id: providerId, event_type })
+    if (navigator.sendBeacon) {
+      const blob = new Blob([payload], { type: 'application/json' })
+      navigator.sendBeacon('/api/provider/track', blob)
+    } else {
       fetch('/api/provider/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider_id: providerId, event_type: 'whatsapp_click' }),
+        body: payload,
+        keepalive: true,
       }).catch(() => {})
+    }
+  }
+
+  function executeAction(action: 'whatsapp' | 'call' | 'save') {
+    if (action === 'whatsapp') {
+      track('whatsapp_click')
       const digits = whatsapp.replace(/\D/g, '').slice(-10)
       window.open(`https://wa.me/91${digits}`, '_blank', 'noopener,noreferrer')
     } else if (action === 'call') {
-      fetch('/api/provider/track', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider_id: providerId, event_type: 'call_click' }),
-      }).catch(() => {})
+      track('call_click')
       window.location.href = `tel:${phone}`
     } else if (action === 'save') {
       try {

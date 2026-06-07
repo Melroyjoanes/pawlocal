@@ -1,27 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
+import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
+
+function adminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function PATCH(req: NextRequest) {
-  const cookieStore = await cookies()
-
-  // Get session user from cookies
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
-  )
+  // Use the shared server client — it correctly refreshes tokens via setAll
+  const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user?.email) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   // Admin client for DB writes
-  const admin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const admin = adminClient()
 
   // Verify caller is an approved provider identified by their session email
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

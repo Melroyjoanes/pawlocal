@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
-import { getCategoryBySlug } from '@/lib/categories'
+import { getCategoryBySlug, CATEGORIES } from '@/lib/categories'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
 import ProviderCard from '@/components/ProviderCard'
 import dynamic from 'next/dynamic'
@@ -45,16 +45,14 @@ const EASE_OUT_QUART = [0.25, 0.46, 0.45, 0.94] as const
 export default function CategoryPage() {
   const params = useParams()
   const searchParams = useSearchParams()
+  const router = useRouter()
   const slug = params.category as string
   const category = getCategoryBySlug(slug)
 
-  // Resolve neighbourhood: URL param → localStorage → default 'Juhu'
-  const [neighbourhood, setNeighbourhood] = useState<string>('Juhu')
-  useEffect(() => {
-    const urlArea = searchParams.get('area')
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('pawlocal_area') : null
-    setNeighbourhood(urlArea ?? stored ?? 'Juhu')
-  }, [searchParams])
+  // Neighbourhood is Juhu-only in phase 1
+  const neighbourhood = 'Juhu'
+  // suppress unused warning until locality filtering is implemented
+  void searchParams
 
   const [providers, setProviders] = useState<ProviderWithPhotos[]>([])
   const [loading, setLoading] = useState(true)
@@ -66,35 +64,18 @@ export default function CategoryPage() {
     if (!category) return
     setLoading(true)
     const supabase = createClient()
-    // Filter by neighbourhood; fall back gracefully if column doesn't exist
     supabase
       .from('providers')
       .select('*, provider_photos(*)')
       .or(`category_slug.eq.${slug},category_slugs.cs.{${slug}}`)
       .eq('status', 'approved')
-      .eq('neighbourhood', neighbourhood)
       .order('is_verified', { ascending: false })
       .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
-        if (error) {
-          // neighbourhood column not yet added — show all
-          supabase
-            .from('providers')
-            .select('*, provider_photos(*)')
-            .or(`category_slug.eq.${slug},category_slugs.cs.{${slug}}`)
-            .eq('status', 'approved')
-            .order('is_verified', { ascending: false })
-            .order('created_at', { ascending: false })
-            .then(({ data: all }) => {
-              setProviders((all as unknown as ProviderWithPhotos[]) ?? [])
-              setLoading(false)
-            })
-        } else {
-          setProviders((data as unknown as ProviderWithPhotos[]) ?? [])
-          setLoading(false)
-        }
+      .then(({ data }) => {
+        setProviders((data as unknown as ProviderWithPhotos[]) ?? [])
+        setLoading(false)
       })
-  }, [slug, category, neighbourhood])
+  }, [slug, category])
 
   if (!category) {
     return <div className="py-20 text-center text-muted-foreground">Category not found.</div>
@@ -104,96 +85,121 @@ export default function CategoryPage() {
     ? providers.filter((p) => (p as ProviderWithPhotos & { is_emergency?: boolean }).is_emergency)
     : providers
 
+  // Visible categories (exclude insurance from the quick-switch bar)
+  const BROWSE_CATS = CATEGORIES.filter(c => c.slug !== 'insurance')
+
   return (
-    <div>
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-7">
-        <div
-          className="w-14 h-14 rounded-[18px] flex items-center justify-center text-2xl flex-shrink-0"
-          style={{
-            background: `linear-gradient(145deg, ${category.color}18 0%, ${category.color}30 100%)`,
-            boxShadow: `inset 0 1.5px 0 rgba(255,255,255,0.9), inset 0 -2.5px 0 ${category.color}28, 0 8px 20px ${category.color}22`,
-            border: `1px solid ${category.color}25`,
-          }}
-        >
-          {category.icon}
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 font-display">{category.name}</h1>
-          <p className="text-sm text-slate-400 mt-0.5">{category.tagline} · {neighbourhood}, Mumbai</p>
-        </div>
-        {!loading && (
-          <span
-            className="ml-auto text-xs font-bold px-3 py-1.5 clay-badge-amber"
-            style={{ color: '#78350F' }}
-          >
-            {displayedProviders.length} {displayedProviders.length === 1 ? 'result' : 'results'}
-          </span>
-        )}
-      </div>
+    <div className="-mx-4 sm:mx-0">
 
-      {/* Emergency filter — only show for vet category */}
-      {slug === 'vet' && (
-        <button
-          onClick={() => setEmergencyOnly((v) => !v)}
-          className="flex items-center gap-1.5 mb-4 px-4 py-2 text-sm font-bold transition-all"
-          style={emergencyOnly ? {
-            background: 'linear-gradient(160deg, #FCA5A5 0%, #EF4444 100%)',
-            color: '#fff',
-            borderRadius: 9999,
-            boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(127,29,29,0.35), 0 8px 20px rgba(239,68,68,0.38)',
-            border: '1px solid rgba(252,165,165,0.3)',
-          } : {
-            background: 'linear-gradient(160deg, #FFF1F2 0%, #FECDD3 100%)',
-            color: '#BE123C',
-            borderRadius: 9999,
-            boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.9), inset 0 -2.5px 0 rgba(159,18,57,0.15), 0 6px 16px rgba(254,205,211,0.55)',
-            border: '1px solid rgba(254,205,211,0.8)',
-          }}
-        >
-          🚨 24hr / Emergency only
-        </button>
-      )}
+      {/* ── Browse header ── */}
+      <div className="px-4 sm:px-0 pt-2 pb-5">
 
-      {/* View toggle — clay segmented control */}
-      <div
-        className="flex gap-1 mb-6 p-1 w-fit"
-        style={{
-          background: 'linear-gradient(160deg, #FEF3C7 0%, #FDE68A 100%)',
-          boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.7), inset 0 -2px 0 rgba(161,98,7,0.15), 0 4px 12px rgba(253,230,138,0.5)',
-          border: '1px solid rgba(253,230,138,0.7)',
-          borderRadius: 16,
-        }}
-      >
-        {(['list', 'map'] as const).map((v) => (
+        {/* Row 1: eyebrow + map button */}
+        <div className="flex items-start justify-between mb-1">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--pl-teal)' }}>
+            Browse
+          </p>
           <button
-            key={v}
-            onClick={() => setView(v)}
-            className="relative px-5 py-1.5 text-sm font-semibold transition-all"
-            style={{ borderRadius: 12, color: view === v ? '#78350F' : '#92400E' }}
+            onClick={() => setView(v => v === 'map' ? 'list' : 'map')}
+            aria-label={view === 'map' ? 'Switch to list' : 'Show on map'}
+            className="flex items-center justify-center w-10 h-10 rounded-2xl transition-all active:scale-95"
+            style={view === 'map' ? {
+              background: 'linear-gradient(160deg, oklch(0.48 0.17 196) 0%, oklch(0.42 0.15 196) 100%)',
+              boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.18), inset 0 -3px 0 oklch(0.36 0.14 198), 0 8px 20px oklch(0.48 0.17 196 / 0.4)',
+              color: '#fff',
+            } : {
+              background: 'linear-gradient(160deg, #ffffff 0%, #fffdf5 100%)',
+              boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.95), inset 0 -2.5px 0 rgba(0,0,0,0.06), 0 6px 16px rgba(0,0,0,0.07)',
+              border: '1px solid rgba(226,220,200,0.8)',
+              color: '#374151',
+            }}
           >
-            {view === v && (
-              <motion.span
-                layoutId="view-pill"
-                className="absolute inset-0"
-                style={{
-                  background: 'linear-gradient(160deg, #ffffff 0%, #fffdf5 100%)',
-                  borderRadius: 12,
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -2px 0 rgba(0,0,0,0.07), 0 4px 10px rgba(0,0,0,0.09)',
-                }}
-                transition={{ duration: 0.2, ease: EASE_OUT_QUART }}
-              />
-            )}
-            <span className="relative z-10">
-              {v === 'list' ? '☰ List' : '🗺 Map'}
-            </span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/>
+              <line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+            </svg>
           </button>
-        ))}
+        </div>
+
+        {/* Row 2: category heading */}
+        <h1 className="font-display text-[2rem] leading-[1.1] text-slate-900 mb-4">
+          {category.name}
+        </h1>
+
+        {/* Row 3: category switcher pills */}
+        <div
+          className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0"
+          style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+        >
+          {BROWSE_CATS.map(cat => {
+            const active = cat.slug === slug
+            return (
+              <motion.button
+                key={cat.slug}
+                onClick={() => router.push(`/${cat.slug}`)}
+                whileTap={{ scale: 0.95 }}
+                className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 text-sm font-semibold transition-all"
+                style={active ? {
+                  background: 'linear-gradient(160deg, oklch(0.52 0.17 196) 0%, oklch(0.44 0.16 196) 100%)',
+                  color: '#fff',
+                  borderRadius: 9999,
+                  boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.18), inset 0 -3px 0 oklch(0.36 0.14 198), 0 8px 20px oklch(0.48 0.17 196 / 0.35)',
+                } : {
+                  background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
+                  color: '#374151',
+                  borderRadius: 9999,
+                  boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.9), inset 0 -2px 0 rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.06)',
+                  border: '1px solid rgba(226,220,200,0.8)',
+                }}
+              >
+                <span className="text-base leading-none">{cat.icon}</span>
+                <span>{cat.name}</span>
+              </motion.button>
+            )
+          })}
+        </div>
+
+        {/* Row 4: provider count */}
+        <div className="mt-4 flex items-center justify-between">
+          {!loading ? (
+            <p className="text-sm text-slate-500">
+              <span className="font-semibold text-slate-800">{displayedProviders.length}</span>
+              {' '}{displayedProviders.length === 1 ? 'provider' : 'providers'} near {neighbourhood}
+            </p>
+          ) : (
+            <div className="h-4 w-36 rounded-full bg-amber-100/70 animate-pulse" />
+          )}
+
+          {/* Emergency toggle — vet only */}
+          {slug === 'vet' && (
+            <button
+              onClick={() => setEmergencyOnly(v => !v)}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold transition-all"
+              style={emergencyOnly ? {
+                background: 'linear-gradient(160deg, #FCA5A5 0%, #EF4444 100%)',
+                color: '#fff',
+                borderRadius: 9999,
+                boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(127,29,29,0.35), 0 6px 16px rgba(239,68,68,0.35)',
+              } : {
+                background: 'linear-gradient(160deg, #FFF1F2 0%, #FECDD3 100%)',
+                color: '#BE123C',
+                borderRadius: 9999,
+                boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.9), inset 0 -2px 0 rgba(159,18,57,0.12), 0 4px 12px rgba(254,205,211,0.5)',
+                border: '1px solid rgba(254,205,211,0.8)',
+              }}
+            >
+              🚨 24hr only
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* Divider */}
+      <div className="h-px bg-border/60 mx-4 sm:mx-0 mb-5" />
 
       {/* Content */}
       {loading ? (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 px-4 sm:px-0">
           {Array.from({ length: 4 }).map((_, i) => (
             <ProviderCardSkeleton key={i} />
           ))}
@@ -203,7 +209,7 @@ export default function CategoryPage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, ease: EASE_OUT_QUART }}
-          className="py-10 flex flex-col items-center"
+          className="py-10 flex flex-col items-center px-4 sm:px-0"
         >
           <p className="text-3xl mb-3">🔍</p>
           <p className="font-semibold text-slate-800 mb-1">
@@ -237,7 +243,7 @@ export default function CategoryPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="flex flex-col gap-3"
+              className="flex flex-col gap-3 px-4 sm:px-0"
             >
               {displayedProviders.map((p, i) => (
                 <motion.div
