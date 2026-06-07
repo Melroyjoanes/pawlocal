@@ -431,8 +431,8 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
 
           {/* Cards: horizontal scroll mobile, 2-col tablet, 3-col desktop */}
           <div
-            className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 overflow-x-auto pb-3 sm:pb-0 -mx-5 sm:mx-0 px-5 sm:px-0"
-            style={{ scrollbarWidth: 'none', scrollSnapType: 'x mandatory' }}
+            className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 overflow-x-auto pb-3 sm:pb-0 -mx-5 sm:mx-0 px-5 sm:px-0"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
           >
             {CATEGORIES.map((cat, i) => {
               const ck = catClay[cat.slug] ?? 'white'
@@ -448,17 +448,17 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, ease: EASE, delay: i * 0.07 }}
-                  style={{ scrollSnapAlign: 'start', flexShrink: 0, minWidth: '260px' }}
+                  style={{ scrollSnapAlign: 'start', flexShrink: 0, width: 'clamp(150px, 44vw, 260px)' }}
                 >
                   <Link href={`/${cat.slug}`} className="block group">
                     <motion.div
                       whileHover={{ y: -6, scale: 1.01 }}
                       whileTap={{ y: 2, scale: 0.99 }}
                       transition={{ type: 'spring', stiffness: 380, damping: 26 }}
-                      style={{ borderRadius: 24, overflow: 'hidden', boxShadow: t.shadow, border: t.border }}
+                      style={{ borderRadius: 20, overflow: 'hidden', boxShadow: t.shadow, border: t.border }}
                     >
                       {/* Photo */}
-                      <div style={{ height: 200, position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ height: 'clamp(110px, 28vw, 200px)', position: 'relative', overflow: 'hidden' }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={photo}

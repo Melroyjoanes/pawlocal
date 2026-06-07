@@ -70,7 +70,7 @@ export default function AuthNavItem() {
   return (
     <a
       href="/account"
-      className="text-sm font-medium px-3.5 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-amber-50 transition-all border border-border"
+      className="text-sm font-medium px-3 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-amber-50 transition-all border border-border whitespace-nowrap flex-shrink-0"
     >
       Sign in
     </a>
