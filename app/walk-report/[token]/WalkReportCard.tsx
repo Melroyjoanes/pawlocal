@@ -4,6 +4,10 @@ import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 
+// Run this in Supabase SQL editor:
+// ALTER TABLE walk_reports ADD COLUMN start_location text;
+// ALTER TABLE walk_reports ADD COLUMN end_location text;
+
 type WalkReport = {
   id: string
   token: string
@@ -17,6 +21,8 @@ type WalkReport = {
   provider_name: string
   is_verified: boolean
   verification_tier: string
+  start_location: string | null
+  end_location: string | null
 }
 
 function formatWalkDate(isoDate: string): string {
@@ -129,6 +135,34 @@ export default function WalkReportCard({ report }: { report: WalkReport }) {
                 💧 {report.pee_count} {report.pee_count === 1 ? 'pee' : 'pees'}
               </span>
             </div>
+
+            {/* Route */}
+            {report.start_location && report.end_location && (
+              <div className="rounded-2xl overflow-hidden border border-amber-100/60 mb-5"
+                style={{ background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)' }}>
+                {/* Google Maps Static API image */}
+                <img
+                  src={`https://maps.googleapis.com/maps/api/staticmap?size=600x200&scale=2&maptype=roadmap&markers=color:0x0f766e|label:S|${encodeURIComponent(report.start_location + ', Juhu, Mumbai')}&markers=color:0xF59E0B|label:F|${encodeURIComponent(report.end_location + ', Juhu, Mumbai')}&style=feature:all|element:labels.text.fill|color:0x64748b&style=feature:road|element:geometry|color:0xfef3c7&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
+                  alt="Walk route map"
+                  className="w-full object-cover"
+                  style={{ height: 140 }}
+                />
+                {/* Route text below the map */}
+                <div className="px-4 py-3 flex items-center gap-3">
+                  <span className="text-xl">📍</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-0.5">Route</p>
+                    <p className="text-sm font-semibold text-stone-800 truncate">{report.start_location}</p>
+                  </div>
+                  <span className="text-amber-400 font-bold text-lg flex-shrink-0">→</span>
+                  <div className="flex-1 min-w-0 text-right">
+                    <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-0.5"> </p>
+                    <p className="text-sm font-semibold text-stone-800 truncate">{report.end_location}</p>
+                  </div>
+                  <span className="text-xl">🏁</span>
+                </div>
+              </div>
+            )}
 
             {/* Notes */}
             {report.notes && (

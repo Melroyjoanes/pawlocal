@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   if (!provider) return NextResponse.json({ error: 'Provider not found' }, { status: 404 })
 
   const body = await req.json()
-  const { dog_name, duration_mins, poop_count, pee_count, notes, photo_url, walk_date } = body
+  const { dog_name, duration_mins, poop_count, pee_count, notes, photo_url, walk_date, start_location, end_location } = body
 
   if (!dog_name || duration_mins == null) {
     return NextResponse.json({ error: 'Missing required fields: dog_name, duration_mins' }, { status: 400 })
@@ -69,6 +69,8 @@ export async function POST(req: NextRequest) {
       notes: notes?.trim() || null,
       photo_url: photo_url || null,
       walk_date: walk_date ?? new Date().toISOString(),
+      start_location: start_location?.trim() || null,
+      end_location: end_location?.trim() || null,
     })
     .select('id, token')
     .single()

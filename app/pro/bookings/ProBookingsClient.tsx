@@ -289,10 +289,10 @@ export default function ProBookingsClient({ providerId, firstName, categorySlugs
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 400, damping: 38 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl"
+              className="fixed bottom-0 left-0 right-0 z-[60] bg-white rounded-t-3xl"
               style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)', maxHeight: '90dvh', overflowY: 'auto' }}
             >
-              <div className="max-w-lg mx-auto px-5 pt-5 pb-6">
+              <div className="max-w-lg mx-auto px-5 pt-5 pb-10">
                 <div className="w-10 h-1 rounded-full bg-stone-200 mx-auto mb-5" />
                 <h2 className="text-lg font-bold text-stone-900 mb-5">Log a booking</h2>
 

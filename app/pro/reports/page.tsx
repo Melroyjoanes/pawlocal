@@ -14,6 +14,8 @@ type WalkReport = {
   photo_url: string | null
   walk_date: string
   created_at: string
+  start_location: string | null
+  end_location: string | null
 }
 
 export default async function WalkReportsPage() {

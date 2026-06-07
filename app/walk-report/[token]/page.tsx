@@ -16,6 +16,8 @@ type WalkReport = {
   provider_name: string
   is_verified: boolean
   verification_tier: string
+  start_location: string | null
+  end_location: string | null
 }
 
 async function getReport(token: string): Promise<WalkReport | null> {
@@ -45,6 +47,8 @@ async function getReport(token: string): Promise<WalkReport | null> {
     provider_name: data.providers?.name ?? 'Your Walker',
     is_verified: data.providers?.is_verified ?? false,
     verification_tier: data.providers?.verification_tier ?? 'contacted',
+    start_location: data.start_location ?? null,
+    end_location: data.end_location ?? null,
   }
 }
 

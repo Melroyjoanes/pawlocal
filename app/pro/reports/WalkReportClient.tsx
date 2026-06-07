@@ -4,6 +4,10 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 
+// Run this in Supabase SQL editor:
+// ALTER TABLE walk_reports ADD COLUMN start_location text;
+// ALTER TABLE walk_reports ADD COLUMN end_location text;
+
 type WalkReport = {
   id: string
   token: string
@@ -15,6 +19,8 @@ type WalkReport = {
   photo_url: string | null
   walk_date: string
   created_at: string
+  start_location: string | null
+  end_location: string | null
 }
 
 type Props = {
@@ -144,6 +150,11 @@ function ReportCard({
           {report.notes && (
             <p className="text-xs text-stone-400 italic mt-1.5 line-clamp-1">&ldquo;{report.notes}&rdquo;</p>
           )}
+          {report.start_location && report.end_location && (
+            <p className="text-xs text-stone-400 mt-1">
+              📍 {report.start_location} → {report.end_location}
+            </p>
+          )}
         </div>
       </div>
 
@@ -271,6 +282,8 @@ export default function WalkReportClient({
   const [poopCount, setPoopCount] = useState(0)
   const [peeCount, setPeeCount] = useState(0)
   const [notes, setNotes] = useState('')
+  const [startLocation, setStartLocation] = useState('')
+  const [endLocation, setEndLocation] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -288,6 +301,8 @@ export default function WalkReportClient({
     setPoopCount(0)
     setPeeCount(0)
     setNotes('')
+    setStartLocation('')
+    setEndLocation('')
     setPhotoUrl(null)
     setPhotoPreview(null)
     setSuccessToken(null)
@@ -344,6 +359,8 @@ export default function WalkReportClient({
           notes: notes.trim() || null,
           photo_url: photoUrl,
           walk_date: new Date().toISOString(),
+          start_location: startLocation.trim() || null,
+          end_location: endLocation.trim() || null,
         }),
       })
 
@@ -361,6 +378,8 @@ export default function WalkReportClient({
         photo_url: photoUrl,
         walk_date: new Date().toISOString(),
         created_at: new Date().toISOString(),
+        start_location: startLocation.trim() || null,
+        end_location: endLocation.trim() || null,
       }
 
       setReports(prev => [newReport, ...prev])
@@ -514,6 +533,38 @@ export default function WalkReportClient({
                         count={peeCount}
                         onChange={setPeeCount}
                       />
+                    </div>
+                  </div>
+
+                  {/* Route */}
+                  <div>
+                    <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Route</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border bg-white">
+                          <span className="text-sm">📍</span>
+                          <input
+                            type="text"
+                            placeholder="Started from..."
+                            value={startLocation}
+                            onChange={e => setStartLocation(e.target.value)}
+                            className="flex-1 text-sm outline-none bg-transparent"
+                          />
+                        </div>
+                      </div>
+                      <span className="text-stone-300 font-bold">→</span>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border bg-white">
+                          <span className="text-sm">🏁</span>
+                          <input
+                            type="text"
+                            placeholder="Ended at..."
+                            value={endLocation}
+                            onChange={e => setEndLocation(e.target.value)}
+                            className="flex-1 text-sm outline-none bg-transparent"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
