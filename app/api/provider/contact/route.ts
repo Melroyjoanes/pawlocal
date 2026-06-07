@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { randomUUID } from 'crypto'
 
 export async function POST(req: NextRequest) {
@@ -10,13 +11,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'provider_id required' }, { status: 400 })
     }
 
+    // Get current user session — may be null for anonymous visitors
     const supabase = await createClient()
-
-    // Get current user session (may be null for anonymous visitors)
     const { data: { user } } = await supabase.auth.getUser()
 
-    const { data, error } = await supabase
-      .from('provider_contacts')
+    // Use admin client for the INSERT — the anon/authenticated role cannot
+    // validate the customer_id FK against auth.users (permission denied).
+    // Service role bypasses RLS and has full auth schema access.
+    const admin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (admin.from('provider_contacts') as any)
       .insert({
         provider_id,
         customer_id: user?.id ?? null,
