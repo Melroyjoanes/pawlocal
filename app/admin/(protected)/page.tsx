@@ -7,7 +7,7 @@ import { getCategoryBySlug } from '@/lib/categories'
 import { Stars } from '@/components/StarRating'
 
 type ProviderStatus = 'pending' | 'approved' | 'rejected'
-type AdminTab = 'providers' | 'broadcasts' | 'reviews'
+type AdminTab = 'providers' | 'broadcasts' | 'reviews' | 'stats'
 
 interface Broadcast {
   id: string
@@ -472,6 +472,22 @@ export default function AdminPage() {
   const [approvedProviders, setApprovedProviders] = useState<any[]>([])
   const [pendingCount, setPendingCount] = useState(0)
   const [broadcastCount, setBroadcastCount] = useState(0)
+  const [stats, setStats] = useState<{
+    totalApproved: number
+    totalPending: number
+    totalRejected: number
+    totalBroadcasts: number
+    providerStats: {
+      id: string
+      name: string
+      category: string
+      whatsapp_clicks: number
+      profile_views: number
+      neighbourhood: string
+      created_at: string
+    }[]
+  } | null>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
 
   // Load pending count on mount
   useEffect(() => {
@@ -534,9 +550,49 @@ export default function AdminPage() {
     setBroadcastsLoading(false)
   }
 
+  async function loadStats() {
+    setStatsLoading(true)
+    const supabase = createClient()
+
+    const [approvedRes, pendingRes, rejectedRes, broadcastRes, providersRes, analyticsRes] = await Promise.all([
+      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
+      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'rejected'),
+      fetch('/api/broadcasts').then(r => r.json()).catch(() => []),
+      supabase.from('providers').select('id, name, category_slug, neighbourhood, created_at').eq('status', 'approved').order('created_at', { ascending: false }),
+      supabase.from('provider_analytics').select('provider_id, event_type'),
+    ])
+
+    const analytics = analyticsRes.data ?? []
+    const providerList = providersRes.data ?? []
+
+    const providerStats = providerList.map((p: any) => {
+      const events = analytics.filter((a: any) => a.provider_id === p.id)
+      return {
+        id: p.id,
+        name: p.name,
+        category: p.category_slug,
+        neighbourhood: p.neighbourhood ?? 'Juhu',
+        created_at: p.created_at,
+        whatsapp_clicks: events.filter((a: any) => a.event_type === 'whatsapp_click').length,
+        profile_views: events.filter((a: any) => a.event_type === 'profile_view').length,
+      }
+    }).sort((a: any, b: any) => b.whatsapp_clicks - a.whatsapp_clicks)
+
+    setStats({
+      totalApproved: approvedRes.count ?? 0,
+      totalPending: pendingRes.count ?? 0,
+      totalRejected: rejectedRes.count ?? 0,
+      totalBroadcasts: Array.isArray(broadcastRes) ? broadcastRes.length : 0,
+      providerStats,
+    })
+    setStatsLoading(false)
+  }
+
   useEffect(() => { loadProviders(filter) }, [filter])
   useEffect(() => { if (tab === 'reviews') loadReviews() }, [tab])
   useEffect(() => { if (tab === 'broadcasts') loadBroadcasts() }, [tab])
+  useEffect(() => { if (tab === 'stats') loadStats() }, [tab])
 
   async function updateStatus(id: string, status: 'approved' | 'rejected') {
     await fetch(`/api/admin/providers/${id}`, {
@@ -632,6 +688,15 @@ export default function AdminPage() {
           }`}
         >
           ⭐ Reviews
+        </button>
+
+        <button
+          onClick={() => setTab('stats')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
+            tab === 'stats' ? 'bg-slate-900 text-white' : 'bg-white border border-border text-slate-600 hover:border-slate-400'
+          }`}
+        >
+          📊 Stats
         </button>
       </div>
 
@@ -736,6 +801,88 @@ export default function AdminPage() {
             </>
           )}
         </>
+      )}
+
+      {/* ── STATS TAB ────────────────────────────────────────────── */}
+      {tab === 'stats' && (
+        statsLoading || !stats ? (
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-2xl border border-border p-4 animate-pulse h-16" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {/* Overview tiles */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: 'Live providers', value: stats.totalApproved, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+                { label: 'Pending review', value: stats.totalPending, color: 'bg-amber-50 text-amber-700 border-amber-200' },
+                { label: 'Active broadcasts', value: stats.totalBroadcasts, color: 'bg-blue-50 text-blue-700 border-blue-200' },
+                { label: 'Rejected', value: stats.totalRejected, color: 'bg-slate-50 text-slate-500 border-slate-200' },
+              ].map((tile) => (
+                <div key={tile.label} className={`rounded-2xl border p-4 ${tile.color}`}>
+                  <p className="text-2xl font-bold">{tile.value}</p>
+                  <p className="text-xs font-medium mt-0.5 opacity-80">{tile.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Per-provider breakdown */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
+                Provider Performance (sorted by WhatsApp clicks)
+              </p>
+              <div className="flex flex-col gap-2">
+                {stats.providerStats.length === 0 ? (
+                  <p className="text-sm text-slate-400 py-4 text-center">No approved providers yet.</p>
+                ) : stats.providerStats.map((p) => {
+                  const cat = getCategoryBySlug(p.category)
+                  return (
+                    <div key={p.id} className="bg-white border border-border rounded-2xl px-4 py-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base">{cat?.icon ?? '🐾'}</span>
+                            <p className="font-semibold text-sm text-slate-900 truncate">{p.name}</p>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-0.5">{p.neighbourhood} · joined {timeAgo(p.created_at)}</p>
+                        </div>
+                        <div className="flex items-center gap-3 flex-shrink-0 text-right">
+                          <div>
+                            <p className="text-lg font-bold text-emerald-600">{p.whatsapp_clicks}</p>
+                            <p className="text-[10px] text-slate-400">WA clicks</p>
+                          </div>
+                          <div>
+                            <p className="text-lg font-bold text-blue-600">{p.profile_views}</p>
+                            <p className="text-[10px] text-slate-400">views</p>
+                          </div>
+                          <a
+                            href={`/provider/${p.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-slate-400 hover:text-slate-700 text-lg"
+                          >
+                            👁
+                          </a>
+                        </div>
+                      </div>
+                      {/* Mini bar — WA clicks relative to top performer */}
+                      {stats.providerStats[0]?.whatsapp_clicks > 0 && (
+                        <div className="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-emerald-400 rounded-full transition-all"
+                            style={{ width: `${(p.whatsapp_clicks / stats.providerStats[0].whatsapp_clicks) * 100}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )
       )}
 
       {/* ── REVIEWS TAB ───────────────────────────────────────────── */}
