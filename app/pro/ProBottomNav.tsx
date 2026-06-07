@@ -12,7 +12,6 @@ export default function ProBottomNav() {
   useEffect(() => {
     const stored = localStorage.getItem('pro_lang') as Lang | null
     if (stored === 'hi' || stored === 'mr') setLang(stored)
-    // Listen for storage changes in case another tab updates it
     function onStorage(e: StorageEvent) {
       if (e.key === 'pro_lang' && (e.newValue === 'en' || e.newValue === 'hi' || e.newValue === 'mr')) {
         setLang(e.newValue as Lang)
@@ -42,18 +41,22 @@ export default function ProBottomNav() {
             <Link
               key={href}
               href={href}
-              className={`relative flex-1 flex flex-col items-center justify-center pt-2.5 pb-2 gap-0.5 transition-colors ${
-                active ? 'text-[var(--pl-teal)]' : 'text-stone-400 hover:text-stone-600'
-              }`}
+              className="relative flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-colors min-h-[56px]"
             >
+              {/* Active pill background */}
               {active && (
                 <span
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full"
-                  style={{ backgroundColor: 'oklch(0.48 0.17 196)' }}
+                  className="absolute inset-x-1.5 top-1.5 bottom-1.5 rounded-xl"
+                  style={{ backgroundColor: 'oklch(0.48 0.17 196 / 0.1)' }}
                 />
               )}
-              <span className="text-xl leading-none">{icon}</span>
-              <span className={`text-[9px] font-semibold tracking-tight ${active ? 'text-[var(--pl-teal)]' : 'text-stone-400'}`}>
+              <span className="relative text-xl leading-none" style={{ filter: active ? 'none' : 'grayscale(40%)' }}>
+                {icon}
+              </span>
+              <span
+                className="relative text-[9px] font-bold tracking-tight"
+                style={{ color: active ? 'oklch(0.48 0.17 196)' : 'oklch(0.55 0.01 250)' }}
+              >
                 {label}
               </span>
             </Link>

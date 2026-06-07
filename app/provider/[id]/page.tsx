@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import { getCategoryBySlug } from '@/lib/categories'
 import type { ProviderWithPhotos, Review, TrainerMetadata } from '@/lib/supabase/types'
 import { Stars } from '@/components/StarRating'
-import ReviewForm from '@/components/ReviewForm'
 import { TrackView, TrackButton, SaveButton } from '@/components/ProviderTracker'
 import BookingRequestTrigger from '@/components/BookingRequestTrigger'
 import VerificationBadge from '@/components/VerificationBadge'
@@ -31,7 +30,6 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
   const { id } = await params
   const supabase = await createClient()
 
-  // Check if the current session user is the provider themselves
   const { data: { user } } = await supabase.auth.getUser()
 
   const { data } = await supabase
@@ -48,7 +46,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
   const category = getCategoryBySlug(provider.category_slug)
   if (!category) notFound()
 
-  // Fetch approved reviews
+  // Approved reviews only
   const { data: reviewsData } = await supabase
     .from('reviews')
     .select('*')
@@ -61,7 +59,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
     : 0
 
-  // Trust signals: jobs completed
+  // Trust signals
   const { count: jobsCompleted } = await supabase
     .from('booking_requests')
     .select('*', { count: 'exact', head: true })
@@ -95,374 +93,348 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
     return m === '00' ? `${display}${ampm}` : `${display}:${m}${ampm}`
   }
 
+  function getVideoEmbed(url: string): { type: 'youtube' | 'loom' | 'instagram'; embedUrl?: string } {
+    if (url.includes('youtu.be') || url.includes('youtube.com')) {
+      const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+      return { type: 'youtube', embedUrl: match ? `https://www.youtube.com/embed/${match[1]}` : undefined }
+    }
+    if (url.includes('loom.com')) {
+      return { type: 'loom', embedUrl: url.replace('/share/', '/embed/') }
+    }
+    if (url.includes('instagram.com')) {
+      return { type: 'instagram' }
+    }
+    return { type: 'youtube' }
+  }
+
+  const p = provider as unknown as {
+    intro_note?: string | null
+    experience_years?: number | null
+    languages?: string[] | null
+    neighbourhood_tags?: string[] | null
+    pet_types_handled?: string[] | null
+    intro_video_url?: string | null
+  }
+
+  const petEmoji: Record<string, string> = {
+    Dog: '🐕', Cat: '🐈', Bird: '🦜', Rabbit: '🐇', Hamster: '🐹', Fish: '🐠', Reptile: '🦎',
+  }
+
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Silent view tracker */}
       <TrackView providerId={provider.id} />
 
-      {/* Back */}
-      <a
-        href={`/${provider.category_slug}`}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-7"
-      >
-        ← {category.name}
-      </a>
+      {/* ── Hero: full-bleed cover photo ─────────────────────────────── */}
+      <div className="relative -mx-4 mb-0 h-64 sm:h-72 overflow-hidden bg-stone-100">
+        {/* Back link — floats top-left */}
+        <a
+          href={`/${provider.category_slug}`}
+          className="absolute top-4 left-4 z-20 inline-flex items-center gap-1.5 text-sm font-medium text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full hover:bg-black/50 transition-colors"
+        >
+          ← {category.name}
+        </a>
 
-      {/* Profile header */}
-      <div className="flex gap-5 items-start mb-7">
-        <div className="w-24 h-24 rounded-2xl overflow-hidden flex-shrink-0 bg-stone-100">
-          {primaryPhoto ? (
-            <img
-              src={primaryPhoto.url}
-              alt={provider.name}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div
-              className="w-full h-full flex items-center justify-center text-4xl"
-              style={{ backgroundColor: category.color + '18' }}
-            >
-              {category.icon}
-            </div>
-          )}
-        </div>
+        {/* Photo or colour fill */}
+        {primaryPhoto ? (
+          <img
+            src={primaryPhoto.url}
+            alt={provider.name}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div
+            className="absolute inset-0 flex items-center justify-center text-8xl"
+            style={{ backgroundColor: category.color + '22' }}
+          >
+            {category.icon}
+          </div>
+        )}
 
-        <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-display text-foreground leading-tight">
+        {/* Gradient overlay — name + badges at bottom */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+
+        {/* Hero content */}
+        <div className="absolute bottom-0 left-0 right-0 p-5 pb-6">
+          <h1 className="text-2xl font-display text-white leading-tight mb-1">
             {provider.name}
           </h1>
           {provider.business_name && provider.business_name !== provider.name && (
-            <p className="text-sm text-muted-foreground mt-0.5">{provider.business_name}</p>
+            <p className="text-sm text-white/70 mb-2">{provider.business_name}</p>
           )}
 
-          <div className="flex items-center gap-2 flex-wrap mt-2">
-
+          {/* Badges row */}
+          <div className="flex items-center gap-2 flex-wrap">
             <span
-              className="inline-block text-xs font-medium px-2.5 py-1 rounded-full"
-              style={{ backgroundColor: category.color + '18', color: category.color }}
+              className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full"
+              style={{ backgroundColor: category.color + '30', color: 'white', backdropFilter: 'blur(4px)' }}
             >
               {category.icon} {category.name}
             </span>
-            <VerificationBadge tier={(provider.verification_tier as 'contacted' | 'verified' | 'certified') ?? 'contacted'} size="md" />
-            {(provider as unknown as { intro_video_url?: string | null }).intro_video_url && (
-              <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-pink-50 text-pink-600 border border-pink-100">
+            <VerificationBadge
+              tier={(provider.verification_tier as 'contacted' | 'verified' | 'certified') ?? 'contacted'}
+              size="md"
+            />
+            {p.intro_video_url && (
+              <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-500/80 text-white backdrop-blur-sm border border-pink-300/30">
                 📹 Video
               </span>
             )}
             {reviews.length > 0 && (
-              <span className="text-amber-400">
+              <span className="inline-flex items-center gap-1 text-xs text-white/90">
                 <Stars rating={avgRating} count={reviews.length} size="sm" />
               </span>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* Availability badge */}
-          {provider.is_available === false && (
-            <div className="mt-2 flex flex-col gap-0.5">
-              <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
-                ⏸ Currently unavailable
-              </span>
-              {provider.availability_note && (
-                <span className="text-xs text-muted-foreground mt-0.5">{provider.availability_note}</span>
-              )}
-            </div>
-          )}
+      {/* ── Content body ─────────────────────────────────────────────── */}
+      <div className="pt-5">
 
-          {/* Trust signals: jobs done + member since */}
-          <div className="flex flex-wrap items-center gap-1.5 mt-2">
-            {totalJobs > 0 && (
-              <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-600">
-                ✓ {totalJobs} jobs done
-              </span>
-            )}
-            <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-600">
-              🗓 Member since {memberSince}
+        {/* Availability note */}
+        {provider.is_available === false && (
+          <div className="mb-5 flex flex-col gap-1">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 w-fit">
+              ⏸ Currently unavailable
             </span>
-          </div>
-
-          {/* Verification tier explainer */}
-          {(provider.verification_tier === 'verified' || provider.verification_tier === 'certified') && (
-            <TierExplainer tier={provider.verification_tier as 'verified' | 'certified'} />
-          )}
-        </div>
-      </div>
-
-      {/* Trust section */}
-      {(() => {
-        const p = provider as unknown as {
-          intro_note?: string | null
-          experience_years?: number | null
-          languages?: string[] | null
-          neighbourhood_tags?: string[] | null
-          pet_types_handled?: string[] | null
-        }
-        const petEmoji: Record<string, string> = {
-          Dog: '🐕', Cat: '🐈', Bird: '🦜', Rabbit: '🐇',
-          Hamster: '🐹', Fish: '🐠', Reptile: '🦎',
-        }
-        const chips: string[] = []
-        if (p.experience_years) chips.push(`${p.experience_years} yrs experience`)
-        if (p.languages?.length) chips.push(p.languages.join(' · '))
-        if (p.neighbourhood_tags?.length) chips.push(p.neighbourhood_tags.join(' · '))
-        const hasTrust = p.intro_note || chips.length > 0 || (p.pet_types_handled?.length ?? 0) > 0
-        if (!hasTrust) return null
-        return (
-          <div className="mb-7">
-            {p.intro_note && (
-              <p className="border-l-4 border-teal-400 pl-3 italic text-base text-stone-700 leading-snug mb-4">
-                {p.intro_note}
-              </p>
+            {provider.availability_note && (
+              <p className="text-xs text-muted-foreground pl-1">{provider.availability_note}</p>
             )}
-            {chips.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3">
-                {chips.map(chip => (
-                  <span key={chip} className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-600">
-                    {chip}
-                  </span>
-                ))}
-              </div>
-            )}
-            {(p.pet_types_handled?.length ?? 0) > 0 && (
-              <p className="text-xs text-stone-500">
-                Works with:{' '}
-                {p.pet_types_handled!.map((pet, i) => (
-                  <span key={pet}>{i > 0 && ' · '}{petEmoji[pet] ?? ''} {pet}s</span>
-                ))}
-              </p>
-            )}
-          </div>
-        )
-      })()}
-
-      {/* Bio */}
-      {provider.bio && (
-        <p className="text-muted-foreground leading-relaxed mb-7">{provider.bio}</p>
-      )}
-
-      {/* Details */}
-      <div className="grid grid-cols-2 gap-3 mb-7">
-        {(provider.price_min || provider.price_max) && (
-          <div className="bg-white border border-border rounded-xl p-4">
-            <p className="text-xs text-muted-foreground mb-1.5">Pricing</p>
-            <p className="font-semibold text-foreground">
-              ₹{provider.price_min}
-              {provider.price_max && provider.price_max !== provider.price_min
-                ? `–₹${provider.price_max}`
-                : ''}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">{provider.price_unit}</p>
           </div>
         )}
-        <div className="bg-white border border-border rounded-xl p-4">
-          <p className="text-xs text-muted-foreground mb-1.5">Hours</p>
-          <p className="font-semibold text-foreground">
-            {formatHour(provider.hours_from)} – {formatHour(provider.hours_to)}
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {provider.working_days.slice(0, 3).join(', ')}
-            {provider.working_days.length > 3 ? ` +${provider.working_days.length - 3} more` : ''}
-          </p>
-        </div>
-        <div className="bg-white border border-border rounded-xl p-4 col-span-2">
-          <p className="text-xs text-muted-foreground mb-1.5">Location</p>
-          <p className="font-medium text-foreground">{provider.address}</p>
-        </div>
-      </div>
 
-      {/* ── Trainer details ─────────────────────────────────────── */}
-      {provider.category_slug === 'dog-training' && provider.metadata && (() => {
-        const t = provider.metadata as TrainerMetadata
-        const hasAny = t.training_methods?.length || t.specialisations?.length || t.session_format || t.certifications || t.breeds
-        if (!hasAny) return null
-        return (
-          <div className="mb-7">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-              Trainer details
-            </p>
-            <div className="flex flex-col gap-4">
-              {t.training_methods && t.training_methods.length > 0 && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">Training method</p>
-                  <div className="flex flex-wrap gap-2">
-                    {t.training_methods.map((m) => (
-                      <span key={m} className="px-3 py-1 rounded-full text-xs font-medium bg-cyan-50 text-cyan-700 border border-cyan-100">{m}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {t.specialisations && t.specialisations.length > 0 && (
-                <div>
-                  <p className="text-xs text-muted-foreground mb-2">Specialises in</p>
-                  <div className="flex flex-wrap gap-2">
-                    {t.specialisations.map((s) => (
-                      <span key={s} className="px-3 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-700">{s}</span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-3">
-                {t.session_format && (
-                  <div className="bg-white border border-border rounded-xl p-4">
-                    <p className="text-xs text-muted-foreground mb-1">Session format</p>
-                    <p className="text-sm font-medium text-foreground">{t.session_format}</p>
-                  </div>
-                )}
-                {t.certifications && (
-                  <div className="bg-white border border-border rounded-xl p-4">
-                    <p className="text-xs text-muted-foreground mb-1">Certifications</p>
-                    <p className="text-sm font-medium text-foreground">{t.certifications}</p>
-                  </div>
-                )}
-              </div>
-              {t.breeds && (
-                <div className="bg-white border border-border rounded-xl p-4">
-                  <p className="text-xs text-muted-foreground mb-1.5">Breeds experienced with</p>
-                  <p className="text-sm text-foreground">{t.breeds}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )
-      })()}
-
-      {/* Gallery */}
-      {galleryPhotos.length > 0 && (
-        <div className="mb-7">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-            Photos
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            {galleryPhotos.map((photo) => (
-              <div
-                key={photo.id}
-                className="aspect-square rounded-xl overflow-hidden bg-stone-100"
-              >
-                <img src={photo.url} alt="" className="w-full h-full object-cover" />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Intro video ─────────────────────────────────────────────── */}
-      {(() => {
-        const videoUrl = (provider as unknown as { intro_video_url?: string | null }).intro_video_url
-        if (!videoUrl) return null
-
-        function getVideoEmbed(url: string): { type: 'youtube' | 'loom' | 'instagram', embedUrl?: string } {
-          if (url.includes('youtu.be') || url.includes('youtube.com')) {
-            const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
-            return { type: 'youtube', embedUrl: match ? `https://www.youtube.com/embed/${match[1]}` : undefined }
-          }
-          if (url.includes('loom.com')) {
-            const embedUrl = url.replace('/share/', '/embed/')
-            return { type: 'loom', embedUrl }
-          }
-          if (url.includes('instagram.com')) {
-            return { type: 'instagram' }
-          }
-          return { type: 'youtube' }
-        }
-
-        const video = getVideoEmbed(videoUrl)
-
-        return (
-          <div className="mb-7">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              Meet {provider.name.split(' ')[0]}
-            </p>
-            {video.type === 'instagram' ? (
-              <a
-                href={videoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-3 w-full py-5 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold text-sm hover:opacity-90 transition-opacity"
-              >
-                <span className="text-xl">▶</span>
-                Watch on Instagram
-              </a>
-            ) : video.embedUrl ? (
-              <div className="aspect-video rounded-2xl overflow-hidden bg-stone-100">
-                <iframe
-                  src={video.embedUrl}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-full"
-                  title={`Intro video by ${provider.name}`}
-                />
-              </div>
-            ) : null}
-          </div>
-        )
-      })()}
-
-      {/* ── Reviews ────────────────────────────────────────────────── */}
-      <div id="review-section" className="mb-24">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-            Reviews
-          </h2>
-          {reviews.length > 0 && (
-            <div className="flex items-center gap-1.5">
-              <Stars rating={avgRating} size="sm" />
-              <span className="text-xs text-muted-foreground">
-                {avgRating.toFixed(1)} · {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+        {/* Trust chips row */}
+        {(() => {
+          const chips: string[] = []
+          if (totalJobs > 0) chips.push(`${totalJobs} jobs done`)
+          if (p.experience_years) chips.push(`${p.experience_years} yrs experience`)
+          if (p.languages?.length) chips.push(p.languages.join(' · '))
+          if (p.neighbourhood_tags?.length) chips.push(p.neighbourhood_tags.join(' · '))
+          if (!chips.length) return (
+            <p className="text-xs text-stone-400 mb-5">Member since {memberSince}</p>
+          )
+          return (
+            <div className="flex flex-wrap items-center gap-2 mb-5">
+              {chips.map(chip => (
+                <span key={chip} className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-600">
+                  {chip}
+                </span>
+              ))}
+              <span className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-500">
+                🗓 Since {memberSince}
               </span>
             </div>
-          )}
-        </div>
+          )
+        })()}
 
-        {/* Existing reviews */}
-        {reviews.length > 0 ? (
-          <div className="flex flex-col gap-3 mb-8">
-            {reviews.map((r) => (
-              <div key={r.id} className="bg-white border border-border rounded-xl p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-medium text-sm text-foreground">{r.reviewer_name}</p>
-                    <Stars rating={r.rating} size="sm" />
-                  </div>
-                  <p className="text-xs text-muted-foreground flex-shrink-0">
-                    {new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </p>
-                </div>
-                {r.comment && (
-                  <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{r.comment}</p>
-                )}
-              </div>
-            ))}
+        {/* Tier explainer */}
+        {(provider.verification_tier === 'verified' || provider.verification_tier === 'certified') && (
+          <div className="mb-5">
+            <TierExplainer tier={provider.verification_tier as 'verified' | 'certified'} />
           </div>
-        ) : (
-          <p className="text-sm text-muted-foreground mb-8">
-            No reviews yet. Be the first to share your experience.
+        )}
+
+        {/* Tagline / intro note */}
+        {p.intro_note && (
+          <blockquote className="mb-6 pl-4 border-l-2 border-teal-300 italic text-base text-stone-700 leading-snug">
+            {p.intro_note}
+          </blockquote>
+        )}
+
+        {/* Pet types */}
+        {(p.pet_types_handled?.length ?? 0) > 0 && (
+          <p className="text-sm text-stone-500 mb-5">
+            Works with:{' '}
+            {p.pet_types_handled!.map((pet, i) => (
+              <span key={pet}>{i > 0 && ' · '}{petEmoji[pet] ?? ''} {pet}s</span>
+            ))}
           </p>
         )}
 
-        {/* Write a review — hidden from the provider themselves */}
-        {isOwner ? (
-          <div className="border border-border rounded-2xl p-5 bg-stone-50 text-center">
-            <p className="text-sm text-muted-foreground">
-              This is your profile.{' '}
-              <a href="/pro/profile" className="text-[var(--pl-teal)] font-semibold hover:underline">
-                Edit it here →
-              </a>
+        {/* Bio */}
+        {provider.bio && (
+          <p className="text-muted-foreground leading-relaxed mb-7">{provider.bio}</p>
+        )}
+
+        {/* Details grid */}
+        <div className="grid grid-cols-2 gap-3 mb-7">
+          {(provider.price_min || provider.price_max) && (
+            <div className="bg-white border border-border rounded-xl p-4">
+              <p className="text-xs text-muted-foreground mb-1.5">Pricing</p>
+              <p className="font-semibold text-foreground">
+                ₹{provider.price_min}
+                {provider.price_max && provider.price_max !== provider.price_min
+                  ? `–₹${provider.price_max}`
+                  : ''}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">{provider.price_unit}</p>
+            </div>
+          )}
+          <div className="bg-white border border-border rounded-xl p-4">
+            <p className="text-xs text-muted-foreground mb-1.5">Hours</p>
+            <p className="font-semibold text-foreground">
+              {formatHour(provider.hours_from)} – {formatHour(provider.hours_to)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {provider.working_days.slice(0, 3).join(', ')}
+              {provider.working_days.length > 3 ? ` +${provider.working_days.length - 3}` : ''}
             </p>
           </div>
-        ) : (
-          <div className="border border-border rounded-2xl p-5">
-            <h3 className="font-semibold text-foreground mb-4">Write a review</h3>
-            <ReviewForm providerId={provider.id} />
+          <div className="bg-white border border-border rounded-xl p-4 col-span-2">
+            <p className="text-xs text-muted-foreground mb-1.5">Location</p>
+            <p className="font-medium text-foreground">{provider.address}</p>
+          </div>
+        </div>
+
+        {/* Trainer details */}
+        {provider.category_slug === 'dog-training' && provider.metadata && (() => {
+          const t = provider.metadata as TrainerMetadata
+          const hasAny = t.training_methods?.length || t.specialisations?.length || t.session_format || t.certifications || t.breeds
+          if (!hasAny) return null
+          return (
+            <div className="mb-7">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">
+                Trainer details
+              </p>
+              <div className="flex flex-col gap-4">
+                {t.training_methods && t.training_methods.length > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Training method</p>
+                    <div className="flex flex-wrap gap-2">
+                      {t.training_methods.map((m) => (
+                        <span key={m} className="px-3 py-1 rounded-full text-xs font-medium bg-cyan-50 text-cyan-700 border border-cyan-100">{m}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {t.specialisations && t.specialisations.length > 0 && (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Specialises in</p>
+                    <div className="flex flex-wrap gap-2">
+                      {t.specialisations.map((s) => (
+                        <span key={s} className="px-3 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-700">{s}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-3">
+                  {t.session_format && (
+                    <div className="bg-white border border-border rounded-xl p-4">
+                      <p className="text-xs text-muted-foreground mb-1">Session format</p>
+                      <p className="text-sm font-medium text-foreground">{t.session_format}</p>
+                    </div>
+                  )}
+                  {t.certifications && (
+                    <div className="bg-white border border-border rounded-xl p-4">
+                      <p className="text-xs text-muted-foreground mb-1">Certifications</p>
+                      <p className="text-sm font-medium text-foreground">{t.certifications}</p>
+                    </div>
+                  )}
+                </div>
+                {t.breeds && (
+                  <div className="bg-white border border-border rounded-xl p-4">
+                    <p className="text-xs text-muted-foreground mb-1.5">Breeds experienced with</p>
+                    <p className="text-sm text-foreground">{t.breeds}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* Gallery */}
+        {galleryPhotos.length > 0 && (
+          <div className="mb-7">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Photos</p>
+            <div className="grid grid-cols-3 gap-2">
+              {galleryPhotos.map((photo) => (
+                <div key={photo.id} className="aspect-square rounded-xl overflow-hidden bg-stone-100">
+                  <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                </div>
+              ))}
+            </div>
           </div>
         )}
+
+        {/* Intro video */}
+        {p.intro_video_url && (() => {
+          const video = getVideoEmbed(p.intro_video_url!)
+          return (
+            <div className="mb-7">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+                Meet {provider.name.split(' ')[0]}
+              </p>
+              {video.type === 'instagram' ? (
+                <a
+                  href={p.intro_video_url!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 w-full py-5 rounded-2xl font-bold text-sm text-white transition-opacity hover:opacity-90"
+                  style={{ background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)' }}
+                >
+                  <span className="text-xl">▶</span> Watch on Instagram
+                </a>
+              ) : video.embedUrl ? (
+                <div className="aspect-video rounded-2xl overflow-hidden bg-stone-100">
+                  <iframe
+                    src={video.embedUrl}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full"
+                    title={`Intro video by ${provider.name}`}
+                  />
+                </div>
+              ) : null}
+            </div>
+          )
+        })()}
+
+        {/* Reviews — only shown when approved reviews exist. No open form. */}
+        {reviews.length > 0 && (
+          <div className="mb-24">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+                Reviews
+              </h2>
+              <div className="flex items-center gap-1.5">
+                <Stars rating={avgRating} size="sm" />
+                <span className="text-xs text-muted-foreground">
+                  {avgRating.toFixed(1)} · {reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}
+                </span>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              {reviews.map((r) => (
+                <div key={r.id} className="bg-white border border-border rounded-xl p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <p className="font-medium text-sm text-foreground">{r.reviewer_name}</p>
+                      <Stars rating={r.rating} size="sm" />
+                    </div>
+                    <p className="text-xs text-muted-foreground flex-shrink-0">
+                      {new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  {r.comment && (
+                    <p className="text-sm text-muted-foreground leading-relaxed">{r.comment}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Bottom spacer when no reviews section */}
+        {reviews.length === 0 && <div className="mb-24" />}
+
       </div>
 
-      {/* Sticky CTA — clears iOS home indicator via safe-area-inset */}
+      {/* ── Sticky CTA ───────────────────────────────────────────────── */}
       <div
-        className="sticky bottom-0 -mx-4 px-4 pt-3 bg-background/95 backdrop-blur-sm flex flex-col gap-2"
+        className="sticky bottom-0 -mx-4 px-4 pt-3 bg-background/95 backdrop-blur-sm flex flex-col gap-2 border-t border-border/50"
         style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}
       >
         {isOwner ? (
-          /* Provider viewing their own profile — show edit shortcut instead of contact CTAs */
           <a
             href="/pro/profile"
             className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-sm text-white transition-all"
@@ -472,7 +444,6 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           </a>
         ) : (
           <>
-            {/* Primary row: booking button (full width) + compact call button if phone exists */}
             <div className="flex gap-2">
               <BookingRequestTrigger
                 providerId={provider.id}
@@ -490,8 +461,6 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
                 </TrackButton>
               )}
             </div>
-
-            {/* Secondary row: Save (left) + Share (right) — equal width, lighter styling */}
             <div className="flex gap-2">
               <SaveButton
                 providerId={provider.id}

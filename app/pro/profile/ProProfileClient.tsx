@@ -280,11 +280,27 @@ export default function ProProfileClient({ provider }: Props) {
   // ── View mode ───────────────────────────────────────────────────────────────
   if (mode === 'view') {
     return (
-      <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
+      <div className="min-h-dvh pb-24" style={{ background: 'oklch(0.975 0.006 85)' }}>
+        {/* Sticky header */}
+        <header className="sticky top-0 z-40 bg-white border-b border-border">
+          <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+            <h1 className="font-display text-xl text-stone-900">{t(lang, 'nav_profile')}</h1>
+            <a
+              href={`/provider/${provider.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-semibold text-[var(--pl-teal)] hover:opacity-80 transition-opacity"
+            >
+              View public →
+            </a>
+          </div>
+        </header>
+
+        <div className="max-w-lg mx-auto px-4 py-5 space-y-4">
         {/* Success banner */}
         {saved && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium px-4 py-3 rounded-xl">
-            ✓ Profile updated!
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium px-4 py-3 rounded-xl flex items-center gap-2">
+            <span className="text-emerald-600">✓</span> Profile updated!
           </div>
         )}
 
@@ -331,46 +347,39 @@ export default function ProProfileClient({ provider }: Props) {
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => setMode('edit')}
-            className="flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-[var(--pl-teal)] text-[var(--pl-teal)] text-sm font-bold hover:bg-teal-50 transition-colors"
-          >
-            ✏️ {t(lang, 'edit_profile')}
-          </button>
-          <a
-            href={`/provider/${provider.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 py-3 rounded-xl border border-border text-stone-700 text-sm font-semibold hover:bg-stone-50 transition-colors"
-          >
-            🔗 Public view
-          </a>
-        </div>
+        {/* Edit CTA */}
+        <button
+          onClick={() => setMode('edit')}
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl border-2 border-[var(--pl-teal)] text-[var(--pl-teal)] text-sm font-bold hover:bg-teal-50 transition-colors active:scale-[0.98]"
+        >
+          ✏️ {t(lang, 'edit_profile')}
+        </button>
 
         {/* Review link */}
         <ReviewLinkPanel whatsapp={provider.whatsapp} />
 
-        <div className="pb-24" />
+        </div>{/* end inner */}
       </div>
     )
   }
 
   // ── Edit mode ────────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 space-y-4">
-      <div className="flex items-center justify-between mb-2">
-        <h1 className="text-xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
-          {t(lang, 'edit_profile')}
-        </h1>
-        <button
-          onClick={() => setMode('view')}
-          className="text-sm text-muted-foreground hover:text-stone-900 transition-colors"
-        >
-          {t(lang, 'cancel')}
-        </button>
-      </div>
+    <div className="min-h-dvh pb-24" style={{ background: 'oklch(0.975 0.006 85)' }}>
+      {/* Sticky header */}
+      <header className="sticky top-0 z-40 bg-white border-b border-border">
+        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+          <h1 className="font-display text-xl text-stone-900">{t(lang, 'edit_profile')}</h1>
+          <button
+            onClick={() => setMode('view')}
+            className="text-sm font-medium text-stone-500 hover:text-stone-900 transition-colors"
+          >
+            {t(lang, 'cancel')}
+          </button>
+        </div>
+      </header>
+
+    <div className="max-w-lg mx-auto px-4 py-5 space-y-4">
 
       {/* Language selector — always visible at top */}
       <div className="bg-teal-50 border border-teal-100 rounded-xl p-4">
@@ -749,7 +758,8 @@ export default function ProProfileClient({ provider }: Props) {
         ) : t(lang, 'save_changes')}
       </button>
 
-      <div className="pb-24" />
+      <div className="pb-6" />
+    </div>{/* end inner */}
     </div>
   )
 }
