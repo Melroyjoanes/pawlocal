@@ -24,8 +24,8 @@ export default function ProBottomNav() {
   const NAV = [
     { href: '/pro/dashboard', label: t(lang, 'nav_dashboard'), icon: '🏠' },
     { href: '/pro/bookings',  label: t(lang, 'nav_bookings'),  icon: '📒' },
-    { href: '/pro/fitness',   label: t(lang, 'nav_fitness'),   icon: '🏃' },
-    { href: '/pro/leads',     label: t(lang, 'nav_leads'),     icon: '📋' },
+    { href: '/pro/leads',     label: t(lang, 'nav_leads'),     icon: '📣' },
+    { href: '/pro/reports',   label: t(lang, 'nav_reports'),   icon: '📋' },
     { href: '/pro/profile',   label: t(lang, 'nav_profile'),   icon: '👤' },
   ]
 
