@@ -136,26 +136,21 @@ export default function ProviderCard({ provider, category }: Props) {
           <p className="text-xs text-slate-400 mt-1.5 line-clamp-1">{provider.bio}</p>
         )}
 
-        {/* CTAs */}
-        <div
-          className="flex items-center gap-2 mt-3"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+        {/* CTAs — navigate to profile (auth-gated WhatsApp redirect happens there) */}
+        <div className="flex items-center gap-2 mt-3">
+          <button
+            onClick={() => router.push(`/provider/${provider.id}`)}
             className="flex items-center gap-1.5 text-xs font-bold text-white px-3.5 py-1.5 clay-btn-wa"
           >
             💬 WhatsApp
-          </a>
+          </button>
           {provider.phone && (
-            <a
-              href={`tel:${provider.phone}`}
+            <button
+              onClick={() => router.push(`/provider/${provider.id}`)}
               className="text-xs font-semibold px-3.5 py-1.5 clay-btn-ghost"
             >
               📞 Call
-            </a>
+            </button>
           )}
           <span className="ml-auto text-xs font-semibold flex items-center gap-0.5 shrink-0" style={{ color: 'var(--pl-teal)' }}>
             View →
