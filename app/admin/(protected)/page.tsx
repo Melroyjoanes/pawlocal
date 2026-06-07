@@ -243,7 +243,6 @@ function ProviderCard({
           <button
             onClick={() => {
               setShowSettings((v) => !v)
-              setShowAccessInput(false)
             }}
             className="w-full mt-2 py-2 text-xs text-slate-400 flex items-center justify-center gap-1 hover:text-slate-600 transition-colors"
           >
