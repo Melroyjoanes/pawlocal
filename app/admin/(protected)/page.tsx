@@ -357,16 +357,19 @@ function BroadcastAdminCard({
   b,
   providers,
   onClose,
+  onReopen,
 }: {
   b: Broadcast
   providers: any[]
   onClose: (id: string) => void
+  onReopen: (id: string) => void
 }) {
   const svc = SERVICE_LABELS[b.service_slug] ?? { label: b.service_slug, icon: '🐾' }
   const expired = isExpired(b.expires_at)
+  // Derive directly from prop — never use local state for this, parent owns the truth
   const isClosed = b.status === 'closed' || b.status === 'filled'
   const [closing, setClosing] = useState(false)
-  const [localClosed, setLocalClosed] = useState(isClosed)
+  const [reopening, setReopening] = useState(false)
 
   const waLink = `https://wa.me/91${b.poster_whatsapp.replace(/\D/g, '').slice(-10)}`
   const waText = encodeURIComponent(
@@ -374,7 +377,7 @@ function BroadcastAdminCard({
   )
 
   async function handleClose() {
-    if (closing || localClosed) return
+    if (closing || isClosed) return
     setClosing(true)
     try {
       const res = await fetch(`/api/admin/broadcasts/${b.id}`, {
@@ -382,22 +385,25 @@ function BroadcastAdminCard({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'closed' }),
       })
-      if (res.ok) {
-        setLocalClosed(true)
-        onClose(b.id)
-      }
+      if (res.ok) onClose(b.id)
     } finally {
       setClosing(false)
     }
   }
 
   async function handleReopen() {
-    await fetch(`/api/admin/broadcasts/${b.id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: 'active' }),
-    })
-    setLocalClosed(false)
+    if (reopening) return
+    setReopening(true)
+    try {
+      const res = await fetch(`/api/admin/broadcasts/${b.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'active' }),
+      })
+      if (res.ok) onReopen(b.id)
+    } finally {
+      setReopening(false)
+    }
   }
 
   const matchingProviders = providers.filter((p) => {
@@ -427,7 +433,7 @@ function BroadcastAdminCard({
 
   // Status chip
   let statusChip = null
-  if (localClosed) {
+  if (isClosed) {
     statusChip = <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">Closed</span>
   } else if (expired) {
     statusChip = <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">Expired</span>
@@ -436,7 +442,7 @@ function BroadcastAdminCard({
   }
 
   return (
-    <div className={`bg-white border rounded-2xl p-4 ${(localClosed || expired) ? 'opacity-60 border-border' : 'border-border'}`}>
+    <div className={`bg-white border rounded-2xl p-4 ${(isClosed || expired) ? 'opacity-60 border-border' : 'border-border'}`}>
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
           <span className="text-lg">{svc.icon}</span>
@@ -475,7 +481,7 @@ function BroadcastAdminCard({
           💬 Follow up
         </a>
 
-        {!localClosed && !expired && (
+        {!isClosed && !expired && (
           <button
             onClick={handleClose}
             disabled={closing}
@@ -485,18 +491,19 @@ function BroadcastAdminCard({
           </button>
         )}
 
-        {localClosed && (
+        {isClosed && (
           <button
             onClick={handleReopen}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 text-amber-700 bg-amber-50 text-xs font-semibold hover:bg-amber-100 transition-colors"
+            disabled={reopening}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 text-amber-700 bg-amber-50 text-xs font-semibold hover:bg-amber-100 transition-colors disabled:opacity-50"
           >
-            ↩ Reopen
+            {reopening ? '…' : '↩ Reopen'}
           </button>
         )}
       </div>
 
       {/* Notify matching providers — only shown for active broadcasts */}
-      {!localClosed && matchingProviders.length > 0 && (
+      {!isClosed && matchingProviders.length > 0 && (
         <div className="mt-3 pt-3 border-t border-border">
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
             Notify these providers
@@ -946,10 +953,12 @@ export default function AdminPage() {
                   b={b}
                   providers={approvedProviders}
                   onClose={(id) => {
-                    // Update status in local state instead of removing — keeps card visible with "Closed" chip
                     setBroadcasts((prev) => prev.map((x) => x.id === id ? { ...x, status: 'closed' } : x))
-                    // Shift the filter to closed so admin sees the result
                     setBroadcastFilter('closed')
+                  }}
+                  onReopen={(id) => {
+                    setBroadcasts((prev) => prev.map((x) => x.id === id ? { ...x, status: 'active' } : x))
+                    setBroadcastFilter('active')
                   }}
                 />
               ))}

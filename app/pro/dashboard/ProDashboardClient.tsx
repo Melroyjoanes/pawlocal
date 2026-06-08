@@ -345,17 +345,15 @@ export default function ProDashboardClient({ provider, stats, broadcasts, firstN
                 Edit profile
               </p>
             </Link>
-            <a
-              href={`/provider/${provider.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/pro/reports"
               className="bg-white rounded-2xl border border-border p-4 shadow-sm hover:border-teal-300 transition-colors group text-center active:scale-95 transition-transform"
             >
-              <div className="text-2xl mb-1.5">🔗</div>
+              <div className="text-2xl mb-1.5">🐕</div>
               <p className="text-sm font-semibold text-stone-800 group-hover:text-[var(--pl-teal)] transition-colors">
-                View profile
+                Walk reports
               </p>
-            </a>
+            </Link>
           </div>
         </motion.div>
 
