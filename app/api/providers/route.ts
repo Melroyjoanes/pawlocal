@@ -1,22 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import type { Database, CategorySlug } from '@/lib/supabase/types'
+import { createClient } from '@supabase/supabase-js'
+import type { CategorySlug } from '@/lib/supabase/types'
+
+// Direct admin client — bypasses RLS reliably (no cookie/session interference)
+function adminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function POST(req: NextRequest) {
-  const cookieStore = await cookies()
-
-  // Admin client for writes (bypasses RLS)
-  const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: () => {},
-      },
-    }
-  )
+  const supabase = adminClient()
 
   const body = await req.json()
   const {
