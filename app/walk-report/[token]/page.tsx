@@ -18,6 +18,10 @@ type WalkReport = {
   verification_tier: string
   start_location: string | null
   end_location: string | null
+  route_points: {lat: number, lng: number}[] | null
+  distance_meters: number | null
+  poop_events: {lat: number, lng: number, time: string}[] | null
+  pee_events: {lat: number, lng: number, time: string}[] | null
 }
 
 async function getReport(token: string): Promise<WalkReport | null> {
@@ -49,6 +53,10 @@ async function getReport(token: string): Promise<WalkReport | null> {
     verification_tier: data.providers?.verification_tier ?? 'contacted',
     start_location: data.start_location ?? null,
     end_location: data.end_location ?? null,
+    route_points: data.route_points ?? null,
+    distance_meters: data.distance_meters ?? null,
+    poop_events: data.poop_events ?? null,
+    pee_events: data.pee_events ?? null,
   }
 }
 

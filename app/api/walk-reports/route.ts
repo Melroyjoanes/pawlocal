@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   if (!provider) return NextResponse.json({ error: 'Provider not found' }, { status: 404 })
 
   const body = await req.json()
-  const { dog_name, duration_mins, poop_count, pee_count, notes, photo_url, walk_date, start_location, end_location } = body
+  const { dog_name, duration_mins, poop_count, pee_count, notes, photo_url, walk_date, start_location, end_location, route_points, distance_meters, poop_events, pee_events } = body
 
   if (!dog_name || duration_mins == null) {
     return NextResponse.json({ error: 'Missing required fields: dog_name, duration_mins' }, { status: 400 })
@@ -71,6 +71,10 @@ export async function POST(req: NextRequest) {
       walk_date: walk_date ?? new Date().toISOString(),
       start_location: start_location?.trim() || null,
       end_location: end_location?.trim() || null,
+      route_points: route_points ?? null,
+      distance_meters: distance_meters != null ? Number(distance_meters) : null,
+      poop_events: poop_events ?? null,
+      pee_events: pee_events ?? null,
     })
     .select('id, token')
     .single()

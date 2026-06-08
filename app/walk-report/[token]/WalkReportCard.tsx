@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRef, useEffect } from 'react'
 
 // Run this in Supabase SQL editor:
 // ALTER TABLE walk_reports ADD COLUMN start_location text;
@@ -23,6 +24,10 @@ type WalkReport = {
   verification_tier: string
   start_location: string | null
   end_location: string | null
+  route_points: {lat: number, lng: number}[] | null
+  distance_meters: number | null
+  poop_events: {lat: number, lng: number, time: string}[] | null
+  pee_events: {lat: number, lng: number, time: string}[] | null
 }
 
 function formatWalkDate(isoDate: string): string {
@@ -35,6 +40,130 @@ function formatWalkDate(isoDate: string): string {
   } catch {
     return isoDate
   }
+}
+
+function WalkMap({ routePoints, poopEvents, peeEvents }: {
+  routePoints: {lat: number, lng: number}[]
+  poopEvents: {lat: number, lng: number, time: string}[]
+  peeEvents: {lat: number, lng: number, time: string}[]
+}) {
+  const mapRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!routePoints?.length || !mapRef.current) return
+
+    function initMap() {
+      const map = new (window as any).google.maps.Map(mapRef.current, {
+        zoom: 15,
+        center: routePoints[0],
+        disableDefaultUI: true,
+        styles: [
+          { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+          { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+          { elementType: 'geometry', stylers: [{ color: '#f5f0e8' }] },
+          { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9e8e0' }] },
+        ],
+      })
+
+      // Draw route as teal polyline
+      new (window as any).google.maps.Polyline({
+        path: routePoints,
+        strokeColor: '#0f766e',
+        strokeWeight: 5,
+        strokeOpacity: 0.85,
+        geodesic: true,
+      }).setMap(map)
+
+      // Start marker — green dot
+      new (window as any).google.maps.Marker({
+        position: routePoints[0],
+        map,
+        icon: {
+          path: (window as any).google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: '#22c55e',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 3,
+        },
+        title: 'Start',
+      })
+
+      // End marker — teal dot
+      new (window as any).google.maps.Marker({
+        position: routePoints[routePoints.length - 1],
+        map,
+        icon: {
+          path: (window as any).google.maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: '#0f766e',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 3,
+        },
+        title: 'End',
+      })
+
+      // Poop markers — emoji label markers
+      poopEvents?.forEach((e, i) => {
+        new (window as any).google.maps.Marker({
+          position: { lat: e.lat, lng: e.lng },
+          map,
+          label: { text: '💩', fontSize: '18px' },
+          icon: {
+            path: (window as any).google.maps.SymbolPath.CIRCLE,
+            scale: 0,
+          },
+          title: `Poop ${i + 1}`,
+        })
+      })
+
+      // Pee markers — emoji label markers
+      peeEvents?.forEach((e, i) => {
+        new (window as any).google.maps.Marker({
+          position: { lat: e.lat, lng: e.lng },
+          map,
+          label: { text: '💧', fontSize: '18px' },
+          icon: {
+            path: (window as any).google.maps.SymbolPath.CIRCLE,
+            scale: 0,
+          },
+          title: `Pee ${i + 1}`,
+        })
+      })
+
+      // Fit all route points in view
+      const bounds = new (window as any).google.maps.LatLngBounds()
+      routePoints.forEach(p => bounds.extend(p))
+      map.fitBounds(bounds, { top: 20, bottom: 20, left: 20, right: 20 })
+    }
+
+    if ((window as any).google?.maps) {
+      initMap()
+    } else {
+      // Check if script already loading
+      if (document.querySelector('script[data-gm]')) {
+        const check = setInterval(() => {
+          if ((window as any).google?.maps) { clearInterval(check); initMap() }
+        }, 100)
+        return
+      }
+      const script = document.createElement('script')
+      script.setAttribute('data-gm', '1')
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+      script.onload = initMap
+      document.head.appendChild(script)
+    }
+  }, [routePoints, poopEvents, peeEvents])
+
+  return (
+    <div
+      ref={mapRef}
+      className="w-full rounded-2xl overflow-hidden"
+      style={{ height: 260 }}
+    />
+  )
 }
 
 const CLAY_CARD = {
@@ -134,7 +263,37 @@ export default function WalkReportCard({ report }: { report: WalkReport }) {
               >
                 💧 {report.pee_count} {report.pee_count === 1 ? 'pee' : 'pees'}
               </span>
+              {report.distance_meters && report.distance_meters > 0 && !report.route_points?.length && (
+                <span className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold"
+                  style={{ background: '#F0FDF4', color: '#166534' }}>
+                  📏 {(report.distance_meters / 1000).toFixed(2)} km
+                </span>
+              )}
             </div>
+
+            {/* Route map — only show if we have GPS data (at least 2 points) */}
+            {report.route_points && report.route_points.length >= 2 && (
+              <div className="mb-5">
+                <WalkMap
+                  routePoints={report.route_points}
+                  poopEvents={report.poop_events ?? []}
+                  peeEvents={report.pee_events ?? []}
+                />
+                {/* Distance stat below map */}
+                {report.distance_meters && report.distance_meters > 0 && (
+                  <div className="flex items-center justify-center gap-1.5 mt-2">
+                    <span className="text-xs text-stone-400">📏</span>
+                    <span className="text-xs font-semibold text-stone-500">
+                      {report.distance_meters >= 1000
+                        ? `${(report.distance_meters / 1000).toFixed(2)} km`
+                        : `${Math.round(report.distance_meters)} m`}
+                    </span>
+                    <span className="text-stone-200">·</span>
+                    <span className="text-xs text-stone-400">GPS tracked</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Route */}
             {report.start_location && report.end_location && (
