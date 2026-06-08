@@ -509,6 +509,7 @@ export default function AdminPage() {
     totalPending: number
     totalRejected: number
     totalBroadcasts: number
+    totalWalkReports: number
     providerStats: {
       id: string
       name: string
@@ -586,13 +587,14 @@ export default function AdminPage() {
     setStatsLoading(true)
     const supabase = createClient()
 
-    const [approvedRes, pendingRes, rejectedRes, broadcastRes, providersRes, analyticsRes] = await Promise.all([
+    const [approvedRes, pendingRes, rejectedRes, broadcastRes, providersRes, analyticsRes, walkReportsRes] = await Promise.all([
       supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
       supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'rejected'),
       fetch('/api/broadcasts').then(r => r.json()).catch(() => []),
       supabase.from('providers').select('id, name, category_slug, neighbourhood, created_at').eq('status', 'approved').order('created_at', { ascending: false }),
       supabase.from('provider_analytics').select('provider_id, event_type'),
+      supabase.from('walk_reports').select('id', { count: 'exact', head: true }),
     ])
 
     const analytics = analyticsRes.data ?? []
@@ -616,6 +618,7 @@ export default function AdminPage() {
       totalPending: pendingRes.count ?? 0,
       totalRejected: rejectedRes.count ?? 0,
       totalBroadcasts: Array.isArray(broadcastRes) ? broadcastRes.length : 0,
+      totalWalkReports: walkReportsRes.count ?? 0,
       providerStats,
     })
     setStatsLoading(false)
@@ -852,6 +855,7 @@ export default function AdminPage() {
                 { label: 'Pending review', value: stats.totalPending, color: 'bg-amber-50 text-amber-700 border-amber-200' },
                 { label: 'Active broadcasts', value: stats.totalBroadcasts, color: 'bg-blue-50 text-blue-700 border-blue-200' },
                 { label: 'Rejected', value: stats.totalRejected, color: 'bg-slate-50 text-slate-500 border-slate-200' },
+                { label: 'Walk reports', value: stats.totalWalkReports, color: 'bg-teal-50 text-teal-700 border-teal-200' },
               ].map((tile) => (
                 <div key={tile.label} className={`rounded-2xl border p-4 ${tile.color}`}>
                   <p className="text-2xl font-bold">{tile.value}</p>

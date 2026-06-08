@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 
 // Run this in Supabase SQL editor:
 // ALTER TABLE walk_reports ADD COLUMN start_location text;
@@ -12,6 +12,7 @@ import { useRef, useEffect } from 'react'
 type WalkReport = {
   id: string
   token: string
+  customer_id?: string | null
   dog_name: string
   walk_date: string
   duration_mins: number
@@ -173,7 +174,18 @@ const CLAY_CARD = {
   border: '1px solid rgba(226,220,200,0.7)',
 }
 
-export default function WalkReportCard({ report }: { report: WalkReport }) {
+export default function WalkReportCard({
+  report,
+  isClaimed,
+  isClaimedByMe,
+}: {
+  report: WalkReport
+  isClaimed: boolean
+  isClaimedByMe: boolean
+}) {
+  const [claiming, setClaiming] = useState(false)
+  const [claimed, setClaimed] = useState(isClaimedByMe)
+
   return (
     <div
       className="min-h-dvh flex flex-col items-center px-4 py-8"
@@ -349,6 +361,43 @@ export default function WalkReportCard({ report }: { report: WalkReport }) {
             </div>
           )}
         </motion.div>
+
+        {/* Save to account banner */}
+        {!claimed && !isClaimed && (
+          <div className="mt-4 rounded-2xl px-4 py-3 flex items-center gap-3"
+            style={{ background: 'oklch(0.975 0.006 85)', border: '1px solid rgba(226,220,200,0.7)' }}>
+            <span className="text-2xl">🐾</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-slate-800">Save to your account</p>
+              <p className="text-xs text-slate-400 leading-snug">Keep all your dog&apos;s walk history in one place</p>
+            </div>
+            <button
+              onClick={async () => {
+                setClaiming(true)
+                const res = await fetch(`/api/walk-reports/${report.token}/claim`, { method: 'POST' })
+                if (res.status === 401) {
+                  // Not logged in — redirect to home (which has Google sign in)
+                  window.location.href = `/?redirect=/walk-report/${report.token}`
+                } else if (res.ok || res.status === 409) {
+                  setClaimed(true)
+                }
+                setClaiming(false)
+              }}
+              disabled={claiming}
+              className="flex-shrink-0 px-3 py-2 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-60"
+              style={{ background: 'linear-gradient(160deg, oklch(0.52 0.17 196) 0%, oklch(0.44 0.16 196) 100%)' }}
+            >
+              {claiming ? '…' : 'Save'}
+            </button>
+          </div>
+        )}
+        {claimed && (
+          <div className="mt-4 rounded-2xl px-4 py-3 flex items-center gap-2"
+            style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+            <span className="text-lg">✓</span>
+            <p className="text-sm font-semibold text-green-700">Saved to your PawLocal account</p>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="mt-6 flex flex-col items-center gap-3 text-center">

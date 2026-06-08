@@ -1,6 +1,14 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import MyAccountClient from './MyAccountClient'
+
+function admin() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 interface SavedProvider {
   id: string
@@ -78,6 +86,14 @@ export default async function MyAccountPage() {
     status: string; created_at: string; providers?: { name: string; category_slug: string };
   }[] = (bookingRequestsRaw ?? []) as unknown as typeof bookingRequests
 
+  // Fetch claimed walk reports for this user
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: claimedReports } = await (admin().from('walk_reports') as any)
+    .select('id, token, dog_name, walk_date, duration_mins, poop_count, pee_count, distance_meters, photo_url, providers(name, is_verified)')
+    .eq('customer_id', user.id)
+    .order('walk_date', { ascending: false })
+    .limit(20)
+
   // Saved providers come from localStorage — server can't read it, so pass empty array
   // MyAccountClient will hydrate from localStorage on mount
   const savedProviders: SavedProvider[] = []
@@ -96,6 +112,7 @@ export default async function MyAccountPage() {
       reviews={reviews}
       savedProviders={savedProviders}
       bookingRequests={bookingRequests}
+      claimedReports={claimedReports ?? []}
       userDisplay={userDisplay}
       userAvatar={userAvatar}
       userId={user.id}

@@ -23,9 +23,22 @@ interface BookingRequest {
   time_needed: string; notes: string | null; status: string
   created_at: string; providers?: { name: string; category_slug: string }
 }
+interface ClaimedReport {
+  id: string
+  token: string
+  dog_name: string
+  walk_date: string
+  duration_mins: number
+  poop_count: number
+  pee_count: number
+  distance_meters: number | null
+  photo_url: string | null
+  providers?: { name: string; is_verified: boolean }
+}
 interface Props {
   broadcasts: Broadcast[]; reviews: Review[]
   savedProviders: SavedProvider[]; bookingRequests: BookingRequest[]
+  claimedReports: ClaimedReport[]
   userDisplay: string; userAvatar?: string | null; userId: string
 }
 
@@ -53,7 +66,7 @@ const TABS: { id: Tab; label: string; emoji: string }[] = [
   { id: 'broadcasts', label: 'Broadcasts', emoji: '📣' },
   { id: 'saved',      label: 'Saved',      emoji: '❤️' },
   { id: 'reviews',    label: 'Reviews',    emoji: '⭐' },
-  { id: 'bookings',   label: 'Bookings',   emoji: '📅' },
+  { id: 'bookings',   label: 'Walk Reports', emoji: '🐕' },
 ]
 
 function EmptyState({ emoji, title, sub, cta, ctaHref }: {
@@ -83,6 +96,7 @@ function EmptyState({ emoji, title, sub, cta, ctaHref }: {
 
 export default function MyAccountClient({
   broadcasts: initialBroadcasts, reviews, savedProviders: initialSaved, bookingRequests,
+  claimedReports,
   userDisplay, userAvatar,
 }: Props) {
   const [tab, setTab] = useState<Tab>('broadcasts')
@@ -154,7 +168,7 @@ export default function MyAccountClient({
     broadcasts: broadcasts.length,
     saved: savedProviders.length,
     reviews: reviews.length,
-    bookings: bookingRequests.length,
+    bookings: claimedReports.length,
   }
 
   return (
@@ -427,48 +441,52 @@ export default function MyAccountClient({
             </div>
           )}
 
-          {/* BOOKINGS */}
+          {/* WALK REPORTS */}
           {tab === 'bookings' && (
             <div className="flex flex-col gap-3">
-              {bookingRequests.length === 0 ? (
-                <EmptyState emoji="📅" title="No bookings yet"
-                  sub="Send a booking request from any provider profile."
-                  cta="Browse providers" ctaHref="/" />
+              {claimedReports.length === 0 ? (
+                <EmptyState
+                  emoji="🐕"
+                  title="No walk reports yet"
+                  sub="When your dog walker shares a walk report, save it here to keep track of all walks."
+                />
               ) : (
-                bookingRequests.map(b => {
-                  const s = STATUS_STYLE[b.status] ?? STATUS_STYLE.pending
-                  return (
-                    <div key={b.id} className="rounded-2xl p-4"
-                      style={{
-                        background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
-                        boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 6px 20px rgba(15,45,50,0.07)',
-                        border: '1px solid rgba(226,220,200,0.7)',
-                      }}
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <a href={`/provider/${b.provider_id}`}
-                          className="text-sm font-semibold text-slate-900 hover:text-[var(--pl-teal)] transition-colors">
-                          {b.providers?.name ?? 'Provider'}
-                        </a>
-                        <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full flex-shrink-0 capitalize"
-                          style={{ background: s.bg, color: s.color }}>
-                          {b.status}
+                claimedReports.map(r => (
+                  <a
+                    key={r.id}
+                    href={`/walk-report/${r.token}`}
+                    className="rounded-2xl overflow-hidden block transition-transform active:scale-[0.99]"
+                    style={{
+                      background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
+                      boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 6px 20px rgba(15,45,50,0.07)',
+                      border: '1px solid rgba(226,220,200,0.7)',
+                    }}
+                  >
+                    {r.photo_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={r.photo_url} alt={r.dog_name} className="w-full object-cover" style={{ height: 120 }} />
+                    )}
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <p className="font-semibold text-slate-900">🐕 {r.dog_name}</p>
+                        <span className="text-xs text-slate-400 flex-shrink-0">
+                          {new Date(r.walk_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                         </span>
                       </div>
-                      <p className="text-sm text-slate-500 mb-2 capitalize">
-                        {b.service_slug.replace(/-/g, ' ')}
-                        {b.pet_name ? ` · ${b.pet_type || 'Pet'}: ${b.pet_name}` : ''}
-                      </p>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400">
-                        <span>📅 {b.date_needed}</span>
-                        {b.time_needed && <span>🕐 {b.time_needed}</span>}
-                        <span className="ml-auto">
-                          {new Date(b.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                        </span>
+                      {r.providers && (
+                        <p className="text-xs text-slate-400 mb-2">by {r.providers.name}{r.providers.is_verified ? ' ✓' : ''}</p>
+                      )}
+                      <div className="flex items-center gap-3 text-xs text-slate-500">
+                        <span>⏱ {r.duration_mins} mins</span>
+                        {r.distance_meters && r.distance_meters > 0 && (
+                          <span>📏 {r.distance_meters >= 1000 ? `${(r.distance_meters / 1000).toFixed(1)}km` : `${Math.round(r.distance_meters)}m`}</span>
+                        )}
+                        {r.poop_count > 0 && <span>💩 {r.poop_count}</span>}
+                        {r.pee_count > 0 && <span>💧 {r.pee_count}</span>}
                       </div>
                     </div>
-                  )
-                })
+                  </a>
+                ))
               )}
             </div>
           )}

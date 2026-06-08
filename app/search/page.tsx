@@ -170,30 +170,20 @@ export default async function SearchPage({ searchParams }: PageProps) {
             </div>
           ) : (
             /* Empty state */
-            <div className="text-center py-16 px-4">
-              <div className="text-5xl mb-4">🐾</div>
-              <h2 className="text-lg font-semibold text-foreground mb-2">
-                No results for &ldquo;{query}&rdquo;
-              </h2>
-              <p className="text-sm text-muted-foreground mb-8 max-w-xs mx-auto">
-                We couldn&apos;t find any pet services matching your search. Try a different keyword or browse by category.
+            <div className="flex flex-col items-center py-16 px-4 text-center">
+              <div className="text-5xl mb-4">🔍</div>
+              <h2 className="font-display text-xl text-slate-900 mb-2">No providers found</h2>
+              <p className="text-sm text-slate-400 leading-relaxed mb-6 max-w-xs">
+                We couldn&apos;t find anyone matching &ldquo;{query}&rdquo; in Juhu right now. Try a different search or browse by category.
               </p>
-
-              {/* Browse categories */}
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                Browse categories
-              </p>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {CATEGORIES.map((cat) => (
-                  <Link
-                    key={cat.slug}
-                    href={`/category/${cat.slug}`}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-border bg-white text-sm hover:border-[var(--pl-teal)] transition-colors"
-                  >
-                    <span>{cat.icon}</span>
-                    <span className="font-medium">{cat.name}</span>
-                  </Link>
-                ))}
+              <div className="flex flex-col gap-3 w-full max-w-xs">
+                <a href="/" className="py-3 rounded-2xl font-bold text-sm text-white text-center"
+                  style={{ background: 'linear-gradient(160deg, oklch(0.52 0.17 196) 0%, oklch(0.44 0.16 196) 100%)' }}>
+                  Browse all providers
+                </a>
+                <a href="/broadcast" className="py-3 rounded-2xl font-bold text-sm text-center border border-border text-slate-600">
+                  📣 Post a broadcast — let providers find you
+                </a>
               </div>
             </div>
           )}

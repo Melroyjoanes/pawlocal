@@ -1,11 +1,13 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
 import WalkReportCard from './WalkReportCard'
 
 type WalkReport = {
   id: string
   token: string
+  customer_id: string | null
   dog_name: string
   walk_date: string
   duration_mins: number
@@ -41,6 +43,7 @@ async function getReport(token: string): Promise<WalkReport | null> {
   return {
     id: data.id,
     token: data.token,
+    customer_id: data.customer_id ?? null,
     dog_name: data.dog_name,
     walk_date: data.walk_date,
     duration_mins: data.duration_mins,
@@ -68,12 +71,23 @@ export async function generateMetadata({
   const { token } = await params
   const report = await getReport(token)
 
-  if (!report) {
-    return { title: 'Walk Report · PawLocal' }
-  }
+  if (!report) return { title: 'Walk Report · PawLocal' }
 
-  const title = `${report.dog_name}'s Walk Report · PawLocal`
-  const description = `${report.provider_name} walked ${report.dog_name} for ${report.duration_mins} mins. Shared via PawLocal.`
+  const dogName = report.dog_name
+  const walkerName = report.provider_name ?? 'Your dog walker'
+  const duration = report.duration_mins ? `${report.duration_mins} mins` : ''
+  const poop = report.poop_count > 0 ? `💩 ${report.poop_count}` : ''
+  const pee = report.pee_count > 0 ? `💧 ${report.pee_count}` : ''
+  const stats = [duration, poop, pee].filter(Boolean).join(' · ')
+  const distance = report.distance_meters && report.distance_meters > 0
+    ? report.distance_meters >= 1000
+      ? `${(report.distance_meters / 1000).toFixed(1)}km`
+      : `${Math.round(report.distance_meters)}m`
+    : null
+
+  const title = `${dogName}'s Walk Report · PawLocal`
+  const description = [stats, distance && `📏 ${distance}`, `by ${walkerName} in Juhu, Mumbai`]
+    .filter(Boolean).join(' · ')
 
   return {
     title,
@@ -81,16 +95,18 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
+      url: `https://pawlocal-ashen.vercel.app/walk-report/${token}`,
       siteName: 'PawLocal',
-      locale: 'en_IN',
-      type: 'website',
-      ...(report.photo_url ? { images: [{ url: report.photo_url, alt: `${report.dog_name}'s walk` }] } : {}),
+      type: 'article',
+      images: report.photo_url
+        ? [{ url: report.photo_url, width: 1200, height: 630, alt: `${dogName}'s walk` }]
+        : [{ url: 'https://pawlocal-ashen.vercel.app/og-default.png', width: 1200, height: 630 }],
     },
     twitter: {
-      card: report.photo_url ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
       title,
       description,
-      ...(report.photo_url ? { images: [report.photo_url] } : {}),
+      images: report.photo_url ? [report.photo_url] : [],
     },
   }
 }
@@ -105,5 +121,11 @@ export default async function WalkReportPage({
 
   if (!report) notFound()
 
-  return <WalkReportCard report={report} />
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const isClaimed = report.customer_id !== null
+  const isClaimedByMe = report.customer_id !== null && report.customer_id === user?.id
+
+  return <WalkReportCard report={report} isClaimed={isClaimed} isClaimedByMe={isClaimedByMe} />
 }
