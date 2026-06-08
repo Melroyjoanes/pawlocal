@@ -1,21 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import type { Database } from '@/lib/supabase/types'
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const cookieStore = await cookies()
-  const supabase = createServerClient<Database>(
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'melroy@verfolia.com'
+
+function adminDb() {
+  return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
+
+async function requireAdmin() {
+  const cookieStore = await cookies()
+  const auth = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } }
   )
+  const { data: { user } } = await auth.auth.getUser()
+  return user?.email === ADMIN_EMAIL ? user : null
+}
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (user.email !== (process.env.ADMIN_EMAIL ?? 'melroy@verfolia.com')) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = await requireAdmin()
+  if (!user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  const { id } = await params
   const body = await req.json()
 
   type ProviderUpdate = {
@@ -34,9 +46,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     update.status = body.status as 'approved' | 'rejected'
   }
 
-  if ('is_verified' in body) {
-    update.is_verified = Boolean(body.is_verified)
-  }
+  if ('is_verified' in body) update.is_verified = Boolean(body.is_verified)
 
   if ('verification_tier' in body) {
     if (!['contacted', 'verified', 'certified'].includes(body.verification_tier)) {
@@ -58,8 +68,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
   }
 
+  const admin = adminDb()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: updatedProvider, error } = await (supabase.from('providers') as any)
+  const { data: updatedProvider, error } = await (admin.from('providers') as any)
     .update(update)
     .eq('id', id)
     .select('id, name, email, category_slug')
@@ -72,52 +83,37 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // When a provider is approved and has an email, send magic link
   if (update.status === 'approved' && prov?.email && process.env.RESEND_API_KEY) {
     try {
-      const { createClient: createAdminClient } = await import('@supabase/supabase-js')
-      const admin = createAdminClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
-
       const firstName = prov.name.split(' ')[0]
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app'
 
-      // Generate magic link
       const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
         type: 'magiclink',
         email: prov.email,
-        options: {
-          redirectTo: `${siteUrl}/pro/dashboard`,
-        },
+        options: { redirectTo: `${siteUrl}/pro/dashboard` },
       })
 
       if (!linkError && linkData?.properties?.action_link) {
         const magicLink = linkData.properties.action_link
-
         fetch('https://api.resend.com/emails', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-          },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
           body: JSON.stringify({
             from: 'PawLocal <onboarding@resend.dev>',
             to: prov.email,
             subject: "You're approved on PawLocal — click to access your dashboard",
-            html: `<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; background: #f0fdfa; padding: 32px 24px; border-radius: 24px;">
-  <div style="text-align: center; margin-bottom: 28px;">
-    <div style="font-size: 48px; margin-bottom: 12px;">🐾</div>
-    <h1 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 8px;">You're approved, ${firstName}!</h1>
-    <p style="font-size: 14px; color: #475569; margin: 0;">Your PawLocal profile is live! Click the button below to access your provider dashboard.</p>
+            html: `<div style="font-family:-apple-system,sans-serif;max-width:520px;margin:0 auto;background:#f0fdfa;padding:32px 24px;border-radius:24px;">
+  <div style="text-align:center;margin-bottom:28px;">
+    <div style="font-size:48px;margin-bottom:12px;">🐾</div>
+    <h1 style="font-size:22px;font-weight:800;color:#0f172a;margin:0 0 8px;">You're approved, ${firstName}!</h1>
+    <p style="font-size:14px;color:#475569;margin:0;">Your PawLocal profile is live. Click below to access your provider dashboard.</p>
   </div>
-
-  <a href="${magicLink}" style="display: block; text-align: center; background: oklch(0.48 0.17 196); color: white; font-weight: 700; font-size: 15px; padding: 16px 28px; border-radius: 12px; text-decoration: none; margin-bottom: 20px;">
+  <a href="${magicLink}" style="display:block;text-align:center;background:oklch(0.48 0.17 196);color:white;font-weight:700;font-size:15px;padding:16px 28px;border-radius:12px;text-decoration:none;margin-bottom:20px;">
     Access my dashboard →
   </a>
-
-  <p style="font-size: 12px; color: #94a3b8; text-align: center; margin: 0;">This link expires in 1 hour. If you didn't expect this email, you can safely ignore it.</p>
+  <p style="font-size:12px;color:#94a3b8;text-align:center;margin:0;">Link expires in 1 hour.</p>
 </div>`,
           }),
-        }).catch((e: unknown) => { console.error("[Resend] email failed:", e instanceof Error ? e.message : e) })
+        }).catch((e: unknown) => { console.error('[Resend]', e) })
       }
     } catch {}
   }
