@@ -7,7 +7,7 @@ import { getCategoryBySlug } from '@/lib/categories'
 import { Stars } from '@/components/StarRating'
 
 type ProviderStatus = 'pending' | 'approved' | 'rejected'
-type AdminTab = 'providers' | 'broadcasts' | 'reviews' | 'stats'
+type AdminTab = 'providers' | 'broadcasts' | 'reports' | 'reviews' | 'stats'
 
 interface Broadcast {
   id: string
@@ -22,6 +22,27 @@ interface Broadcast {
   status: string
   created_at: string
   expires_at: string
+}
+
+interface WalkReport {
+  id: string
+  token: string
+  dog_name: string
+  walk_date: string
+  duration_mins: number
+  distance_meters: number | null
+  poop_count: number
+  pee_count: number
+  photo_url: string | null
+  customer_id: string | null
+  created_at: string
+  provider_id: string
+  providers: {
+    id: string
+    name: string
+    whatsapp: string
+    category_slug: string
+  } | null
 }
 
 const SERVICE_LABELS: Record<string, { label: string; icon: string }> = {
@@ -44,6 +65,12 @@ function timeAgo(dateStr: string) {
 
 function isExpired(expiresAt: string) {
   return new Date(expiresAt).getTime() < Date.now()
+}
+
+function fmtDistance(meters: number | null) {
+  if (!meters) return '—'
+  if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`
+  return `${Math.round(meters)} m`
 }
 
 // ── Tier badge ───────────────────────────────────────────────────
@@ -77,14 +104,13 @@ function ProviderCard({
   const [savingCoords, setSavingCoords] = useState(false)
   const [coordSaved, setCoordSaved] = useState(false)
 
-  // Dashboard access state
   const providerEmail = (p as unknown as { email?: string }).email ?? ''
   const [sendingAccess, setSendingAccess] = useState(false)
   const [accessSent, setAccessSent] = useState(false)
   const [accessError, setAccessError] = useState<string | null>(null)
-
-  // Settings panel state (approved cards only)
   const [showSettings, setShowSettings] = useState(false)
+
+  void showCoords // suppress lint — kept for future use
 
   async function sendDashboardWhatsApp() {
     if (!providerEmail) {
@@ -137,16 +163,13 @@ function ProviderCard({
 
   return (
     <div className="bg-white border border-border rounded-2xl shadow-sm overflow-hidden">
-      {/* Provider info row */}
       <div className="p-4 flex gap-3 items-start">
-        {/* Avatar */}
         <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100 flex items-center justify-center text-2xl">
           {primaryPhoto
             ? <img src={primaryPhoto.url} alt={p.name} className="w-full h-full object-cover" />
             : <span>{category?.icon ?? '🐾'}</span>}
         </div>
 
-        {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 flex-wrap">
             <div>
@@ -174,7 +197,6 @@ function ProviderCard({
         </div>
       </div>
 
-      {/* ── PENDING actions ── */}
       {filter === 'pending' && (
         <div className="border-t border-border px-4 py-3 flex gap-3">
           <button
@@ -192,12 +214,9 @@ function ProviderCard({
         </div>
       )}
 
-      {/* ── APPROVED actions ── */}
       {filter === 'approved' && (
         <div className="border-t border-border px-4 py-3">
-          {/* Primary 3-button row */}
           <div className="flex gap-2">
-            {/* Send Dashboard — generates magic link, opens WhatsApp */}
             <button
               onClick={sendDashboardWhatsApp}
               disabled={sendingAccess}
@@ -210,7 +229,6 @@ function ProviderCard({
               {sendingAccess ? '⏳ Generating…' : accessSent ? '✓ WhatsApp opened!' : '🔑 Send Dashboard'}
             </button>
 
-            {/* WhatsApp direct */}
             {waDirectUrl ? (
               <a
                 href={waDirectUrl}
@@ -227,7 +245,6 @@ function ProviderCard({
               </div>
             )}
 
-            {/* View profile */}
             <a
               href={profileUrl}
               target="_blank"
@@ -239,20 +256,15 @@ function ProviderCard({
             </a>
           </div>
 
-          {/* Settings toggle */}
           <button
-            onClick={() => {
-              setShowSettings((v) => !v)
-            }}
+            onClick={() => setShowSettings((v) => !v)}
             className="w-full mt-2 py-2 text-xs text-slate-400 flex items-center justify-center gap-1 hover:text-slate-600 transition-colors"
           >
             ⚙️ Settings {showSettings ? '▲' : '▼'}
           </button>
 
-          {/* Settings panel */}
           {showSettings && (
             <div className="mt-2 pt-3 border-t border-border space-y-4">
-              {/* Tier select */}
               <div>
                 <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Tier</label>
                 <select
@@ -266,7 +278,6 @@ function ProviderCard({
                 </select>
               </div>
 
-              {/* Verified toggle */}
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-slate-700">Verified badge</span>
                 <button
@@ -281,7 +292,6 @@ function ProviderCard({
                 </button>
               </div>
 
-              {/* Fix Pin */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Fix Map Pin</label>
@@ -333,7 +343,6 @@ function ProviderCard({
         </div>
       )}
 
-      {/* Error state for dashboard send */}
       {accessError && filter === 'approved' && (
         <div className="px-4 pb-3 border-t border-border pt-2">
           <p className="text-xs text-red-600">⚠️ {accessError}</p>
@@ -344,33 +353,53 @@ function ProviderCard({
 }
 
 // ── Broadcast card (admin view) ──────────────────────────────────
-function BroadcastAdminCard({ b, providers, onClose }: { b: Broadcast; providers: any[]; onClose: (id: string) => void }) {
+function BroadcastAdminCard({
+  b,
+  providers,
+  onClose,
+}: {
+  b: Broadcast
+  providers: any[]
+  onClose: (id: string) => void
+}) {
   const svc = SERVICE_LABELS[b.service_slug] ?? { label: b.service_slug, icon: '🐾' }
   const expired = isExpired(b.expires_at)
+  const isClosed = b.status === 'closed' || b.status === 'filled'
   const [closing, setClosing] = useState(false)
-  const [closed, setClosed] = useState(b.status === 'closed')
+  const [localClosed, setLocalClosed] = useState(isClosed)
+
   const waLink = `https://wa.me/91${b.poster_whatsapp.replace(/\D/g, '').slice(-10)}`
   const waText = encodeURIComponent(
     `Hi ${b.poster_name}! I saw your request on PawLocal for ${svc.label}. Let me help connect you with the right provider. 🐾`
   )
 
   async function handleClose() {
-    if (closing || closed) return
+    if (closing || localClosed) return
     setClosing(true)
     try {
-      await fetch(`/api/admin/broadcasts/${b.id}`, {
+      const res = await fetch(`/api/admin/broadcasts/${b.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'closed' }),
       })
-      setClosed(true)
-      onClose(b.id)
+      if (res.ok) {
+        setLocalClosed(true)
+        onClose(b.id)
+      }
     } finally {
       setClosing(false)
     }
   }
 
-  // Match providers by category slug (check both category_slugs array and category_slug string)
+  async function handleReopen() {
+    await fetch(`/api/admin/broadcasts/${b.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'active' }),
+    })
+    setLocalClosed(false)
+  }
+
   const matchingProviders = providers.filter((p) => {
     const slugs: string[] = Array.isArray(p.category_slugs)
       ? p.category_slugs
@@ -392,13 +421,22 @@ function BroadcastAdminCard({ b, providers, onClose }: { b: Broadcast; providers
       `Reply to them: wa.me/91${b.poster_whatsapp.replace(/\D/g, '').slice(-10)}`,
     ].filter(Boolean).join('\n')
     const phone = (prov.whatsapp ?? '').replace(/\D/g, '').slice(-10)
-    // Guard: skip if phone is empty or too short (would produce an invalid WA link)
     if (phone.length < 10) return null
     return `https://wa.me/91${phone}?text=${encodeURIComponent(message)}`
   }
 
+  // Status chip
+  let statusChip = null
+  if (localClosed) {
+    statusChip = <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">Closed</span>
+  } else if (expired) {
+    statusChip = <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">Expired</span>
+  } else {
+    statusChip = <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">Active</span>
+  }
+
   return (
-    <div className={`bg-white border rounded-2xl p-4 ${expired ? 'opacity-50 border-border' : 'border-border'}`}>
+    <div className={`bg-white border rounded-2xl p-4 ${(localClosed || expired) ? 'opacity-60 border-border' : 'border-border'}`}>
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-2">
           <span className="text-lg">{svc.icon}</span>
@@ -407,9 +445,7 @@ function BroadcastAdminCard({ b, providers, onClose }: { b: Broadcast; providers
             <p className="text-xs text-slate-400">{b.area} · {timeAgo(b.created_at)}</p>
           </div>
         </div>
-        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${expired ? 'bg-slate-100 text-slate-400' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-          {expired ? 'Expired' : 'Active'}
-        </span>
+        {statusChip}
       </div>
 
       <div className="space-y-0.5 mb-3">
@@ -438,15 +474,8 @@ function BroadcastAdminCard({ b, providers, onClose }: { b: Broadcast; providers
         >
           💬 Follow up
         </a>
-        <a
-          href={`/${b.service_slug}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-slate-600 text-xs font-medium hover:bg-slate-50 transition-colors"
-        >
-          Find providers →
-        </a>
-        {!expired && !closed && (
+
+        {!localClosed && !expired && (
           <button
             onClick={handleClose}
             disabled={closing}
@@ -455,15 +484,19 @@ function BroadcastAdminCard({ b, providers, onClose }: { b: Broadcast; providers
             {closing ? '…' : '✕ Close'}
           </button>
         )}
-        {closed && (
-          <span className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 text-xs font-medium">
-            ✓ Closed
-          </span>
+
+        {localClosed && (
+          <button
+            onClick={handleReopen}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-200 text-amber-700 bg-amber-50 text-xs font-semibold hover:bg-amber-100 transition-colors"
+          >
+            ↩ Reopen
+          </button>
         )}
       </div>
 
-      {/* Notify matching providers */}
-      {matchingProviders.length > 0 && (
+      {/* Notify matching providers — only shown for active broadcasts */}
+      {!localClosed && matchingProviders.length > 0 && (
         <div className="mt-3 pt-3 border-t border-border">
           <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
             Notify these providers
@@ -491,10 +524,83 @@ function BroadcastAdminCard({ b, providers, onClose }: { b: Broadcast; providers
   )
 }
 
+// ── Walk report card (admin view) ────────────────────────────────
+function WalkReportAdminCard({ r }: { r: WalkReport }) {
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://pawlocal-ashen.vercel.app'
+
+  return (
+    <div className="bg-white border border-border rounded-2xl p-4">
+      <div className="flex gap-3 items-start">
+        {/* Dog photo */}
+        <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100 flex items-center justify-center text-2xl">
+          {r.photo_url
+            ? <img src={r.photo_url} alt={r.dog_name} className="w-full h-full object-cover" />
+            : <span>🐕</span>}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="font-semibold text-slate-900">{r.dog_name}</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                by <span className="font-medium">{r.providers?.name ?? 'Unknown walker'}</span>
+              </p>
+            </div>
+            <span className="text-[11px] text-slate-400 whitespace-nowrap">{timeAgo(r.created_at)}</span>
+          </div>
+
+          <div className="flex gap-3 mt-2 text-xs text-slate-500 flex-wrap">
+            <span>⏱ {r.duration_mins} min</span>
+            <span>📍 {fmtDistance(r.distance_meters)}</span>
+            <span>💩 {r.poop_count}</span>
+            <span>💧 {r.pee_count}</span>
+          </div>
+
+          <div className="flex items-center gap-3 mt-2 flex-wrap">
+            {/* Claimed status */}
+            {r.customer_id ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                ✓ Claimed by customer
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">
+                Not claimed
+              </span>
+            )}
+
+            {/* Provider WhatsApp */}
+            {r.providers?.whatsapp && (
+              <a
+                href={`https://wa.me/91${r.providers.whatsapp.replace(/\D/g, '').slice(-10)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-semibold text-[#25D366] hover:underline"
+              >
+                💬 {r.providers.name}
+              </a>
+            )}
+
+            {/* View report */}
+            <a
+              href={`${siteUrl}/walk-report/${r.token}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] font-semibold text-[var(--pl-teal)] hover:underline"
+            >
+              View report ↗
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main admin page ──────────────────────────────────────────────
 export default function AdminPage() {
   const [tab, setTab] = useState<AdminTab>('providers')
   const [filter, setFilter] = useState<ProviderStatus>('pending')
+  const [broadcastFilter, setBroadcastFilter] = useState<'active' | 'closed' | 'expired'>('active')
   const [providers, setProviders] = useState<ProviderWithPhotos[]>([])
   const [loading, setLoading] = useState(true)
   const [reviews, setReviews] = useState<(Review & { provider_name?: string })[]>([])
@@ -502,14 +608,18 @@ export default function AdminPage() {
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([])
   const [broadcastsLoading, setBroadcastsLoading] = useState(false)
   const [approvedProviders, setApprovedProviders] = useState<any[]>([])
+  const [walkReports, setWalkReports] = useState<WalkReport[]>([])
+  const [reportsLoading, setReportsLoading] = useState(false)
   const [pendingCount, setPendingCount] = useState(0)
   const [broadcastCount, setBroadcastCount] = useState(0)
+  const [reportsCount, setReportsCount] = useState(0)
   const [stats, setStats] = useState<{
     totalApproved: number
     totalPending: number
     totalRejected: number
     totalBroadcasts: number
     totalWalkReports: number
+    claimedReports: number
     providerStats: {
       id: string
       name: string
@@ -522,19 +632,24 @@ export default function AdminPage() {
   } | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
 
-  // Load pending count on mount
+  // Load counts on mount
   useEffect(() => {
     const supabase = createClient()
     supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending')
       .then(({ count }) => setPendingCount(count ?? 0))
   }, [])
 
-  // Load active broadcast count on mount
   useEffect(() => {
     fetch('/api/broadcasts')
       .then((r) => r.json())
       .then((data) => setBroadcastCount(Array.isArray(data) ? data.length : 0))
       .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.from('walk_reports').select('id', { count: 'exact', head: true })
+      .then(({ count }) => setReportsCount(count ?? 0))
   }, [])
 
   async function loadProviders(status: ProviderStatus) {
@@ -564,8 +679,6 @@ export default function AdminPage() {
 
   async function loadBroadcasts() {
     setBroadcastsLoading(true)
-
-    // Run both fetches in parallel
     const supabase = createClient()
     const [broadcastRes, provResult] = await Promise.all([
       fetch('/api/admin/broadcasts'),
@@ -573,21 +686,28 @@ export default function AdminPage() {
         .from('providers')
         .select('id, name, whatsapp, category_slugs, category_slug, provider_photos(*)')
         .eq('status', 'approved')
-        .limit(200), // safety ceiling as provider count grows
+        .limit(200),
     ])
-
     const data = await broadcastRes.json().catch(() => [])
     setBroadcasts(Array.isArray(data) ? data : [])
     setApprovedProviders(provResult.data ?? [])
-
     setBroadcastsLoading(false)
+  }
+
+  async function loadWalkReports() {
+    setReportsLoading(true)
+    const res = await fetch('/api/admin/walk-reports')
+    const data = await res.json().catch(() => [])
+    setWalkReports(Array.isArray(data) ? data : [])
+    setReportsCount(Array.isArray(data) ? data.length : 0)
+    setReportsLoading(false)
   }
 
   async function loadStats() {
     setStatsLoading(true)
     const supabase = createClient()
 
-    const [approvedRes, pendingRes, rejectedRes, broadcastRes, providersRes, analyticsRes, walkReportsRes] = await Promise.all([
+    const [approvedRes, pendingRes, rejectedRes, broadcastRes, providersRes, analyticsRes, walkReportsRes, claimedRes] = await Promise.all([
       supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
       supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'rejected'),
@@ -595,6 +715,7 @@ export default function AdminPage() {
       supabase.from('providers').select('id, name, category_slug, neighbourhood, created_at').eq('status', 'approved').order('created_at', { ascending: false }),
       supabase.from('provider_analytics').select('provider_id, event_type'),
       supabase.from('walk_reports').select('id', { count: 'exact', head: true }),
+      supabase.from('walk_reports').select('id', { count: 'exact', head: true }).not('customer_id', 'is', null),
     ])
 
     const analytics = analyticsRes.data ?? []
@@ -619,6 +740,7 @@ export default function AdminPage() {
       totalRejected: rejectedRes.count ?? 0,
       totalBroadcasts: Array.isArray(broadcastRes) ? broadcastRes.length : 0,
       totalWalkReports: walkReportsRes.count ?? 0,
+      claimedReports: claimedRes.count ?? 0,
       providerStats,
     })
     setStatsLoading(false)
@@ -627,6 +749,7 @@ export default function AdminPage() {
   useEffect(() => { loadProviders(filter) }, [filter])
   useEffect(() => { if (tab === 'reviews') loadReviews() }, [tab])
   useEffect(() => { if (tab === 'broadcasts') loadBroadcasts() }, [tab])
+  useEffect(() => { if (tab === 'reports') loadWalkReports() }, [tab])
   useEffect(() => { if (tab === 'stats') loadStats() }, [tab])
 
   async function updateStatus(id: string, status: 'approved' | 'rejected') {
@@ -670,8 +793,19 @@ export default function AdminPage() {
     setReviews((prev) => prev.filter((r) => r.id !== id))
   }
 
-  const activeBroadcasts = broadcasts.filter((b) => !isExpired(b.expires_at))
-  const expiredBroadcasts = broadcasts.filter((b) => isExpired(b.expires_at))
+  // Broadcast grouping — status is the source of truth, not just expiry
+  const activeBroadcasts = broadcasts.filter((b) => b.status === 'active' && !isExpired(b.expires_at))
+  const closedBroadcasts = broadcasts.filter((b) => b.status === 'closed' || b.status === 'filled')
+  const expiredBroadcasts = broadcasts.filter((b) => b.status === 'active' && isExpired(b.expires_at))
+
+  const filteredBroadcasts =
+    broadcastFilter === 'active' ? activeBroadcasts :
+    broadcastFilter === 'closed' ? closedBroadcasts :
+    expiredBroadcasts
+
+  // Walk report grouping
+  const claimedReports = walkReports.filter((r) => r.customer_id)
+  const unclaimedReports = walkReports.filter((r) => !r.customer_id)
 
   return (
     <div className="max-w-lg mx-auto">
@@ -687,58 +821,34 @@ export default function AdminPage() {
       </div>
 
       {/* Tab bar */}
-      <div className="flex gap-2 mb-5">
-        <button
-          onClick={() => setTab('providers')}
-          className={`relative flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            tab === 'providers' ? 'bg-slate-900 text-white' : 'bg-white border border-border text-slate-600 hover:border-slate-400'
-          }`}
-        >
-          🏠 Providers
-          {pendingCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-              {pendingCount}
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={() => setTab('broadcasts')}
-          className={`relative flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            tab === 'broadcasts' ? 'bg-slate-900 text-white' : 'bg-white border border-border text-slate-600 hover:border-slate-400'
-          }`}
-        >
-          📣 Broadcasts
-          {broadcastCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-              {broadcastCount}
-            </span>
-          )}
-        </button>
-
-        <button
-          onClick={() => setTab('reviews')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            tab === 'reviews' ? 'bg-slate-900 text-white' : 'bg-white border border-border text-slate-600 hover:border-slate-400'
-          }`}
-        >
-          ⭐ Reviews
-        </button>
-
-        <button
-          onClick={() => setTab('stats')}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-            tab === 'stats' ? 'bg-slate-900 text-white' : 'bg-white border border-border text-slate-600 hover:border-slate-400'
-          }`}
-        >
-          📊 Stats
-        </button>
+      <div className="flex gap-2 mb-5 overflow-x-auto pb-1 -mx-1 px-1">
+        {([
+          { key: 'providers', label: '🏠 Providers', badge: pendingCount, badgeColor: 'bg-red-500' },
+          { key: 'broadcasts', label: '📣 Broadcasts', badge: broadcastCount, badgeColor: 'bg-amber-500' },
+          { key: 'reports', label: '🐕 Reports', badge: reportsCount, badgeColor: 'bg-teal-500' },
+          { key: 'reviews', label: '⭐ Reviews', badge: 0, badgeColor: '' },
+          { key: 'stats', label: '📊 Stats', badge: 0, badgeColor: '' },
+        ] as { key: AdminTab; label: string; badge: number; badgeColor: string }[]).map(({ key, label, badge, badgeColor }) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`relative flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors ${
+              tab === key ? 'bg-slate-900 text-white' : 'bg-white border border-border text-slate-600 hover:border-slate-400'
+            }`}
+          >
+            {label}
+            {badge > 0 && (
+              <span className={`absolute -top-1.5 -right-1.5 w-5 h-5 ${badgeColor} text-white text-[10px] font-bold rounded-full flex items-center justify-center`}>
+                {badge}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
       {/* ── PROVIDERS TAB ─────────────────────────────────────────── */}
       {tab === 'providers' && (
         <>
-          {/* Status filter */}
           <div className="flex gap-2 mb-5">
             {(['pending', 'approved', 'rejected'] as ProviderStatus[]).map((f) => (
               <button
@@ -769,9 +879,6 @@ export default function AdminPage() {
               <p className="font-semibold text-slate-700">
                 {filter === 'pending' ? 'All caught up!' : `No ${filter} providers`}
               </p>
-              <p className="text-sm text-slate-400 mt-1">
-                {filter === 'pending' ? 'No pending submissions right now.' : ''}
-              </p>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
@@ -794,42 +901,107 @@ export default function AdminPage() {
       {/* ── BROADCASTS TAB ────────────────────────────────────────── */}
       {tab === 'broadcasts' && (
         <>
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-5">
-            <p className="text-sm font-semibold text-amber-800 mb-0.5">How Pet Broadcast works (phase 1)</p>
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 mb-4">
+            <p className="text-sm font-semibold text-amber-800 mb-0.5">Phase 1 — Manual matching</p>
             <p className="text-xs text-amber-700 leading-relaxed">
-              A customer posts a request → it shows up here + on the public broadcast page → you manually WhatsApp relevant approved providers. When we have 15+ providers, they'll reply directly.
+              Customer posts → you WhatsApp the right provider → close when filled.
             </p>
+          </div>
+
+          {/* Broadcast status filter */}
+          <div className="flex gap-2 mb-5">
+            {([
+              { key: 'active', label: `Active (${activeBroadcasts.length})` },
+              { key: 'closed', label: `Closed (${closedBroadcasts.length})` },
+              { key: 'expired', label: `Expired (${expiredBroadcasts.length})` },
+            ] as { key: typeof broadcastFilter; label: string }[]).map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setBroadcastFilter(key)}
+                className={`px-3.5 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  broadcastFilter === key
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-white border border-border text-slate-500 hover:border-slate-400'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
           {broadcastsLoading ? (
             <div className="space-y-3">
               {[1, 2].map((i) => <div key={i} className="bg-white rounded-2xl border border-border p-4 animate-pulse h-32" />)}
             </div>
-          ) : broadcasts.length === 0 ? (
+          ) : filteredBroadcasts.length === 0 ? (
             <div className="py-20 text-center">
               <div className="text-4xl mb-3">📭</div>
-              <p className="font-semibold text-slate-700">No broadcasts yet</p>
-              <p className="text-sm text-slate-400 mt-1">Share the broadcast page with your community.</p>
+              <p className="font-semibold text-slate-700">No {broadcastFilter} broadcasts</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {filteredBroadcasts.map((b) => (
+                <BroadcastAdminCard
+                  key={b.id}
+                  b={b}
+                  providers={approvedProviders}
+                  onClose={(id) => {
+                    // Update status in local state instead of removing — keeps card visible with "Closed" chip
+                    setBroadcasts((prev) => prev.map((x) => x.id === id ? { ...x, status: 'closed' } : x))
+                    // Shift the filter to closed so admin sees the result
+                    setBroadcastFilter('closed')
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── WALK REPORTS TAB ─────────────────────────────────────── */}
+      {tab === 'reports' && (
+        <>
+          {/* Summary row */}
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4">
+              <p className="text-2xl font-bold text-teal-700">{walkReports.length}</p>
+              <p className="text-xs font-medium text-teal-600 mt-0.5">Total reports</p>
+            </div>
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+              <p className="text-2xl font-bold text-emerald-700">{claimedReports.length}</p>
+              <p className="text-xs font-medium text-emerald-600 mt-0.5">Claimed by customers</p>
+            </div>
+          </div>
+
+          {reportsLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => <div key={i} className="bg-white rounded-2xl border border-border p-4 animate-pulse h-24" />)}
+            </div>
+          ) : walkReports.length === 0 ? (
+            <div className="py-20 text-center">
+              <div className="text-4xl mb-3">🐕</div>
+              <p className="font-semibold text-slate-700">No walk reports yet</p>
+              <p className="text-sm text-slate-400 mt-1">Providers submit these after walks.</p>
             </div>
           ) : (
             <>
-              {activeBroadcasts.length > 0 && (
-                <div className="mb-6">
+              {claimedReports.length > 0 && (
+                <div className="mb-5">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
-                    Active ({activeBroadcasts.length})
+                    Claimed ({claimedReports.length})
                   </p>
                   <div className="flex flex-col gap-3">
-                    {activeBroadcasts.map((b) => <BroadcastAdminCard key={b.id} b={b} providers={approvedProviders} onClose={(id) => setBroadcasts(prev => prev.filter(x => x.id !== id))} />)}
+                    {claimedReports.map((r) => <WalkReportAdminCard key={r.id} r={r} />)}
                   </div>
                 </div>
               )}
-              {expiredBroadcasts.length > 0 && (
+              {unclaimedReports.length > 0 && (
                 <div>
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
-                    Expired ({expiredBroadcasts.length})
+                    Not claimed ({unclaimedReports.length})
                   </p>
                   <div className="flex flex-col gap-3">
-                    {expiredBroadcasts.map((b) => <BroadcastAdminCard key={b.id} b={b} providers={approvedProviders} onClose={(id) => setBroadcasts(prev => prev.filter(x => x.id !== id))} />)}
+                    {unclaimedReports.map((r) => <WalkReportAdminCard key={r.id} r={r} />)}
                   </div>
                 </div>
               )}
@@ -856,6 +1028,7 @@ export default function AdminPage() {
                 { label: 'Active broadcasts', value: stats.totalBroadcasts, color: 'bg-blue-50 text-blue-700 border-blue-200' },
                 { label: 'Rejected', value: stats.totalRejected, color: 'bg-slate-50 text-slate-500 border-slate-200' },
                 { label: 'Walk reports', value: stats.totalWalkReports, color: 'bg-teal-50 text-teal-700 border-teal-200' },
+                { label: 'Reports claimed', value: stats.claimedReports, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
               ].map((tile) => (
                 <div key={tile.label} className={`rounded-2xl border p-4 ${tile.color}`}>
                   <p className="text-2xl font-bold">{tile.value}</p>
@@ -903,7 +1076,6 @@ export default function AdminPage() {
                           </a>
                         </div>
                       </div>
-                      {/* Mini bar — WA clicks relative to top performer */}
                       {stats.providerStats[0]?.whatsapp_clicks > 0 && (
                         <div className="mt-2 h-1 bg-slate-100 rounded-full overflow-hidden">
                           <div
