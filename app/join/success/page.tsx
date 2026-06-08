@@ -19,14 +19,14 @@ const TIMELINE = [
   },
   {
     icon: '○',
-    label: 'You get an email',
-    description: "We'll email you the moment your profile goes live.",
+    label: 'You get a WhatsApp',
+    description: "We'll WhatsApp you personally once your profile is approved — usually within a few hours.",
     done: false,
   },
   {
     icon: '○',
     label: 'Access your dashboard',
-    description: 'Visit pawlocal.in/dashboard — you\'ll land straight on your profile. No extra steps.',
+    description: 'Visit pawlocal-ashen.vercel.app/pro — sign in with Google and you\'ll land on your dashboard.',
     done: false,
   },
 ]
