@@ -71,13 +71,51 @@ export default function LiveWalkClient({
   const watchIdRef = useRef<number | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
+  // Wall-clock start time — survives JS pauses when screen locks
+  const startTimeRef = useRef<number>(0)
+  // Screen Wake Lock — keeps screen on so GPS never pauses
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null)
 
-  const startTracking = useCallback(() => {
+  // Acquire wake lock — call on walk start and on visibility restore
+  const requestWakeLock = useCallback(async () => {
+    if (!('wakeLock' in navigator)) return
+    try {
+      wakeLockRef.current = await navigator.wakeLock.request('screen')
+    } catch {
+      // Silently fail — user sees the banner prompt as fallback
+    }
+  }, [])
+
+  // Re-acquire wake lock when user returns to the tab after screen-on
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && wakeLockRef.current?.released) {
+        requestWakeLock()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [requestWakeLock])
+
+  // Ticker — recalculates from wall clock every second so screen-lock gaps are bridged
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    if (walkState !== 'walking') return
+    timerRef.current = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000))
+    }, 1000)
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [walkState])
+
+  const startTracking = useCallback(async () => {
     if (!navigator.geolocation) {
       setGpsError('GPS not available on this device.')
       return
     }
 
+    startTimeRef.current = Date.now()
     setWalkState('walking')
     setElapsed(0)
     setDistance(0)
@@ -85,6 +123,9 @@ export default function LiveWalkClient({
     setPeeEvents([])
     setPhotos([])
     routePointsRef.current = []
+
+    // Request wake lock — prevents screen from locking mid-walk
+    await requestWakeLock()
 
     // Start GPS
     watchIdRef.current = navigator.geolocation.watchPosition(
@@ -102,12 +143,7 @@ export default function LiveWalkClient({
       },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
     )
-
-    // Start timer
-    timerRef.current = setInterval(() => {
-      setElapsed((e) => e + 1)
-    }, 1000)
-  }, [])
+  }, [requestWakeLock])
 
   const stopTracking = useCallback(() => {
     if (watchIdRef.current !== null) {
@@ -118,6 +154,9 @@ export default function LiveWalkClient({
       clearInterval(timerRef.current)
       timerRef.current = null
     }
+    // Release wake lock — screen can sleep again after walk ends
+    wakeLockRef.current?.release().catch(() => {})
+    wakeLockRef.current = null
   }, [])
 
   // Cleanup on unmount
@@ -305,6 +344,14 @@ export default function LiveWalkClient({
                 Back
               </button>
             </div>
+
+            {/* Wake lock fallback banner — only shown when wake lock isn't supported */}
+            {typeof window !== 'undefined' && !('wakeLock' in navigator) && (
+              <div className="mx-4 mb-2 px-3 py-2 rounded-xl text-xs text-amber-800 text-center"
+                style={{ background: '#FEF3C7', border: '1px solid #FCD34D' }}>
+                🔆 Keep your screen on for accurate GPS tracking
+              </div>
+            )}
 
             {/* Timer + Distance */}
             <div className="flex flex-col items-center px-6 pt-4 pb-6 gap-1">
