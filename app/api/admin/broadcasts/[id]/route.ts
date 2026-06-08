@@ -25,7 +25,11 @@ export async function PATCH(
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
   }
 
-  const { error } = await admin().from('broadcasts').update({ status }).eq('id', id)
+  // DB constraint only allows: active, filled, expired
+  // Map 'closed' → 'filled' (same semantic: admin has handled it)
+  const dbStatus = status === 'closed' ? 'filled' : status
+
+  const { error } = await admin().from('broadcasts').update({ status: dbStatus }).eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
