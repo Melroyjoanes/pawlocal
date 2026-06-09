@@ -1,21 +1,19 @@
 import { ImageResponse } from 'next/og'
-import { readFileSync } from 'fs'
-import path from 'path'
 import { createClient } from '@supabase/supabase-js'
 
-export const runtime = 'nodejs'
+export const runtime = 'edge'   // ~50ms cold start vs 1-3s Node.js — WhatsApp won't time out
 export const alt = 'PawLocal Walk Report'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
+export const revalidate = 86400  // CDN caches the PNG for 24h — repeat hits are instant
 
-// Cache for 24 hours — walk report data never changes after creation.
-// Next.js serves the cached PNG instantly; no Supabase/satori cold-start on repeat hits.
-export const revalidate = 86400
-
-// ── Font loaded once at module level (cached across requests) ──
-const fontData = readFileSync(
-  path.join(process.cwd(), 'public/fonts/DMSerifDisplay-Regular.ttf')
-)
+// Font fetched once per edge worker instance (promise cached = subsequent requests free)
+const fontDataPromise = fetch(
+  new URL(
+    '/fonts/DMSerifDisplay-Regular.ttf',
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app',
+  ),
+).then(r => r.arrayBuffer())
 
 type Report = {
   dog_name: string
@@ -29,28 +27,33 @@ type Report = {
   is_verified: boolean
 }
 
-function formatDate(isoDate: string): string {
+function formatDate(iso: string) {
   try {
-    return new Date(isoDate).toLocaleDateString('en-IN', {
+    return new Date(iso).toLocaleDateString('en-IN', {
       day: 'numeric', month: 'short', year: 'numeric',
     })
   } catch { return '' }
 }
 
-function fmtDistance(m: number): string {
+function fmtDist(m: number) {
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`
 }
 
-// ── Amber / golden yellow palette ─────────────────────────────
-const AMBER_BG     = '#FDE68A'  // warm lemon — main bg left
-const AMBER_MID    = '#FCD34D'  // golden mid
-const AMBER_RICH   = '#F59E0B'  // rich amber accent
-const AMBER_DEEP   = '#D97706'  // pl-amber — logo, badges
-const BROWN_DARK   = '#451A03'  // darkest brown — primary text
-const BROWN_MID    = '#78350F'  // mid brown — secondary text
-const BROWN_GHOST  = 'rgba(69,26,3,0.45)'  // ghost text
-const WHITE_PURE   = '#fffefa'  // near-white for photo overlay
-const TEAL         = '#0b7a8a'  // pl-teal — logo only (small)
+/* ── Palette ─────────────────────────────────────────── */
+const BG1     = '#FFFBF0'  // warm cream
+const BG2     = '#FEF3C7'  // light amber
+const BG3     = '#FDE68A'  // golden
+const AMBER   = '#F59E0B'  // amber accent
+const AMBER_D = '#D97706'  // deep amber
+const BROWN   = '#1C0A00'  // near-black warm
+const BROWN_M = '#78350F'  // mid brown
+const TEAL    = '#0b7a8a'  // brand teal (logo only)
+const WHITE   = '#FFFDF5'  // near-white
+
+const PHOTO_W = 440
+const CARD_L  = 36
+const CARD_T  = 36
+const CARD_W  = 1200 - PHOTO_W - CARD_L - 30   // 694 — leaves a 30px gap for spheres
 
 export default async function Image({
   params,
@@ -58,58 +61,57 @@ export default async function Image({
   params: Promise<{ token: string }>
 }) {
   const { token } = await params
+  const fontData  = await fontDataPromise
 
   // ── Fetch report ──────────────────────────────────────────────
   let report: Report | null = null
   try {
-    const admin = createClient(
+    const sb = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
     )
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (admin.from('walk_reports') as any)
-      .select('dog_name, duration_mins, poop_count, pee_count, distance_meters, photo_url, walk_date, providers(name, is_verified)')
+    const { data } = await (sb.from('walk_reports') as any)
+      .select('dog_name,duration_mins,poop_count,pee_count,distance_meters,photo_url,walk_date,providers(name,is_verified)')
       .eq('token', token)
       .single()
 
     if (data) {
       report = {
-        dog_name: data.dog_name ?? 'Dog',
-        duration_mins: data.duration_mins ?? 0,
-        poop_count: data.poop_count ?? 0,
-        pee_count: data.pee_count ?? 0,
-        distance_meters: data.distance_meters ?? null,
-        photo_url: data.photo_url ?? null,
-        walk_date: data.walk_date,
-        provider_name: data.providers?.name ?? 'Your Walker',
-        is_verified: data.providers?.is_verified ?? false,
+        dog_name:         data.dog_name          ?? 'Dog',
+        duration_mins:    data.duration_mins      ?? 0,
+        poop_count:       data.poop_count         ?? 0,
+        pee_count:        data.pee_count          ?? 0,
+        distance_meters:  data.distance_meters    ?? null,
+        photo_url:        data.photo_url          ?? null,
+        walk_date:        data.walk_date,
+        provider_name:    data.providers?.name    ?? 'Your Walker',
+        is_verified:      data.providers?.is_verified ?? false,
       }
     }
-  } catch { /* render fallback card */ }
+  } catch { /* render fallback */ }
 
   // ── Data ─────────────────────────────────────────────────────
-  const dogName  = report?.dog_name ?? 'Walk Report'
+  const dogName  = report?.dog_name      ?? 'Walk Report'
   const walker   = report?.provider_name ?? ''
-  const verified = report?.is_verified ?? false
+  const verified = report?.is_verified   ?? false
   const dateStr  = report ? formatDate(report.walk_date) : ''
-  const photoUrl = report?.photo_url ?? null
-  const poops    = report?.poop_count ?? 0
-  const pees     = report?.pee_count ?? 0
+  const photoUrl = report?.photo_url     ?? null
+  const poops    = report?.poop_count    ?? 0
+  const pees     = report?.pee_count     ?? 0
   const mins     = report?.duration_mins ?? 0
-  const dist     = (report?.distance_meters ?? 0) > 0
-    ? fmtDistance(report!.distance_meters!)
-    : null
+  const dist     = (report?.distance_meters ?? 0) > 0 ? fmtDist(report!.distance_meters!) : null
 
-  const statParts: string[] = []
-  if (poops > 0) statParts.push(`💩 ${poops}`)
-  if (pees > 0)  statParts.push(`💧 ${pees}`)
-  if (mins > 0)  statParts.push(`⏱ ${mins} mins`)
-  if (dist)      statParts.push(`📏 ${dist}`)
-  const statLine = statParts.join('   ')
+  const nameFontSize = dogName.length > 14 ? 66
+    : dogName.length > 10 ? 80
+    : dogName.length > 7  ? 92
+    : 104
 
-  const nameFontSize = dogName.length > 12 ? 76 : dogName.length > 8 ? 88 : 98
-
-  const PHOTO_W = 460
+  const stats: { emoji: string; label: string; bg: string; fg: string }[] = []
+  if (poops > 0) stats.push({ emoji: '💩', label: `${poops}`,       bg: '#FED7AA', fg: '#9A3412' })
+  if (pees  > 0) stats.push({ emoji: '💧', label: `${pees}`,        bg: '#BAE6FD', fg: '#075985' })
+  if (mins  > 0) stats.push({ emoji: '⏱', label: `${mins} min`,    bg: '#BBF7D0', fg: '#065F46' })
+  if (dist)      stats.push({ emoji: '📏', label: dist,             bg: '#DDD6FE', fg: '#4C1D95' })
 
   return new ImageResponse(
     (
@@ -119,186 +121,226 @@ export default async function Image({
           width: 1200,
           height: 630,
           position: 'relative',
-          // warm golden gradient — bright left, richer right edge
-          background: `linear-gradient(135deg, ${AMBER_BG} 0%, ${AMBER_MID} 55%, ${AMBER_RICH} 100%)`,
+          background: `linear-gradient(135deg, ${BG1} 0%, ${BG2} 50%, ${BG3} 100%)`,
           fontFamily: '"Inter", system-ui, sans-serif',
           overflow: 'hidden',
         }}
       >
-        {/* ── Soft radial warmth — top-left glow ──────────────── */}
-        <div
-          style={{
-            position: 'absolute',
-            top: -100,
-            left: -60,
-            width: 480,
-            height: 480,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,255,220,0.55) 0%, transparent 68%)',
-            display: 'flex',
-          }}
-        />
-        {/* Bottom right warmth */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: -80,
-            right: PHOTO_W + 20,
-            width: 300,
-            height: 300,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(245,158,11,0.28) 0%, transparent 70%)',
-            display: 'flex',
-          }}
-        />
 
-        {/* ── Left content panel ─────────────────────────────── */}
+        {/* ─────────────────────────────────────────────────────────────
+            DECORATIVE 3-D SPHERES
+            Each sphere = radial-gradient (off-centre light source) +
+            absolute white specular highlight div = fake 3-D ball.
+        ───────────────────────────────────────────────────────────── */}
+
+        {/* Large amber sphere — top-left, partially behind card */}
+        <div style={{
+          position: 'absolute', top: -70, left: -70,
+          width: 280, height: 280, borderRadius: '50%',
+          background: 'radial-gradient(circle at 32% 30%, #FEF9C3, #FDE68A 44%, #F59E0B 72%, #D97706)',
+          boxShadow: '0 28px 72px rgba(180,83,9,0.24)',
+          display: 'flex', overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'absolute', top: 36, left: 44,
+            width: 74, height: 52, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.40)',
+            display: 'flex',
+          }} />
+        </div>
+
+        {/* Medium amber sphere — bottom, below card */}
+        <div style={{
+          position: 'absolute', bottom: -45, left: 400,
+          width: 148, height: 148, borderRadius: '50%',
+          background: 'radial-gradient(circle at 30% 28%, #FEF3C7, #FCD34D 50%, #D97706)',
+          boxShadow: '0 16px 48px rgba(180,83,9,0.22)',
+          display: 'flex', overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'absolute', top: 18, left: 22,
+            width: 38, height: 26, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.36)',
+            display: 'flex',
+          }} />
+        </div>
+
+        {/* Teal sphere — in the gap between card and photo */}
+        <div style={{
+          position: 'absolute', top: 68, left: 746,
+          width: 66, height: 66, borderRadius: '50%',
+          background: 'radial-gradient(circle at 30% 28%, #99F6E4, #14B8A6 55%, #0F766E)',
+          boxShadow: '0 8px 28px rgba(15,118,110,0.30)',
+          display: 'flex', overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'absolute', top: 8, left: 10,
+            width: 17, height: 12, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.45)',
+            display: 'flex',
+          }} />
+        </div>
+
+        {/* Tiny amber sphere — lower gap */}
+        <div style={{
+          position: 'absolute', bottom: 66, left: 762,
+          width: 40, height: 40, borderRadius: '50%',
+          background: 'radial-gradient(circle at 30% 28%, #FDE68A, #F59E0B 55%, #B45309)',
+          boxShadow: '0 5px 18px rgba(180,83,9,0.24)',
+          display: 'flex', overflow: 'hidden',
+        }} />
+
+        {/* ─────────────────────────────────────────────────────────────
+            CLAY CARD — left content panel
+            Claymorphism: cream bg, heavy rounded corners, single deep
+            shadow, near-white border giving the "lifted" feel.
+        ───────────────────────────────────────────────────────────── */}
         <div
           style={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: 1200 - PHOTO_W,
-            height: 630,
-            padding: '44px 52px',
+            position: 'absolute',
+            left: CARD_L, top: CARD_T,
+            width: CARD_W, height: 630 - CARD_T * 2,
+            display: 'flex', flexDirection: 'column',
             justifyContent: 'space-between',
-            position: 'relative',
-            zIndex: 2,
+            background: 'rgba(255, 252, 237, 0.92)',
+            borderRadius: 44,
+            padding: '38px 48px',
+            boxShadow: '0 24px 72px rgba(120, 53, 15, 0.18)',
+            border: '2.5px solid rgba(255, 255, 255, 0.96)',
           }}
         >
-          {/* Logo + Walk Report badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 28 }}>🐾</span>
-              <span
-                style={{
-                  fontFamily: '"DMSerif"',
-                  fontSize: 26,
-                  color: BROWN_DARK,
-                  lineHeight: 1,
-                }}
-              >
+          {/* Brand + Walk Report badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 34 }}>🐾</span>
+              <span style={{
+                fontFamily: '"DMSerif"',
+                fontSize: 30,
+                color: BROWN,
+                lineHeight: 1,
+              }}>
                 Paw<span style={{ color: TEAL }}>Local</span>
               </span>
             </div>
 
-            {/* Walk Report pill — white on amber, rounded */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: 'rgba(255,255,255,0.55)',
-                border: `1.5px solid rgba(255,255,255,0.85)`,
-                borderRadius: 40,
-                padding: '5px 14px',
-                marginLeft: 4,
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 800,
-                  letterSpacing: 2.5,
-                  color: BROWN_MID,
-                  textTransform: 'uppercase',
-                }}
-              >
+            {/* Amber clay badge */}
+            <div style={{
+              display: 'flex', alignItems: 'center',
+              background: AMBER,
+              borderRadius: 100,
+              padding: '7px 20px',
+              boxShadow: '0 6px 20px rgba(180,83,9,0.28)',
+              border: '2.5px solid rgba(255,255,255,0.65)',
+            }}>
+              <span style={{
+                fontSize: 11, fontWeight: 800,
+                letterSpacing: 2.8, color: WHITE,
+                textTransform: 'uppercase',
+              }}>
                 Walk Report
               </span>
             </div>
           </div>
 
-          {/* Dog name — the hero element */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div
-              style={{
-                fontFamily: '"DMSerif"',
-                fontSize: nameFontSize,
-                color: BROWN_DARK,
-                lineHeight: 1.0,
-                display: 'flex',
-                letterSpacing: '-0.5px',
-              }}
-            >
+          {/* Hero: dog name + walker */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{
+              fontFamily: '"DMSerif"',
+              fontSize: nameFontSize,
+              color: BROWN,
+              lineHeight: 1.0,
+              display: 'flex',
+              letterSpacing: '-0.5px',
+            }}>
               {dogName}&apos;s Walk
             </div>
 
-            {/* Walker + verified */}
             {walker && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
-                <span style={{ fontSize: 22, color: BROWN_MID, fontWeight: 500 }}>
-                  by {walker}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 4 }}>
+                <span style={{ fontSize: 26, color: BROWN_M, fontWeight: 500 }}>
+                  with {walker}
                 </span>
                 {verified && (
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      background: 'rgba(255,255,255,0.60)',
-                      border: '1.5px solid rgba(255,255,255,0.9)',
-                      borderRadius: 24,
-                      padding: '4px 12px',
-                    }}
-                  >
-                    <span style={{ fontSize: 13, color: TEAL, fontWeight: 700 }}>
-                      ✓ Verified
-                    </span>
+                  <div style={{
+                    display: 'flex', alignItems: 'center',
+                    background: 'rgba(11,122,138,0.10)',
+                    border: '1.5px solid rgba(11,122,138,0.28)',
+                    borderRadius: 100,
+                    padding: '5px 16px',
+                  }}>
+                    <span style={{ fontSize: 14, color: TEAL, fontWeight: 700 }}>✓ Verified</span>
                   </div>
                 )}
               </div>
             )}
           </div>
 
-          {/* Stats */}
-          {statLine.length > 0 && (
-            <div
-              style={{
-                display: 'flex',
-                fontSize: 27,
-                color: BROWN_DARK,
-                fontWeight: 700,
-                letterSpacing: 0.2,
-              }}
-            >
-              {statLine}
-            </div>
-          )}
+          {/* Stats — colorful clay pills */}
+          <div style={{ display: 'flex', gap: 14 }}>
+            {stats.length > 0 ? stats.map((s, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                background: s.bg,
+                borderRadius: 100,
+                padding: '11px 24px',
+                boxShadow: '0 5px 22px rgba(0,0,0,0.08)',
+                border: '2.5px solid rgba(255,255,255,0.88)',
+              }}>
+                <span style={{ fontSize: 28 }}>{s.emoji}</span>
+                <span style={{ fontSize: 24, fontWeight: 700, color: s.fg }}>{s.label}</span>
+              </div>
+            )) : (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                background: '#FEF3C7', borderRadius: 100,
+                padding: '11px 28px',
+                boxShadow: '0 5px 22px rgba(0,0,0,0.07)',
+                border: '2.5px solid rgba(255,255,255,0.88)',
+              }}>
+                <span style={{ fontSize: 28 }}>🐾</span>
+                <span style={{ fontSize: 22, fontWeight: 700, color: BROWN_M }}>Great walk today!</span>
+              </div>
+            )}
+          </div>
 
           {/* Footer */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 15, color: BROWN_GHOST }}>📍 Juhu, Mumbai</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 17, color: BROWN_M, opacity: 0.55 }}>📍 Juhu, Mumbai</span>
             {dateStr && (
               <>
-                <span style={{ color: BROWN_GHOST, fontSize: 15 }}>·</span>
-                <span style={{ fontSize: 15, color: BROWN_GHOST }}>{dateStr}</span>
+                <span style={{ color: BROWN_M, fontSize: 17, opacity: 0.35 }}>·</span>
+                <span style={{ fontSize: 17, color: BROWN_M, opacity: 0.55 }}>{dateStr}</span>
               </>
             )}
-            <span style={{ color: BROWN_GHOST, fontSize: 15, marginLeft: 2 }}>·</span>
-            <span style={{ fontSize: 15, color: BROWN_GHOST, fontWeight: 600 }}>
-              pawlocal.in
-            </span>
+            <span style={{ color: BROWN_M, fontSize: 17, opacity: 0.35 }}>·</span>
+            <span style={{ fontSize: 17, color: AMBER_D, fontWeight: 700 }}>pawlocal.in</span>
           </div>
         </div>
 
-        {/* ── Right panel: dog photo or warm no-photo state ────── */}
+        {/* ─────────────────────────────────────────────────────────────
+            RIGHT PANEL — dog photo or decorative amber slab
+        ───────────────────────────────────────────────────────────── */}
         <div
           style={{
             position: 'absolute',
-            right: 0,
-            top: 0,
-            width: PHOTO_W,
-            height: 630,
+            right: 0, top: 0,
+            width: PHOTO_W, height: 630,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            alignItems: 'center', justifyContent: 'center',
             overflow: 'hidden',
           }}
         >
           {photoUrl ? (
-            <div style={{ display: 'flex', width: PHOTO_W, height: 630, position: 'relative', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{
+              display: 'flex',
+              width: PHOTO_W, height: 630,
+              position: 'relative',
+              alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden',
+            }}>
               {/*
-                Rotate 90° clockwise so portrait photos fill the landscape panel.
-                DOM size is swapped (630 wide × PHOTO_W tall) so after rotation
-                the visual result is exactly PHOTO_W wide × 630 tall — fills the panel.
+                DOM size is swapped (630×440). After rotate(90deg) the visual
+                result is exactly 440 wide × 630 tall — fills the panel.
               */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -308,54 +350,56 @@ export default async function Image({
                 height={PHOTO_W}
                 style={{
                   objectFit: 'cover',
-                  width: 630,
-                  height: PHOTO_W,
+                  width: 630, height: PHOTO_W,
                   transform: 'rotate(90deg)',
                   flexShrink: 0,
                 }}
               />
             </div>
           ) : (
-            /* No photo — amber accent panel */
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: `linear-gradient(160deg, ${AMBER_RICH} 0%, ${AMBER_DEEP} 100%)`,
-                borderLeft: `2px solid rgba(255,255,255,0.30)`,
-                gap: 14,
-              }}
-            >
-              <span style={{ fontSize: 110, opacity: 0.25 }}>🐾</span>
-              <span
-                style={{
-                  fontFamily: '"DMSerif"',
-                  fontSize: 18,
-                  color: WHITE_PURE,
-                  opacity: 0.55,
-                  letterSpacing: 1.5,
-                }}
-              >
+            /* No photo — amber clay slab */
+            <div style={{
+              width: '100%', height: '100%',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              background: `linear-gradient(170deg, ${AMBER} 0%, ${AMBER_D} 100%)`,
+              gap: 24,
+            }}>
+              <span style={{ fontSize: 118, opacity: 0.18, display: 'flex' }}>🐾</span>
+
+              {/* Mini white sphere decoration */}
+              <div style={{
+                width: 70, height: 70, borderRadius: '50%',
+                background: 'radial-gradient(circle at 30% 28%, rgba(255,255,255,0.55), rgba(255,255,255,0.12) 55%, rgba(255,255,255,0.04))',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                display: 'flex', overflow: 'hidden',
+              }}>
+                <div style={{
+                  position: 'absolute', top: 9, left: 11,
+                  width: 18, height: 12, borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.48)',
+                  display: 'flex',
+                }} />
+              </div>
+
+              <span style={{
+                fontFamily: '"DMSerif"', fontSize: 22,
+                color: WHITE, opacity: 0.65, letterSpacing: 1.5,
+              }}>
                 PawLocal
               </span>
             </div>
           )}
         </div>
+
       </div>
     ),
     {
       ...size,
-      fonts: [
-        { name: 'DMSerif', data: fontData, style: 'normal', weight: 400 },
-      ],
-      // Tell WhatsApp / CDNs to cache this image for 24h
+      fonts: [{ name: 'DMSerif', data: fontData, style: 'normal', weight: 400 }],
       headers: {
         'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800',
       },
-    }
+    },
   )
 }

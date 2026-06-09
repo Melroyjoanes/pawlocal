@@ -108,12 +108,9 @@ export async function generateMetadata({
       url: canonicalUrl,
       siteName: 'PawLocal',
       type: 'article',
-      // Use the walk photo directly (Supabase CDN = instant) so WhatsApp
-      // scraper doesn't time out waiting for satori to generate the PNG.
-      // Falls back to the opengraph-image.tsx generated card when no photo.
-      ...(report.photo_url
-        ? { images: [{ url: report.photo_url, width: 1200, height: 630, alt: `${dogName} on their walk` }] }
-        : {}),
+      // No images key → Next.js auto-wires opengraph-image.tsx.
+      // That route now runs on edge runtime (~50ms cold start) so
+      // WhatsApp's scraper gets the full branded card in time.
     },
     twitter: {
       card: 'summary_large_image',

@@ -49,8 +49,6 @@ export const metadata: Metadata = {
     images: ['/og-image.png'],
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
-  // fb:app_id suppresses Facebook debugger warning; WhatsApp doesn't need it
-  other: { 'fb:app_id': process.env.NEXT_PUBLIC_FB_APP_ID ?? '0' },
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
