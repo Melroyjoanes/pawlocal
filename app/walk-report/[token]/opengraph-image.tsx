@@ -1,22 +1,18 @@
 import { ImageResponse } from 'next/og'
+import { readFileSync } from 'fs'
+import path from 'path'
 import { createClient } from '@supabase/supabase-js'
 
-export const runtime = 'edge'   // ~50ms cold start vs 1-3s Node.js — WhatsApp won't time out
+export const runtime = 'nodejs'  // readFileSync works; edge caused silent crash on font fetch
 export const alt = 'PawLocal Walk Report'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 export const revalidate = 86400  // CDN caches the PNG for 24h — repeat hits are instant
 
-// VERCEL_URL is auto-set by Vercel to the real deployment hostname (no https://).
-// Prefer it over NEXT_PUBLIC_SITE_URL which may point to an unresolved custom domain.
-const deploymentBase = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app')
-
-// Font fetched once per edge worker instance (promise cached = subsequent requests free)
-const fontDataPromise = fetch(
-  new URL('/fonts/DMSerifDisplay-Regular.ttf', deploymentBase),
-).then(r => r.arrayBuffer())
+// Font loaded once at module level — zero cost on warm requests
+const fontData = readFileSync(
+  path.join(process.cwd(), 'public/fonts/DMSerifDisplay-Regular.ttf'),
+)
 
 type Report = {
   dog_name: string
@@ -64,7 +60,6 @@ export default async function Image({
   params: Promise<{ token: string }>
 }) {
   const { token } = await params
-  const fontData  = await fontDataPromise
 
   // ── Fetch report ──────────────────────────────────────────────
   let report: Report | null = null
