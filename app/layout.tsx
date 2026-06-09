@@ -23,9 +23,9 @@ export const viewport = {
 }
 
 // Resolve base URL: custom domain → Vercel auto URL → fallback
-// Stable public URL — never use VERCEL_URL here as it's deployment-specific
-// and changes every deploy, causing og:image domain mismatches.
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app'
+// Hardcoded stable URL — Next.js on Vercel overrides env-based metadataBase
+// with VERCEL_URL (deployment-specific hash URL), breaking og:image for WhatsApp.
+const siteUrl = 'https://pawlocal-ashen.vercel.app'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
