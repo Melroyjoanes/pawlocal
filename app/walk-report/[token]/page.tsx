@@ -109,14 +109,19 @@ export async function generateMetadata({
       url: canonicalUrl,
       siteName: 'PawLocal',
       type: 'article',
-      // No images key → Next.js auto-wires opengraph-image.tsx.
-      // That route now runs on edge runtime (~50ms cold start) so
-      // WhatsApp's scraper gets the full branded card in time.
+      // Explicitly set so layout's broken /og-image.png is not inherited
+      images: [{
+        url: `${baseUrl}/walk-report/${token}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: `${dogName}'s Walk Report`,
+      }],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
+      images: [`${baseUrl}/walk-report/${token}/opengraph-image`],
     },
   }
 }

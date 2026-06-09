@@ -43,13 +43,12 @@ export const metadata: Metadata = {
     siteName: 'PawLocal',
     title: 'PawLocal — Pet Services in Juhu, Mumbai',
     description: 'Find verified vets, groomers, dog walkers & trainers near Juhu, Mumbai. WhatsApp directly. Zero fees.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'PawLocal — Pet Services in Mumbai' }],
+    // og-image.png doesn't exist yet — remove to prevent 404 fallback
   },
   twitter: {
     card: 'summary_large_image',
     title: 'PawLocal — Pet Services in Juhu, Mumbai',
     description: 'Verified vets, groomers, walkers & trainers near Juhu. WhatsApp direct. Zero fees.',
-    images: ['/og-image.png'],
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
 }
