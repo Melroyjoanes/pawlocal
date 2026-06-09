@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js'
 export const runtime = 'nodejs'
 export const alt = 'PawLocal Walk Report'
 export const size = { width: 1200, height: 630 }
-export const contentType = 'image/png'
+export const contentType = 'image/jpeg'
 
 type Report = {
   dog_name: string
@@ -32,6 +32,16 @@ function fmtDistance(m: number): string {
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`
 }
 
+// Deep teal palette — OKLCH-inspired hex approximations
+const TEAL_DEEP   = '#083d4a'   // oklch(0.25 0.11 200) — darkest bg
+const TEAL_MID    = '#0b5c6b'   // oklch(0.36 0.13 198) — gradient mid
+const TEAL_BRIGHT = '#0e7485'   // oklch(0.46 0.14 196) — photo overlay start
+const CREAM       = '#faf7f0'   // warm cream text
+const CREAM_DIM   = 'rgba(250,247,240,0.68)'
+const CREAM_GHOST = 'rgba(250,247,240,0.36)'
+const AMBER       = '#d97706'   // pl-amber
+const AMBER_LIGHT = '#fef3c7'   // amber chip bg
+
 export default async function Image({
   params,
 }: {
@@ -54,10 +64,10 @@ export default async function Image({
 
     if (data) {
       report = {
-        dog_name: data.dog_name,
-        duration_mins: data.duration_mins,
-        poop_count: data.poop_count,
-        pee_count: data.pee_count,
+        dog_name: data.dog_name ?? 'Dog',
+        duration_mins: data.duration_mins ?? 0,
+        poop_count: data.poop_count ?? 0,
+        pee_count: data.pee_count ?? 0,
         distance_meters: data.distance_meters ?? null,
         photo_url: data.photo_url ?? null,
         walk_date: data.walk_date,
@@ -65,31 +75,38 @@ export default async function Image({
         is_verified: data.providers?.is_verified ?? false,
       }
     }
-  } catch { /* fallback to default card */ }
+  } catch { /* render fallback card */ }
 
-  // ── Fonts ─────────────────────────────────────────────────────
+  // ── Font ─────────────────────────────────────────────────────
   const fontData = readFileSync(
     path.join(process.cwd(), 'public/fonts/DMSerifDisplay-Regular.ttf')
   )
 
-  // ── Stat pills config ─────────────────────────────────────────
-  const pills: { label: string; bg: string; color: string }[] = []
-  if (report) {
-    if (report.poop_count > 0)
-      pills.push({ label: `💩 ${report.poop_count} ${report.poop_count === 1 ? 'poop' : 'poops'}`, bg: '#FEF3C7', color: '#92400E' })
-    if (report.pee_count > 0)
-      pills.push({ label: `💧 ${report.pee_count} ${report.pee_count === 1 ? 'pee' : 'pees'}`, bg: '#EFF6FF', color: '#1E40AF' })
-    if (report.duration_mins > 0)
-      pills.push({ label: `⏱ ${report.duration_mins} mins`, bg: '#F0FDF4', color: '#166534' })
-    if (report.distance_meters && report.distance_meters > 0)
-      pills.push({ label: `📏 ${fmtDistance(report.distance_meters)}`, bg: '#FDF4FF', color: '#6B21A8' })
-  }
+  // ── Data ─────────────────────────────────────────────────────
+  const dogName     = report?.dog_name ?? 'Walk Report'
+  const walker      = report?.provider_name ?? ''
+  const verified    = report?.is_verified ?? false
+  const dateStr     = report ? formatDate(report.walk_date) : ''
+  const photoUrl    = report?.photo_url ?? null
+  const poops       = report?.poop_count ?? 0
+  const pees        = report?.pee_count ?? 0
+  const mins        = report?.duration_mins ?? 0
+  const dist        = (report?.distance_meters ?? 0) > 0
+    ? fmtDistance(report!.distance_meters!)
+    : null
 
-  const dogName  = report?.dog_name ?? 'Walk Report'
-  const walker   = report?.provider_name ?? ''
-  const verified = report?.is_verified ?? false
-  const dateStr  = report ? formatDate(report.walk_date) : ''
-  const photoUrl = report?.photo_url ?? null
+  // Build stat string — designed for large single-line render
+  const statParts: string[] = []
+  if (poops > 0) statParts.push(`💩 ${poops}`)
+  if (pees > 0)  statParts.push(`💧 ${pees}`)
+  if (mins > 0)  statParts.push(`⏱ ${mins} mins`)
+  if (dist)      statParts.push(`📏 ${dist}`)
+  const statLine = statParts.join('   ')
+
+  // Scale dog name font: very long names get a smaller size
+  const nameFontSize = dogName.length > 12 ? 76 : dogName.length > 8 ? 86 : 96
+
+  const PHOTO_WIDTH = 460   // right photo panel width
 
   return new ImageResponse(
     (
@@ -98,191 +115,271 @@ export default async function Image({
           display: 'flex',
           width: 1200,
           height: 630,
-          background: '#faf7f2',
+          position: 'relative',
+          background: `linear-gradient(138deg, ${TEAL_MID} 0%, ${TEAL_DEEP} 100%)`,
           fontFamily: '"Inter", system-ui, sans-serif',
+          overflow: 'hidden',
         }}
       >
+        {/* ── Subtle teal vignette corner accent ─────────────── */}
+        <div
+          style={{
+            position: 'absolute',
+            top: -80,
+            right: PHOTO_WIDTH - 40,
+            width: 280,
+            height: 280,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(14,116,133,0.30) 0%, transparent 70%)',
+            display: 'flex',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: -60,
+            left: -60,
+            width: 220,
+            height: 220,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(14,116,133,0.20) 0%, transparent 70%)',
+            display: 'flex',
+          }}
+        />
+
         {/* ── Left content panel ─────────────────────────────── */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
-            flex: 1,
-            padding: '52px 60px',
+            width: 1200 - PHOTO_WIDTH,
+            height: 630,
+            padding: '44px 52px',
             justifyContent: 'space-between',
+            position: 'relative',
+            zIndex: 2,
           }}
         >
-          {/* Logo + badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 30 }}>🐾</span>
-            <span
-              style={{
-                fontFamily: '"DMSerif"',
-                fontSize: 26,
-                color: '#1c1917',
-                lineHeight: 1,
-              }}
-            >
-              Paw
-              <span style={{ color: '#d97706' }}>Local</span>
-            </span>
+          {/* Logo + badge row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* Logo */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 26 }}>🐾</span>
+              <span
+                style={{
+                  fontFamily: '"DMSerif"',
+                  fontSize: 24,
+                  color: CREAM,
+                  lineHeight: 1,
+                }}
+              >
+                Paw<span style={{ color: AMBER }}>Local</span>
+              </span>
+            </div>
+
+            {/* Walk Report pill */}
             <div
               style={{
-                marginLeft: 'auto',
-                background: 'rgba(15,118,110,0.1)',
-                border: '1px solid rgba(15,118,110,0.22)',
-                borderRadius: 24,
-                padding: '5px 14px',
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: 2.5,
-                color: '#0f766e',
-                textTransform: 'uppercase',
                 display: 'flex',
+                alignItems: 'center',
+                background: AMBER_LIGHT,
+                borderRadius: 40,
+                padding: '5px 14px',
+                marginLeft: 4,
               }}
             >
-              Walk Report
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: 2.5,
+                  color: '#78350f',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Walk Report
+              </span>
             </div>
           </div>
 
-          {/* Dog name */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* Dog name — the hero */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div
               style={{
                 fontFamily: '"DMSerif"',
-                fontSize: dogName.length > 10 ? 60 : 72,
-                color: '#1c1917',
-                lineHeight: 1.05,
+                fontSize: nameFontSize,
+                color: CREAM,
+                lineHeight: 1.0,
                 display: 'flex',
+                letterSpacing: '-0.5px',
               }}
             >
               {dogName}&apos;s Walk
             </div>
 
-            {/* Walker row */}
+            {/* Walker + verified */}
             {walker && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
-                <span style={{ fontSize: 17, color: '#78716c' }}>by {walker}</span>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  marginTop: 2,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 22,
+                    color: CREAM_DIM,
+                    fontWeight: 500,
+                  }}
+                >
+                  by {walker}
+                </span>
                 {verified && (
                   <div
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: 4,
-                      background: 'rgba(15,118,110,0.08)',
-                      border: '1px solid rgba(15,118,110,0.20)',
-                      borderRadius: 20,
-                      padding: '3px 10px',
-                      fontSize: 12,
-                      color: '#0f766e',
-                      fontWeight: 700,
+                      background: 'rgba(14,116,133,0.35)',
+                      border: `1px solid rgba(14,200,200,0.25)`,
+                      borderRadius: 24,
+                      padding: '4px 12px',
                     }}
                   >
-                    ✓ Verified
+                    <span
+                      style={{
+                        fontSize: 13,
+                        color: 'rgba(180,255,245,0.9)',
+                        fontWeight: 700,
+                      }}
+                    >
+                      ✓ Verified
+                    </span>
                   </div>
                 )}
               </div>
             )}
           </div>
 
-          {/* Stat pills */}
-          {pills.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-              {pills.map((p, i) => (
-                <div
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    background: p.bg,
-                    color: p.color,
-                    borderRadius: 40,
-                    padding: '8px 16px',
-                    fontSize: 15,
-                    fontWeight: 700,
-                  }}
-                >
-                  {p.label}
-                </div>
-              ))}
+          {/* Stats line */}
+          {statLine.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                fontSize: 26,
+                color: CREAM,
+                fontWeight: 600,
+                letterSpacing: 0.2,
+                opacity: 0.92,
+              }}
+            >
+              {statLine}
             </div>
           )}
 
-          {/* Footer */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 13, color: '#a8a29e' }}>📍 Juhu, Mumbai</span>
+          {/* Footer: location + date */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 15, color: CREAM_GHOST }}>
+              📍 Juhu, Mumbai
+            </span>
             {dateStr && (
               <>
-                <span style={{ color: '#d6cfc4', fontSize: 13 }}>·</span>
-                <span style={{ fontSize: 13, color: '#a8a29e' }}>{dateStr}</span>
+                <span style={{ color: CREAM_GHOST, fontSize: 15 }}>·</span>
+                <span style={{ fontSize: 15, color: CREAM_GHOST }}>{dateStr}</span>
               </>
             )}
-            <span style={{ color: '#d6cfc4', fontSize: 13, marginLeft: 4 }}>·</span>
-            <span style={{ fontSize: 13, color: '#c4bdb2', fontWeight: 600 }}>pawlocal.in</span>
+            <span style={{ color: CREAM_GHOST, fontSize: 15, marginLeft: 2 }}>·</span>
+            <span
+              style={{
+                fontSize: 15,
+                color: 'rgba(250,247,240,0.45)',
+                fontWeight: 600,
+              }}
+            >
+              pawlocal.in
+            </span>
           </div>
         </div>
 
-        {/* ── Right panel: photo or teal ──────────────────────── */}
+        {/* ── Right panel: photo or teal accent ──────────────── */}
         <div
           style={{
-            width: 420,
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            width: PHOTO_WIDTH,
             height: 630,
-            flexShrink: 0,
-            overflow: 'hidden',
             display: 'flex',
-            position: 'relative',
+            overflow: 'hidden',
           }}
         >
           {photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={photoUrl}
-              alt=""
-              width={420}
-              height={630}
-              style={{ objectFit: 'cover', width: '100%', height: '100%' }}
-            />
+            <div style={{ display: 'flex', width: PHOTO_WIDTH, height: 630, position: 'relative' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photoUrl}
+                alt=""
+                width={PHOTO_WIDTH}
+                height={630}
+                style={{
+                  objectFit: 'cover',
+                  width: '100%',
+                  height: '100%',
+                }}
+              />
+              {/* Left gradient blend into teal background */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: 120,
+                  height: '100%',
+                  background: `linear-gradient(to right, ${TEAL_MID} 0%, transparent 100%)`,
+                  display: 'flex',
+                }}
+              />
+              {/* Bottom gradient for depth */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  height: 140,
+                  background: `linear-gradient(to top, ${TEAL_DEEP}CC 0%, transparent 100%)`,
+                  display: 'flex',
+                }}
+              />
+            </div>
           ) : (
-            /* Teal gradient panel with watermark paw */
+            /* No photo — teal accent panel with paw watermark */
             <div
               style={{
                 width: '100%',
                 height: '100%',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'linear-gradient(160deg, #0d9488 0%, #0f766e 40%, #134e4a 100%)',
-                flexDirection: 'column',
-                gap: 16,
+                background: `linear-gradient(160deg, ${TEAL_BRIGHT} 0%, ${TEAL_DEEP} 100%)`,
+                borderLeft: `1px solid rgba(14,200,200,0.12)`,
+                gap: 12,
               }}
             >
-              <span style={{ fontSize: 110, opacity: 0.35 }}>🐾</span>
+              <span style={{ fontSize: 100, opacity: 0.18 }}>🐾</span>
               <span
                 style={{
                   fontFamily: '"DMSerif"',
-                  fontSize: 18,
-                  color: 'rgba(255,255,255,0.5)',
-                  letterSpacing: 1,
+                  fontSize: 16,
+                  color: 'rgba(250,247,240,0.30)',
+                  letterSpacing: 1.5,
                 }}
               >
                 PawLocal
               </span>
             </div>
-          )}
-
-          {/* Bottom gradient overlay on photo */}
-          {photoUrl && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: 100,
-                background: 'linear-gradient(to top, rgba(15,118,110,0.55) 0%, transparent 100%)',
-                display: 'flex',
-              }}
-            />
           )}
         </div>
       </div>
