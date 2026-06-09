@@ -94,9 +94,9 @@ export async function generateMetadata({
   ].filter(Boolean).join(' ')
 
   // Use configured site URL, fall back to Vercel's automatic URL, then the known Vercel deployment
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app')
+  // Use the stable public URL — VERCEL_URL is deployment-specific (hash changes
+  // every deploy) and causes og:image domain mismatch that WhatsApp rejects.
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app'
   const canonicalUrl = `${baseUrl}/walk-report/${token}`
 
   return {
