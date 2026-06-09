@@ -35,6 +35,7 @@ interface WalkReport {
   pee_count: number
   photo_url: string | null
   customer_id: string | null
+  customer: { email: string; name: string | null } | null
   created_at: string
   provider_id: string
   providers: {
@@ -567,7 +568,7 @@ function WalkReportAdminCard({ r }: { r: WalkReport }) {
             {/* Claimed status */}
             {r.customer_id ? (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                ✓ Claimed by customer
+                ✓ {r.customer?.name ?? r.customer?.email ?? 'Customer'} claimed
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">
@@ -737,7 +738,7 @@ export default function AdminPage() {
         neighbourhood: p.neighbourhood ?? 'Juhu',
         created_at: p.created_at,
         whatsapp_clicks: events.filter((a: any) => a.event_type === 'whatsapp_click').length,
-        profile_views: events.filter((a: any) => a.event_type === 'profile_view').length,
+        profile_views: events.filter((a: any) => a.event_type === 'view').length,
       }
     }).sort((a: any, b: any) => b.whatsapp_clicks - a.whatsapp_clicks)
 

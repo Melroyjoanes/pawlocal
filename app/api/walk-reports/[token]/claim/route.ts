@@ -16,14 +16,20 @@ export async function POST(
 
   const { token } = await params
 
-  // Find the report
+  // Find the report + the provider's linked user_id
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: report } = await (admin().from('walk_reports') as any)
-    .select('id, customer_id')
+    .select('id, customer_id, provider_id, providers(user_id)')
     .eq('token', token)
     .single()
 
   if (!report) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  // Block: the provider who created this report cannot claim it as a customer
+  const providerUserId = report.providers?.user_id
+  if (providerUserId && providerUserId === user.id) {
+    return NextResponse.json({ error: 'Providers cannot claim their own reports' }, { status: 403 })
+  }
 
   // Already claimed by this user — idempotent
   if (report.customer_id === user.id) return NextResponse.json({ ok: true })

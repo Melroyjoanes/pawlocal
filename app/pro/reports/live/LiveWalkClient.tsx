@@ -44,6 +44,118 @@ const fadeVariants: Variants = {
   exit: { opacity: 0, y: -12, transition: { duration: 0.2, ease: 'easeIn' } },
 }
 
+// ── Live map shown to provider during walk ────────────────────────────────
+function LiveMap({
+  currentPos,
+  routePointsRef,
+  poopEvents,
+  peeEvents,
+}: {
+  currentPos: { lat: number; lng: number } | null
+  routePointsRef: React.RefObject<{ lat: number; lng: number }[]>
+  poopEvents: GeoEvent[]
+  peeEvents: GeoEvent[]
+}) {
+  const mapDivRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<any>(null)
+  const polylineRef = useRef<any>(null)
+  const posMarkerRef = useRef<any>(null)
+  const eventMarkersRef = useRef<any[]>([])
+
+  useEffect(() => {
+    function initMap() {
+      if (!mapDivRef.current) return
+      const center = currentPos ?? { lat: 19.098, lng: 72.827 } // Juhu default
+      const gm = (window as any).google.maps
+
+      const map = new gm.Map(mapDivRef.current, {
+        center,
+        zoom: 17,
+        disableDefaultUI: true,
+        styles: [
+          { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+          { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+        ],
+      })
+      mapRef.current = map
+
+      polylineRef.current = new gm.Polyline({
+        geodesic: true,
+        strokeColor: '#0f766e',
+        strokeOpacity: 1,
+        strokeWeight: 5,
+        map,
+      })
+
+      posMarkerRef.current = new gm.Marker({
+        position: center,
+        map,
+        zIndex: 10,
+        icon: {
+          path: gm.SymbolPath.CIRCLE,
+          scale: 11,
+          fillColor: '#0f766e',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 3,
+        },
+      })
+    }
+
+    if ((window as any).google?.maps) {
+      initMap()
+    } else {
+      const existing = document.getElementById('gmaps-script')
+      if (!existing) {
+        const script = document.createElement('script')
+        script.id = 'gmaps-script'
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+        script.async = true
+        script.onload = initMap
+        document.head.appendChild(script)
+      } else {
+        existing.addEventListener('load', initMap)
+      }
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pan + update route on every new GPS point
+  useEffect(() => {
+    if (!mapRef.current || !currentPos) return
+    posMarkerRef.current?.setPosition(currentPos)
+    polylineRef.current?.setPath(routePointsRef.current ?? [])
+    mapRef.current.panTo(currentPos)
+  }, [currentPos, routePointsRef])
+
+  // Add poop/pee markers when new events arrive
+  useEffect(() => {
+    if (!mapRef.current) return
+    const gm = (window as any).google?.maps
+    if (!gm) return
+
+    // Clear old markers
+    eventMarkersRef.current.forEach(m => m.setMap(null))
+    eventMarkersRef.current = []
+
+    const allEvents = [
+      ...poopEvents.map(e => ({ ...e, emoji: '💩' })),
+      ...peeEvents.map(e => ({ ...e, emoji: '💧' })),
+    ]
+
+    allEvents.forEach(evt => {
+      const marker = new gm.Marker({
+        position: { lat: evt.lat, lng: evt.lng },
+        map: mapRef.current,
+        label: { text: evt.emoji, fontSize: '16px' },
+        icon: { path: gm.SymbolPath.CIRCLE, scale: 0 }, // invisible base, emoji label only
+      })
+      eventMarkersRef.current.push(marker)
+    })
+  }, [poopEvents, peeEvents])
+
+  return <div ref={mapDivRef} className="w-full h-full" />
+}
+
 export default function LiveWalkClient({
   providerId,
   providerName,
@@ -66,6 +178,7 @@ export default function LiveWalkClient({
   const [copied, setCopied] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [gpsError, setGpsError] = useState<string | null>(null)
+  const [currentPos, setCurrentPos] = useState<{ lat: number; lng: number } | null>(null)
 
   const routePointsRef = useRef<{ lat: number; lng: number }[]>([])
   const watchIdRef = useRef<number | null>(null)
@@ -132,6 +245,7 @@ export default function LiveWalkClient({
       (pos) => {
         const point = { lat: pos.coords.latitude, lng: pos.coords.longitude }
         routePointsRef.current.push(point)
+        setCurrentPos(point)
         if (routePointsRef.current.length >= 2) {
           const prev = routePointsRef.current[routePointsRef.current.length - 2]
           setDistance((d) => d + haversineDistance(prev, point))
@@ -326,148 +440,165 @@ export default function LiveWalkClient({
             exit="exit"
             className="flex flex-col min-h-dvh"
           >
-            {/* Header */}
-            <div className="flex items-center px-4 pt-safe pt-4 pb-2">
+            {/* ── Live map — takes top half of screen ── */}
+            <div className="relative w-full" style={{ height: '46vh' }}>
+              <LiveMap
+                currentPos={currentPos}
+                routePointsRef={routePointsRef}
+                poopEvents={poopEvents}
+                peeEvents={peeEvents}
+              />
+
+              {/* Back button — floating top-left */}
               <button
                 onClick={handleBack}
-                className="flex items-center gap-1 text-sm font-medium text-gray-500 active:opacity-60 transition-opacity"
+                className="absolute top-4 left-4 z-10 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white shadow-md text-gray-700 active:opacity-60 transition-opacity"
               >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                 </svg>
                 Back
               </button>
-            </div>
 
-            {/* Wake lock fallback banner — only shown when wake lock isn't supported */}
-            {typeof window !== 'undefined' && !('wakeLock' in navigator) && (
-              <div className="mx-4 mb-2 px-3 py-2 rounded-xl text-xs text-amber-800 text-center"
-                style={{ background: '#FEF3C7', border: '1px solid #FCD34D' }}>
-                🔆 Keep your screen on for accurate GPS tracking
+              {/* Timer + distance HUD — floating bottom of map */}
+              <div className="absolute bottom-0 left-0 right-0 z-10 flex items-end justify-between px-4 py-3"
+                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%)' }}>
+                <div>
+                  <p className="text-3xl font-bold text-white tabular-nums tracking-tight leading-none"
+                    style={{ fontFamily: 'DM Serif Display, Georgia, serif' }}>
+                    {formatTime(elapsed)}
+                  </p>
+                  <p className="text-sm font-semibold text-white/80 mt-0.5">{formatDistance(distance)}</p>
+                </div>
+                <div className="flex gap-3 text-white text-sm font-bold">
+                  <span>💩 {poopEvents.length}</span>
+                  <span>💧 {peeEvents.length}</span>
+                </div>
               </div>
-            )}
 
-            {/* Timer + Distance */}
-            <div className="flex flex-col items-center px-6 pt-4 pb-6 gap-1">
-              <span
-                className="text-7xl font-bold tabular-nums tracking-tight text-gray-900"
-                style={{ fontFamily: 'DM Serif Display, Georgia, serif' }}
-              >
-                {formatTime(elapsed)}
-              </span>
-              <span className="text-xl font-semibold text-gray-500">
-                {formatDistance(distance)}
-              </span>
+              {/* GPS error */}
               {gpsError && (
-                <p className="text-xs text-amber-600 mt-1 text-center">{gpsError}</p>
+                <div className="absolute top-14 left-4 right-4 z-10 px-3 py-2 rounded-xl text-xs text-amber-800 text-center"
+                  style={{ background: '#FEF3C7', border: '1px solid #FCD34D' }}>
+                  {gpsError}
+                </div>
               )}
-            </div>
 
-            {/* Poop / Pee buttons */}
-            <div className="grid grid-cols-2 gap-4 px-5 mb-5">
-              {/* Poop */}
-              <button
-                onClick={() => recordEvent('poop')}
-                className="flex flex-col items-center justify-center gap-2 rounded-3xl bg-white min-h-[100px] shadow-[0_8px_24px_rgba(0,0,0,0.10)] active:scale-95 transition-transform border border-gray-100"
-              >
-                <span className="text-4xl select-none">💩</span>
-                <span className="text-base font-semibold text-gray-700">
-                  Poop
-                  {poopEvents.length > 0 && (
-                    <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full text-xs text-white font-bold"
-                      style={{ background: 'oklch(0.48 0.17 196)' }}>
-                      {poopEvents.length}
-                    </span>
-                  )}
-                </span>
-              </button>
-
-              {/* Pee */}
-              <button
-                onClick={() => recordEvent('pee')}
-                className="flex flex-col items-center justify-center gap-2 rounded-3xl bg-white min-h-[100px] shadow-[0_8px_24px_rgba(0,0,0,0.10)] active:scale-95 transition-transform border border-gray-100"
-              >
-                <span className="text-4xl select-none">💧</span>
-                <span className="text-base font-semibold text-gray-700">
-                  Pee
-                  {peeEvents.length > 0 && (
-                    <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full text-xs text-white font-bold"
-                      style={{ background: 'oklch(0.48 0.17 196)' }}>
-                      {peeEvents.length}
-                    </span>
-                  )}
-                </span>
-              </button>
-            </div>
-
-            {/* Photo section */}
-            <div className="px-5 mb-5">
-              <input
-                ref={photoInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={handlePhotoChange}
-                id="photo-input"
-              />
-              <label
-                htmlFor="photo-input"
-                className={`flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl border-2 border-dashed font-medium text-sm transition-all active:scale-95 cursor-pointer ${
-                  uploadingPhoto
-                    ? 'border-gray-300 text-gray-400 bg-gray-50'
-                    : 'border-teal-400 text-teal-700 bg-teal-50 active:bg-teal-100'
-                }`}
-              >
-                {uploadingPhoto ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              {/* No GPS yet — waiting indicator */}
+              {!currentPos && !gpsError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+                  <div className="flex flex-col items-center gap-2 text-gray-500">
+                    <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                     </svg>
-                    Uploading…
-                  </>
-                ) : (
-                  <>
-                    <span className="text-lg">📸</span>
-                    Take Photo
-                  </>
-                )}
-              </label>
+                    <p className="text-sm">Getting GPS…</p>
+                  </div>
+                </div>
+              )}
 
-              {/* Photo thumbnails */}
-              {photos.length > 0 && (
-                <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
-                  {photos.map((url, i) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      key={i}
-                      src={url}
-                      alt={`Walk photo ${i + 1}`}
-                      className="w-16 h-16 rounded-xl object-cover flex-shrink-0 shadow"
-                    />
-                  ))}
+              {/* Wake lock fallback */}
+              {typeof window !== 'undefined' && !('wakeLock' in navigator) && (
+                <div className="absolute top-14 left-4 right-4 z-10 px-3 py-2 rounded-xl text-xs text-amber-800 text-center"
+                  style={{ background: '#FEF3C7', border: '1px solid #FCD34D' }}>
+                  🔆 Keep your screen on for accurate GPS tracking
                 </div>
               )}
             </div>
 
-            {/* Spacer */}
-            <div className="flex-1" />
+            {/* ── Controls — bottom half ── */}
+            <div className="flex-1 flex flex-col px-4 pt-4 pb-6 gap-3" style={{ background: 'oklch(0.975 0.006 85)' }}>
 
-            {/* End Walk */}
-            <div className="px-5 pb-8 pt-4">
-              <button
-                onClick={handleEndWalk}
-                className="w-full py-4 rounded-2xl text-white font-semibold text-lg shadow-md active:scale-95 transition-transform bg-rose-500 active:bg-rose-600"
-              >
-                End Walk
-              </button>
+              {/* Poop / Pee buttons */}
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => recordEvent('poop')}
+                  className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-white py-4 shadow-sm active:scale-95 transition-transform border border-gray-100"
+                >
+                  <span className="text-3xl select-none">💩</span>
+                  <span className="text-sm font-semibold text-gray-700 flex items-center gap-1">
+                    Poop
+                    {poopEvents.length > 0 && (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] text-white font-bold"
+                        style={{ background: 'oklch(0.48 0.17 196)' }}>
+                        {poopEvents.length}
+                      </span>
+                    )}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => recordEvent('pee')}
+                  className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-white py-4 shadow-sm active:scale-95 transition-transform border border-gray-100"
+                >
+                  <span className="text-3xl select-none">💧</span>
+                  <span className="text-sm font-semibold text-gray-700 flex items-center gap-1">
+                    Pee
+                    {peeEvents.length > 0 && (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] text-white font-bold"
+                        style={{ background: 'oklch(0.48 0.17 196)' }}>
+                        {peeEvents.length}
+                      </span>
+                    )}
+                  </span>
+                </button>
+              </div>
+
+              {/* Photo button */}
+              <div>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                  id="photo-input"
+                />
+                <label
+                  htmlFor="photo-input"
+                  className={`flex items-center justify-center gap-2 w-full py-3 rounded-2xl border-2 border-dashed font-medium text-sm transition-all active:scale-95 cursor-pointer ${
+                    uploadingPhoto
+                      ? 'border-gray-300 text-gray-400 bg-gray-50'
+                      : 'border-teal-400 text-teal-700 bg-teal-50 active:bg-teal-100'
+                  }`}
+                >
+                  {uploadingPhoto ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                      Uploading…
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-base">📸</span>
+                      {photos.length > 0 ? `Photo added (${photos.length})` : 'Take Photo'}
+                    </>
+                  )}
+                </label>
+
+                {photos.length > 0 && (
+                  <div className="flex gap-2 mt-2 overflow-x-auto pb-1">
+                    {photos.map((url, i) => (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img key={i} src={url} alt={`Walk photo ${i + 1}`}
+                        className="w-14 h-14 rounded-xl object-cover flex-shrink-0 shadow" />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* End Walk */}
+              <div className="mt-auto">
+                <button
+                  onClick={handleEndWalk}
+                  className="w-full py-4 rounded-2xl text-white font-semibold text-base shadow-md active:scale-95 transition-transform bg-rose-500"
+                >
+                  End Walk
+                </button>
+              </div>
             </div>
           </motion.div>
         )}

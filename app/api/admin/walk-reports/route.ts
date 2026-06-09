@@ -16,7 +16,9 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { data, error } = await adminDb()
+  const db = adminDb()
+
+  const { data, error } = await db
     .from('walk_reports')
     .select(`
       id,
@@ -42,5 +44,36 @@ export async function GET() {
     .limit(200)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data ?? [])
+
+  const reports = data ?? []
+
+  // Enrich claimed reports with customer email from auth.users
+  const claimedIds = [...new Set(
+    reports.filter((r: any) => r.customer_id).map((r: any) => r.customer_id as string)
+  )]
+
+  const customerMap: Record<string, { email: string; name: string | null }> = {}
+
+  if (claimedIds.length > 0) {
+    // Fetch each user by ID using admin auth API
+    await Promise.all(
+      claimedIds.map(async (uid) => {
+        const { data: userData } = await db.auth.admin.getUserById(uid)
+        if (userData?.user) {
+          customerMap[uid] = {
+            email: userData.user.email ?? 'unknown',
+            name: userData.user.user_metadata?.full_name ?? userData.user.user_metadata?.name ?? null,
+          }
+        }
+      })
+    )
+  }
+
+  // Attach customer info to each report
+  const enriched = reports.map((r: any) => ({
+    ...r,
+    customer: r.customer_id ? (customerMap[r.customer_id] ?? null) : null,
+  }))
+
+  return NextResponse.json(enriched)
 }

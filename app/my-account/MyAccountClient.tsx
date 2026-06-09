@@ -443,51 +443,134 @@ export default function MyAccountClient({
 
           {/* WALK REPORTS */}
           {tab === 'bookings' && (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               {claimedReports.length === 0 ? (
                 <EmptyState
                   emoji="🐕"
                   title="No walk reports yet"
                   sub="When your dog walker shares a walk report, save it here to keep track of all walks."
                 />
-              ) : (
-                claimedReports.map(r => (
-                  <a
-                    key={r.id}
-                    href={`/walk-report/${r.token}`}
-                    className="rounded-2xl overflow-hidden block transition-transform active:scale-[0.99]"
-                    style={{
-                      background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
-                      boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 6px 20px rgba(15,45,50,0.07)',
-                      border: '1px solid rgba(226,220,200,0.7)',
-                    }}
-                  >
-                    {r.photo_url && (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.photo_url} alt={r.dog_name} className="w-full object-cover" style={{ height: 120 }} />
-                    )}
-                    <div className="p-4">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <p className="font-semibold text-slate-900">🐕 {r.dog_name}</p>
-                        <span className="text-xs text-slate-400 flex-shrink-0">
-                          {new Date(r.walk_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                        </span>
+              ) : (() => {
+                // ── Stats computed from all reports ──
+                const last30 = claimedReports.filter(r =>
+                  new Date(r.walk_date) >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                )
+                const totalPoops = last30.reduce((s, r) => s + r.poop_count, 0)
+                const totalPees  = last30.reduce((s, r) => s + r.pee_count, 0)
+                const totalMins  = last30.reduce((s, r) => s + r.duration_mins, 0)
+                const totalKm    = last30.reduce((s, r) => s + (r.distance_meters ?? 0), 0) / 1000
+                const dogName    = claimedReports[0]?.dog_name ?? 'your dog'
+                const walkerName = claimedReports[0]?.providers?.name ?? 'your walker'
+
+                // Poop streak — consecutive walks with at least 1 poop
+                let streak = 0
+                for (const r of claimedReports) {
+                  if (r.poop_count > 0) streak++
+                  else break
+                }
+
+                return (
+                  <>
+                    {/* ── 30-day summary card ── */}
+                    <div className="rounded-2xl p-4" style={{
+                      background: 'linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)',
+                      border: '1.5px solid #BBF7D0',
+                    }}>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 mb-3">
+                        {dogName}&apos;s last 30 days
+                      </p>
+                      <div className="grid grid-cols-4 gap-2 text-center">
+                        {[
+                          { icon: '🐾', value: last30.length, label: 'Walks' },
+                          { icon: '⏱', value: `${totalMins}m`, label: 'Total time' },
+                          { icon: '💩', value: totalPoops, label: 'Poops' },
+                          { icon: '💧', value: totalPees,  label: 'Pees' },
+                        ].map(s => (
+                          <div key={s.label}>
+                            <p className="text-lg">{s.icon}</p>
+                            <p className="text-base font-bold text-slate-900 leading-tight">{s.value}</p>
+                            <p className="text-[9px] text-slate-500 mt-0.5">{s.label}</p>
+                          </div>
+                        ))}
                       </div>
-                      {r.providers && (
-                        <p className="text-xs text-slate-400 mb-2">by {r.providers.name}{r.providers.is_verified ? ' ✓' : ''}</p>
+                      {totalKm > 0 && (
+                        <p className="text-xs text-emerald-700 font-semibold mt-3 text-center">
+                          📏 {totalKm.toFixed(1)} km walked this month
+                        </p>
                       )}
-                      <div className="flex items-center gap-3 text-xs text-slate-500">
-                        <span>⏱ {r.duration_mins} mins</span>
-                        {r.distance_meters && r.distance_meters > 0 && (
-                          <span>📏 {r.distance_meters >= 1000 ? `${(r.distance_meters / 1000).toFixed(1)}km` : `${Math.round(r.distance_meters)}m`}</span>
-                        )}
-                        {r.poop_count > 0 && <span>💩 {r.poop_count}</span>}
-                        {r.pee_count > 0 && <span>💧 {r.pee_count}</span>}
-                      </div>
+                      {streak >= 3 && (
+                        <p className="text-xs text-emerald-700 font-semibold mt-1 text-center">
+                          🔥 {streak}-walk poop streak — healthy gut!
+                        </p>
+                      )}
                     </div>
-                  </a>
-                ))
-              )}
+
+                    {/* ── Vet summary ── */}
+                    <details className="rounded-2xl overflow-hidden" style={{ border: '1px solid rgba(226,220,200,0.7)' }}>
+                      <summary className="flex items-center justify-between px-4 py-3 cursor-pointer bg-white text-sm font-semibold text-slate-700 select-none">
+                        <span>🏥 Vet summary (last 30 days)</span>
+                        <span className="text-slate-400 text-xs">tap to expand</span>
+                      </summary>
+                      <div className="px-4 py-4 bg-slate-50 text-xs text-slate-600 leading-relaxed space-y-1 font-mono">
+                        <p>Dog: {dogName}</p>
+                        <p>Walker: {walkerName}</p>
+                        <p>Period: last 30 days ({last30.length} walks)</p>
+                        <p>Avg walk duration: {last30.length ? Math.round(totalMins / last30.length) : 0} mins</p>
+                        <p>Avg distance: {last30.length ? (totalKm / last30.length).toFixed(2) : 0} km/walk</p>
+                        <p>Total poops: {totalPoops} ({last30.length ? (totalPoops / last30.length).toFixed(1) : 0}/walk avg)</p>
+                        <p>Total pees: {totalPees} ({last30.length ? (totalPees / last30.length).toFixed(1) : 0}/walk avg)</p>
+                        <p className="pt-1 text-slate-400">Generated by PawLocal · {new Date().toLocaleDateString('en-IN')}</p>
+                      </div>
+                    </details>
+
+                    {/* ── Walk history feed ── */}
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-0.5">Walk history</p>
+                    {claimedReports.map(r => (
+                      <a
+                        key={r.id}
+                        href={`/walk-report/${r.token}`}
+                        className="rounded-2xl overflow-hidden flex gap-3 items-center p-3 transition-transform active:scale-[0.99]"
+                        style={{
+                          background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
+                          boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 4px 12px rgba(15,45,50,0.06)',
+                          border: '1px solid rgba(226,220,200,0.7)',
+                        }}
+                      >
+                        {/* Photo or emoji */}
+                        <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-stone-100 flex items-center justify-center text-2xl">
+                          {r.photo_url
+                            ? <img src={r.photo_url} alt={r.dog_name} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
+                            : '🐕'}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-1 mb-0.5">
+                            <p className="font-semibold text-slate-900 text-sm truncate">{r.dog_name}</p>
+                            <span className="text-[10px] text-slate-400 flex-shrink-0">
+                              {new Date(r.walk_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                            </span>
+                          </div>
+                          {r.providers && (
+                            <p className="text-[10px] text-slate-400 mb-1">by {r.providers.name}{r.providers.is_verified ? ' ✓' : ''}</p>
+                          )}
+                          <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                            <span>⏱ {r.duration_mins}m</span>
+                            {r.distance_meters && r.distance_meters > 0 && (
+                              <span>📏 {r.distance_meters >= 1000 ? `${(r.distance_meters / 1000).toFixed(1)}km` : `${Math.round(r.distance_meters)}m`}</span>
+                            )}
+                            {r.poop_count > 0 && <span>💩 {r.poop_count}</span>}
+                            {r.pee_count > 0 && <span>💧 {r.pee_count}</span>}
+                          </div>
+                        </div>
+
+                        <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </a>
+                    ))}
+                  </>
+                )
+              })()}
             </div>
           )}
 
