@@ -94,8 +94,9 @@ export async function generateMetadata({
   ].filter(Boolean).join(' ')
 
   // Use configured site URL, fall back to Vercel's automatic URL, then the known Vercel deployment
-  const baseUrl = 'https://pawlocal-ashen.vercel.app'
-  const canonicalUrl = `${baseUrl}/walk-report/${token}`
+  const canonicalUrl = `https://pawlocal-ashen.vercel.app/walk-report/${token}`
+  // API route — bypasses Next.js metadataBase/VERCEL_URL magic entirely
+  const ogImageUrl = `https://pawlocal-ashen.vercel.app/api/og/walk-report/${token}`
 
   return {
     title,
@@ -108,18 +109,13 @@ export async function generateMetadata({
       siteName: 'PawLocal',
       type: 'article',
       // Explicitly set so layout's broken /og-image.png is not inherited
-      images: [{
-        url: `${baseUrl}/walk-report/${token}/opengraph-image`,
-        width: 1200,
-        height: 630,
-        alt: `${dogName}'s Walk Report`,
-      }],
+      images: [{ url: ogImageUrl, width: 1200, height: 630, alt: `${dogName}'s Walk Report` }],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: [`${baseUrl}/walk-report/${token}/opengraph-image`],
+      images: [ogImageUrl],
     },
   }
 }
