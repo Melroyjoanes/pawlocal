@@ -310,42 +310,6 @@ export default async function Image({
                   flexShrink: 0,
                 }}
               />
-              {/* Left fade: amber bleeds into photo — wide, prominent */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: 180,
-                  height: '100%',
-                  background: `linear-gradient(to right, ${AMBER_MID} 0%, ${AMBER_MID}CC 30%, transparent 100%)`,
-                  display: 'flex',
-                }}
-              />
-              {/* Top fade */}
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: 100,
-                  background: `linear-gradient(to bottom, ${AMBER_BG}99 0%, transparent 100%)`,
-                  display: 'flex',
-                }}
-              />
-              {/* Bottom fade */}
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: 160,
-                  background: `linear-gradient(to top, ${AMBER_RICH}DD 0%, transparent 100%)`,
-                  display: 'flex',
-                }}
-              />
             </div>
           ) : (
             /* No photo — amber accent panel */
