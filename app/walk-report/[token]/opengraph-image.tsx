@@ -8,6 +8,15 @@ export const alt = 'PawLocal Walk Report'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
+// Cache for 24 hours — walk report data never changes after creation.
+// Next.js serves the cached PNG instantly; no Supabase/satori cold-start on repeat hits.
+export const revalidate = 86400
+
+// ── Font loaded once at module level (cached across requests) ──
+const fontData = readFileSync(
+  path.join(process.cwd(), 'public/fonts/DMSerifDisplay-Regular.ttf')
+)
+
 type Report = {
   dog_name: string
   duration_mins: number
@@ -77,11 +86,6 @@ export default async function Image({
       }
     }
   } catch { /* render fallback card */ }
-
-  // ── Font ─────────────────────────────────────────────────────
-  const fontData = readFileSync(
-    path.join(process.cwd(), 'public/fonts/DMSerifDisplay-Regular.ttf')
-  )
 
   // ── Data ─────────────────────────────────────────────────────
   const dogName  = report?.dog_name ?? 'Walk Report'
@@ -348,6 +352,10 @@ export default async function Image({
       fonts: [
         { name: 'DMSerif', data: fontData, style: 'normal', weight: 400 },
       ],
+      // Tell WhatsApp / CDNs to cache this image for 24h
+      headers: {
+        'Cache-Control': 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800',
+      },
     }
   )
 }
