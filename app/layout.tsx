@@ -22,8 +22,12 @@ export const viewport = {
   viewportFit: 'cover', // enables env(safe-area-inset-*) on iOS notch/Dynamic Island
 }
 
+// Resolve base URL: custom domain → Vercel auto URL → fallback
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://pawlocal-ashen.vercel.app')
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://pawlocal.in'),
+  metadataBase: new URL(siteUrl),
   title: { default: 'PawLocal — Pet Services in Juhu, Mumbai', template: '%s | PawLocal' },
   description: 'Find verified vets, groomers, dog walkers, trainers and pet stores near Juhu, Mumbai. WhatsApp directly. Zero booking fees.',
   keywords: ['pet services Mumbai', 'vets Juhu', 'dog grooming Juhu', 'dog walker Mumbai', 'pet store Juhu', 'emergency vet Mumbai'],
@@ -32,7 +36,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_IN',
-    url: 'https://pawlocal.in',
+    url: siteUrl,
     siteName: 'PawLocal',
     title: 'PawLocal — Pet Services in Juhu, Mumbai',
     description: 'Find verified vets, groomers, dog walkers & trainers near Juhu, Mumbai. WhatsApp directly. Zero fees.',
