@@ -23,8 +23,11 @@ export const viewport = {
 }
 
 // Resolve base URL: custom domain → Vercel auto URL → fallback
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://pawlocal-ashen.vercel.app')
+// VERCEL_URL (auto-set, always live) takes priority over custom domain env var
+// which may be unresolved (e.g. pawlocal.in not yet pointing anywhere).
+const siteUrl = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app')
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

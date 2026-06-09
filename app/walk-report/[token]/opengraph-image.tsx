@@ -7,12 +7,15 @@ export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 export const revalidate = 86400  // CDN caches the PNG for 24h — repeat hits are instant
 
+// VERCEL_URL is auto-set by Vercel to the real deployment hostname (no https://).
+// Prefer it over NEXT_PUBLIC_SITE_URL which may point to an unresolved custom domain.
+const deploymentBase = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app')
+
 // Font fetched once per edge worker instance (promise cached = subsequent requests free)
 const fontDataPromise = fetch(
-  new URL(
-    '/fonts/DMSerifDisplay-Regular.ttf',
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app',
-  ),
+  new URL('/fonts/DMSerifDisplay-Regular.ttf', deploymentBase),
 ).then(r => r.arrayBuffer())
 
 type Report = {
