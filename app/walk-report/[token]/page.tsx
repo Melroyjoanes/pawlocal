@@ -93,7 +93,10 @@ export async function generateMetadata({
     distance && `📏 ${distance} covered`,
   ].filter(Boolean).join(' ')
 
-  const canonicalUrl = `https://pawlocal.in/walk-report/${token}`
+  // Use configured site URL, fall back to Vercel's automatic URL, then the known Vercel deployment
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
+    ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://pawlocal-ashen.vercel.app')
+  const canonicalUrl = `${baseUrl}/walk-report/${token}`
 
   return {
     title,
