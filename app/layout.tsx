@@ -87,9 +87,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <Image
                     src="/logo.png"
                     alt="PupStep"
-                    width={130}
-                    height={44}
-                    className="h-9 sm:h-10 w-auto mix-blend-multiply"
+                    width={160}
+                    height={59}
+                    className="h-11 sm:h-12 w-auto"
                     priority
                   />
                 </a>
@@ -135,7 +135,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <footer className="border-t border-border mt-16 py-8">
               <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <Image src="/logo.png" alt="PupStep" width={90} height={30} className="h-7 w-auto mix-blend-multiply opacity-75" />
+                  <Image src="/logo.png" alt="PupStep" width={110} height={40} className="h-8 w-auto opacity-80" />
                   <span className="text-stone-400">· © {new Date().getFullYear()} · Juhu, Mumbai</span>
                 </div>
                 <div className="flex items-center gap-4">

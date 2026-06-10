@@ -310,7 +310,7 @@ export default function WalkReportCard({
           transition={{ duration: 0.4, ease: EASE }}
         >
           <Link href="/" className="flex items-center">
-            <Image src="/logo.png" alt="PupStep" width={110} height={36} className="h-8 w-auto" />
+            <Image src="/logo.png" alt="PupStep" width={140} height={52} className="h-10 w-auto" />
           </Link>
           <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: 'oklch(0.48 0.17 196)' }}>
             Walk Report
