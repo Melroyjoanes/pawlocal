@@ -53,6 +53,10 @@ export const metadata: Metadata = {
     images: [`${siteUrl}/api/og`],
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
+  // Add NEXT_PUBLIC_GSC_VERIFICATION in Vercel env vars once you get the code from Google Search Console
+  ...(process.env.NEXT_PUBLIC_GSC_VERIFICATION
+    ? { verification: { google: process.env.NEXT_PUBLIC_GSC_VERIFICATION } }
+    : {}),
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
