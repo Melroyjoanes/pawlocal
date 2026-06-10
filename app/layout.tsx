@@ -6,6 +6,7 @@ import MotionProvider from '@/components/MotionProvider'
 import ResponsePrompt from '@/components/ResponsePrompt'
 import HeaderSearch from '@/components/HeaderSearch'
 import AuthNavItem from '@/components/AuthNavItem'
+import MobileDrawer from '@/components/MobileDrawer'
 import './globals.css'
 
 // Fredoka — bubbly display font matching the logo lettering
@@ -80,25 +81,48 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {/* Customer header — hidden for /pro and /admin */}
           {!isIsolated && (
             <header className="sticky top-0 z-40" style={{ background: 'rgba(255,251,235,0.94)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: '1px solid oklch(0.906 0.06 88)' }}>
-              <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center gap-2 sm:gap-3">
 
-                {/* Logo — actual PupStep logo asset */}
+              {/* ── MOBILE header (< md): hamburger | centred logo | auth ── */}
+              <div className="md:hidden flex items-center px-3 h-14">
+                {/* Left: hamburger */}
+                <MobileDrawer />
+
+                {/* Centre: logo — absolute so it's truly centred regardless of side widths */}
+                <a href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center">
+                  <Image
+                    src="/logo.png"
+                    alt="PupStep"
+                    width={160}
+                    height={59}
+                    className="h-11 w-auto"
+                    priority
+                  />
+                </a>
+
+                {/* Right: auth avatar / sign-in */}
+                <div className="ml-auto flex-shrink-0">
+                  <AuthNavItem />
+                </div>
+              </div>
+
+              {/* ── DESKTOP header (≥ md): logo | nav | search | auth ── */}
+              <div className="hidden md:flex max-w-7xl mx-auto px-6 h-16 items-center gap-3">
+
+                {/* Logo */}
                 <a href="/" className="flex items-center flex-shrink-0">
                   <Image
                     src="/logo.png"
                     alt="PupStep"
                     width={160}
                     height={59}
-                    className="h-11 sm:h-12 w-auto"
+                    className="h-12 w-auto"
                     priority
                   />
                 </a>
 
-                {/* Middle group: nav (desktop) + search (grows on mobile) */}
+                {/* Nav + search */}
                 <div className="flex items-center gap-1.5 flex-1 min-w-0">
-
-                  {/* Nav links — desktop only, text-only (no emoji) */}
-                  <nav className="hidden md:flex items-center gap-0.5 mr-1">
+                  <nav className="flex items-center gap-0.5 mr-1">
                     {[
                       { href: '/search', label: 'Find' },
                       { href: '/map', label: 'Near me' },
@@ -113,14 +137,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                       </a>
                     ))}
                   </nav>
-
-                  {/* Search — flex-1 on mobile fills remaining space; fixed width on desktop */}
                   <HeaderSearch />
                 </div>
 
-                {/* Auth — sign in / avatar */}
+                {/* Auth */}
                 <AuthNavItem />
               </div>
+
             </header>
           )}
 
