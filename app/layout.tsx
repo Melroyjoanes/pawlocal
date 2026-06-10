@@ -2,9 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, DM_Serif_Display } from 'next/font/google'
 import { headers } from 'next/headers'
 import MotionProvider from '@/components/MotionProvider'
-import OnboardingSheet from '@/components/OnboardingSheet'
 import ResponsePrompt from '@/components/ResponsePrompt'
-import LocationPicker from '@/components/LocationPicker'
 import HeaderSearch from '@/components/HeaderSearch'
 import AuthNavItem from '@/components/AuthNavItem'
 import './globals.css'
@@ -75,9 +73,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   </span>
                 </a>
 
-                {/* Location picker */}
-                <LocationPicker />
-
                 {/* Nav links — desktop */}
                 <nav className="hidden md:flex items-center gap-1">
                   {[
@@ -125,7 +120,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </footer>
           )}
 
-          {!isIsolated && <OnboardingSheet />}
           {!isIsolated && <ResponsePrompt />}
         </MotionProvider>
       </body>
