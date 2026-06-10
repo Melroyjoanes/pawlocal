@@ -391,6 +391,9 @@ export default function WalkReportClient({
 
       setReports(prev => [newReport, ...prev])
       setSuccessToken(json.token)
+
+      // Pre-warm the OG image so Vercel CDN caches it before the link is shared on WhatsApp
+      fetch(`/api/og/walk-report/${json.token}`).catch(() => {})
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {

@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest } from 'next/server'
 
 export const runtime = 'nodejs'
+export const revalidate = 86400
 
 const fontData = readFileSync(
   path.join(process.cwd(), 'public/fonts/DMSerifDisplay-Regular.ttf'),
