@@ -104,11 +104,8 @@ export default function TrackingClient({
       <header className="bg-white border-b border-stone-200 px-4 py-4">
         <div className="max-w-lg mx-auto">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-2xl">🐾</span>
-            <span className="font-display font-extrabold text-lg leading-none tracking-tight">
-              <span style={{ color: 'oklch(0.57 0.17 192)' }}>Pup</span><span style={{ color: 'oklch(0.68 0.18 44)' }}>Step</span>
-              <span className="font-sans font-bold text-stone-700 text-base ml-1.5">Walk Tracker</span>
-            </span>
+            <img src="/logo.png" alt="PupStep" className="h-8 w-auto" />
+            <span className="font-display font-semibold text-stone-600 text-sm">Walk Tracker</span>
           </div>
           <p className="text-sm text-stone-500">
             {petName ? `${petName}'s walk` : 'Live walk'} with {providerName}

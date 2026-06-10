@@ -1,23 +1,26 @@
 import type { Metadata } from 'next'
-import { Nunito, Plus_Jakarta_Sans } from 'next/font/google'
+import { Nunito, Fredoka } from 'next/font/google'
 import { headers } from 'next/headers'
+import Image from 'next/image'
 import MotionProvider from '@/components/MotionProvider'
 import ResponsePrompt from '@/components/ResponsePrompt'
 import HeaderSearch from '@/components/HeaderSearch'
 import AuthNavItem from '@/components/AuthNavItem'
 import './globals.css'
 
+// Fredoka — bubbly display font matching the logo lettering
+const fredoka = Fredoka({
+  subsets: ['latin'],
+  variable: '--font-fredoka',
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+})
+
+// Nunito — warm, rounded body font
 const nunito = Nunito({
   subsets: ['latin'],
   variable: '--font-nunito',
   weight: ['400', '500', '600', '700', '800'],
-  display: 'swap',
-})
-
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--font-jakarta',
-  weight: ['400', '500', '600', '700'],
   display: 'swap',
 })
 
@@ -70,7 +73,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const isIsolated = pathname.startsWith('/pro') || pathname.startsWith('/admin') || pathname.startsWith('/track')
 
   return (
-    <html lang="en" className={`${plusJakarta.variable} ${nunito.variable}`}>
+    <html lang="en" className={`${fredoka.variable} ${nunito.variable}`}>
       <body className="font-sans antialiased bg-background text-foreground">
         <MotionProvider>
 
@@ -79,13 +82,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <header className="sticky top-0 z-40" style={{ background: 'rgba(255,251,235,0.94)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: '1px solid oklch(0.906 0.06 88)' }}>
               <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center gap-2 sm:gap-3">
 
-                {/* Logo — colours matched to the PupStep logo asset */}
-                <a href="/" className="flex items-center gap-1.5 flex-shrink-0">
-                  <span className="text-xl sm:text-2xl leading-none">🐾</span>
-                  <span className="font-display font-extrabold text-lg sm:text-xl leading-none tracking-tight">
-                    <span style={{ color: 'oklch(0.57 0.17 192)' }}>Pup</span>
-                    <span style={{ color: 'oklch(0.68 0.18 44)' }}>Step</span>
-                  </span>
+                {/* Logo — actual PupStep logo asset */}
+                <a href="/" className="flex items-center flex-shrink-0">
+                  <Image
+                    src="/logo.png"
+                    alt="PupStep"
+                    width={130}
+                    height={44}
+                    className="h-9 sm:h-10 w-auto mix-blend-multiply"
+                    priority
+                  />
                 </a>
 
                 {/* Middle group: nav (desktop) + search (grows on mobile) */}
@@ -128,7 +134,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {!isIsolated && (
             <footer className="border-t border-border mt-16 py-8">
               <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
-                <p>© {new Date().getFullYear()} PupStep · Juhu, Mumbai</p>
+                <div className="flex items-center gap-2">
+                  <Image src="/logo.png" alt="PupStep" width={90} height={30} className="h-7 w-auto mix-blend-multiply opacity-75" />
+                  <span className="text-stone-400">· © {new Date().getFullYear()} · Juhu, Mumbai</span>
+                </div>
                 <div className="flex items-center gap-4">
                   <a href="/search" className="hover:text-foreground transition-colors">Find services</a>
                   <a href="/map" className="hover:text-foreground transition-colors">All on map</a>

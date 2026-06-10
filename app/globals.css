@@ -7,10 +7,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-jakarta);
+  --font-sans: var(--font-nunito);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-nunito);
-  --font-display: var(--font-nunito);
+  --font-heading: var(--font-fredoka);
+  --font-display: var(--font-fredoka);
   --color-brand-teal: var(--pl-teal);
   --color-brand-teal-light: var(--pl-teal-light);
   --color-brand-amber: var(--pl-amber);
@@ -204,12 +204,12 @@
     background: linear-gradient(160deg, #ffffff 0%, #fffdf7 100%);
     box-shadow: var(--sh-clay);
     border: 1px solid rgba(226,220,200,0.7);
-    border-radius: 24px;
-    transition: box-shadow 0.22s ease, transform 0.22s ease;
+    border-radius: 28px;
+    transition: box-shadow 0.22s ease, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   .clay-card:hover {
     box-shadow: var(--sh-clay-hover);
-    transform: translateY(-2px);
+    transform: translateY(-4px) scale(1.01);
   }
 
   /* Teal primary button — updated to logo teal */
@@ -311,6 +311,65 @@
     border: 1px solid oklch(0.82 0.12 44 / 0.55);
     border-radius: 9999px;
   }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BUBBLY / PLAYFUL UTILITIES
+══════════════════════════════════════════════════════════════════════════════ */
+
+@layer utilities {
+  /* Gentle float — hero elements, paw icons */
+  .animate-float {
+    animation: float 3.6s ease-in-out infinite;
+  }
+  .animate-float-slow {
+    animation: float 5s ease-in-out infinite;
+  }
+  .animate-float-delay {
+    animation: float 3.6s ease-in-out infinite;
+    animation-delay: 0.9s;
+  }
+
+  /* Soft wiggle on hover (applied via JS / framer usually, but available as CSS) */
+  .animate-wiggle {
+    animation: wiggle 0.55s ease-in-out;
+  }
+
+  /* Bounce-in for feature cards */
+  .animate-bounce-in {
+    animation: bounceIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  /* Pulsing glow ring (verified badge / CTA) */
+  .animate-pulse-ring {
+    animation: pulseRing 2.4s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%       { transform: translateY(-8px) rotate(1.5deg); }
+  66%       { transform: translateY(-4px) rotate(-1deg); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20%  { transform: rotate(-8deg); }
+  40%  { transform: rotate(6deg); }
+  60%  { transform: rotate(-4deg); }
+  80%  { transform: rotate(3deg); }
+}
+
+@keyframes bounceIn {
+  0%   { opacity: 0; transform: scale(0.5); }
+  60%  { opacity: 1; transform: scale(1.08); }
+  80%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pulseRing {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.53 0.17 192 / 0.35); }
+  50%       { box-shadow: 0 0 0 8px oklch(0.53 0.17 192 / 0); }
 }
 
 /* Respect reduced motion */

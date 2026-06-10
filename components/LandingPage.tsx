@@ -255,7 +255,7 @@ function WalkReportMiniCard() {
         <div className="flex items-center gap-2.5">
           <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg, #FF8C52, #F56B22)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 8px rgba(175,65,10,0.28)', fontSize: 22 }}>🐕</div>
           <div>
-            <p style={{ fontSize: 17, fontWeight: 700, color: '#1C0A00', lineHeight: 1.1, fontFamily: 'var(--font-nunito, sans-serif)' }}>Kairo&apos;s Walk</p>
+            <p style={{ fontSize: 17, fontWeight: 700, color: '#1C0A00', lineHeight: 1.1, fontFamily: 'var(--font-fredoka, sans-serif)' }}>Kairo&apos;s Walk</p>
             <p style={{ fontSize: 12, color: '#92400E', marginTop: 2 }}>with Shahrukh</p>
           </div>
         </div>

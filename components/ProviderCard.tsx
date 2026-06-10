@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
 import type { CategoryConfig } from '@/lib/categories'
 import VerificationBadge from '@/components/VerificationBadge'
@@ -25,12 +26,15 @@ export default function ProviderCard({ provider, category }: Props) {
   const whatsappUrl = `https://wa.me/91${provider.whatsapp.replace(/\D/g, '')}`
 
   return (
-    <div
-      className="group flex gap-4 p-4 transition-all clay-card cursor-pointer"
+    <motion.div
+      className="group flex gap-4 p-4 clay-card cursor-pointer"
       role="link"
       tabIndex={0}
       onClick={() => router.push(`/provider/${provider.id}`)}
       onKeyDown={(e) => e.key === 'Enter' && router.push(`/provider/${provider.id}`)}
+      whileHover={{ y: -4, scale: 1.01 }}
+      whileTap={{ y: 1, scale: 0.99 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 24 }}
     >
       {/* Photo */}
       <div
@@ -157,6 +161,6 @@ export default function ProviderCard({ provider, category }: Props) {
           </span>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }

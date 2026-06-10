@@ -309,11 +309,8 @@ export default function WalkReportCard({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: EASE }}
         >
-          <Link href="/" className="flex items-center gap-1.5">
-            <span className="text-xl leading-none">🐾</span>
-            <span className="font-display font-extrabold text-lg leading-none tracking-tight">
-              <span style={{ color: 'oklch(0.57 0.17 192)' }}>Pup</span><span style={{ color: 'oklch(0.68 0.18 44)' }}>Step</span>
-            </span>
+          <Link href="/" className="flex items-center">
+            <Image src="/logo.png" alt="PupStep" width={110} height={36} className="h-8 w-auto" />
           </Link>
           <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: 'oklch(0.48 0.17 196)' }}>
             Walk Report
