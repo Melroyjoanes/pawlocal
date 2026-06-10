@@ -10,8 +10,8 @@ const fontData = readFileSync(
   path.join(process.cwd(), 'public/fonts/DMSerifDisplay-Regular.ttf'),
 )
 
-// ── Circular logo as base64 data URI (read at cold-start, cached in module) ──
-const logoBuffer = readFileSync(path.join(process.cwd(), 'public/icon-circle.png'))
+// ── Horizontal PupStep logo as base64 data URI ────────────────────────────────
+const logoBuffer = readFileSync(path.join(process.cwd(), 'public/logo.png'))
 const logoSrc    = `data:image/png;base64,${logoBuffer.toString('base64')}`
 
 // ── Brand tokens ──────────────────────────────────────────────────────────────
@@ -185,16 +185,16 @@ export async function GET() {
             display: 'flex',
           }} />
 
-          {/* The circular logo — crisp, prominent */}
+          {/* Horizontal PupStep logo — crisp, prominent */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={logoSrc}
-            width={350}
-            height={350}
+            width={380}
+            height={140}
             style={{
-              width: 350, height: 350,
-              borderRadius: '50%',
-              boxShadow: '0 20px 60px rgba(15,45,50,0.18), 0 8px 24px rgba(180,83,9,0.14)',
+              width: 380, height: 140,
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 12px 32px rgba(15,45,50,0.16))',
             }}
             alt="PupStep"
           />
