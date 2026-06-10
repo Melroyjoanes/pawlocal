@@ -75,13 +75,15 @@ const C = {
     border: '1px solid rgba(186,230,253,0.55)', text: '#0C4A6E',
   },
   amberCTA: {
-    bg: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
-    shadow: '0 4px 0px rgba(120,53,15,0.28), 0 10px 24px rgba(252,211,77,0.45), inset 0 1.5px 0 rgba(255,255,255,0.38)',
+    // Logo "Step" orange — replaces amber-gold
+    bg: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
+    shadow: '0 4px 0px rgba(175,65,10,0.30), 0 10px 24px rgba(245,107,34,0.42), inset 0 1.5px 0 rgba(255,255,255,0.38)',
     border: '1px solid rgba(255,255,255,0.18)', text: '#451A03',
   },
   tealCTA: {
-    bg: 'linear-gradient(160deg, #14B8A6 0%, #0B7A8A 100%)',
-    shadow: '0 4px 0px rgba(6,90,103,0.4), 0 10px 24px rgba(11,122,138,0.35), inset 0 1.5px 0 rgba(255,255,255,0.18)',
+    // Logo map-pin teal — brighter, more cyan
+    bg: 'linear-gradient(160deg, #17C8CC 0%, #0A8A96 100%)',
+    shadow: '0 4px 0px rgba(5,80,90,0.42), 0 10px 24px rgba(12,180,188,0.38), inset 0 1.5px 0 rgba(255,255,255,0.20)',
     border: '1px solid rgba(255,255,255,0.12)', text: '#F0FDFA',
   },
 } as const
@@ -139,10 +141,10 @@ function Sphere({ size, gradient, glow, specW, specH, specTop, specLeft, style =
 }
 
 const AmberSphere = ({ size = 220, style = {} }: { size?: number; style?: React.CSSProperties }) => (
-  <Sphere size={size} gradient="radial-gradient(circle at 32% 30%, #FEF9C3, #FDE68A 44%, #F59E0B 72%, #D97706)" glow={`0 ${Math.round(size * 0.13)}px ${Math.round(size * 0.33)}px rgba(180,83,9,0.22)`} specW="38%" specH="27%" specTop="17%" specLeft="22%" style={style} />
+  <Sphere size={size} gradient="radial-gradient(circle at 32% 30%, #FEF9C3, #FDE68A 44%, #F59E0B 72%, #F07030)" glow={`0 ${Math.round(size * 0.13)}px ${Math.round(size * 0.33)}px rgba(180,83,9,0.22)`} specW="38%" specH="27%" specTop="17%" specLeft="22%" style={style} />
 )
 const TealSphere = ({ size = 120, style = {} }: { size?: number; style?: React.CSSProperties }) => (
-  <Sphere size={size} gradient="radial-gradient(circle at 30% 28%, #99F6E4, #14B8A6 55%, #0B7A8A)" glow={`0 ${Math.round(size * 0.12)}px ${Math.round(size * 0.28)}px rgba(11,122,138,0.28)`} specW="40%" specH="28%" specTop="16%" specLeft="20%" style={style} />
+  <Sphere size={size} gradient="radial-gradient(circle at 30% 28%, #B2F5F8, #17C8CC 52%, #0A8A96)" glow={`0 ${Math.round(size * 0.12)}px ${Math.round(size * 0.28)}px rgba(10,138,150,0.30)`} specW="40%" specH="28%" specTop="16%" specLeft="20%" style={style} />
 )
 const LavenderSphere = ({ size = 80, style = {} }: { size?: number; style?: React.CSSProperties }) => (
   <Sphere size={size} gradient="radial-gradient(circle at 30% 28%, #EDE9FE, #C4B5FD 50%, #7C3AED)" glow={`0 ${Math.round(size * 0.12)}px ${Math.round(size * 0.28)}px rgba(124,58,237,0.22)`} specW="42%" specH="28%" specTop="16%" specLeft="20%" style={style} />
@@ -222,8 +224,8 @@ function CardStack() {
   return (
     <div className="relative h-44 w-[300px] mx-auto">
       <ProviderMiniCard emoji="✂️" name="Bella's Grooming Studio" area="Versova · 0.8 km" rating="4.9 (38)" badge="Grooming" badgeColor="#7C3AED" z={1} rotate={-7} y={-28} />
-      <ProviderMiniCard emoji="🦮" name="Rahul's Dog Walks" area="Andheri W · 0.4 km" rating="5.0 (22)" badge="Walking" badgeColor="#D97706" z={2} rotate={-2} y={-10} />
-      <ProviderMiniCard emoji="🐕" name="Sohail's Dog Walks" area="Juhu · 0.6 km" rating="4.8 (54)" badge="Walking" badgeColor="#D97706" z={3} rotate={0} y={0} float />
+      <ProviderMiniCard emoji="🦮" name="Rahul's Dog Walks" area="Andheri W · 0.4 km" rating="5.0 (22)" badge="Walking" badgeColor="#F07030" z={2} rotate={-2} y={-10} />
+      <ProviderMiniCard emoji="🐕" name="Sohail's Dog Walks" area="Juhu · 0.6 km" rating="4.8 (54)" badge="Walking" badgeColor="#F07030" z={3} rotate={0} y={0} float />
     </div>
   )
 }
@@ -257,7 +259,7 @@ function WalkReportMiniCard() {
             <p style={{ fontSize: 12, color: '#92400E', marginTop: 2 }}>with Shahrukh</p>
           </div>
         </div>
-        <div style={{ background: 'linear-gradient(135deg, #0B7A8A, #065A67)', borderRadius: 100, padding: '4px 12px', fontSize: 11, fontWeight: 700, color: '#F0FDFA' }}>✓ Verified</div>
+        <div style={{ background: 'linear-gradient(135deg, #0A8A96, #087585)', borderRadius: 100, padding: '4px 12px', fontSize: 11, fontWeight: 700, color: '#F0FDFA' }}>✓ Verified</div>
       </div>
 
       {/* Stats row */}
@@ -349,7 +351,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
               <motion.h1 initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: EASE_EXP, delay: 0.08 }}
                 className="font-display text-slate-900 mb-5" style={{ fontSize: 'clamp(2.6rem, 6.5vw, 5rem)', lineHeight: 1.04, letterSpacing: '-0.02em' }}>
                 Mumbai&apos;s verified<br />
-                <span style={{ color: '#D97706' }}>pet people.</span>
+                <span style={{ color: '#F07030' }}>pet people.</span>
               </motion.h1>
 
               <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE_EXP, delay: 0.18 }}
@@ -466,7 +468,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
           <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE_EXP }} className="mb-10">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#D97706' }}>Every service, one tap away</p>
+                <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#F07030' }}>Every service, one tap away</p>
                 <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12 }}>What does your pet need?</h2>
               </div>
               <p className="text-sm text-slate-400 max-w-xs sm:text-right">All verified providers near {neighbourhood}</p>
@@ -577,7 +579,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
       <section style={{ ...BLEED, background: C.pageBg }} className="py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE_EXP }} className="text-center mb-10">
-            <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#D97706' }}>Three steps. That&apos;s all.</p>
+            <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#F07030' }}>Three steps. That&apos;s all.</p>
             <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)' }}>How PupStep works</h2>
           </motion.div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
@@ -640,7 +642,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
       <section style={{ ...BLEED, background: C.pageBg }} className="py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE_EXP }} className="text-center mb-10">
-            <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#D97706' }}>Why pet parents choose us</p>
+            <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#F07030' }}>Why pet parents choose us</p>
             <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)' }}>What makes PupStep different</h2>
           </motion.div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -696,7 +698,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
         style={{ background: 'rgba(255,251,235,0.96)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderTop: '1px solid #FDE68A', paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
         <div className="flex gap-3 px-4 pt-3 pb-3">
           <Link href="/dog-walking" className="flex-1 flex items-center justify-center py-3.5 rounded-2xl text-sm font-bold"
-            style={{ background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)', boxShadow: '0 4px 0px rgba(120,53,15,0.26)', color: '#451A03' }}>
+            style={{ background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)', boxShadow: '0 4px 0px rgba(175,65,10,0.30), 0 8px 20px rgba(245,107,34,0.35)', color: '#451A03' }}>
             Browse Services
           </Link>
           <Link href="/broadcast" className="flex-1 flex items-center justify-center py-3.5 rounded-2xl text-sm font-bold"

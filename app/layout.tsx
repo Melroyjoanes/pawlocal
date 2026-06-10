@@ -79,11 +79,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <header className="sticky top-0 z-40" style={{ background: 'rgba(255,251,235,0.94)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: '1px solid oklch(0.906 0.06 88)' }}>
               <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center gap-2 sm:gap-3">
 
-                {/* Logo */}
+                {/* Logo — colours matched to the PupStep logo asset */}
                 <a href="/" className="flex items-center gap-1.5 flex-shrink-0">
                   <span className="text-xl sm:text-2xl leading-none">🐾</span>
-                  <span className="font-display font-bold text-lg sm:text-xl text-slate-900 leading-none tracking-tight">
-                    Pup<span style={{ color: '#D97706' }}>Step</span>
+                  <span className="font-display font-extrabold text-lg sm:text-xl leading-none tracking-tight">
+                    <span style={{ color: 'oklch(0.57 0.17 192)' }}>Pup</span>
+                    <span style={{ color: 'oklch(0.68 0.18 44)' }}>Step</span>
                   </span>
                 </a>
 

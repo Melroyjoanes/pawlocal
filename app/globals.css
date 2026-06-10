@@ -54,37 +54,44 @@
 }
 
 :root {
-  /* ── Warm amber-cream page background (matches the LandingPage sunshine palette) ── */
+  /* ── Warm amber-cream page background ────────────────────────────────────── */
   --background: oklch(0.988 0.018 88);   /* ≈ #FFFBEB amber-50 */
   --foreground: oklch(0.14 0.012 250);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.14 0.012 250);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.14 0.012 250);
-  --primary: oklch(0.48 0.17 196);
-  --primary-foreground: oklch(0.99 0.01 196);
+
+  /* Primary = logo teal (shifted brighter + more cyan vs old) */
+  --primary: oklch(0.53 0.17 192);
+  --primary-foreground: oklch(0.99 0.01 192);
+
   --secondary: oklch(0.97 0.012 88);
   --secondary-foreground: oklch(0.14 0.012 250);
   --muted: oklch(0.97 0.012 88);
   --muted-foreground: oklch(0.52 0.01 250);
-  --accent: oklch(0.96 0.04 196);
-  --accent-foreground: oklch(0.48 0.17 196);
+  --accent: oklch(0.95 0.05 192);
+  --accent-foreground: oklch(0.53 0.17 192);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.018 88);         /* warm amber-tinted border */
+  --border: oklch(0.92 0.018 88);
   --input: oklch(0.93 0.014 88);
-  --ring: oklch(0.48 0.17 196);
+  --ring: oklch(0.53 0.17 192);
 
-  /* PawLocal brand tokens */
-  --pl-teal: oklch(0.48 0.17 196);
-  --pl-teal-hover: oklch(0.42 0.17 196);
-  --pl-teal-deep: oklch(0.36 0.14 198);   /* bottom shadow of teal clay button */
-  --pl-teal-light: oklch(0.96 0.04 196);
-  --pl-amber: oklch(0.65 0.18 75);
-  --pl-amber-light: oklch(0.97 0.05 75);
+  /* ── PupStep brand tokens — matched to logo ──────────────────────────────
+     Teal  : logo map-pin + "Pup" text — brighter, cyan-shifted vs old
+     Orange: logo "Step" text — true warm orange, replaces amber-gold
+  ──────────────────────────────────────────────────────────────────────── */
+  --pl-teal: oklch(0.53 0.17 192);
+  --pl-teal-bright: oklch(0.64 0.14 192);   /* logo "Pup" display only */
+  --pl-teal-hover: oklch(0.47 0.17 192);
+  --pl-teal-deep: oklch(0.38 0.14 193);     /* button press-shadow */
+  --pl-teal-light: oklch(0.95 0.05 192);
+  --pl-amber: oklch(0.68 0.18 44);           /* logo "Step" orange */
+  --pl-amber-light: oklch(0.95 0.06 44);
 
-  /* ── Claymorphism shadow tokens ────────────────────────────────────────────────
-     Three layers: top inset highlight · bottom inset press edge · outer glow
-  ──────────────────────────────────────────────────────────────────────────── */
+  /* ── Claymorphism shadow tokens ──────────────────────────────────────────
+     Three layers: top inset highlight · bottom press edge · outer glow
+  ──────────────────────────────────────────────────────────────────────── */
   --sh-clay:
     inset 0 1.5px 0 rgba(255,255,255,0.85),
     inset 0 -3px 0 rgba(0,0,0,0.08),
@@ -93,20 +100,22 @@
 
   --sh-clay-hover:
     inset 0 1.5px 0 rgba(255,255,255,0.9),
-    inset 0 -3px 0 rgba(0,0,0,0.1),
+    inset 0 -3px 0 rgba(0,0,0,0.10),
     0 18px 40px rgba(15,45,50,0.14),
     0 6px 14px rgba(15,45,50,0.08);
 
+  /* Teal button — updated to new teal hue */
   --sh-clay-teal:
     inset 0 1.5px 0 rgba(255,255,255,0.22),
     inset 0 -4px 0 var(--pl-teal-deep),
-    0 12px 32px oklch(0.48 0.17 196 / 0.42);
+    0 12px 32px oklch(0.53 0.17 192 / 0.42);
 
+  /* Orange button (was amber, now logo orange) */
   --sh-clay-amber:
     inset 0 1.5px 0 rgba(255,255,255,0.45),
-    inset 0 -4px 0 rgba(120,53,15,0.28),
-    0 10px 28px rgba(253,230,138,0.65),
-    0 4px 8px rgba(180,83,9,0.18);
+    inset 0 -4px 0 rgba(175,65,10,0.30),
+    0 10px 28px rgba(245,110,35,0.48),
+    0 4px 8px rgba(200,80,15,0.20);
 
   --sh-clay-wa:
     inset 0 1.5px 0 rgba(255,255,255,0.22),
@@ -119,7 +128,7 @@
     0 6px 20px rgba(0,0,0,0.07),
     0 2px 6px rgba(0,0,0,0.04);
 
-  /* Apple-style base radius (16px → large curves everywhere) */
+  /* Apple-style base radius (16px) */
   --radius: 1rem;
 
   --chart-1: oklch(0.87 0 0);
@@ -187,7 +196,6 @@
 /* ══════════════════════════════════════════════════════════════════════════════
    CLAYMORPHISM UTILITIES
    Apply with className="clay-card", "clay-btn-teal", etc.
-   These layer: top-inset highlight + bottom-inset press ridge + outer glow
 ══════════════════════════════════════════════════════════════════════════════ */
 
 @layer utilities {
@@ -204,11 +212,11 @@
     transform: translateY(-2px);
   }
 
-  /* Teal primary button */
+  /* Teal primary button — updated to logo teal */
   .clay-btn-teal {
-    background: linear-gradient(160deg, oklch(0.52 0.17 196) 0%, oklch(0.44 0.17 196) 100%);
+    background: linear-gradient(160deg, oklch(0.58 0.17 192) 0%, oklch(0.49 0.17 192) 100%);
     box-shadow: var(--sh-clay-teal);
-    border: 1px solid oklch(0.56 0.15 196 / 0.25);
+    border: 1px solid oklch(0.60 0.14 192 / 0.25);
     color: #fff;
     border-radius: 9999px;
     transition: box-shadow 0.2s ease, transform 0.2s ease;
@@ -217,7 +225,7 @@
     box-shadow:
       inset 0 1.5px 0 rgba(255,255,255,0.28),
       inset 0 -4px 0 var(--pl-teal-deep),
-      0 18px 40px oklch(0.48 0.17 196 / 0.55);
+      0 18px 40px oklch(0.53 0.17 192 / 0.55);
     transform: translateY(-2px);
   }
   .clay-btn-teal:active { transform: translateY(1px); }
@@ -240,9 +248,9 @@
   }
   .clay-btn-wa:active { transform: translateY(1px); }
 
-  /* Amber / golden CTA button */
+  /* Orange CTA button — logo "Step" orange, replaces amber-gold */
   .clay-btn-amber {
-    background: linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%);
+    background: linear-gradient(160deg, oklch(0.74 0.18 44) 0%, oklch(0.65 0.18 44) 100%);
     box-shadow: var(--sh-clay-amber);
     border: 1px solid rgba(255,255,255,0.22);
     color: #451A03;
@@ -251,10 +259,10 @@
   }
   .clay-btn-amber:hover {
     box-shadow:
-      inset 0 1.5px 0 rgba(255,255,255,0.55),
-      inset 0 -4px 0 rgba(120,53,15,0.35),
-      0 18px 36px rgba(253,230,138,0.8),
-      0 6px 12px rgba(180,83,9,0.22);
+      inset 0 1.5px 0 rgba(255,255,255,0.50),
+      inset 0 -4px 0 rgba(175,65,10,0.38),
+      0 18px 36px rgba(245,110,35,0.58),
+      0 6px 12px rgba(200,80,15,0.22);
     transform: translateY(-2px);
   }
   .clay-btn-amber:active { transform: translateY(1px); }
@@ -293,14 +301,14 @@
       0 8px 18px rgba(0,0,0,0.10);
   }
 
-  /* Yellow accent badge */
+  /* Orange accent badge (was amber-gold, now logo orange-light) */
   .clay-badge-amber {
-    background: linear-gradient(160deg, #FEF3C7 0%, #FDE68A 100%);
+    background: linear-gradient(160deg, oklch(0.94 0.06 44) 0%, oklch(0.87 0.10 44) 100%);
     box-shadow:
       inset 0 1px 0 rgba(255,255,255,0.95),
-      inset 0 -2px 0 rgba(180,83,9,0.18),
-      0 4px 12px rgba(253,230,138,0.6);
-    border: 1px solid rgba(253,230,138,0.7);
+      inset 0 -2px 0 rgba(175,65,10,0.18),
+      0 4px 12px rgba(245,110,35,0.32);
+    border: 1px solid oklch(0.82 0.12 44 / 0.55);
     border-radius: 9999px;
   }
 }
