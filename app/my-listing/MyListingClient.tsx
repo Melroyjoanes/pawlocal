@@ -3,7 +3,7 @@
 import GoogleSignInButton from '@/components/GoogleSignInButton'
 
 const ADMIN_WA = 'https://wa.me/919082980099?text=' + encodeURIComponent(
-  'Hi! I am a service provider listed on PawLocal and I want to access my dashboard. My name is: '
+  'Hi! I am a service provider listed on PupStep and I want to access my dashboard. My name is: '
 )
 
 export default function MyListingClient() {
@@ -45,7 +45,7 @@ export default function MyListingClient() {
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-3.5 font-semibold text-sm transition-colors"
         >
-          💬 Message PawLocal to get access
+          💬 Message PupStep to get access
         </a>
 
         <p className="text-xs text-slate-400 text-center mt-4 leading-relaxed">

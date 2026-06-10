@@ -21,7 +21,7 @@ export default function VerificationBadge({ tier, size = 'sm' }: Props) {
         }}
       >
         <span style={{ letterSpacing: '-0.5px' }}>&#x1F43E;&#x1F43E;&#x1F43E;</span>
-        <span>PawLocal Certified</span>
+        <span>PupStep Certified</span>
       </span>
     )
   }

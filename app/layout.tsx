@@ -27,23 +27,23 @@ const siteUrl = 'https://pupstep.in'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: { default: 'PawLocal — Pet Services in Juhu, Mumbai', template: '%s | PawLocal' },
+  title: { default: 'PupStep — Pet Services in Juhu, Mumbai', template: '%s | PupStep' },
   description: 'Find verified vets, groomers, dog walkers, trainers and pet stores near Juhu, Mumbai. WhatsApp directly. Zero booking fees.',
   keywords: ['pet services Mumbai', 'vets Juhu', 'dog grooming Juhu', 'dog walker Mumbai', 'pet store Juhu', 'emergency vet Mumbai'],
-  authors: [{ name: 'PawLocal' }],
-  creator: 'PawLocal',
+  authors: [{ name: 'PupStep' }],
+  creator: 'PupStep',
   openGraph: {
     type: 'website',
     locale: 'en_IN',
     url: siteUrl,
-    siteName: 'PawLocal',
-    title: 'PawLocal — Pet Services in Juhu, Mumbai',
+    siteName: 'PupStep',
+    title: 'PupStep — Pet Services in Juhu, Mumbai',
     description: 'Find verified vets, groomers, dog walkers & trainers near Juhu, Mumbai. WhatsApp directly. Zero fees.',
     // og-image.png doesn't exist yet — remove to prevent 404 fallback
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PawLocal — Pet Services in Juhu, Mumbai',
+    title: 'PupStep — Pet Services in Juhu, Mumbai',
     description: 'Verified vets, groomers, walkers & trainers near Juhu. WhatsApp direct. Zero fees.',
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
@@ -69,7 +69,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <a href="/" className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-2xl">🐾</span>
                   <span className="font-display text-xl text-slate-900 leading-none">
-                    Paw<span style={{ color: '#D97706' }}>Local</span>
+                    Pup<span style={{ color: '#D97706' }}>Step</span>
                   </span>
                 </a>
 
@@ -109,7 +109,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {!isIsolated && (
             <footer className="border-t border-border mt-16 py-8">
               <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
-                <p>© {new Date().getFullYear()} PawLocal · Juhu, Mumbai</p>
+                <p>© {new Date().getFullYear()} PupStep · Juhu, Mumbai</p>
                 <div className="flex items-center gap-4">
                   <a href="/search" className="hover:text-foreground transition-colors">Find services</a>
                   <a href="/map" className="hover:text-foreground transition-colors">All on map</a>

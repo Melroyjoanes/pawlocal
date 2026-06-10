@@ -374,7 +374,7 @@ function BroadcastAdminCard({
 
   const waLink = `https://wa.me/91${b.poster_whatsapp.replace(/\D/g, '').slice(-10)}`
   const waText = encodeURIComponent(
-    `Hi ${b.poster_name}! I saw your request on PawLocal for ${svc.label}. Let me help connect you with the right provider. 🐾`
+    `Hi ${b.poster_name}! I saw your request on PupStep for ${svc.label}. Let me help connect you with the right provider. 🐾`
   )
 
   async function handleClose() {
@@ -418,7 +418,7 @@ function BroadcastAdminCard({
 
   function buildNotifyLink(prov: any) {
     const message = [
-      `Hi ${prov.name}! 🐾 New ${svc.label} request on PawLocal.`,
+      `Hi ${prov.name}! 🐾 New ${svc.label} request on PupStep.`,
       ``,
       `Customer: ${b.poster_name} in ${b.area}`,
       `When: ${b.date_needed}`,
@@ -821,7 +821,7 @@ export default function AdminPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Admin</h1>
-          <p className="text-xs text-slate-400 mt-0.5">PawLocal · Juhu, Mumbai</p>
+          <p className="text-xs text-slate-400 mt-0.5">PupStep · Juhu, Mumbai</p>
         </div>
         <a href="/" className="text-sm text-slate-400 hover:text-slate-700 transition-colors">
           ← View site

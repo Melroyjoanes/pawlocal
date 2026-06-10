@@ -106,7 +106,7 @@ export default function TrackingClient({
           <div className="flex items-center gap-2 mb-1">
             <span className="text-2xl">🐾</span>
             <span className="font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif", fontSize: 20 }}>
-              PawLocal Walk Tracker
+              PupStep Walk Tracker
             </span>
           </div>
           <p className="text-sm text-stone-500">
@@ -208,7 +208,7 @@ export default function TrackingClient({
 
         {/* Footer note */}
         <p className="text-xs text-stone-400 text-center pb-4">
-          Location updates every 10 seconds · Powered by PawLocal
+          Location updates every 10 seconds · Powered by PupStep
         </p>
 
       </main>

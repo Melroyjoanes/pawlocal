@@ -71,7 +71,7 @@ export async function generateMetadata({
   const { token } = await params
   const report = await getReport(token)
 
-  if (!report) return { title: 'Walk Report · PawLocal' }
+  if (!report) return { title: 'Walk Report · PupStep' }
 
   const dogName = report.dog_name
   const walkerName = report.provider_name ?? 'Your dog walker'
@@ -106,7 +106,7 @@ export async function generateMetadata({
       title,
       description,
       url: canonicalUrl,
-      siteName: 'PawLocal',
+      siteName: 'PupStep',
       type: 'article',
       // Explicitly set so layout's broken /og-image.png is not inherited
       images: [{ url: ogImageUrl, width: 1200, height: 630, alt: `${dogName}'s Walk Report` }],

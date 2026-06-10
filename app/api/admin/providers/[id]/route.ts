@@ -98,9 +98,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
           body: JSON.stringify({
-            from: 'PawLocal <onboarding@resend.dev>',
+            from: 'PupStep <onboarding@resend.dev>',
             to: prov.email,
-            subject: "You're approved on PawLocal — click to access your dashboard",
+            subject: "You're approved on PupStep — click to access your dashboard",
             html: `<div style="font-family:-apple-system,sans-serif;max-width:520px;margin:0 auto;background:#f0fdfa;padding:32px 24px;border-radius:24px;">
   <div style="text-align:center;margin-bottom:28px;">
     <div style="font-size:48px;margin-bottom:12px;">🐾</div>

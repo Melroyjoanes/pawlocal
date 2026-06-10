@@ -105,7 +105,7 @@ export default async function JoinSuccessPage({ searchParams }: Props) {
           <div className="py-2.5 px-4 rounded-xl bg-amber-50 border border-amber-100">
             <p className="text-xs font-semibold text-amber-800 mb-1">About verification tiers</p>
             <p className="text-xs text-amber-700 leading-relaxed">
-              Once approved, your listing starts as <strong>Listed</strong>. After our team speaks with you, you become <strong>Verified</strong>. After an in-person review, you can earn <strong>PawLocal Certified</strong> status — the highest trust badge on the directory.
+              Once approved, your listing starts as <strong>Listed</strong>. After our team speaks with you, you become <strong>Verified</strong>. After an in-person review, you can earn <strong>PupStep Certified</strong> status — the highest trust badge on the directory.
             </p>
           </div>
         </div>

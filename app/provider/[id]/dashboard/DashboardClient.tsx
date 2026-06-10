@@ -270,7 +270,7 @@ function ProfileCard({
     { label: 'Bio written',    done: !!provider.bio,                        tip: 'Tell customers about your experience' },
     { label: 'Pricing set',    done: !!provider.price_min,                  tip: 'Add pricing to attract more leads' },
     { label: 'Hours set',      done: !!provider.hours_from,                 tip: 'Show when you\'re available' },
-    { label: 'Verified',       done: !!provider.is_verified,                tip: 'Get verified by PawLocal for more trust' },
+    { label: 'Verified',       done: !!provider.is_verified,                tip: 'Get verified by PupStep for more trust' },
   ]
   const donePct = Math.round((checks.filter(c => c.done).length / checks.length) * 100)
   const firstMissing = checks.find(c => !c.done)
@@ -362,7 +362,7 @@ function calcPoints(stats: Stats, provider: ProviderWithPhotos) {
 
   // Profile completeness
   if (provider.is_verified) {
-    pts += 100; breakdown.push({ label: 'Verified by PawLocal', pts: 100 })
+    pts += 100; breakdown.push({ label: 'Verified by PupStep', pts: 100 })
   }
   const complete = provider.bio && provider.price_min && provider.provider_photos.length > 0
   if (complete) {
@@ -540,7 +540,7 @@ function MatchingBroadcasts({ broadcasts, category }: { broadcasts: MatchingBroa
         {broadcasts.map(b => {
           const phone = b.poster_whatsapp.replace(/\D/g, '').slice(-10)
           const waUrl = `https://wa.me/91${phone}?text=${encodeURIComponent(
-            `Hi ${b.poster_name}, I saw your request on PawLocal for ${b.pet_description} in ${b.area}. I can help! 🐾`
+            `Hi ${b.poster_name}, I saw your request on PupStep for ${b.pet_description} in ${b.area}. I can help! 🐾`
           )}`
           return (
             <div key={b.id} className="bg-white border border-border rounded-2xl p-4">
@@ -576,7 +576,7 @@ function MatchingBroadcasts({ broadcasts, category }: { broadcasts: MatchingBroa
 function ProviderOnly({ provider, category }: { provider: ProviderWithPhotos; category: CategoryConfig }) {
   const primaryPhoto = provider.provider_photos.find(p => p.is_primary) ?? provider.provider_photos[0]
   const adminWa = 'https://wa.me/919082980099?text=' + encodeURIComponent(
-    `Hi! I'm ${provider.name} listed on PawLocal. I'd like to access my dashboard.`
+    `Hi! I'm ${provider.name} listed on PupStep. I'd like to access my dashboard.`
   )
 
   return (
@@ -612,7 +612,7 @@ function ProviderOnly({ provider, category }: { provider: ProviderWithPhotos; ca
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 text-white rounded-2xl py-3.5 font-bold text-sm transition-colors mb-3"
           >
-            💬 Message PawLocal to get access
+            💬 Message PupStep to get access
           </a>
           <a
             href={`/provider/${provider.id}`}
@@ -882,7 +882,7 @@ export default function DashboardClient({
         <p className="text-xs font-bold uppercase tracking-widest text-amber-700 mb-3">Earn more points</p>
         <div className="flex flex-col gap-2">
           {[
-            { label: 'Get verified by PawLocal', pts: 100, done: provider.is_verified },
+            { label: 'Get verified by PupStep', pts: 100, done: provider.is_verified },
             { label: 'Add bio + pricing + photo', pts: 50, done: !!(provider.bio && provider.price_min && provider.provider_photos.length > 0) },
             { label: 'Per approved review received', pts: 25, done: false },
             { label: 'Per 5-star review (bonus)', pts: 10, done: false },

@@ -16,7 +16,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal.in'
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
 
 export async function GET(
   request: NextRequest,

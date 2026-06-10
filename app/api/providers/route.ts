@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'PawLocal <onboarding@resend.dev>',
+        from: 'PupStep <onboarding@resend.dev>',
         to: 'melroy@verfolia.com',
         subject: `🐾 New provider: ${name} (${categoryLabel})`,
         html: `

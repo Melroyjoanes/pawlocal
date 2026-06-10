@@ -41,7 +41,7 @@ export async function GET(
   }
 
   const digits = provider.whatsapp.replace(/\D/g, '').slice(-10)
-  const text = encodeURIComponent(`Hi, I found you on PawLocal! 🐾`)
+  const text = encodeURIComponent(`Hi, I found you on PupStep! 🐾`)
   const waUrl = `https://wa.me/91${digits}?text=${text}`
 
   return NextResponse.redirect(waUrl)

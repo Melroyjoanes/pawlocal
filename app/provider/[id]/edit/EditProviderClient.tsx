@@ -124,9 +124,9 @@ export default function EditProviderClient({
 
   // ── Render: setup wizard (shown after claiming) ──────────────
   if (setupMode && !setupDone) {
-    const profileUrl = `https://pawlocal.in/provider/${provider.id}`
+    const profileUrl = `https://pupstep.in/provider/${provider.id}`
     const waShareUrl = `https://wa.me/?text=${encodeURIComponent(
-      `Hi! I just listed my ${category.name.toLowerCase()} services on PawLocal 🐾\nCheck my profile: ${profileUrl}`
+      `Hi! I just listed my ${category.name.toLowerCase()} services on PupStep 🐾\nCheck my profile: ${profileUrl}`
     )}`
 
     if (setupStep === SETUP_STEPS.length) {
@@ -136,7 +136,7 @@ export default function EditProviderClient({
           <div className="text-5xl mb-4">🎉</div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">You're all set!</h1>
           <p className="text-sm text-slate-500 mb-8 leading-relaxed">
-            Your profile is live on PawLocal. Share it on WhatsApp — your first customer is one message away.
+            Your profile is live on PupStep. Share it on WhatsApp — your first customer is one message away.
           </p>
 
           {/* Profile link */}
@@ -149,7 +149,7 @@ export default function EditProviderClient({
                 rel="noopener noreferrer"
                 className="text-sm font-medium text-[var(--pl-teal)] underline underline-offset-2 flex-1 truncate"
               >
-                pawlocal.in/provider/{provider.id.slice(0, 8)}…
+                pupstep.in/provider/{provider.id.slice(0, 8)}…
               </a>
               <button
                 type="button"
@@ -405,7 +405,7 @@ export default function EditProviderClient({
           rel="noopener noreferrer"
           className="text-xs font-medium text-[var(--pl-teal)] underline underline-offset-2 truncate"
         >
-          pawlocal.in/provider/{provider.id.slice(0, 8)}…
+          pupstep.in/provider/{provider.id.slice(0, 8)}…
         </a>
         <button
           type="button"

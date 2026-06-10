@@ -16,17 +16,17 @@ export async function POST(req: NextRequest) {
       'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
     },
     body: JSON.stringify({
-      from: 'PawLocal <onboarding@resend.dev>',
+      from: 'PupStep <onboarding@resend.dev>',
       to: 'melroy@verfolia.com',
       subject: `New provider joined: ${name}`,
       html: `
-        <h2>New provider submitted on PawLocal</h2>
+        <h2>New provider submitted on PupStep</h2>
         <p><strong>Name:</strong> ${name}</p>
         <p><strong>Business:</strong> ${business_name ?? 'N/A'}</p>
         <p><strong>Category:</strong> ${category}</p>
         <p><strong>WhatsApp:</strong> ${whatsapp}</p>
         <p><strong>Phone:</strong> ${phone ?? 'N/A'}</p>
-        <p><a href="https://pawlocal.in/admin">Review in admin dashboard →</a></p>
+        <p><a href="https://pupstep.in/admin">Review in admin dashboard →</a></p>
       `,
     }),
   })

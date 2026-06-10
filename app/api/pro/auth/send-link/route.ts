@@ -42,11 +42,11 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'PawLocal <onboarding@resend.dev>',
+        from: 'PupStep <onboarding@resend.dev>',
         to: email,
         subject: '🐾 Your PawLocal sign-in link',
         html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
-          <h2 style="font-size:20px;color:#0f172a;">Sign in to PawLocal</h2>
+          <h2 style="font-size:20px;color:#0f172a;">Sign in to PupStep</h2>
           <p style="color:#475569;font-size:14px;">Click the button below to sign in. This link expires in 1 hour.</p>
           <a href="${data.properties.action_link}" style="display:inline-block;margin:16px 0;background:oklch(0.48 0.17 196);color:white;padding:14px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;">Sign in to my dashboard →</a>
           <p style="color:#94a3b8;font-size:12px;">If you didn't request this, ignore this email.</p>

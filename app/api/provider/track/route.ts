@@ -52,7 +52,7 @@ async function sendLeadEmail(providerId: string) {
       'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
     },
     body: JSON.stringify({
-      from: 'PawLocal <onboarding@resend.dev>',
+      from: 'PupStep <onboarding@resend.dev>',
       to: provider.email,
       subject: `🐾 Someone is interested in your services, ${provider.name.split(' ')[0]}!`,
       html: `
@@ -60,7 +60,7 @@ async function sendLeadEmail(providerId: string) {
           <div style="text-align: center; margin-bottom: 28px;">
             <div style="font-size: 48px; margin-bottom: 12px;">🐾</div>
             <h1 style="font-size: 22px; font-weight: 800; color: #451A03; margin: 0 0 8px;">You have a new lead!</h1>
-            <p style="font-size: 14px; color: #78716C; margin: 0;">Someone just clicked your WhatsApp on PawLocal</p>
+            <p style="font-size: 14px; color: #78716C; margin: 0;">Someone just clicked your WhatsApp on PupStep</p>
           </div>
 
           <div style="background: white; border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #E5E7EB;">
@@ -87,7 +87,7 @@ async function sendLeadEmail(providerId: string) {
           </a>
 
           <p style="font-size: 12px; color: #9CA3AF; text-align: center; margin-top: 20px; margin-bottom: 0;">
-            PawLocal · Juhu, Mumbai
+            PupStep · Juhu, Mumbai
           </p>
         </div>
       `,

@@ -19,9 +19,9 @@ export async function generateMetadata(
     .select('name, bio, category_slug')
     .eq('id', id)
     .single()
-  if (!data) return { title: 'Provider not found | PawLocal' }
+  if (!data) return { title: 'Provider not found | PupStep' }
   return {
-    title: `${data.name} | PawLocal`,
+    title: `${data.name} | PupStep`,
     description: data.bio ?? `${data.name} offers ${data.category_slug.replace(/-/g, ' ')} services in Juhu, Mumbai.`,
   }
 }

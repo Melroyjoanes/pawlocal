@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
   const refCode = `#PL-${(data.id as string).replace(/-/g, '').slice(0, 6).toUpperCase()}`
 
   const lines = [
-    `Hi ${provider.name}! I found you on PawLocal 🐾`,
+    `Hi ${provider.name}! I found you on PupStep 🐾`,
     ``,
     `📋 *Service Request*`,
     `Service: ${serviceName}`,

@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 import { CATEGORIES } from '@/lib/categories'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = 'https://pawlocal.in'
+  const base = 'https://pupstep.in'
   const staticRoutes = ['/', '/map', '/broadcast', '/join', '/insurance']
   const categoryRoutes = CATEGORIES.map(c => `/${c.slug}`)
 

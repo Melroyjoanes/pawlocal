@@ -111,7 +111,7 @@ async function notifyMatchingProviders(
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'PawLocal <onboarding@resend.dev>',
+        from: 'PupStep <onboarding@resend.dev>',
         to: provider.email,
         subject: `🐾 New ${svc.label} request in ${area} — ${posterName} needs help`,
         html: `
@@ -140,7 +140,7 @@ async function notifyMatchingProviders(
     View request &amp; respond →
   </a>
 
-  <p style="font-size:11px;color:#94a3b8;text-align:center;margin:0;">PawLocal · Juhu, Mumbai · You received this because you're a matched provider.</p>
+  <p style="font-size:11px;color:#94a3b8;text-align:center;margin:0;">PupStep · Juhu, Mumbai · You received this because you're a matched provider.</p>
 
 </body>
 </html>`,
@@ -205,7 +205,7 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'PawLocal <onboarding@resend.dev>',
+        from: 'PupStep <onboarding@resend.dev>',
         to: process.env.ADMIN_EMAIL ?? 'melroy@verfolia.com',
         subject: `📣 New broadcast: ${svc.label} in ${area.trim()}`,
         html: `
@@ -213,7 +213,7 @@ export async function POST(req: NextRequest) {
 <html>
 <body style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; background: #f8fafc; color: #1e293b;">
   <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
-    <p style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; margin: 0 0 12px;">New Broadcast · PawLocal</p>
+    <p style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; margin: 0 0 12px;">New Broadcast · PupStep</p>
     <h2 style="margin: 0 0 4px; font-size: 20px;">${svc.icon} ${svc.label}</h2>
     <p style="margin: 0; color: #64748b; font-size: 14px;">${area.trim()} · ${date_needed.trim()}</p>
   </div>

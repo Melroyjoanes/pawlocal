@@ -683,7 +683,7 @@ export default function WalkReportCard({
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.45, ease: EASE }}
         >
-          <p className="text-xs text-stone-400">Shared via PawLocal · Juhu, Mumbai</p>
+          <p className="text-xs text-stone-400">Shared via PupStep · Juhu, Mumbai</p>
           <Link
             href="/search"
             className="text-sm font-semibold transition-colors"

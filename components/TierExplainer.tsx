@@ -19,7 +19,7 @@ const TIERS = [
   },
   {
     key: 'certified',
-    label: 'PawLocal Certified',
+    label: 'PupStep Certified',
     description: 'Our team has personally visited, reviewed credentials, and certifies this provider meets our quality standards.',
   },
 ]

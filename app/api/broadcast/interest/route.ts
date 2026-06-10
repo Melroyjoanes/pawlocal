@@ -19,11 +19,11 @@ export async function POST(req: NextRequest) {
         'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'PawLocal <onboarding@resend.dev>',
+        from: 'PupStep <onboarding@resend.dev>',
         to: ADMIN_EMAIL,
         subject: `🐾 Provider interest: ${provider_name} → ${service_slug} in ${area}`,
         html: `
-          <h2 style="color:#0f766e;">New provider interest on PawLocal</h2>
+          <h2 style="color:#0f766e;">New provider interest on PupStep</h2>
           <p><strong>Provider:</strong> ${provider_name}</p>
           <p><strong>Service:</strong> ${service_slug}</p>
           <p><strong>Area:</strong> ${area}</p>

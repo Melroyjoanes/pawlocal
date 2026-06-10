@@ -41,7 +41,7 @@ function timeLeft(expiresAt: string): string {
 function BroadcastCard({ b, isSignedIn }: { b: Broadcast; isSignedIn?: boolean }) {
   const service = SERVICES.find((s) => s.slug === b.service_slug)
   const waLink = `https://wa.me/91${b.poster_whatsapp.replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(
-    `Hi ${b.poster_name}, I saw your request on PawLocal for ${service?.label ?? b.service_slug}. I can help! 🐾`
+    `Hi ${b.poster_name}, I saw your request on PupStep for ${service?.label ?? b.service_slug}. I can help! 🐾`
   )}`
 
   return (

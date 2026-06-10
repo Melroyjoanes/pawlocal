@@ -12,11 +12,11 @@ export async function generateMetadata(
     title: `${cat.name} in Juhu, Mumbai`,
     description: `Find trusted ${cat.name.toLowerCase()} services near Juhu, Mumbai. Browse ${cat.name.toLowerCase()} providers, read reviews, and contact directly on WhatsApp. Zero booking fees.`,
     openGraph: {
-      title: `${cat.name} near Juhu, Mumbai | PawLocal`,
+      title: `${cat.name} near Juhu, Mumbai | PupStep`,
       description: `Verified ${cat.name.toLowerCase()} providers near Juhu. WhatsApp direct.`,
       type: 'website',
     },
-    alternates: { canonical: `https://pawlocal.in/${category}` },
+    alternates: { canonical: `https://pupstep.in/${category}` },
   }
 }
 

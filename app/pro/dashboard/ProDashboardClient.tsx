@@ -107,7 +107,7 @@ export default function ProDashboardClient({ provider, stats, broadcasts, firstN
       {/* ── Top bar ──────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-white border-b border-border">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          <span className="text-base font-bold text-stone-900">🐾 PawLocal Pro</span>
+          <span className="text-base font-bold text-stone-900">🐾 PupStep Pro</span>
           <div className="flex items-center gap-3">
             {/* Avatar */}
             {primaryPhoto ? (

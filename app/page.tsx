@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import LandingPage from '@/components/LandingPage'
 
 export const metadata: Metadata = {
-  title: 'PawLocal — Pet Services in Juhu, Mumbai',
+  title: 'PupStep — Pet Services in Juhu, Mumbai',
   description:
     'Find trusted vets, groomers, dog walkers, trainers and pet stores near Juhu, Mumbai. WhatsApp directly. No booking fee.',
 }
@@ -52,9 +52,9 @@ export default async function HomePage({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "LocalBusiness",
-            "name": "PawLocal",
+            "name": "PupStep",
             "description": "Hyperlocal pet services directory for Juhu, Mumbai",
-            "url": "https://pawlocal.in",
+            "url": "https://pupstep.in",
             "areaServed": { "@type": "City", "name": "Mumbai" },
             "serviceArea": { "@type": "GeoCircle", "geoMidpoint": { "@type": "GeoCoordinates", "latitude": 19.1075, "longitude": 72.8263 }, "geoRadius": "5000" },
             "hasOfferCatalog": {

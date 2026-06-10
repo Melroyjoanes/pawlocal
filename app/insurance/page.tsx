@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Pet Insurance in Mumbai | PawLocal',
+  title: 'Pet Insurance in Mumbai | PupStep',
   description: 'Compare and buy pet insurance for your dog or cat in Mumbai. Health, accident, and wellness cover from trusted Indian insurers.',
 }
 
