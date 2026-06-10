@@ -391,7 +391,7 @@ export default function LiveWalkClient({
 
   const shareUrl = `https://pupstep.in/walk-report/${reportToken}`
   const whatsappText = encodeURIComponent(
-    `Here is ${dogName ? `${dogName}'s` : "your dog's"} walk report from PawLocal! 🐾\n${shareUrl}`
+    `Here is ${dogName ? `${dogName}'s` : "your dog's"} walk report from PupStep! 🐾\n${shareUrl}`
   )
 
   return (

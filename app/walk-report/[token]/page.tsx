@@ -32,13 +32,21 @@ async function getReport(token: string): Promise<WalkReport | null> {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // Fetch report first — no JOIN, avoids FK dependency on PostgREST schema cache
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (admin.from('walk_reports') as any)
-    .select('*, providers(name, is_verified, verification_tier)')
+    .select('*')
     .eq('token', token)
     .single()
 
   if (error || !data) return null
+
+  // Separately fetch provider info (same pattern as the public API route)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: provider } = data.provider_id ? await (admin.from('providers') as any)
+    .select('name, is_verified, verification_tier')
+    .eq('id', data.provider_id)
+    .single() : { data: null }
 
   return {
     id: data.id,
@@ -51,9 +59,9 @@ async function getReport(token: string): Promise<WalkReport | null> {
     pee_count: data.pee_count,
     notes: data.notes ?? null,
     photo_url: data.photo_url ?? null,
-    provider_name: data.providers?.name ?? 'Your Walker',
-    is_verified: data.providers?.is_verified ?? false,
-    verification_tier: data.providers?.verification_tier ?? 'contacted',
+    provider_name: provider?.name ?? 'Your Walker',
+    is_verified: provider?.is_verified ?? false,
+    verification_tier: provider?.verification_tier ?? 'contacted',
     start_location: data.start_location ?? null,
     end_location: data.end_location ?? null,
     route_points: data.route_points ?? null,

@@ -287,7 +287,7 @@ export default function WalkReportCard({
     `${report.dog_name} just had an amazing walk! 🐾\nFull report here:\n${shareUrl}`
   )
   const waVetText = encodeURIComponent(
-    `Hi Doctor, here is ${report.dog_name}'s recent walk report from PawLocal 🏥\n${shareUrl}`
+    `Hi Doctor, here is ${report.dog_name}'s recent walk report from PupStep 🏥\n${shareUrl}`
   )
 
   return (
