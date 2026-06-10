@@ -676,7 +676,7 @@ export default function DashboardClient({
           <div>
             <p className="text-sm font-semibold text-emerald-800">Welcome to your dashboard!</p>
             <p className="text-xs text-emerald-600 mt-0.5">
-              Access your dashboard anytime at <strong>pawlocal.in/dashboard</strong>
+              Access your dashboard anytime at <strong>pupstep.in/dashboard</strong>
             </p>
           </div>
         </div>
