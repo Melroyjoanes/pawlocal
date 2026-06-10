@@ -27,9 +27,9 @@ const siteUrl = 'https://pupstep.in'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: { default: 'PupStep — Pet Services in Juhu, Mumbai', template: '%s | PupStep' },
-  description: 'Find verified vets, groomers, dog walkers, trainers and pet stores near Juhu, Mumbai. WhatsApp directly. Zero booking fees.',
-  keywords: ['pet services Mumbai', 'vets Juhu', 'dog grooming Juhu', 'dog walker Mumbai', 'pet store Juhu', 'emergency vet Mumbai'],
+  title: { default: "PupStep — Mumbai's Verified Pet People", template: '%s | PupStep' },
+  description: "Mumbai's most trusted pet directory. Find verified walkers, vets, groomers and more near you. WhatsApp direct. Zero booking fees.",
+  keywords: ['pet services Mumbai', 'dog walker Mumbai', 'vets Juhu', 'dog grooming Mumbai', 'pet store Juhu', 'emergency vet Mumbai', 'verified pet care Mumbai'],
   authors: [{ name: 'PupStep' }],
   creator: 'PupStep',
   openGraph: {
@@ -37,19 +37,19 @@ export const metadata: Metadata = {
     locale: 'en_IN',
     url: siteUrl,
     siteName: 'PupStep',
-    title: 'PupStep — Pet Services in Juhu, Mumbai',
-    description: 'Find verified vets, groomers, dog walkers & trainers near Juhu, Mumbai. WhatsApp directly. Zero fees.',
+    title: "PupStep — Mumbai's Verified Pet People",
+    description: "Mumbai's most trusted pet directory. Verified walkers, vets & groomers — WhatsApp direct, zero fees.",
     images: [{
       url: `${siteUrl}/api/og`,
       width: 1200,
       height: 630,
-      alt: 'PupStep — Verified pet services in Juhu, Mumbai',
+      alt: "PupStep — Mumbai's verified pet people",
     }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PupStep — Pet Services in Juhu, Mumbai',
-    description: 'Verified vets, groomers, walkers & trainers near Juhu. WhatsApp direct. Zero fees.',
+    title: "PupStep — Mumbai's Verified Pet People",
+    description: "Mumbai's most trusted pet directory. Verified walkers, vets & groomers — WhatsApp direct, zero fees.",
     images: [`${siteUrl}/api/og`],
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },

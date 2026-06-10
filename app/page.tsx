@@ -3,9 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import LandingPage from '@/components/LandingPage'
 
 export const metadata: Metadata = {
-  title: 'PupStep — Pet Services in Juhu, Mumbai',
+  title: "PupStep — Mumbai's Verified Pet People",
   description:
-    'Find trusted vets, groomers, dog walkers, trainers and pet stores near Juhu, Mumbai. WhatsApp directly. No booking fee.',
+    "Mumbai's most trusted pet directory. Find verified walkers, vets, groomers and more near you. WhatsApp direct. Zero booking fees.",
 }
 
 export default async function HomePage({

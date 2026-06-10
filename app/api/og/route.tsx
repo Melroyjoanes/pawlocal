@@ -116,13 +116,13 @@ export async function GET() {
           {/* Headline */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <div style={{ fontFamily: '"DMSerif"', fontSize: 55, color: BROWN, lineHeight: 1.04, letterSpacing: '-0.5px', display: 'flex' }}>
-              Your dog&apos;s world,
+              Mumbai&apos;s verified
             </div>
             <div style={{ fontFamily: '"DMSerif"', fontSize: 66, color: AMBER_D, lineHeight: 1.0, letterSpacing: '-0.5px', display: 'flex' }}>
-              right here.
+              pet people.
             </div>
             <div style={{ fontSize: 18, color: BROWN_M, marginTop: 10, lineHeight: 1.55, opacity: 0.78, display: 'flex' }}>
-              Verified walkers, vets and groomers — WhatsApp direct, zero fees.
+              Trusted walkers, vets &amp; groomers — WhatsApp direct, zero fees.
             </div>
           </div>
 

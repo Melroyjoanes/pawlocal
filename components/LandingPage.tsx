@@ -348,13 +348,13 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
 
               <motion.h1 initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: EASE_EXP, delay: 0.08 }}
                 className="font-display text-slate-900 mb-5" style={{ fontSize: 'clamp(2.6rem, 6.5vw, 5rem)', lineHeight: 1.04, letterSpacing: '-0.02em' }}>
-                Your dog&apos;s world,<br />
-                <span style={{ color: '#D97706' }}>right here in Juhu.</span>
+                Mumbai&apos;s verified<br />
+                <span style={{ color: '#D97706' }}>pet people.</span>
               </motion.h1>
 
               <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE_EXP, delay: 0.18 }}
                 className="text-lg sm:text-xl text-slate-500 mb-8 max-w-lg mx-auto lg:mx-0" style={{ lineHeight: 1.65 }}>
-                Verified walkers, vets, groomers and more — Juhu, Versova and Andheri West. WhatsApp direct. Zero fees.
+                Trusted walkers, vets, groomers and more — right where you live. WhatsApp direct. Zero fees.
               </motion.p>
 
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: EASE_EXP, delay: 0.28 }}
