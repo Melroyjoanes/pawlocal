@@ -29,10 +29,17 @@ export default function SearchBar({ className = '', defaultValue = '', autoFocus
 
   return (
     <form onSubmit={handleSubmit} className={`relative flex items-center ${className}`}>
-      {/* Search icon */}
-      <span className="absolute left-3 text-muted-foreground pointer-events-none text-sm select-none">
-        🔍
-      </span>
+      {/* Search icon — SVG, not emoji */}
+      <svg
+        width="14" height="14" viewBox="0 0 20 20"
+        fill="none" stroke="currentColor" strokeWidth="2.2"
+        strokeLinecap="round" strokeLinejoin="round"
+        className="absolute left-3 text-muted-foreground pointer-events-none opacity-60"
+        aria-hidden="true"
+      >
+        <circle cx="9" cy="9" r="6.5" />
+        <path d="m15.5 15.5 2.5 2.5" />
+      </svg>
 
       <input
         ref={inputRef}
@@ -41,7 +48,7 @@ export default function SearchBar({ className = '', defaultValue = '', autoFocus
         onChange={(e) => setValue(e.target.value)}
         placeholder="Search vets, groomers, walkers…"
         autoFocus={autoFocus}
-        className="w-full pl-9 pr-8 py-2.5 rounded-xl border border-border bg-white text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+        className="w-full pl-8 pr-8 py-2.5 rounded-xl border border-border bg-white text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
       />
 
       {/* Clear button */}

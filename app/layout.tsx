@@ -76,38 +76,42 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
           {/* Customer header — hidden for /pro and /admin */}
           {!isIsolated && (
-            <header className="sticky top-0 z-40" style={{ background: 'rgba(255,251,235,0.94)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: '1px solid #FDE68A' }}>
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+            <header className="sticky top-0 z-40" style={{ background: 'rgba(255,251,235,0.94)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: '1px solid oklch(0.906 0.06 88)' }}>
+              <div className="max-w-7xl mx-auto px-3 sm:px-6 h-14 sm:h-16 flex items-center gap-2 sm:gap-3">
 
                 {/* Logo */}
-                <a href="/" className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-2xl">🐾</span>
-                  <span className="font-display text-xl text-slate-900 leading-none">
+                <a href="/" className="flex items-center gap-1.5 flex-shrink-0">
+                  <span className="text-xl sm:text-2xl leading-none">🐾</span>
+                  <span className="font-display font-bold text-lg sm:text-xl text-slate-900 leading-none tracking-tight">
                     Pup<span style={{ color: '#D97706' }}>Step</span>
                   </span>
                 </a>
 
-                {/* Nav links — desktop */}
-                <nav className="hidden md:flex items-center gap-1">
-                  {[
-                    { href: '/search', label: '🔍 Find' },
-                    { href: '/map', label: '🗺 Near me' },
-                    { href: '/broadcast', label: '📣 Post a request' },
-                  ].map(({ href, label }) => (
-                    <a
-                      key={href}
-                      href={href}
-                      className="px-3.5 py-2 rounded-xl text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-amber-50 transition-all"
-                    >
-                      {label}
-                    </a>
-                  ))}
-                </nav>
+                {/* Middle group: nav (desktop) + search (grows on mobile) */}
+                <div className="flex items-center gap-1.5 flex-1 min-w-0">
 
-                {/* Search — desktop inline, mobile icon */}
-                <HeaderSearch />
+                  {/* Nav links — desktop only, text-only (no emoji) */}
+                  <nav className="hidden md:flex items-center gap-0.5 mr-1">
+                    {[
+                      { href: '/search', label: 'Find' },
+                      { href: '/map', label: 'Near me' },
+                      { href: '/broadcast', label: 'Post request' },
+                    ].map(({ href, label }) => (
+                      <a
+                        key={href}
+                        href={href}
+                        className="px-3 py-2 rounded-xl text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-amber-50 transition-all whitespace-nowrap"
+                      >
+                        {label}
+                      </a>
+                    ))}
+                  </nav>
 
-                {/* Auth — sign in / avatar — provider-aware */}
+                  {/* Search — flex-1 on mobile fills remaining space; fixed width on desktop */}
+                  <HeaderSearch />
+                </div>
+
+                {/* Auth — sign in / avatar */}
                 <AuthNavItem />
               </div>
             </header>
