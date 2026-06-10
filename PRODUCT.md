@@ -12,7 +12,7 @@ Secondary user: pet service providers (dog walkers, groomers, vets) who want fre
 
 ## Product Purpose
 
-PawLocal is a curated, hyperlocal directory of pet services in Mumbai. It is not a booking platform. The job it does: surface trusted, vetted pet service providers on a map, with enough detail (pricing, hours, bio, photos, Verified badge) that a pet owner can make a confident decision and contact via WhatsApp. Every listing is manually reviewed.
+PupStep is a curated, hyperlocal directory of pet services in Mumbai. It is not a booking platform. The job it does: surface trusted, vetted pet service providers on a map, with enough detail (pricing, hours, bio, photos, Verified badge) that a pet owner can make a confident decision and contact via WhatsApp. Every listing is manually reviewed.
 
 ## Brand Personality
 
@@ -20,7 +20,7 @@ Trustworthy, calm, neighbourhood. The Practo of pet services: professional witho
 
 ## Anti-references
 
-- Swiggy / Zomato: food-delivery UI patterns — countdown urgency, aggressive red/orange CTAs, push-to-order energy. PawLocal is research-first, not impulse-first.
+- Swiggy / Zomato: food-delivery UI patterns — countdown urgency, aggressive red/orange CTAs, push-to-order energy. PupStep is research-first, not impulse-first.
 - JustDial / Sulekha: cluttered, ad-heavy, low-trust directory aesthetic.
 - Generic marketplaces (Fiverr, Urban Company clones): transactional, no local personality.
 
@@ -28,7 +28,7 @@ Trustworthy, calm, neighbourhood. The Practo of pet services: professional witho
 
 1. **Trust is the product.** Every design decision should increase the pet owner's confidence, not pressure them into action. No urgency patterns, no fake scarcity.
 2. **Scan before you commit.** Users browse and compare. Cards, profiles, and lists must support fast scanning: price, location, and hours visible without clicking.
-3. **Verified is the moat.** The Verified badge is PawLocal's key differentiator. It must be visually distinctive without being shouty.
+3. **Verified is the moat.** The Verified badge is PupStep's key differentiator. It must be visually distinctive without being shouty.
 4. **Local, not corporate.** Warm enough to feel like a neighbourhood recommendation, professional enough to be trusted.
 5. **Calm density.** More information per screen than a food-delivery app, but never cluttered. Think Practo profile cards, not Swiggy restaurant tiles.
 

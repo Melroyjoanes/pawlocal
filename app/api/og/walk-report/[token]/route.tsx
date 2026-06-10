@@ -182,7 +182,7 @@ export async function GET(
               <span style={{ fontSize: 17, color: BROWN_M, opacity: 0.55 }}>{dateStr}</span>
             </>)}
             <span style={{ color: BROWN_M, fontSize: 17, opacity: 0.35 }}>·</span>
-            <span style={{ fontSize: 17, color: AMBER_D, fontWeight: 700 }}>pawlocal.in</span>
+            <span style={{ fontSize: 17, color: AMBER_D, fontWeight: 700 }}>pupstep.in</span>
           </div>
         </div>
 

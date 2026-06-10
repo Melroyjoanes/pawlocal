@@ -1,4 +1,4 @@
-# PawLocal Design System
+# PupStep Design System
 
 ## Brand in one sentence
 A warm, neighbourhood notice board for pet services in Juhu — trustworthy enough for a vet recommendation, personal enough that it feels like a friend told you.
