@@ -141,7 +141,7 @@ function Sphere({ size, gradient, glow, specW, specH, specTop, specLeft, style =
 }
 
 const AmberSphere = ({ size = 220, style = {} }: { size?: number; style?: React.CSSProperties }) => (
-  <Sphere size={size} gradient="radial-gradient(circle at 32% 30%, #FEF9C3, #FDE68A 44%, #F59E0B 72%, #F07030)" glow={`0 ${Math.round(size * 0.13)}px ${Math.round(size * 0.33)}px rgba(180,83,9,0.22)`} specW="38%" specH="27%" specTop="17%" specLeft="22%" style={style} />
+  <Sphere size={size} gradient="radial-gradient(circle at 32% 30%, #FFE8D6, #FFB380 44%, #F07030 72%, #E05818)" glow={`0 ${Math.round(size * 0.13)}px ${Math.round(size * 0.33)}px rgba(180,83,9,0.22)`} specW="38%" specH="27%" specTop="17%" specLeft="22%" style={style} />
 )
 const TealSphere = ({ size = 120, style = {} }: { size?: number; style?: React.CSSProperties }) => (
   <Sphere size={size} gradient="radial-gradient(circle at 30% 28%, #B2F5F8, #17C8CC 52%, #0A8A96)" glow={`0 ${Math.round(size * 0.12)}px ${Math.round(size * 0.28)}px rgba(10,138,150,0.30)`} specW="40%" specH="28%" specTop="16%" specLeft="20%" style={style} />
@@ -253,9 +253,9 @@ function WalkReportMiniCard() {
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
-          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg, #FCD34D, #F59E0B)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 8px rgba(180,83,9,0.25)', fontSize: 22 }}>🐕</div>
+          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg, #FF8C52, #F56B22)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 8px rgba(175,65,10,0.28)', fontSize: 22 }}>🐕</div>
           <div>
-            <p style={{ fontSize: 17, fontWeight: 700, color: '#1C0A00', lineHeight: 1.1, fontFamily: 'var(--font-dm-serif, serif)' }}>Kairo&apos;s Walk</p>
+            <p style={{ fontSize: 17, fontWeight: 700, color: '#1C0A00', lineHeight: 1.1, fontFamily: 'var(--font-nunito, sans-serif)' }}>Kairo&apos;s Walk</p>
             <p style={{ fontSize: 12, color: '#92400E', marginTop: 2 }}>with Shahrukh</p>
           </div>
         </div>
@@ -396,7 +396,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
                     <p style={{ fontSize: 9, color: '#92400E', opacity: 0.7, lineHeight: 1.2 }}>providers only</p>
                   </div>
                 </motion.div>
-                <div style={{ position: 'absolute', bottom: '6%', right: '-4%', background: 'linear-gradient(135deg, #FCD34D, #F59E0B)', borderRadius: '50%', width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 0px rgba(120,53,15,0.24), 0 10px 20px rgba(252,211,77,0.42)', border: '3px solid #FFFBEB', fontSize: 24 }} aria-hidden>🐾</div>
+                <div style={{ position: 'absolute', bottom: '6%', right: '-4%', background: 'linear-gradient(135deg, #FF8C52, #F56B22)', borderRadius: '50%', width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 0px rgba(175,65,10,0.24), 0 10px 20px rgba(245,110,35,0.40)', border: '3px solid #FFFBEB', fontSize: 24 }} aria-hidden>🐾</div>
                 <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
                   style={{ position: 'absolute', top: '10%', right: '-14%', background: 'linear-gradient(135deg, #DCFCE7, #BBF7D0)', borderRadius: 100, padding: '7px 14px', boxShadow: '0 3px 0px rgba(5,150,105,0.18), 0 8px 20px rgba(187,247,208,0.5)', border: '1px solid rgba(187,247,208,0.65)', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
                   <span style={{ fontSize: 14 }}>💬</span>
@@ -431,7 +431,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
             {[
               {
                 icon: '🐾',
-                iconBg: '#FCD34D',
+                iconBg: '#FF8C52',
                 node: <><span ref={pStat.ref} className="font-display" style={{ fontSize: 'clamp(1.85rem, 5vw, 3rem)', color: '#92400E', lineHeight: 1, fontWeight: 700 }}>{pStat.val}</span><span className="font-display" style={{ fontSize: 'clamp(1.2rem, 3vw, 2rem)', color: '#B45309' }}>+</span></>,
                 label: 'Verified providers',
                 sub: 'Manually reviewed',
@@ -548,7 +548,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
                 ✨ Walk Reports — only on PupStep
               </span>
               <h2 className="font-display text-white leading-tight mb-5" style={{ fontSize: 'clamp(1.9rem, 4.5vw, 3.4rem)', lineHeight: 1.1 }}>
-                Every walk,<br /><span style={{ color: '#FCD34D' }}>beautifully reported.</span>
+                Every walk,<br /><span style={{ color: '#FF8C52' }}>beautifully reported.</span>
               </h2>
               <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-md mx-auto lg:mx-0" style={{ lineHeight: 1.7 }}>
                 Your walker sends a daily report with photos, GPS route, and stats — straight to WhatsApp. No app needed.
@@ -604,7 +604,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
       {/* ═══════════ PET BROADCAST ═══════════ */}
       <section style={{ ...BLEED, background: 'linear-gradient(135deg, #0D3528 0%, #1A5C42 50%, #0D3528 100%)', position: 'relative', overflow: 'hidden' }} className="py-12 sm:py-16">
         <div className="absolute inset-0 pointer-events-none" aria-hidden>
-          <div style={{ position: 'absolute', top: -80, right: -60, width: 420, height: 420, borderRadius: '50%', background: '#FCD34D', opacity: 0.1, filter: 'blur(90px)' }} />
+          <div style={{ position: 'absolute', top: -80, right: -60, width: 420, height: 420, borderRadius: '50%', background: '#F07030', opacity: 0.1, filter: 'blur(90px)' }} />
           <div style={{ position: 'absolute', bottom: -40, left: -40, width: 320, height: 320, borderRadius: '50%', background: '#6EE7B7', opacity: 0.06, filter: 'blur(70px)' }} />
         </div>
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
@@ -614,7 +614,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
                 🆕 Pet Broadcast — only on PupStep
               </span>
               <h2 className="font-display text-white leading-tight mb-4" style={{ fontSize: 'clamp(1.9rem, 4.5vw, 3.4rem)' }}>
-                Can&apos;t find what you need?<br /><span style={{ color: '#FCD34D' }}>Just post it.</span>
+                Can&apos;t find what you need?<br /><span style={{ color: '#FF8C52' }}>Just post it.</span>
               </h2>
               <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-md mx-auto lg:mx-0" style={{ lineHeight: 1.7 }}>
                 Post your request once. Verified providers nearby see it and reply on WhatsApp directly. Free.

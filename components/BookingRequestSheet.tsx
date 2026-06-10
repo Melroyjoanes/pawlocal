@@ -129,7 +129,7 @@ export default function BookingRequestSheet({
             <div className="px-5 pb-4">
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                  <h2 className="font-display text-lg font-bold text-slate-900">
                     Send a Request
                   </h2>
                   <p className="text-xs text-muted-foreground mt-0.5">to {providerName}</p>

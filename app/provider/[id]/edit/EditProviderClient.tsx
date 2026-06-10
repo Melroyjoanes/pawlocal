@@ -263,7 +263,7 @@ export default function EditProviderClient({
                 disabled={uploading}
                 className="flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all"
                 style={{
-                  background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+                  background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
                   color: '#451A03',
                   boxShadow: '0 4px 0px rgba(120,53,15,0.28)',
                 }}
@@ -294,7 +294,7 @@ export default function EditProviderClient({
                 type="button"
                 onClick={() => setSetupStep(s => s + 1)}
                 className="flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all"
-                style={{ background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)', color: '#451A03', boxShadow: '0 4px 0px rgba(120,53,15,0.28)' }}
+                style={{ background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)', color: '#451A03', boxShadow: '0 4px 0px rgba(120,53,15,0.28)' }}
               >
                 {bio.trim() ? 'Continue →' : 'Skip for now →'}
               </button>
@@ -358,7 +358,7 @@ export default function EditProviderClient({
                   }
                 }}
                 className="flex-1 py-3.5 rounded-2xl font-bold text-sm transition-all disabled:opacity-50"
-                style={{ background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)', color: '#451A03', boxShadow: '0 4px 0px rgba(120,53,15,0.28)' }}
+                style={{ background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)', color: '#451A03', boxShadow: '0 4px 0px rgba(120,53,15,0.28)' }}
               >
                 {saving ? 'Saving…' : 'Save & finish 🎉'}
               </button>
@@ -518,7 +518,7 @@ export default function EditProviderClient({
                   className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all"
                   style={
                     workingDays.includes(day)
-                      ? { background: '#FCD34D', color: '#451A03', borderColor: '#F59E0B' }
+                      ? { background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)', color: '#fff', borderColor: '#F56B22' }
                       : { background: 'white', color: '#64748B', borderColor: '#E2E8F0' }
                   }
                 >
@@ -598,7 +598,7 @@ export default function EditProviderClient({
           disabled={saving || saved}
           className="w-full py-4 rounded-2xl font-bold text-sm transition-all disabled:opacity-60"
           style={{
-            background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+            background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
             color: '#451A03',
             boxShadow: '0 4px 0px rgba(120,53,15,0.28), 0 8px 20px rgba(252,211,77,0.4)',
           }}

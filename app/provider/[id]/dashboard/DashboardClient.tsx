@@ -241,7 +241,7 @@ function AvailabilityCard({ provider }: { provider: ProviderWithPhotos }) {
         disabled={saving}
         className="w-full py-2.5 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
         style={{
-          background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+          background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
           color: '#451A03',
           boxShadow: '0 4px 0px rgba(120,53,15,0.28)',
         }}
@@ -323,7 +323,7 @@ function ProfileCard({
       <div>
         <div className="flex items-center justify-between mb-1.5">
           <p className="text-xs font-semibold text-slate-600">Profile completeness</p>
-          <p className="text-xs font-bold" style={{ color: donePct === 100 ? '#059669' : '#D97706' }}>
+          <p className="text-xs font-bold" style={{ color: donePct === 100 ? '#059669' : '#F07030' }}>
             {donePct}%
           </p>
         </div>
@@ -332,7 +332,7 @@ function ProfileCard({
             className="h-2 rounded-full transition-all duration-500"
             style={{
               width: `${donePct}%`,
-              background: donePct === 100 ? '#059669' : 'linear-gradient(90deg, #F59E0B, #D97706)',
+              background: donePct === 100 ? '#059669' : 'linear-gradient(90deg, #F56B22, #F07030)',
             }}
           />
         </div>
@@ -395,7 +395,7 @@ function calcPoints(stats: Stats, provider: ProviderWithPhotos) {
 }
 
 function getLevel(pts: number) {
-  if (pts >= 500) return { name: 'Gold', emoji: '🥇', color: '#F59E0B', next: null, nextAt: null }
+  if (pts >= 500) return { name: 'Gold', emoji: '🥇', color: '#F56B22', next: null, nextAt: null }
   if (pts >= 200) return { name: 'Silver', emoji: '🥈', color: '#94A3B8', next: 'Gold', nextAt: 500 }
   return { name: 'Bronze', emoji: '🥉', color: '#B45309', next: 'Silver', nextAt: 200 }
 }
@@ -493,7 +493,7 @@ function WrongAccount({ provider, category }: { provider: ProviderWithPhotos; ca
           disabled={loading}
           className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm mb-3 transition-all disabled:opacity-60"
           style={{
-            background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+            background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
             color: '#451A03',
             boxShadow: '0 4px 0px rgba(120,53,15,0.28)',
           }}
@@ -908,7 +908,7 @@ export default function DashboardClient({
           href={`/provider/${provider.id}/edit`}
           className="flex-1 py-3.5 rounded-2xl font-semibold text-sm text-center transition-all"
           style={{
-            background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+            background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
             color: '#451A03',
             boxShadow: '0 4px 0px rgba(120,53,15,0.28)',
           }}

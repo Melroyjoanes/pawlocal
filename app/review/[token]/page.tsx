@@ -26,7 +26,7 @@ export default async function ReviewTokenPage({ params }: Props) {
       <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
         <div className="max-w-sm w-full bg-white rounded-2xl border border-border p-8 shadow-sm text-center space-y-4">
           <div className="text-4xl">🔒</div>
-          <h2 className="text-xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+          <h2 className="font-display text-xl font-bold text-stone-900">
             Link not found
           </h2>
           <p className="text-stone-600 text-sm leading-relaxed">
@@ -42,7 +42,7 @@ export default async function ReviewTokenPage({ params }: Props) {
       <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
         <div className="max-w-sm w-full bg-white rounded-2xl border border-border p-8 shadow-sm text-center space-y-4">
           <div className="text-4xl">✅</div>
-          <h2 className="text-xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+          <h2 className="font-display text-xl font-bold text-stone-900">
             Already used
           </h2>
           <p className="text-stone-600 text-sm leading-relaxed">

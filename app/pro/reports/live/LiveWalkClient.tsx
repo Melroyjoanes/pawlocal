@@ -465,7 +465,7 @@ export default function LiveWalkClient({
                 style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%)' }}>
                 <div>
                   <p className="text-3xl font-bold text-white tabular-nums tracking-tight leading-none"
-                    style={{ fontFamily: 'DM Serif Display, Georgia, serif' }}>
+                    style={{ fontFamily: 'var(--font-nunito), sans-serif' }}>
                     {formatTime(elapsed)}
                   </p>
                   <p className="text-sm font-semibold text-white/80 mt-0.5">{formatDistance(distance)}</p>
@@ -479,7 +479,7 @@ export default function LiveWalkClient({
               {/* GPS error */}
               {gpsError && (
                 <div className="absolute top-14 left-4 right-4 z-10 px-3 py-2 rounded-xl text-xs text-amber-800 text-center"
-                  style={{ background: '#FEF3C7', border: '1px solid #FCD34D' }}>
+                  style={{ background: 'oklch(0.97 0.025 44)', border: '1px solid oklch(0.84 0.12 44)' }}>
                   {gpsError}
                 </div>
               )}
@@ -500,7 +500,7 @@ export default function LiveWalkClient({
               {/* Wake lock fallback */}
               {typeof window !== 'undefined' && !('wakeLock' in navigator) && (
                 <div className="absolute top-14 left-4 right-4 z-10 px-3 py-2 rounded-xl text-xs text-amber-800 text-center"
-                  style={{ background: '#FEF3C7', border: '1px solid #FCD34D' }}>
+                  style={{ background: 'oklch(0.97 0.025 44)', border: '1px solid oklch(0.84 0.12 44)' }}>
                   🔆 Keep your screen on for accurate GPS tracking
                 </div>
               )}

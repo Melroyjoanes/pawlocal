@@ -41,7 +41,7 @@ export default async function JoinSuccessPage({ searchParams }: Props) {
       <div className="text-center mb-10">
         <div
           className="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-2xl mb-5"
-          style={{ background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)' }}
+          style={{ background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)' }}
         >
           <span role="img" aria-label="party">🎉</span>
         </div>

@@ -15,8 +15,8 @@ export default function VerificationBadge({ tier, size = 'sm' }: Props) {
             : 'text-[10px] px-1.5 py-0.5 leading-none'
         }`}
         style={{
-          background: 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%)',
-          borderColor: '#D97706',
+          background: 'linear-gradient(135deg, oklch(0.94 0.06 44) 0%, oklch(0.74 0.18 44) 100%)',
+          borderColor: 'oklch(0.60 0.18 44)',
           color: '#451A03',
         }}
       >

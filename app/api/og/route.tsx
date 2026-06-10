@@ -12,11 +12,11 @@ const fontData = readFileSync(
 // ── Color tokens ──────────────────────────────────────────────────────────────
 const BG1     = '#FFFBEF'
 const BG2     = '#FEF3C7'
-const AMBER   = '#F59E0B'
-const AMBER_D = '#D97706'
+const AMBER   = '#F07030'
+const AMBER_D = '#E05818'
 const BROWN   = '#1C0A00'
 const BROWN_M = '#78350F'
-const TEAL    = '#0B7A8A'
+const TEAL    = '#0A8A96'
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 const RIGHT_W = 456            // right photo panel width
@@ -26,7 +26,7 @@ const CARD_W  = 1200 - RIGHT_W - CARD_L - 28  // 680px
 
 // ── Category chips ────────────────────────────────────────────────────────────
 const CATS = [
-  { emoji: '🦮', label: 'Dog Walking', bg: '#FDE68A', fg: '#78350F' },
+  { emoji: '🦮', label: 'Dog Walking', bg: '#FFE0CC', fg: '#78350F' },
   { emoji: '✂️', label: 'Grooming',   bg: '#E9D5FF', fg: '#4C1D95' },
   { emoji: '🏥', label: 'Vet',        bg: '#FECDD3', fg: '#9F1239' },
   { emoji: '🐾', label: 'Pet Store',  bg: '#BBF7D0', fg: '#064E3B' },
@@ -34,7 +34,7 @@ const CATS = [
 
 // ── Trust badges ──────────────────────────────────────────────────────────────
 const BADGES = [
-  { icon: '✓', text: 'Manually verified', bg: '#FDE68A', fg: '#78350F' },
+  { icon: '✓', text: 'Manually verified', bg: '#FFE0CC', fg: '#78350F' },
   { icon: '💬', text: 'WhatsApp direct',  bg: '#BBF7D0', fg: '#064E3B' },
   { icon: '₹',  text: '0 fees, always',   bg: '#FECDD3', fg: '#7C2D12' },
 ]
@@ -63,7 +63,7 @@ export async function GET() {
         {/* ── 3D Spheres ───────────────────────────────────────────────────── */}
 
         {/* Large amber — top-right corner */}
-        <div style={{ position: 'absolute', top: -65, right: -65, width: 290, height: 290, borderRadius: '50%', background: 'radial-gradient(circle at 32% 30%, #FEF9C3, #FDE68A 44%, #F59E0B 72%, #D97706)', boxShadow: '0 32px 80px rgba(180,83,9,0.24)', display: 'flex', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -65, right: -65, width: 290, height: 290, borderRadius: '50%', background: 'radial-gradient(circle at 32% 30%, #FFE8D6, #FFB380 44%, #F07030 72%, #E05818)', boxShadow: '0 32px 80px rgba(180,83,9,0.24)', display: 'flex', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: 38, left: 46, width: 76, height: 54, borderRadius: '50%', background: 'rgba(255,255,255,0.42)', display: 'flex' }} />
         </div>
 
@@ -78,7 +78,7 @@ export async function GET() {
         </div>
 
         {/* Tiny amber — scattered */}
-        <div style={{ position: 'absolute', top: 58, right: 428, width: 40, height: 40, borderRadius: '50%', background: 'radial-gradient(circle at 30% 28%, #FDE68A, #F59E0B 55%, #B45309)', boxShadow: '0 5px 16px rgba(180,83,9,0.26)', display: 'flex', overflow: 'hidden' }} />
+        <div style={{ position: 'absolute', top: 58, right: 428, width: 40, height: 40, borderRadius: '50%', background: 'radial-gradient(circle at 30% 28%, #FFD4B0, #F07030 55%, #C04010)', boxShadow: '0 5px 16px rgba(180,83,9,0.26)', display: 'flex', overflow: 'hidden' }} />
 
         {/* ── Left clay card ───────────────────────────────────────────────── */}
         <div
@@ -103,12 +103,12 @@ export async function GET() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 32 }}>🐾</span>
-              <span style={{ fontFamily: '"DMSerif"', fontSize: 28, color: BROWN, lineHeight: 1 }}>
-                Pup<span style={{ color: TEAL }}>Step</span>
+              <span style={{ fontFamily: '"DMSerif"', fontSize: 28, lineHeight: 1 }}>
+                <span style={{ color: '#1a9aaa' }}>Pup</span><span style={{ color: AMBER }}>Step</span>
               </span>
             </div>
             {/* Location pill */}
-            <div style={{ display: 'flex', alignItems: 'center', background: AMBER, borderRadius: 100, padding: '7px 18px', boxShadow: '0 5px 18px rgba(180,83,9,0.26)', border: '2px solid rgba(255,255,255,0.65)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', background: '#0A8A96', borderRadius: 100, padding: '7px 18px', boxShadow: '0 5px 18px rgba(10,138,150,0.32)', border: '2px solid rgba(255,255,255,0.65)' }}>
               <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2.6, color: '#FFFDF5', textTransform: 'uppercase' as const }}>Juhu, Mumbai</span>
             </div>
           </div>

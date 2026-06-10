@@ -64,7 +64,7 @@ export default function ProLoginClient() {
           {/* Logo */}
           <div className="text-center mb-6">
             <div className="text-4xl mb-3">🐾</div>
-            <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: "'DM Serif Display', Georgia, serif" }}>
+            <h1 className="text-2xl font-bold text-slate-900" style={{ fontFamily: 'var(--font-nunito), sans-serif' }}>
               Provider Login
             </h1>
             <p className="text-sm text-slate-500 mt-1.5">

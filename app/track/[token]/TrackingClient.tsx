@@ -105,8 +105,9 @@ export default function TrackingClient({
         <div className="max-w-lg mx-auto">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-2xl">🐾</span>
-            <span className="font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif", fontSize: 20 }}>
-              PupStep Walk Tracker
+            <span className="font-display font-extrabold text-lg leading-none tracking-tight">
+              <span style={{ color: 'oklch(0.57 0.17 192)' }}>Pup</span><span style={{ color: 'oklch(0.68 0.18 44)' }}>Step</span>
+              <span className="font-sans font-bold text-stone-700 text-base ml-1.5">Walk Tracker</span>
             </span>
           </div>
           <p className="text-sm text-stone-500">
@@ -142,19 +143,19 @@ export default function TrackingClient({
           </div>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              <p className="font-display text-2xl font-bold text-stone-900">
                 {status === 'active' ? timer : (endedAt ? `${Math.round((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 60000)}m` : '—')}
               </p>
               <p className="text-[10px] text-stone-500 mt-0.5">Duration</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              <p className="font-display text-2xl font-bold text-stone-900">
                 💧{peeCount}
               </p>
               <p className="text-[10px] text-stone-500 mt-0.5">Pee stops</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              <p className="font-display text-2xl font-bold text-stone-900">
                 💩{poopCount}
               </p>
               <p className="text-[10px] text-stone-500 mt-0.5">Poop stops</p>

@@ -82,9 +82,9 @@ function EmptyState({ emoji, title, sub, cta, ctaHref }: {
           href={ctaHref}
           className="px-5 py-2.5 rounded-2xl font-bold text-sm transition-all"
           style={{
-            background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+            background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
             color: '#451A03',
-            boxShadow: '0 4px 0px rgba(120,53,15,0.22)',
+            boxShadow: '0 4px 0px rgba(175,65,10,0.28)',
           }}
         >
           {cta}
@@ -283,7 +283,7 @@ export default function MyAccountClient({
                   className="text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
                   style={active
                     ? { background: 'rgba(255,255,255,0.25)', color: '#fff' }
-                    : { background: '#FDE68A', color: '#78350F' }
+                    : { background: 'oklch(0.92 0.07 44)', color: '#451A03' }
                   }
                 >
                   {count}
@@ -426,7 +426,7 @@ export default function MyAccountClient({
                         </a>
                         <div className="flex gap-0.5 mt-1">
                           {Array.from({ length: 5 }).map((_, i) => (
-                            <span key={i} className="text-sm" style={{ color: i < r.rating ? '#F59E0B' : '#E2E8F0' }}>★</span>
+                            <span key={i} className="text-sm" style={{ color: i < r.rating ? 'oklch(0.68 0.18 44)' : '#E2E8F0' }}>★</span>
                           ))}
                         </div>
                       </div>
@@ -593,9 +593,9 @@ export default function MyAccountClient({
         <a href="/broadcast"
           className="flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm transition-all"
           style={{
-            background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+            background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
             color: '#451A03',
-            boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.45), inset 0 -4px 0 rgba(120,53,15,0.28), 0 10px 28px rgba(253,230,138,0.65)',
+            boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.45), inset 0 -4px 0 rgba(175,65,10,0.30), 0 10px 28px rgba(245,110,35,0.48)',
           }}
         >
           📣 Post a broadcast

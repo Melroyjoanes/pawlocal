@@ -38,11 +38,11 @@ function fmtDist(m: number) {
 const BG1     = '#FFFBF0'
 const BG2     = '#FEF3C7'
 const BG3     = '#FDE68A'
-const AMBER   = '#F59E0B'
-const AMBER_D = '#D97706'
+const AMBER   = '#F07030'
+const AMBER_D = '#E05818'
 const BROWN   = '#1C0A00'
 const BROWN_M = '#78350F'
-const TEAL    = '#0b7a8a'
+const TEAL    = '#0A8A96'
 const WHITE   = '#FFFDF5'
 const PHOTO_W = 440
 const CARD_L  = 36
@@ -113,11 +113,11 @@ export async function GET(
         overflow: 'hidden',
       }}>
         {/* Large amber sphere */}
-        <div style={{ position: 'absolute', top: -70, left: -70, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle at 32% 30%, #FEF9C3, #FDE68A 44%, #F59E0B 72%, #D97706)', boxShadow: '0 28px 72px rgba(180,83,9,0.24)', display: 'flex', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -70, left: -70, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle at 32% 30%, #FFE8D6, #FFB380 44%, #F07030 72%, #E05818)', boxShadow: '0 28px 72px rgba(180,83,9,0.24)', display: 'flex', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: 36, left: 44, width: 74, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.40)', display: 'flex' }} />
         </div>
         {/* Medium amber sphere */}
-        <div style={{ position: 'absolute', bottom: -45, left: 400, width: 148, height: 148, borderRadius: '50%', background: 'radial-gradient(circle at 30% 28%, #FEF3C7, #FCD34D 50%, #D97706)', boxShadow: '0 16px 48px rgba(180,83,9,0.22)', display: 'flex', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', bottom: -45, left: 400, width: 148, height: 148, borderRadius: '50%', background: 'radial-gradient(circle at 30% 28%, #FFE8D6, #FFB380 50%, #E05818)', boxShadow: '0 16px 48px rgba(180,83,9,0.22)', display: 'flex', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: 18, left: 22, width: 38, height: 26, borderRadius: '50%', background: 'rgba(255,255,255,0.36)', display: 'flex' }} />
         </div>
         {/* Teal sphere */}
@@ -125,7 +125,7 @@ export async function GET(
           <div style={{ position: 'absolute', top: 8, left: 10, width: 17, height: 12, borderRadius: '50%', background: 'rgba(255,255,255,0.45)', display: 'flex' }} />
         </div>
         {/* Tiny amber sphere */}
-        <div style={{ position: 'absolute', bottom: 66, left: 762, width: 40, height: 40, borderRadius: '50%', background: 'radial-gradient(circle at 30% 28%, #FDE68A, #F59E0B 55%, #B45309)', boxShadow: '0 5px 18px rgba(180,83,9,0.24)', display: 'flex', overflow: 'hidden' }} />
+        <div style={{ position: 'absolute', bottom: 66, left: 762, width: 40, height: 40, borderRadius: '50%', background: 'radial-gradient(circle at 30% 28%, #FFD4B0, #F07030 55%, #C04010)', boxShadow: '0 5px 18px rgba(180,83,9,0.24)', display: 'flex', overflow: 'hidden' }} />
 
         {/* Clay card */}
         <div style={{ position: 'absolute', left: CARD_L, top: CARD_T, width: CARD_W, height: 630 - CARD_T * 2, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', background: 'rgba(255, 252, 237, 0.92)', borderRadius: 44, padding: '38px 48px', boxShadow: '0 24px 72px rgba(120, 53, 15, 0.18)', border: '2.5px solid rgba(255, 255, 255, 0.96)' }}>
@@ -133,8 +133,8 @@ export async function GET(
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 34 }}>🐾</span>
-              <span style={{ fontFamily: '"DMSerif"', fontSize: 30, color: BROWN, lineHeight: 1 }}>
-                Paw<span style={{ color: TEAL }}>Local</span>
+              <span style={{ fontFamily: '"DMSerif"', fontSize: 30, lineHeight: 1 }}>
+                <span style={{ color: '#1a9aaa' }}>Pup</span><span style={{ color: AMBER }}>Step</span>
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', background: AMBER, borderRadius: 100, padding: '7px 20px', boxShadow: '0 6px 20px rgba(180,83,9,0.28)', border: '2.5px solid rgba(255,255,255,0.65)' }}>
@@ -196,7 +196,7 @@ export async function GET(
           ) : (
             <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: `linear-gradient(170deg, ${AMBER} 0%, ${AMBER_D} 100%)`, gap: 24 }}>
               <span style={{ fontSize: 118, opacity: 0.18, display: 'flex' }}>🐾</span>
-              <span style={{ fontFamily: '"DMSerif"', fontSize: 22, color: WHITE, opacity: 0.65, letterSpacing: 1.5 }}>PawLocal</span>
+              <span style={{ fontFamily: '"DMSerif"', fontSize: 22, color: WHITE, opacity: 0.65, letterSpacing: 1.5 }}>PupStep</span>
             </div>
           )}
         </div>

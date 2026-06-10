@@ -299,7 +299,7 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white border-b border-border">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center">
-          <h1 className="font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif", fontSize: 20 }}>
+          <h1 className="font-bold text-stone-900" style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: 20 }}>
             Fitness Tracker
           </h1>
         </div>
@@ -322,7 +322,7 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
           ].map(({ label, value, icon }) => (
             <div key={label} className="bg-white rounded-2xl border border-border p-3 text-center shadow-sm">
               <div className="text-lg mb-0.5">{icon}</div>
-              <p className="font-bold text-stone-900 text-base leading-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>{value}</p>
+              <p className="font-bold text-stone-900 text-base leading-tight" style={{ fontFamily: 'var(--font-nunito), sans-serif' }}>{value}</p>
               <p className="text-[9px] text-stone-400 font-medium mt-0.5">{label}</p>
             </div>
           ))}
@@ -355,19 +355,19 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
 
               <div className="grid grid-cols-3 gap-4 mb-6 text-center">
                 <div>
-                  <p className="text-3xl font-bold text-white tabular-nums" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                  <p className="text-3xl font-bold text-white tabular-nums" style={{ fontFamily: 'var(--font-nunito), sans-serif' }}>
                     {formatDuration(elapsed)}
                   </p>
                   <p className="text-emerald-300 text-xs mt-1">Duration</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                  <p className="text-3xl font-bold text-white" style={{ fontFamily: 'var(--font-nunito), sans-serif' }}>
                     {distance.toFixed(2)}
                   </p>
                   <p className="text-emerald-300 text-xs mt-1">km</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-bold text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                  <p className="text-3xl font-bold text-white" style={{ fontFamily: 'var(--font-nunito), sans-serif' }}>
                     {liveSteps >= 1000 ? `${(liveSteps / 1000).toFixed(1)}k` : liveSteps}
                   </p>
                   <p className="text-emerald-300 text-xs mt-1">Est. steps</p>
@@ -411,7 +411,7 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
               <button
                 onClick={stopWalk}
                 className="w-full py-3.5 rounded-2xl font-bold text-sm text-stone-900 transition-opacity hover:opacity-90"
-                style={{ background: 'linear-gradient(160deg, #FCD34D, #F59E0B)' }}
+                style={{ background: 'linear-gradient(160deg, #FF8C52, #F56B22)', color: '#fff' }}
               >
                 ⏹ End walk
               </button>
@@ -526,15 +526,15 @@ export default function ProFitnessClient({ providerId, firstName }: Props) {
 
                 <div className="flex items-center gap-6 my-4 text-center">
                   <div>
-                    <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>{formatDuration(elapsed)}</p>
+                    <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: 'var(--font-nunito), sans-serif' }}>{formatDuration(elapsed)}</p>
                     <p className="text-xs text-stone-400">Duration</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>{distance.toFixed(2)} km</p>
+                    <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: 'var(--font-nunito), sans-serif' }}>{distance.toFixed(2)} km</p>
                     <p className="text-xs text-stone-400">Distance</p>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>{liveSteps.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: 'var(--font-nunito), sans-serif' }}>{liveSteps.toLocaleString()}</p>
                     <p className="text-xs text-stone-400">Steps</p>
                   </div>
                 </div>

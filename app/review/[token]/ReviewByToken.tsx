@@ -47,7 +47,7 @@ export default function ReviewByToken({ token, providerName }: Props) {
       <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
         <div className="max-w-sm w-full bg-white rounded-2xl border border-border p-8 shadow-sm text-center space-y-4">
           <div className="text-5xl">🐾</div>
-          <h2 className="text-xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+          <h2 className="font-display text-xl font-bold text-stone-900">
             Thank you!
           </h2>
           <p className="text-stone-600 text-sm leading-relaxed">
@@ -66,7 +66,7 @@ export default function ReviewByToken({ token, providerName }: Props) {
         {/* Header */}
         <div className="text-center space-y-1 mb-2">
           <div className="text-3xl">🐾</div>
-          <h1 className="text-2xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+          <h1 className="font-display text-2xl font-bold text-stone-900">
             Leave a review
           </h1>
           <p className="text-sm text-muted-foreground">

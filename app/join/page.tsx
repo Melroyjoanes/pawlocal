@@ -390,9 +390,9 @@ export default function JoinPage() {
             onClick={() => setStep(2)}
             className="w-full py-4 rounded-2xl font-bold text-sm transition-all disabled:opacity-40"
             style={{
-              background: canNext1 ? 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)' : '#F1F5F9',
+              background: canNext1 ? 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)' : '#F1F5F9',
               color: canNext1 ? '#451A03' : '#94A3B8',
-              boxShadow: canNext1 ? '0 4px 0px rgba(120,53,15,0.28)' : 'none',
+              boxShadow: canNext1 ? '0 4px 0px rgba(175,65,10,0.32)' : 'none',
             }}
           >
             Continue →
@@ -543,7 +543,7 @@ export default function JoinPage() {
                     className="px-3 py-1.5 rounded-full text-xs font-semibold border transition-all"
                     style={
                       form.working_days.includes(day)
-                        ? { background: '#FCD34D', color: '#451A03', borderColor: '#F59E0B' }
+                        ? { background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)', color: '#fff', borderColor: '#F56B22' }
                         : { background: 'white', color: '#64748B', borderColor: '#E2E8F0' }
                     }
                   >
@@ -575,9 +575,9 @@ export default function JoinPage() {
               onClick={handleSubmit}
               className="flex-1 py-4 rounded-2xl font-bold text-sm transition-all disabled:opacity-40"
               style={{
-                background: canSubmit ? 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)' : '#F1F5F9',
+                background: canSubmit ? 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)' : '#F1F5F9',
                 color: canSubmit ? '#451A03' : '#94A3B8',
-                boxShadow: canSubmit ? '0 4px 0px rgba(120,53,15,0.28)' : 'none',
+                boxShadow: canSubmit ? '0 4px 0px rgba(175,65,10,0.32)' : 'none',
               }}
             >
               {submitting ? 'Submitting…' : "Submit — it's free 🐾"}

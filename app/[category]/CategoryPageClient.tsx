@@ -225,7 +225,7 @@ export default function CategoryPage() {
               href="/broadcast"
               className="flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl font-bold text-sm transition-all"
               style={{
-                background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+                background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
                 color: '#451A03',
                 boxShadow: '0 4px 0px rgba(120,53,15,0.22)',
               }}
@@ -265,7 +265,7 @@ export default function CategoryPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, ease: EASE_OUT_QUART, delay: 0.3 }}
-                className="rounded-2xl border-2 border-dashed border-amber-200 bg-amber-50 p-5 flex flex-col sm:flex-row sm:items-center gap-4"
+                className="rounded-2xl border-2 border-dashed p-5 flex flex-col sm:flex-row sm:items-center gap-4" style={{ borderColor: 'oklch(0.88 0.10 44)', background: 'oklch(0.97 0.025 44)' }}
               >
                 <div className="flex-1">
                   <p className="text-sm font-bold text-amber-900 mb-1">
@@ -279,7 +279,7 @@ export default function CategoryPage() {
                   href="/broadcast"
                   className="flex-shrink-0 flex items-center justify-center gap-1.5 px-5 py-3 rounded-xl font-bold text-sm transition-all"
                   style={{
-                    background: 'linear-gradient(160deg, #FCD34D 0%, #F59E0B 100%)',
+                    background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
                     color: '#451A03',
                     boxShadow: '0 4px 0px rgba(120,53,15,0.2)',
                   }}

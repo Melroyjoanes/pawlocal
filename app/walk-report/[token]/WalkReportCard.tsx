@@ -309,10 +309,10 @@ export default function WalkReportCard({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: EASE }}
         >
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">🐾</span>
-            <span className="font-display text-xl text-stone-900 leading-none">
-              Paw<span style={{ color: '#D97706' }}>Local</span>
+          <Link href="/" className="flex items-center gap-1.5">
+            <span className="text-xl leading-none">🐾</span>
+            <span className="font-display font-extrabold text-lg leading-none tracking-tight">
+              <span style={{ color: 'oklch(0.57 0.17 192)' }}>Pup</span><span style={{ color: 'oklch(0.68 0.18 44)' }}>Step</span>
             </span>
           </Link>
           <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: 'oklch(0.48 0.17 196)' }}>
@@ -671,7 +671,7 @@ export default function WalkReportCard({
               transition={{ duration: 0.3, ease: EASE }}
             >
               <span className="text-lg">✓</span>
-              <p className="text-sm font-semibold text-green-700">Saved to your PawLocal account</p>
+              <p className="text-sm font-semibold text-green-700">Saved to your PupStep account</p>
             </motion.div>
           )}
         </AnimatePresence>

@@ -147,7 +147,7 @@ export default function ProBookingsClient({ providerId, firstName, categorySlugs
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white border-b border-border">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          <h1 className="font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif", fontSize: 20 }}>
+          <h1 className="font-bold text-stone-900" style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: 20 }}>
             Bookings
           </h1>
           <button
@@ -173,19 +173,19 @@ export default function ProBookingsClient({ providerId, firstName, categorySlugs
           <p className="text-xs font-bold uppercase tracking-widest text-teal-600 mb-3">This month</p>
           <div className="grid grid-cols-3 gap-3 text-center">
             <div>
-              <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: 'var(--font-nunito), sans-serif' }}>
                 {monthlyCount}
               </p>
               <p className="text-[10px] text-stone-500 mt-0.5">Sessions</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: 'var(--font-nunito), sans-serif' }}>
                 ₹{monthlyEarnings.toLocaleString('en-IN')}
               </p>
               <p className="text-[10px] text-stone-500 mt-0.5">Earned</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: "'DM Serif Display', serif" }}>
+              <p className="text-2xl font-bold text-stone-900" style={{ fontFamily: 'var(--font-nunito), sans-serif' }}>
                 {monthlyHours}h
               </p>
               <p className="text-[10px] text-stone-500 mt-0.5">On the job</p>
