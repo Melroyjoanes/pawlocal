@@ -27,7 +27,9 @@ export async function POST(req: NextRequest) {
     type: 'magiclink',
     email: email.toLowerCase().trim(),
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/pro/dashboard`,
+      // Must go through /auth/callback so Supabase PKCE code exchange happens
+      // before landing on the dashboard (direct redirect skips the exchange → no session)
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/auth/callback?next=/pro/dashboard`,
     },
   })
 
@@ -44,7 +46,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         from: 'PupStep <onboarding@resend.dev>',
         to: email,
-        subject: '🐾 Your PawLocal sign-in link',
+        subject: '🐾 Your PupStep sign-in link',
         html: `<div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">
           <h2 style="font-size:20px;color:#0f172a;">Sign in to PupStep</h2>
           <p style="color:#475569;font-size:14px;">Click the button below to sign in. This link expires in 1 hour.</p>

@@ -63,7 +63,7 @@ export default function AuthModal({ open, onClose, redirectTo, message }: AuthMo
             </p>
           )}
 
-          <h2 className="text-xl font-bold text-slate-900 text-center mb-1">Welcome to PawLocal</h2>
+          <h2 className="text-xl font-bold text-slate-900 text-center mb-1">Welcome to PupStep</h2>
           <p className="text-sm text-slate-500 text-center mb-6">Sign in to contact providers and save favourites</p>
 
           {/* Google sign-in */}
