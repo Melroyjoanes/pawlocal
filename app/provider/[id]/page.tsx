@@ -20,9 +20,19 @@ export async function generateMetadata(
     .eq('id', id)
     .single()
   if (!data) return { title: 'Provider not found | PupStep' }
+
+  const serviceLabel = data.category_slug.replace(/-/g, ' ')
+  const title = `${data.name} — ${serviceLabel} in Mumbai | PupStep`
+  const description = data.bio
+    ? `${data.bio.slice(0, 140)}${data.bio.length > 140 ? '…' : ''}`
+    : `${data.name} is a verified ${serviceLabel} provider in Mumbai. Contact directly on WhatsApp. Zero booking fees.`
+
   return {
-    title: `${data.name} | PupStep`,
-    description: data.bio ?? `${data.name} offers ${data.category_slug.replace(/-/g, ' ')} services in Juhu, Mumbai.`,
+    title,
+    description,
+    keywords: [`${serviceLabel} Mumbai`, `${serviceLabel} Juhu`, data.name, `verified ${serviceLabel}`, 'WhatsApp pet services Mumbai'],
+    alternates: { canonical: `https://pupstep.in/provider/${id}` },
+    openGraph: { title, description, type: 'profile', siteName: 'PupStep' },
   }
 }
 
@@ -120,7 +130,45 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
     Dog: '🐕', Cat: '🐈', Bird: '🦜', Rabbit: '🐇', Hamster: '🐹', Fish: '🐠', Reptile: '🦎',
   }
 
+  const serviceLabel = category.name
+
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "LocalBusiness",
+            "name": provider.name,
+            "description": provider.bio ?? `${provider.name} — verified ${serviceLabel} in Mumbai.`,
+            "url": `https://pupstep.in/provider/${provider.id}`,
+            "image": primaryPhoto?.url ?? undefined,
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": (provider as unknown as { neighbourhood?: string }).neighbourhood ?? "Juhu",
+              "addressRegion": "Mumbai",
+              "addressCountry": "IN"
+            },
+            "geo": { "@type": "GeoCoordinates", "latitude": provider.lat, "longitude": provider.lng },
+            "areaServed": { "@type": "City", "name": "Mumbai" },
+            "priceRange": "₹",
+            "aggregateRating": avgRating > 0 ? {
+              "@type": "AggregateRating",
+              "ratingValue": avgRating.toFixed(1),
+              "reviewCount": reviews.length,
+              "bestRating": "5",
+              "worstRating": "1"
+            } : undefined,
+            "review": reviews.slice(0, 5).map(r => ({
+              "@type": "Review",
+              "reviewRating": { "@type": "Rating", "ratingValue": r.rating },
+              "author": { "@type": "Person", "name": r.reviewer_name ?? "Pet Parent" },
+              "reviewBody": r.body ?? undefined,
+            })),
+          })
+        }}
+      />
     <div className="max-w-2xl mx-auto">
       <TrackView providerId={provider.id} />
 
@@ -440,5 +488,6 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         shareUrl={shareUrl}
       />
     </div>
+    </>
   )
 }

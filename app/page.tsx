@@ -112,6 +112,48 @@ export default async function HomePage({
           })
         }}
       />
+      {/* FAQ schema — triggers rich result accordion in Google search */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is PupStep?",
+                "acceptedAnswer": { "@type": "Answer", "text": "PupStep is Mumbai's verified pet services directory. We list trusted dog walkers, vets, groomers, trainers and pet stores — all manually verified by our team. You contact providers directly on WhatsApp. Zero booking fees." }
+              },
+              {
+                "@type": "Question",
+                "name": "How do I find a dog walker in Mumbai on PupStep?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Visit pupstep.in/dog-walking to browse verified dog walkers near you in Mumbai. Each walker has a detailed profile with reviews, GPS walk reports, and a direct WhatsApp button. No middleman, no booking fees." }
+              },
+              {
+                "@type": "Question",
+                "name": "Are pet service providers on PupStep verified?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes. Every provider on PupStep is manually reviewed by our team before getting a Verified badge. We check their identity, experience, and references. You can also read real reviews from other pet parents." }
+              },
+              {
+                "@type": "Question",
+                "name": "Does PupStep charge a booking fee?",
+                "acceptedAnswer": { "@type": "Answer", "text": "No. PupStep is completely free to use. You contact providers directly on WhatsApp and pay them directly. We never charge a booking fee or commission." }
+              },
+              {
+                "@type": "Question",
+                "name": "Which areas in Mumbai does PupStep cover?",
+                "acceptedAnswer": { "@type": "Answer", "text": "PupStep currently focuses on Juhu, Versova, Andheri West, and surrounding areas in Mumbai. We are expanding to more neighbourhoods. Post a request on Pet Broadcast and nearby providers will reply." }
+              },
+              {
+                "@type": "Question",
+                "name": "How do I find a vet near me in Mumbai?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Visit pupstep.in/vet to find trusted veterinary clinics near you in Mumbai. All vets are verified. You can see their location on a map, read reviews, and WhatsApp them directly." }
+              }
+            ]
+          })
+        }}
+      />
       <LandingPage countMap={countMap} totalProviders={totalProviders} neighbourhood={neighbourhood} />
     </>
   )
