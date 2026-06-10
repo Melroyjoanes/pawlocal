@@ -36,14 +36,6 @@ function CloseIcon() {
   )
 }
 
-function SignOutIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-      <path d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3M11 11l3-3m0 0l-3-3m3 3H6"
-        stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
 
 const EYEBROW = {
   fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const,
@@ -82,12 +74,6 @@ export default function MobileDrawer() {
     }
     return () => { document.body.style.overflow = '' }
   }, [open])
-
-  async function signOut() {
-    await createClient().auth.signOut()
-    setOpen(false)
-    window.location.href = '/'
-  }
 
   const displayName = user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? user?.email?.split('@')[0] ?? ''
   const firstName   = displayName.split(' ')[0]
@@ -310,21 +296,7 @@ export default function MobileDrawer() {
                 </div>
               </div>
 
-              {/* ── Footer: sign out ── */}
-              {user && (
-                <div className="flex-shrink-0 px-4 py-3.5"
-                  style={{ borderTop: '1px solid oklch(0.928 0.02 88)' }}>
-                  <button
-                    onClick={signOut}
-                    className="flex items-center gap-3 w-full px-2 py-[11px] rounded-xl text-red-500 hover:bg-red-50 active:bg-red-100 transition-colors"
-                  >
-                    <span className="w-7 flex-shrink-0 flex items-center justify-center">
-                      <SignOutIcon />
-                    </span>
-                    <span className="text-[14px] font-semibold">Sign out</span>
-                  </button>
-                </div>
-              )}
+              {/* Sign out lives in the account dashboard — not duplicated here */}
 
             </motion.aside>
           </>
