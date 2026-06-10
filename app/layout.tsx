@@ -39,12 +39,18 @@ export const metadata: Metadata = {
     siteName: 'PupStep',
     title: 'PupStep — Pet Services in Juhu, Mumbai',
     description: 'Find verified vets, groomers, dog walkers & trainers near Juhu, Mumbai. WhatsApp directly. Zero fees.',
-    // og-image.png doesn't exist yet — remove to prevent 404 fallback
+    images: [{
+      url: `${siteUrl}/api/og`,
+      width: 1200,
+      height: 630,
+      alt: 'PupStep — Verified pet services in Juhu, Mumbai',
+    }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'PupStep — Pet Services in Juhu, Mumbai',
     description: 'Verified vets, groomers, walkers & trainers near Juhu. WhatsApp direct. Zero fees.',
+    images: [`${siteUrl}/api/og`],
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
 }
