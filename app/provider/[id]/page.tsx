@@ -164,7 +164,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
               "@type": "Review",
               "reviewRating": { "@type": "Rating", "ratingValue": r.rating },
               "author": { "@type": "Person", "name": r.reviewer_name ?? "Pet Parent" },
-              "reviewBody": r.body ?? undefined,
+              "reviewBody": r.comment ?? undefined,
             })),
           })
         }}
