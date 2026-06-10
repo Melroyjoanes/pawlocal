@@ -389,7 +389,7 @@ export default function LiveWalkClient({
     routePointsRef.current = []
   }
 
-  const shareUrl = `https://pawlocal-ashen.vercel.app/walk-report/${reportToken}`
+  const shareUrl = `https://pupstep.in/walk-report/${reportToken}`
   const whatsappText = encodeURIComponent(
     `Here is ${dogName ? `${dogName}'s` : "your dog's"} walk report from PawLocal! 🐾\n${shareUrl}`
   )

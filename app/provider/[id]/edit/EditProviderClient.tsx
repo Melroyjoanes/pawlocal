@@ -410,7 +410,7 @@ export default function EditProviderClient({
         <button
           type="button"
           onClick={() => {
-            navigator.clipboard.writeText(`https://pawlocal-ashen.vercel.app/provider/${provider.id}`)
+            navigator.clipboard.writeText(`https://pupstep.in/provider/${provider.id}`)
               .then(() => alert('Profile link copied!'))
           }}
           className="ml-auto text-xs text-slate-400 hover:text-slate-700 shrink-0 transition-colors"

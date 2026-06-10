@@ -91,7 +91,7 @@ async function notifyMatchingProviders(
   if (!providers?.length) return
 
   const svc = SERVICE_LABELS[serviceSlug] ?? { icon: '🐾', label: serviceSlug }
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
 
   const matching = (providers as { id: string; name: string; email: string; category_slug: string; category_slugs: string[] | null }[])
     .filter(p => {
@@ -196,7 +196,7 @@ export async function POST(req: NextRequest) {
     const svc = SERVICE_LABELS[service_slug] ?? { icon: '🐾', label: service_slug }
     const phone = digits.slice(-10)
     const waUrl = `https://wa.me/91${phone}`
-    const adminUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app'}/admin`
+    const adminUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/admin`
 
     fetch('https://api.resend.com/emails', {
       method: 'POST',

@@ -94,9 +94,9 @@ export async function generateMetadata({
   ].filter(Boolean).join(' ')
 
   // Use configured site URL, fall back to Vercel's automatic URL, then the known Vercel deployment
-  const canonicalUrl = `https://pawlocal-ashen.vercel.app/walk-report/${token}`
+  const canonicalUrl = `https://pupstep.in/walk-report/${token}`
   // API route — bypasses Next.js metadataBase/VERCEL_URL magic entirely
-  const ogImageUrl = `https://pawlocal-ashen.vercel.app/api/og/walk-report/${token}`
+  const ogImageUrl = `https://pupstep.in/api/og/walk-report/${token}`
 
   return {
     title,

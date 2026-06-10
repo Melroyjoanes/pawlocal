@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     type: 'magiclink',
     email: email.toLowerCase().trim(),
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app'}/pro/dashboard`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/pro/dashboard`,
     },
   })
 

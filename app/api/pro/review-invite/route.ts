@@ -46,6 +46,6 @@ export async function POST() {
     return NextResponse.json({ error: error?.message ?? 'Failed to create invite' }, { status: 500 })
   }
 
-  const url = `https://pawlocal-ashen.vercel.app/review/${invite.token}`
+  const url = `https://pupstep.in/review/${invite.token}`
   return NextResponse.json({ token: invite.token, url })
 }

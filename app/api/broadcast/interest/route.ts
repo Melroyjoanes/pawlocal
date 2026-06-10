@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
             <p style="margin:0;color:#15803d;"><strong>Action needed:</strong> Go to the admin broadcasts tab, find this request, and use "Notify these providers" to connect <strong>${provider_name}</strong> with the customer on WhatsApp.</p>
           </div>
           <p style="margin-top:16px;font-size:12px;color:#94a3b8;">
-            Admin: <a href="https://pawlocal-ashen.vercel.app/admin">pawlocal-ashen.vercel.app/admin</a>
+            Admin: <a href="https://pupstep.in/admin">pupstep.in/admin</a>
           </p>
         `,
       }),

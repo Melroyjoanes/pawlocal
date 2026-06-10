@@ -42,8 +42,8 @@ async function sendLeadEmail(providerId: string) {
 
   if (!provider?.email) return // not claimed yet — can't email
 
-  const profileUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app'}/provider/${providerId}`
-  const dashboardUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app'}/pro/dashboard`
+  const profileUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/provider/${providerId}`
+  const dashboardUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/pro/dashboard`
 
   await fetch('https://api.resend.com/emails', {
     method: 'POST',

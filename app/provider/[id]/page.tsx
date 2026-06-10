@@ -82,7 +82,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
     .sort((a, b) => a.sort_order - b.sort_order)
 
   const shareUrl = `https://wa.me/?text=${encodeURIComponent(
-    `🐾 Check out ${provider.name} for ${category.name} near Juhu!\n\nhttps://pawlocal-ashen.vercel.app/provider/${provider.id}`
+    `🐾 Check out ${provider.name} for ${category.name} near Juhu!\n\nhttps://pupstep.in/provider/${provider.id}`
   )}`
 
   function formatHour(t: string) {

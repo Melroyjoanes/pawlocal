@@ -758,7 +758,7 @@ export default function DashboardClient({
           <button
             type="button"
             onClick={() => {
-              navigator.clipboard.writeText(`https://pawlocal-ashen.vercel.app/provider/${provider.id}`)
+              navigator.clipboard.writeText(`https://pupstep.in/provider/${provider.id}`)
                 .then(() => alert('Profile link copied! Share it on WhatsApp.'))
             }}
             className="mt-4 px-5 py-2.5 rounded-xl text-sm font-semibold border border-border text-slate-700 hover:bg-muted transition-colors"

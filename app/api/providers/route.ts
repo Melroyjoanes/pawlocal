@@ -74,8 +74,8 @@ export async function POST(req: NextRequest) {
       .split('-')
       .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ')
-    const adminUrl = `https://pawlocal-ashen.vercel.app/admin`
-    const profileUrl = `https://pawlocal-ashen.vercel.app/provider/${provider.id}`
+    const adminUrl = `https://pupstep.in/admin`
+    const profileUrl = `https://pupstep.in/provider/${provider.id}`
 
     fetch('https://api.resend.com/emails', {
       method: 'POST',

@@ -26,7 +26,7 @@ const TIMELINE = [
   {
     icon: '○',
     label: 'Access your dashboard',
-    description: 'Visit pawlocal-ashen.vercel.app/pro — sign in with Google and you\'ll land on your dashboard.',
+    description: 'Visit pupstep.in/pro — sign in with Google and you\'ll land on your dashboard.',
     done: false,
   },
 ]

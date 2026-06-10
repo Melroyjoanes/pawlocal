@@ -84,7 +84,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (update.status === 'approved' && prov?.email && process.env.RESEND_API_KEY) {
     try {
       const firstName = prov.name.split(' ')[0]
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal-ashen.vercel.app'
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
 
       const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
         type: 'magiclink',

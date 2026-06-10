@@ -130,7 +130,7 @@ function ProviderCard({
       if (!res.ok) throw new Error(data.error ?? 'Failed')
       const firstName = p.name.split(' ')[0]
       const waText = encodeURIComponent(
-        `Hi ${firstName}! Your PawLocal provider dashboard is ready 🐾\n\nClick this link to sign in and manage your profile, update availability, and see who contacted you:\n${data.magicLink}\n\n(Link expires in 1 hour. Next time just go to pawlocal-ashen.vercel.app/pro)`
+        `Hi ${firstName}! Your PawLocal provider dashboard is ready 🐾\n\nClick this link to sign in and manage your profile, update availability, and see who contacted you:\n${data.magicLink}\n\n(Link expires in 1 hour. Next time just go to pupstep.in/pro)`
       )
       const digits = p.whatsapp.replace(/\D/g, '').slice(-10)
       window.open(`https://wa.me/91${digits}?text=${waText}`, '_blank', 'noopener,noreferrer')
@@ -145,7 +145,7 @@ function ProviderCard({
 
   const category = getCategoryBySlug(p.category_slug)
   const primaryPhoto = p.provider_photos?.find((ph) => ph.is_primary) ?? p.provider_photos?.[0]
-  const profileUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://pawlocal-ashen.vercel.app'}/provider/${p.id}`
+  const profileUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://pupstep.in'}/provider/${p.id}`
   const waDigits = p.whatsapp?.replace(/\D/g, '').slice(-10) ?? ''
   const waDirectUrl = waDigits ? `https://wa.me/91${waDigits}` : null
 
@@ -534,7 +534,7 @@ function BroadcastAdminCard({
 
 // ── Walk report card (admin view) ────────────────────────────────
 function WalkReportAdminCard({ r }: { r: WalkReport }) {
-  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://pawlocal-ashen.vercel.app'
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://pupstep.in'
 
   return (
     <div className="bg-white border border-border rounded-2xl p-4">
