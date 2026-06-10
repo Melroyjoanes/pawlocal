@@ -56,7 +56,6 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
   const category = getCategoryBySlug(provider.category_slug)
   if (!category) notFound()
 
-  // Approved reviews only
   const { data: reviewsData } = await supabase
     .from('reviews')
     .select('*')
@@ -69,7 +68,6 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
     : 0
 
-  // Trust signals
   const { count: jobsCompleted } = await supabase
     .from('booking_requests')
     .select('*', { count: 'exact', head: true })
@@ -132,6 +130,13 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
 
   const serviceLabel = category.name
 
+  // Build trust chips
+  const trustChips: string[] = []
+  if (totalJobs > 0) trustChips.push(`${totalJobs} jobs done`)
+  if (p.experience_years) trustChips.push(`${p.experience_years} yrs experience`)
+  if (p.languages?.length) trustChips.push(p.languages.join(' · '))
+  if (p.neighbourhood_tags?.length) trustChips.push(p.neighbourhood_tags.join(' · '))
+
   return (
     <>
       <script
@@ -174,15 +179,13 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
 
       {/* ── Hero: full-bleed cover photo ─────────────────────────────── */}
       <div className="relative -mx-4 mb-0 h-64 sm:h-72 overflow-hidden bg-stone-100">
-        {/* Back link — floats top-left */}
         <a
           href={`/${provider.category_slug}`}
-          className="absolute top-4 left-4 z-20 inline-flex items-center gap-1.5 text-sm font-medium text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full hover:bg-black/50 transition-colors"
+          className="absolute top-4 left-4 z-20 inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full hover:bg-black/50 transition-colors"
         >
           ← {category.name}
         </a>
 
-        {/* Photo or colour fill */}
         {primaryPhoto ? (
           <img
             src={primaryPhoto.url}
@@ -198,19 +201,15 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           </div>
         )}
 
-        {/* Gradient overlay — name + badges at bottom */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
 
-        {/* Hero content */}
         <div className="absolute bottom-0 left-0 right-0 p-5 pb-6">
-          <h1 className="text-2xl font-display text-white leading-tight mb-1">
+          <h1 className="text-2xl font-bold text-white leading-tight mb-1">
             {provider.name}
           </h1>
           {provider.business_name && provider.business_name !== provider.name && (
             <p className="text-sm text-white/70 mb-2">{provider.business_name}</p>
           )}
-
-          {/* Badges row */}
           <div className="flex items-center gap-2 flex-wrap">
             <span
               className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full"
@@ -251,29 +250,53 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           </div>
         )}
 
-        {/* Trust chips row */}
-        {(() => {
-          const chips: string[] = []
-          if (totalJobs > 0) chips.push(`${totalJobs} jobs done`)
-          if (p.experience_years) chips.push(`${p.experience_years} yrs experience`)
-          if (p.languages?.length) chips.push(p.languages.join(' · '))
-          if (p.neighbourhood_tags?.length) chips.push(p.neighbourhood_tags.join(' · '))
-          if (!chips.length) return (
-            <p className="text-xs text-stone-400 mb-5">Member since {memberSince}</p>
-          )
-          return (
-            <div className="flex flex-wrap items-center gap-2 mb-5">
-              {chips.map(chip => (
-                <span key={chip} className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-600">
-                  {chip}
+        {/* ── Quick-scan info strip ─────────────────────────────────── */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {provider.price_min && (
+            <span className="clay-chip inline-flex items-center gap-1 px-4 py-2 text-sm font-semibold bg-amber-50 border border-amber-100 text-amber-900">
+              ₹{provider.price_min}
+              {provider.price_max && provider.price_max !== provider.price_min && `–${provider.price_max}`}
+              {provider.price_unit && (
+                <span className="font-normal text-amber-600 text-xs ml-1">
+                  /{provider.price_unit.replace('per ', '')}
                 </span>
-              ))}
-              <span className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-500">
-                🗓 Since {memberSince}
+              )}
+            </span>
+          )}
+          <span
+            className="clay-chip inline-flex items-center gap-2 px-4 py-2 text-sm font-medium"
+            style={{ background: 'oklch(0.96 0.04 196 / 0.6)', border: '1px solid oklch(0.88 0.06 196)', color: 'oklch(0.36 0.12 196)' }}
+          >
+            {formatHour(provider.hours_from)}–{formatHour(provider.hours_to)}
+            <span className="opacity-60 text-xs">
+              {provider.working_days.slice(0, 3).map((d: string) => d.slice(0, 3)).join(' · ')}
+              {provider.working_days.length > 3 ? ` +${provider.working_days.length - 3}` : ''}
+            </span>
+          </span>
+          <span className="clay-chip inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white border border-border text-stone-600">
+            📍 <span className="line-clamp-1">{provider.address}</span>
+          </span>
+        </div>
+
+        {/* Trust chips */}
+        {trustChips.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2 mb-5">
+            {trustChips.map(chip => (
+              <span
+                key={chip}
+                className="clay-chip text-xs px-3 py-1.5 font-medium"
+                style={{ background: 'oklch(0.97 0.03 75)', border: '1px solid oklch(0.90 0.06 75)', color: 'oklch(0.42 0.12 75)' }}
+              >
+                {chip}
               </span>
-            </div>
-          )
-        })()}
+            ))}
+            <span className="clay-chip text-xs px-3 py-1.5 bg-stone-50 border border-stone-100 text-stone-500">
+              🗓 Since {memberSince}
+            </span>
+          </div>
+        ) : (
+          <p className="text-xs text-stone-400 mb-5">Member since {memberSince}</p>
+        )}
 
         {/* Tier explainer */}
         {(provider.verification_tier === 'verified' || provider.verification_tier === 'certified') && (
@@ -282,11 +305,20 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           </div>
         )}
 
-        {/* Tagline / intro note */}
+        {/* Intro note — teal soft box, no side stripe */}
         {p.intro_note && (
-          <blockquote className="mb-6 pl-4 border-l-2 border-teal-300 italic text-base text-stone-700 leading-snug">
+          <div
+            className="mb-6 px-4 py-3.5 rounded-2xl text-base leading-relaxed"
+            style={{
+              background: 'oklch(0.96 0.04 196 / 0.4)',
+              border: '1px solid oklch(0.88 0.06 196)',
+              color: 'oklch(0.28 0.10 196)',
+            }}
+          >
+            <span style={{ fontSize: '1.25rem', opacity: 0.4, marginRight: '0.25rem' }}>"</span>
             {p.intro_note}
-          </blockquote>
+            <span style={{ fontSize: '1.25rem', opacity: 0.4, marginLeft: '0.15rem' }}>"</span>
+          </div>
         )}
 
         {/* Pet types */}
@@ -304,36 +336,6 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           <p className="text-muted-foreground leading-relaxed mb-7">{provider.bio}</p>
         )}
 
-        {/* Details grid */}
-        <div className="grid grid-cols-2 gap-3 mb-7">
-          {(provider.price_min || provider.price_max) && (
-            <div className="bg-white border border-border rounded-xl p-4">
-              <p className="text-xs text-muted-foreground mb-1.5">Pricing</p>
-              <p className="font-semibold text-foreground">
-                ₹{provider.price_min}
-                {provider.price_max && provider.price_max !== provider.price_min
-                  ? `–₹${provider.price_max}`
-                  : ''}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">{provider.price_unit}</p>
-            </div>
-          )}
-          <div className="bg-white border border-border rounded-xl p-4">
-            <p className="text-xs text-muted-foreground mb-1.5">Hours</p>
-            <p className="font-semibold text-foreground">
-              {formatHour(provider.hours_from)} – {formatHour(provider.hours_to)}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {provider.working_days.slice(0, 3).join(', ')}
-              {provider.working_days.length > 3 ? ` +${provider.working_days.length - 3}` : ''}
-            </p>
-          </div>
-          <div className="bg-white border border-border rounded-xl p-4 col-span-2">
-            <p className="text-xs text-muted-foreground mb-1.5">Location</p>
-            <p className="font-medium text-foreground">{provider.address}</p>
-          </div>
-        </div>
-
         {/* Trainer details */}
         {provider.category_slug === 'dog-training' && provider.metadata && (() => {
           const t = provider.metadata as TrainerMetadata
@@ -341,16 +343,14 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           if (!hasAny) return null
           return (
             <div className="mb-7">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">
-                Trainer details
-              </p>
+              <p className="text-sm font-semibold text-stone-500 mb-4">Trainer details</p>
               <div className="flex flex-col gap-4">
                 {t.training_methods && t.training_methods.length > 0 && (
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">Training method</p>
                     <div className="flex flex-wrap gap-2">
                       {t.training_methods.map((m) => (
-                        <span key={m} className="px-3 py-1 rounded-full text-xs font-medium bg-cyan-50 text-cyan-700 border border-cyan-100">{m}</span>
+                        <span key={m} className="clay-chip px-3 py-1 rounded-full text-xs font-medium bg-cyan-50 text-cyan-700 border border-cyan-100">{m}</span>
                       ))}
                     </div>
                   </div>
@@ -360,27 +360,27 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
                     <p className="text-xs text-muted-foreground mb-2">Specialises in</p>
                     <div className="flex flex-wrap gap-2">
                       {t.specialisations.map((s) => (
-                        <span key={s} className="px-3 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-700">{s}</span>
+                        <span key={s} className="clay-chip px-3 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-700">{s}</span>
                       ))}
                     </div>
                   </div>
                 )}
                 <div className="grid grid-cols-2 gap-3">
                   {t.session_format && (
-                    <div className="bg-white border border-border rounded-xl p-4">
+                    <div className="clay-card p-4">
                       <p className="text-xs text-muted-foreground mb-1">Session format</p>
                       <p className="text-sm font-medium text-foreground">{t.session_format}</p>
                     </div>
                   )}
                   {t.certifications && (
-                    <div className="bg-white border border-border rounded-xl p-4">
+                    <div className="clay-card p-4">
                       <p className="text-xs text-muted-foreground mb-1">Certifications</p>
                       <p className="text-sm font-medium text-foreground">{t.certifications}</p>
                     </div>
                   )}
                 </div>
                 {t.breeds && (
-                  <div className="bg-white border border-border rounded-xl p-4">
+                  <div className="clay-card p-4">
                     <p className="text-xs text-muted-foreground mb-1.5">Breeds experienced with</p>
                     <p className="text-sm text-foreground">{t.breeds}</p>
                   </div>
@@ -393,7 +393,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         {/* Gallery */}
         {galleryPhotos.length > 0 && (
           <div className="mb-7">
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">Photos</p>
+            <p className="text-sm font-semibold text-stone-500 mb-3">Photos</p>
             <div className="grid grid-cols-3 gap-2">
               {galleryPhotos.map((photo) => (
                 <div key={photo.id} className="aspect-square rounded-xl overflow-hidden bg-stone-100">
@@ -409,7 +409,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           const video = getVideoEmbed(p.intro_video_url!)
           return (
             <div className="mb-7">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+              <p className="text-sm font-semibold text-stone-500 mb-3">
                 Meet {provider.name.split(' ')[0]}
               </p>
               {video.type === 'instagram' ? (
@@ -437,11 +437,11 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           )
         })()}
 
-        {/* Reviews — only shown when approved reviews exist. No open form. */}
+        {/* Reviews */}
         {reviews.length > 0 && (
           <div className="mb-24">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+              <h2 className="text-sm font-semibold text-stone-500">
                 Reviews
               </h2>
               <div className="flex items-center gap-1.5">
@@ -453,10 +453,10 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
             </div>
             <div className="flex flex-col gap-3">
               {reviews.map((r) => (
-                <div key={r.id} className="bg-white border border-border rounded-xl p-4">
+                <div key={r.id} className="clay-card p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div>
-                      <p className="font-medium text-sm text-foreground">{r.reviewer_name}</p>
+                      <p className="font-semibold text-sm text-foreground">{r.reviewer_name}</p>
                       <Stars rating={r.rating} size="sm" />
                     </div>
                     <p className="text-xs text-muted-foreground flex-shrink-0">
@@ -472,12 +472,11 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           </div>
         )}
 
-        {/* Bottom spacer when no reviews section */}
         {reviews.length === 0 && <div className="mb-24" />}
 
       </div>
 
-      {/* ── Sticky CTA — auth-gated ──────────────────────────────────── */}
+      {/* ── Sticky CTA ────────────────────────────────────────────────── */}
       <ProviderCTABar
         providerId={provider.id}
         providerName={provider.name}

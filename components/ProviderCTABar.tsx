@@ -137,7 +137,7 @@ export default function ProviderCTABar({
           {/* WhatsApp — auth gated */}
           <button
             onClick={() => requireAuth('whatsapp')}
-            className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-sm text-white clay-btn-wa transition-all"
+            className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-sm text-white clay-btn-teal transition-all"
           >
             💬 WhatsApp
           </button>

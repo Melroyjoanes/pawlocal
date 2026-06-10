@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, DM_Serif_Display } from 'next/font/google'
+import { Nunito, Plus_Jakarta_Sans } from 'next/font/google'
 import { headers } from 'next/headers'
 import MotionProvider from '@/components/MotionProvider'
 import ResponsePrompt from '@/components/ResponsePrompt'
@@ -7,11 +7,18 @@ import HeaderSearch from '@/components/HeaderSearch'
 import AuthNavItem from '@/components/AuthNavItem'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
-const dmSerif = DM_Serif_Display({
-  weight: '400',
+const nunito = Nunito({
   subsets: ['latin'],
-  variable: '--font-dm-serif',
+  variable: '--font-nunito',
+  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
+})
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-jakarta',
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
 })
 
 export const viewport = {
@@ -63,7 +70,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const isIsolated = pathname.startsWith('/pro') || pathname.startsWith('/admin') || pathname.startsWith('/track')
 
   return (
-    <html lang="en" className={`${inter.variable} ${dmSerif.variable}`}>
+    <html lang="en" className={`${plusJakarta.variable} ${nunito.variable}`}>
       <body className="font-sans antialiased bg-background text-foreground">
         <MotionProvider>
 

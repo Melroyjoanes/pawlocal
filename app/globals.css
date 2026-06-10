@@ -7,10 +7,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --font-display: var(--font-dm-serif);
+  --font-heading: var(--font-nunito);
+  --font-display: var(--font-nunito);
   --color-brand-teal: var(--pl-teal);
   --color-brand-teal-light: var(--pl-teal-light);
   --color-brand-amber: var(--pl-amber);
