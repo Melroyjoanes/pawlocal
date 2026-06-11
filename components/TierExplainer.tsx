@@ -39,7 +39,7 @@ export default function TierExplainer({ tier }: Props) {
       {open && (
         <div className="mt-3 border border-border rounded-xl p-4 bg-white flex flex-col gap-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            PawLocal verification levels
+            PupStep verification levels
           </p>
           {TIERS.map((t) => {
             const isActive = t.key === tier || (t.key === 'contacted' && tier === 'verified') || (t.key !== 'certified' && tier === 'certified')

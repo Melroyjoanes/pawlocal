@@ -156,13 +156,24 @@ export default function ProviderCTABar({
 
         {/* Secondary row — Save + Share */}
         <div className="flex gap-2">
-          {/* Save — auth gated */}
+          {/* Save — auth gated, red to drive action */}
           <button
             onClick={() => requireAuth('save')}
-            className="flex-1 flex items-center justify-center gap-1.5 text-sm font-medium py-3 rounded-2xl border border-border bg-white hover:border-red-300 hover:text-red-500 active:scale-95 transition-all"
+            className="flex-1 flex items-center justify-center gap-1.5 text-sm font-bold py-3.5 rounded-2xl active:scale-95 transition-all"
+            style={saved ? {
+              background: 'oklch(0.96 0.04 25)',
+              border: '1px solid oklch(0.82 0.10 25)',
+              color: 'oklch(0.48 0.20 25)',
+              boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.8)',
+            } : {
+              background: 'linear-gradient(160deg, oklch(0.60 0.22 25) 0%, oklch(0.52 0.24 27) 100%)',
+              border: '1px solid oklch(0.44 0.20 25 / 0.3)',
+              color: 'white',
+              boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.2), 0 4px 14px oklch(0.52 0.24 27 / 0.35)',
+            }}
           >
             <span className="text-base">{saved ? '❤️' : '🤍'}</span>
-            <span className="text-muted-foreground">{saved ? 'Saved' : 'Save'}</span>
+            <span>{saved ? 'Saved' : 'Save'}</span>
           </button>
 
           {/* Share — stays public (just a URL) */}

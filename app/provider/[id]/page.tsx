@@ -6,7 +6,6 @@ import type { ProviderWithPhotos, Review, TrainerMetadata } from '@/lib/supabase
 import { Stars } from '@/components/StarRating'
 import { TrackView } from '@/components/ProviderTracker'
 import VerificationBadge from '@/components/VerificationBadge'
-import TierExplainer from '@/components/TierExplainer'
 import ProviderCTABar from '@/components/ProviderCTABar'
 
 export async function generateMetadata(
@@ -130,13 +129,6 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
 
   const serviceLabel = category.name
 
-  // Build trust chips
-  const trustChips: string[] = []
-  if (totalJobs > 0) trustChips.push(`${totalJobs} jobs done`)
-  if (p.experience_years) trustChips.push(`${p.experience_years} yrs experience`)
-  if (p.languages?.length) trustChips.push(p.languages.join(' · '))
-  if (p.neighbourhood_tags?.length) trustChips.push(p.neighbourhood_tags.join(' · '))
-
   return (
     <>
       <script
@@ -177,66 +169,160 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
     <div className="max-w-2xl mx-auto">
       <TrackView providerId={provider.id} />
 
-      {/* ── Hero: full-bleed cover photo ─────────────────────────────── */}
-      <div className="relative -mx-4 mb-0 h-64 sm:h-72 overflow-hidden bg-stone-100">
-        <a
-          href={`/${provider.category_slug}`}
-          className="absolute top-4 left-4 z-20 inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full hover:bg-black/50 transition-colors"
-        >
-          ← {category.name}
-        </a>
-
-        {primaryPhoto ? (
-          <img
-            src={primaryPhoto.url}
-            alt={provider.name}
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-        ) : (
-          <div
-            className="absolute inset-0 flex items-center justify-center text-8xl"
-            style={{ backgroundColor: category.color + '22' }}
+      {/* ── Hero: cover strip + floating circular avatar ───────────── */}
+      <div className="relative -mx-4">
+        {/* Cover photo strip — overflow-hidden only on the inner div so avatar can escape */}
+        <div className="relative h-44 sm:h-52 overflow-hidden">
+          <a
+            href={`/${provider.category_slug}`}
+            className="absolute top-4 left-4 z-20 inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 bg-black/30 backdrop-blur-sm px-3 py-1.5 rounded-full hover:bg-black/50 transition-colors"
           >
-            {category.icon}
-          </div>
-        )}
+            ← {category.name}
+          </a>
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
-
-        <div className="absolute bottom-0 left-0 right-0 p-5 pb-6">
-          <h1 className="text-2xl font-bold text-white leading-tight mb-1">
-            {provider.name}
-          </h1>
-          {provider.business_name && provider.business_name !== provider.name && (
-            <p className="text-sm text-white/70 mb-2">{provider.business_name}</p>
-          )}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span
-              className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full"
-              style={{ backgroundColor: category.color + '30', color: 'white', backdropFilter: 'blur(4px)' }}
-            >
-              {category.icon} {category.name}
-            </span>
-            <VerificationBadge
-              tier={(provider.verification_tier as 'contacted' | 'verified' | 'certified') ?? 'contacted'}
-              size="md"
+          {/* Cover: use gallery photo if available, else primary, else gradient */}
+          {galleryPhotos.length > 0 ? (
+            <img
+              src={galleryPhotos[0].url}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
             />
-            {p.intro_video_url && (
-              <span className="inline-flex items-center text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-500/80 text-white backdrop-blur-sm border border-pink-300/30">
-                📹 Video
-              </span>
-            )}
-            {reviews.length > 0 && (
-              <span className="inline-flex items-center gap-1 text-xs text-white/90">
-                <Stars rating={avgRating} count={reviews.length} size="sm" />
-              </span>
+          ) : primaryPhoto ? (
+            <img
+              src={primaryPhoto.url}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(135deg, oklch(0.48 0.17 196) 0%, oklch(0.70 0.14 75) 100%)`,
+              }}
+            >
+              <div className="absolute inset-0 flex items-center justify-center text-7xl opacity-10 select-none">
+                {category.icon}
+              </div>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+        </div>
+
+        {/* Circular avatar — overlaps cover by half its height (48px) */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 z-10"
+          style={{ bottom: '-48px' }}
+        >
+          <div
+            className="w-24 h-24 rounded-full overflow-hidden bg-stone-100 flex-shrink-0"
+            style={{
+              boxShadow: '0 0 0 4px white, 0 0 0 5px oklch(0.90 0.06 75 / 0.4), 0 6px 24px rgba(0,0,0,0.16)',
+            }}
+          >
+            {primaryPhoto ? (
+              <img src={primaryPhoto.url} alt={provider.name} className="w-full h-full object-cover" />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center text-4xl"
+                style={{ background: `linear-gradient(145deg, ${category.color}22, ${category.color}44)` }}
+              >
+                {category.icon}
+              </div>
             )}
           </div>
         </div>
       </div>
 
+      {/* ── Identity block — name, badges, stats ─────────────────────── */}
+      {/* pt-16 = 64px to clear the 48px avatar overlap + breathing room */}
+      <div className="pt-16 pb-5 text-center px-2">
+        <h1
+          className="text-2xl font-bold leading-tight mb-1 text-stone-900"
+          style={{ fontFamily: 'var(--font-serif, "DM Serif Display", serif)' }}
+        >
+          {provider.name}
+        </h1>
+        {provider.business_name && provider.business_name !== provider.name && (
+          <p className="text-sm text-stone-500 mb-2">{provider.business_name}</p>
+        )}
+
+        {/* Badges row */}
+        <div className="flex items-center justify-center gap-2 flex-wrap mb-4">
+          <span
+            className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full"
+            style={{ background: category.color + '18', color: category.color, border: `1px solid ${category.color}35` }}
+          >
+            {category.icon} {category.name}
+          </span>
+          <VerificationBadge
+            tier={(provider.verification_tier as 'contacted' | 'verified' | 'certified') ?? 'contacted'}
+            size="md"
+          />
+          {p.intro_video_url && (
+            <span className="inline-flex items-center text-[10px] font-bold px-2 py-1 rounded-full bg-pink-50 text-pink-600 border border-pink-100">
+              📹 Video
+            </span>
+          )}
+          {reviews.length > 0 && (
+            <span className="inline-flex items-center gap-1 text-xs text-stone-600">
+              <Stars rating={avgRating} count={reviews.length} size="sm" />
+            </span>
+          )}
+        </div>
+
+        {/* ── Trust stats row — experience is the hero number ────────── */}
+        {(p.experience_years || totalJobs > 0 || avgRating > 0) && (
+          <div className="flex items-stretch justify-center gap-2.5 mb-1">
+            {p.experience_years && p.experience_years > 0 && (
+              <div
+                className="flex flex-col items-center justify-center px-5 py-3 rounded-2xl min-w-[72px]"
+                style={{
+                  background: 'oklch(0.97 0.06 75 / 0.6)',
+                  border: '1px solid oklch(0.88 0.12 75)',
+                  boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.9)',
+                }}
+              >
+                <p className="text-xl font-bold leading-none text-amber-800">{p.experience_years}</p>
+                <p className="text-[10px] font-semibold text-amber-600 mt-0.5 leading-none">
+                  {p.experience_years === 1 ? 'yr exp' : 'yrs exp'}
+                </p>
+              </div>
+            )}
+            {totalJobs > 0 && (
+              <div
+                className="flex flex-col items-center justify-center px-5 py-3 rounded-2xl min-w-[72px]"
+                style={{
+                  background: 'oklch(0.96 0.04 196 / 0.5)',
+                  border: '1px solid oklch(0.88 0.06 196)',
+                  boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.9)',
+                }}
+              >
+                <p className="text-xl font-bold leading-none" style={{ color: 'oklch(0.36 0.12 196)' }}>{totalJobs}</p>
+                <p className="text-[10px] font-semibold mt-0.5 leading-none" style={{ color: 'oklch(0.48 0.10 196)' }}>jobs done</p>
+              </div>
+            )}
+            {avgRating > 0 && (
+              <div
+                className="flex flex-col items-center justify-center px-5 py-3 rounded-2xl min-w-[72px]"
+                style={{
+                  background: 'oklch(0.975 0.003 75)',
+                  border: '1px solid oklch(0.90 0.02 75)',
+                  boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.9)',
+                }}
+              >
+                <p className="text-xl font-bold leading-none text-stone-800">⭐ {avgRating.toFixed(1)}</p>
+                <p className="text-[10px] font-semibold text-stone-500 mt-0.5 leading-none">{reviews.length} {reviews.length === 1 ? 'review' : 'reviews'}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Member since — subtle, below stats */}
+        <p className="text-[11px] text-stone-400 mt-2">Member since {memberSince}</p>
+      </div>
+
       {/* ── Content body ─────────────────────────────────────────────── */}
-      <div className="pt-5">
+      <div className="pt-1">
 
         {/* Availability note */}
         {provider.is_available === false && (
@@ -253,11 +339,19 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         {/* ── Quick-scan info strip ─────────────────────────────────── */}
         <div className="flex flex-wrap gap-2 mb-6">
           {provider.price_min && (
-            <span className="clay-chip inline-flex items-center gap-1 px-4 py-2 text-sm font-semibold bg-amber-50 border border-amber-100 text-amber-900">
+            <span
+              className="clay-chip inline-flex items-center gap-1 px-4 py-2 text-sm font-semibold"
+              style={{
+                background: 'oklch(0.97 0.06 75 / 0.5)',
+                border: '1px solid oklch(0.88 0.12 75)',
+                color: 'oklch(0.40 0.15 75)',
+                boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85)',
+              }}
+            >
               ₹{provider.price_min}
               {provider.price_max && provider.price_max !== provider.price_min && `–${provider.price_max}`}
               {provider.price_unit && (
-                <span className="font-normal text-amber-600 text-xs ml-1">
+                <span className="font-normal text-xs ml-0.5 opacity-70">
                   /{provider.price_unit.replace('per ', '')}
                 </span>
               )}
@@ -265,43 +359,40 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           )}
           <span
             className="clay-chip inline-flex items-center gap-2 px-4 py-2 text-sm font-medium"
-            style={{ background: 'oklch(0.96 0.04 196 / 0.6)', border: '1px solid oklch(0.88 0.06 196)', color: 'oklch(0.36 0.12 196)' }}
+            style={{ background: 'oklch(0.96 0.04 196 / 0.5)', border: '1px solid oklch(0.88 0.06 196)', color: 'oklch(0.36 0.12 196)', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85)' }}
           >
-            {formatHour(provider.hours_from)}–{formatHour(provider.hours_to)}
-            <span className="opacity-60 text-xs">
+            🕐 {formatHour(provider.hours_from)}–{formatHour(provider.hours_to)}
+            <span className="opacity-50 text-xs">
               {provider.working_days.slice(0, 3).map((d: string) => d.slice(0, 3)).join(' · ')}
               {provider.working_days.length > 3 ? ` +${provider.working_days.length - 3}` : ''}
             </span>
           </span>
-          <span className="clay-chip inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white border border-border text-stone-600">
+          <span
+            className="clay-chip inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium"
+            style={{
+              background: 'oklch(0.975 0.003 75)',
+              border: '1px solid oklch(0.90 0.02 75)',
+              color: 'oklch(0.42 0.03 75)',
+              boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85)',
+            }}
+          >
             📍 <span className="line-clamp-1">{provider.address}</span>
           </span>
         </div>
 
-        {/* Trust chips */}
-        {trustChips.length > 0 ? (
+        {/* Language + neighbourhood chips — if any */}
+        {(p.languages?.length || p.neighbourhood_tags?.length) && (
           <div className="flex flex-wrap items-center gap-2 mb-5">
-            {trustChips.map(chip => (
-              <span
-                key={chip}
-                className="clay-chip text-xs px-3 py-1.5 font-medium"
-                style={{ background: 'oklch(0.97 0.03 75)', border: '1px solid oklch(0.90 0.06 75)', color: 'oklch(0.42 0.12 75)' }}
-              >
-                {chip}
+            {p.languages?.map(lang => (
+              <span key={lang} className="clay-chip text-xs px-3 py-1.5 font-medium bg-stone-50 border border-stone-100 text-stone-600">
+                🗣 {lang}
               </span>
             ))}
-            <span className="clay-chip text-xs px-3 py-1.5 bg-stone-50 border border-stone-100 text-stone-500">
-              🗓 Since {memberSince}
-            </span>
-          </div>
-        ) : (
-          <p className="text-xs text-stone-400 mb-5">Member since {memberSince}</p>
-        )}
-
-        {/* Tier explainer */}
-        {(provider.verification_tier === 'verified' || provider.verification_tier === 'certified') && (
-          <div className="mb-5">
-            <TierExplainer tier={provider.verification_tier as 'verified' | 'certified'} />
+            {p.neighbourhood_tags?.map(tag => (
+              <span key={tag} className="clay-chip text-xs px-3 py-1.5 font-medium bg-stone-50 border border-stone-100 text-stone-500">
+                📌 {tag}
+              </span>
+            ))}
           </div>
         )}
 
