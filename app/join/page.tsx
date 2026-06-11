@@ -70,7 +70,7 @@ function GoogleJoinButton() {
   )
 }
 
-export default function JoinPage() {
+function JoinForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const fromGoogle = searchParams.get('from') === 'google'
@@ -591,5 +591,15 @@ export default function JoinPage() {
         <a href="/pro" className="underline hover:text-slate-600">Access your dashboard →</a>
       </p>
     </div>
+  )
+}
+
+import { Suspense } from 'react'
+
+export default function JoinPage() {
+  return (
+    <Suspense>
+      <JoinForm />
+    </Suspense>
   )
 }
