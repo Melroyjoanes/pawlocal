@@ -1,33 +1,16 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
-import WalkReportClient from './WalkReportClient'
+import ProReportsPage from './ProReportsPage'
 
-type WalkReport = {
-  id: string
-  token: string
-  dog_name: string
-  duration_mins: number
-  poop_count: number
-  pee_count: number
-  notes: string | null
-  photo_url: string | null
-  walk_date: string
-  created_at: string
-  start_location: string | null
-  end_location: string | null
-}
-
-export default async function WalkReportsPage() {
+export default async function ReportsPage() {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/pro')
 
   const admin = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
   )
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,15 +22,26 @@ export default async function WalkReportsPage() {
 
   if (!provider) redirect('/pro')
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: reports } = await (admin.from('walk_reports') as any)
-    .select('id, token, dog_name, duration_mins, poop_count, pee_count, notes, photo_url, walk_date, created_at')
-    .eq('provider_id', provider.id)
-    .order('created_at', { ascending: false })
+  // Fetch walk reports and grooming reports in parallel
+  const [walkResult, groomingResult] = await Promise.all([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin.from('walk_reports') as any)
+      .select('id, token, dog_name, duration_mins, poop_count, pee_count, notes, photo_url, walk_date, created_at, start_location, end_location')
+      .eq('provider_id', provider.id)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin.from('grooming_reports') as any)
+      .select('id, token, dog_name, grooming_date, duration_mins, services_done, ticks_found, tick_locations, skin_condition, ear_condition, nail_condition, coat_condition, behavior, before_photo_url, after_photo_url, notes, recommendations, created_at')
+      .eq('provider_id', provider.id)
+      .order('created_at', { ascending: false })
+      .limit(50),
+  ])
 
   return (
-    <WalkReportClient
-      initialReports={(reports as WalkReport[]) ?? []}
+    <ProReportsPage
+      walkReports={walkResult.data ?? []}
+      groomingReports={groomingResult.data ?? []}
       providerId={provider.id as string}
       providerName={provider.name as string}
       verificationTier={(provider.verification_tier as string) ?? null}

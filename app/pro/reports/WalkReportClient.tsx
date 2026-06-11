@@ -32,6 +32,7 @@ type Props = {
   providerId: string
   providerName: string
   verificationTier: string | null
+  hideHeader?: boolean
 }
 
 const EASE_OUT = { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] } as const
@@ -280,6 +281,7 @@ export default function WalkReportClient({
   initialReports,
   providerId,
   providerName,
+  hideHeader = false,
 }: Props) {
   const [reports, setReports] = useState<WalkReport[]>(initialReports)
 
@@ -430,20 +432,14 @@ export default function WalkReportClient({
   return (
     <div className="min-h-dvh pb-28" style={{ background: 'oklch(0.975 0.006 85)' }}>
 
-      {/* Sticky header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-border">
-        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      {!hideHeader && (
+        <header className="sticky top-0 z-40 bg-white border-b border-border">
+          <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
             <h1 className="font-display text-xl text-stone-900">Walk Reports</h1>
-            <a href="/pro/grooming"
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors"
-              style={{ background: 'oklch(0.48 0.17 196 / 0.1)', color: 'oklch(0.44 0.16 196)' }}>
-              ✂️ Grooming
-            </a>
+            <span className="text-xs text-stone-400 font-medium truncate max-w-[160px]">{providerName}</span>
           </div>
-          <span className="text-xs text-stone-400 font-medium truncate max-w-[140px]">{providerName}</span>
-        </div>
-      </header>
+        </header>
+      )}
 
       <main className="max-w-lg mx-auto px-4 py-5 space-y-6">
 

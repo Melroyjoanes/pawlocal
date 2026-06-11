@@ -74,6 +74,7 @@ type Props = {
   initialReports: GroomingReport[]
   providerId: string
   providerName: string
+  hideHeader?: boolean
 }
 
 const EASE_OUT = { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] } as const
@@ -278,7 +279,7 @@ function ReportCard({ report, onDelete }: { report: GroomingReport; onDelete: (i
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function GroomingReportClient({ initialReports, providerId, providerName }: Props) {
+export default function GroomingReportClient({ initialReports, providerId, providerName, hideHeader = false }: Props) {
   const [reports, setReports] = useState<GroomingReport[]>(initialReports)
 
   // Form state
@@ -422,17 +423,14 @@ export default function GroomingReportClient({ initialReports, providerId, provi
   return (
     <div className="min-h-dvh pb-28" style={{ background: 'oklch(0.975 0.006 85)' }}>
 
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-white border-b border-border">
-        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <a href="/pro/reports" className="text-stone-400 hover:text-stone-600 text-sm">← Walks</a>
-            <span className="text-stone-200">|</span>
+      {!hideHeader && (
+        <header className="sticky top-0 z-40 bg-white border-b border-border">
+          <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
             <h1 className="font-display text-xl text-stone-900">Grooming Reports</h1>
+            <span className="text-xs text-stone-400 font-medium truncate max-w-[140px]">{providerName}</span>
           </div>
-          <span className="text-xs text-stone-400 font-medium truncate max-w-[140px]">{providerName}</span>
-        </div>
-      </header>
+        </header>
+      )}
 
       <main className="max-w-lg mx-auto px-4 py-5 space-y-6">
 
