@@ -2,6 +2,10 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import LandingPage from '@/components/LandingPage'
 
+// Revalidate every 5 minutes — provider counts change rarely, no need to hit
+// Supabase on every single request. ISR serves cached HTML instantly.
+export const revalidate = 300
+
 export const metadata: Metadata = {
   title: "PupStep — Mumbai's Verified Pet People",
   description:

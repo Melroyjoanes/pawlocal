@@ -10,18 +10,20 @@ import MobileDrawer from '@/components/MobileDrawer'
 import './globals.css'
 
 // Fredoka — bubbly display font matching the logo lettering
+// Only 2 weights: regular headings (500) + bold CTAs (700)
 const fredoka = Fredoka({
   subsets: ['latin'],
   variable: '--font-fredoka',
-  weight: ['400', '500', '600', '700'],
+  weight: ['500', '700'],
   display: 'swap',
 })
 
 // Nunito — warm, rounded body font
+// 3 weights covers all UI needs: regular body (400), medium labels (600), bold (700)
 const nunito = Nunito({
   subsets: ['latin'],
   variable: '--font-nunito',
-  weight: ['400', '500', '600', '700', '800'],
+  weight: ['400', '600', '700'],
   display: 'swap',
 })
 
@@ -90,7 +92,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 {/* Centre: logo — absolute so it's truly centred regardless of side widths */}
                 <a href="/" className="absolute left-1/2 -translate-x-1/2 flex items-center">
                   <Image
-                    src="/logo.png"
+                    src="/logo.webp"
                     alt="PupStep"
                     width={160}
                     height={59}
@@ -111,7 +113,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 {/* Logo */}
                 <a href="/" className="flex items-center flex-shrink-0">
                   <Image
-                    src="/logo.png"
+                    src="/logo.webp"
                     alt="PupStep"
                     width={160}
                     height={59}
@@ -158,7 +160,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <footer className="border-t border-border mt-16 py-8">
               <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <Image src="/logo.png" alt="PupStep" width={110} height={40} className="h-8 w-auto opacity-80" />
+                  <Image src="/logo.webp" alt="PupStep" width={110} height={40} className="h-8 w-auto opacity-80" />
                   <span className="text-stone-400">· © {new Date().getFullYear()} · Juhu, Mumbai</span>
                 </div>
                 <div className="flex items-center gap-4">

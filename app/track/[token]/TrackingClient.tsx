@@ -104,7 +104,7 @@ export default function TrackingClient({
       <header className="bg-white border-b border-stone-200 px-4 py-4">
         <div className="max-w-lg mx-auto">
           <div className="flex items-center gap-2 mb-1">
-            <img src="/logo.png" alt="PupStep" className="h-10 w-auto" />
+            <img src="/logo.webp" alt="PupStep" className="h-10 w-auto" />
             <span className="font-display font-semibold text-stone-600 text-sm">Walk Tracker</span>
           </div>
           <p className="text-sm text-stone-500">

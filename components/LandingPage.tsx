@@ -183,25 +183,46 @@ function PawPrint({ size = 28, color = '#F07030', opacity = 0.35 }: { size?: num
   )
 }
 
+// Detect mouse/desktop once on mount — skip 3D tilt on touch devices
+function useHasHover() {
+  const [hasHover, setHasHover] = useState(false)
+  useEffect(() => {
+    setHasHover(window.matchMedia('(hover: hover) and (pointer: fine)').matches)
+  }, [])
+  return hasHover
+}
+
 // ─── ClayCard ─────────────────────────────────────────────────────────────────
 function ClayCard({ ckey = 'white', children, className = '', style = {}, href }: {
   ckey?: CKey; children: React.ReactNode; className?: string; style?: React.CSSProperties; href?: string
 }) {
   const ref = useRef<HTMLDivElement>(null)
+  const hasHover = useHasHover()
   const rx = useMotionValue(0); const ry = useMotionValue(0)
   const srx = useSpring(rx, { stiffness: 300, damping: 30 })
   const sry = useSpring(ry, { stiffness: 300, damping: 30 })
   function onMove(e: React.MouseEvent) {
-    if (!ref.current) return
+    if (!hasHover || !ref.current) return
     const r = ref.current.getBoundingClientRect()
     rx.set(((e.clientY - r.top) / r.height - 0.5) * -8)
     ry.set(((e.clientX - r.left) / r.width - 0.5) * 8)
   }
   const inner = (
-    <motion.div ref={ref} onMouseMove={onMove} onMouseLeave={() => { rx.set(0); ry.set(0) }}
-      whileHover={{ y: -4, scale: 1.01 }} whileTap={{ y: 1, scale: 0.99 }}
+    <motion.div
+      ref={ref}
+      onMouseMove={onMove}
+      onMouseLeave={hasHover ? () => { rx.set(0); ry.set(0) } : undefined}
+      whileHover={{ y: -4, scale: 1.01 }}
+      whileTap={{ y: 1, scale: 0.99 }}
       transition={{ type: 'spring', stiffness: 380, damping: 26 }}
-      style={{ rotateX: srx, rotateY: sry, transformStyle: 'preserve-3d', borderRadius: 24, ...cs(ckey), ...style }}
+      style={{
+        // Only enable 3D tilt context on mouse devices — it costs a composite layer on mobile
+        ...(hasHover ? { rotateX: srx, rotateY: sry, transformStyle: 'preserve-3d' as const } : {}),
+        borderRadius: 24,
+        willChange: 'transform',
+        ...cs(ckey),
+        ...style,
+      }}
       className={`overflow-hidden ${className}`}
     >
       {children}
@@ -355,18 +376,26 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
 
         {/* Hero decorations — 2 spheres + bone + paw trail */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-          {/* Keep: big amber sphere top-right */}
-          <motion.div style={{ position: 'absolute', top: -60, right: -50 }} animate={{ y: [0, -18, 0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}>
+          {/* Big amber sphere top-right — GPU layer via will-change */}
+          <motion.div
+            style={{ position: 'absolute', top: -60, right: -50, willChange: 'transform' }}
+            animate={{ y: [0, -18, 0] }}
+            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+          >
             <AmberSphere size={280} />
           </motion.div>
-          {/* Keep: teal sphere bottom-left */}
-          <motion.div style={{ position: 'absolute', bottom: -30, left: 80 }} animate={{ y: [0, -12, 0] }} transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}>
+          {/* Teal sphere bottom-left */}
+          <motion.div
+            style={{ position: 'absolute', bottom: -30, left: 80, willChange: 'transform' }}
+            animate={{ y: [0, -12, 0] }}
+            transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
+          >
             <TealSphere size={160} />
           </motion.div>
 
           {/* Cute bone — mid left, floating & rotating gently */}
           <motion.div
-            style={{ position: 'absolute', top: '32%', left: '4%' }}
+            style={{ position: 'absolute', top: '32%', left: '4%', willChange: 'transform' }}
             animate={{ y: [0, -10, 0], rotate: [-18, -14, -18] }}
             transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
           >

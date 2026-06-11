@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 import { createClient } from '@supabase/supabase-js'
+
+// Revalidate every 2 minutes — provider list is rarely real-time critical
+export const revalidate = 120
 import { getCategoryBySlug } from '@/lib/categories'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
 import CategoryPageClient from './CategoryPageClient'
