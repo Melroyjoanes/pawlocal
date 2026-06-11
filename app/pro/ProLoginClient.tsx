@@ -37,17 +37,41 @@ export default function ProLoginClient() {
     setError(null)
 
     try {
-      const res = await fetch('/api/pro/auth/send-link', {
+      // Step 1: verify email is an approved provider (server-side, service role)
+      const check = await fetch('/api/pro/auth/check-provider', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() }),
       })
 
-      if (res.ok) {
-        setSent(true)
+      if (!check.ok) {
+        const data = await check.json().catch(() => ({}))
+        if (data.error === 'pending') {
+          // Redirect to pending state so they see the right message
+          window.location.href = '/pro?status=pending'
+          return
+        }
+        setError('not_registered')
+        setLoading(false)
+        return
+      }
+
+      // Step 2: let Supabase send the magic link email natively — no Resend needed,
+      // no silent failures. Supabase delivers this reliably via their own SMTP.
+      const supabase = createClient()
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          // Must be in Supabase → Auth → URL Configuration → Redirect URLs whitelist
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/pro/dashboard`,
+          shouldCreateUser: true,
+        },
+      })
+
+      if (otpError) {
+        setError('generic')
       } else {
-        const data = await res.json().catch(() => ({}))
-        setError(data.error === 'not_registered' ? 'not_registered' : 'generic')
+        setSent(true)
       }
     } catch {
       setError('generic')
