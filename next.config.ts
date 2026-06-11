@@ -26,11 +26,14 @@ const nextConfig: NextConfig = {
   },
 
   // Long-cache headers for static assets
+  // Note: Next.js header sources use path-to-regexp syntax — no capturing groups.
+  // /_next/static/ chunks are already immutable-cached by Vercel automatically.
+  // Public folder images/fonts use :path* wildcard.
   async headers() {
     return [
       {
-        // Static files in /public — fonts, images, icons
-        source: '/(.*\\.(png|jpg|jpeg|gif|webp|avif|svg|ico|woff|woff2|ttf|otf))',
+        // Next.js compiled chunks — already immutable on Vercel, explicit here for self-hosting
+        source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
@@ -39,14 +42,22 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Next.js static chunks
-        source: '/_next/static/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
+        // Public images (logo, icons, etc.)
+        source: '/:path*.webp',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
+        source: '/:path*.png',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
+        source: '/:path*.svg',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
+        // Web fonts
+        source: '/:path*.woff2',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
     ]
   },
