@@ -50,37 +50,58 @@ const CARD_T  = 36
 const CARD_W  = 1200 - PHOTO_W - CARD_L - 30
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ token: string }> },
 ) {
   const { token } = await params
+  const url = new URL(req.url)
 
   let report: Report | null = null
-  try {
-    const sb = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    )
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (sb.from('walk_reports') as any)
-      .select('dog_name,duration_mins,poop_count,pee_count,distance_meters,photo_url,walk_date,providers(name,is_verified)')
-      .eq('token', token)
-      .single()
 
-    if (data) {
-      report = {
-        dog_name:        data.dog_name               ?? 'Dog',
-        duration_mins:   data.duration_mins           ?? 0,
-        poop_count:      data.poop_count              ?? 0,
-        pee_count:       data.pee_count               ?? 0,
-        distance_meters: data.distance_meters         ?? null,
-        photo_url:       data.photo_url               ?? null,
-        walk_date:       data.walk_date,
-        provider_name:   data.providers?.name         ?? 'Your Walker',
-        is_verified:     data.providers?.is_verified  ?? false,
-      }
+  // Fast path: generateMetadata embeds report data as URL params so this route
+  // can render immediately without a DB round-trip. WhatsApp's scraper has a ~5s
+  // timeout — cold-start serverless + Supabase latency often exceeds it.
+  const dogParam = url.searchParams.get('dog')
+  if (dogParam) {
+    report = {
+      dog_name:        dogParam,
+      duration_mins:   parseInt(url.searchParams.get('mins') ?? '0') || 0,
+      poop_count:      parseInt(url.searchParams.get('poop') ?? '0') || 0,
+      pee_count:       parseInt(url.searchParams.get('pee') ?? '0') || 0,
+      distance_meters: url.searchParams.get('dist') ? parseInt(url.searchParams.get('dist')!) || null : null,
+      photo_url:       null,
+      walk_date:       new Date().toISOString(),
+      provider_name:   url.searchParams.get('walker') ?? 'Your Walker',
+      is_verified:     url.searchParams.get('verified') === '1',
     }
-  } catch { /* fallback card */ }
+  } else {
+    // Slow path: old links that pre-date the params approach, or direct access.
+    try {
+      const sb = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      )
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (sb.from('walk_reports') as any)
+        .select('dog_name,duration_mins,poop_count,pee_count,distance_meters,photo_url,walk_date,providers(name,is_verified)')
+        .eq('token', token)
+        .single()
+
+      if (data) {
+        report = {
+          dog_name:        data.dog_name               ?? 'Dog',
+          duration_mins:   data.duration_mins           ?? 0,
+          poop_count:      data.poop_count              ?? 0,
+          pee_count:       data.pee_count               ?? 0,
+          distance_meters: data.distance_meters         ?? null,
+          photo_url:       data.photo_url               ?? null,
+          walk_date:       data.walk_date,
+          provider_name:   data.providers?.name         ?? 'Your Walker',
+          is_verified:     data.providers?.is_verified  ?? false,
+        }
+      }
+    } catch { /* fallback card */ }
+  }
 
   const dogName  = report?.dog_name      ?? 'Walk Report'
   const walker   = report?.provider_name ?? ''

@@ -103,8 +103,19 @@ export async function generateMetadata({
 
   // Use configured site URL, fall back to Vercel's automatic URL, then the known Vercel deployment
   const canonicalUrl = `https://pupstep.in/walk-report/${token}`
-  // API route — bypasses Next.js metadataBase/VERCEL_URL magic entirely
-  const ogImageUrl = `https://pupstep.in/api/og/walk-report/${token}`
+
+  // Embed report data as URL params so the OG image route doesn't need a DB query.
+  // WhatsApp's scraper times out on cold-start serverless + DB latency (> ~5s).
+  // Old links without params fall back to the DB query path.
+  const ogParams = new URLSearchParams({ dog: dogName, walker: walkerName })
+  if (report.poop_count > 0) ogParams.set('poop', String(report.poop_count))
+  if (report.pee_count > 0) ogParams.set('pee', String(report.pee_count))
+  if (report.duration_mins > 0) ogParams.set('mins', String(report.duration_mins))
+  if (report.distance_meters && report.distance_meters > 0) {
+    ogParams.set('dist', String(Math.round(report.distance_meters)))
+  }
+  if (report.is_verified) ogParams.set('verified', '1')
+  const ogImageUrl = `https://pupstep.in/api/og/walk-report/${token}?${ogParams.toString()}`
 
   return {
     title,

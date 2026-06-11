@@ -392,8 +392,13 @@ export default function WalkReportClient({
       setReports(prev => [newReport, ...prev])
       setSuccessToken(json.token)
 
-      // Pre-warm the OG image so Vercel CDN caches it before the link is shared on WhatsApp
-      fetch(`/api/og/walk-report/${json.token}`).catch(() => {})
+      // Pre-warm the OG image so Vercel CDN caches it before the link is shared on WhatsApp.
+      // Include data as params — same fast path that generateMetadata uses — so no DB query needed.
+      const warmParams = new URLSearchParams({ dog: dogName, walker: providerName })
+      if (poopCount > 0) warmParams.set('poop', String(poopCount))
+      if (peeCount > 0) warmParams.set('pee', String(peeCount))
+      if (duration > 0) warmParams.set('mins', String(duration))
+      fetch(`/api/og/walk-report/${json.token}?${warmParams}`).catch(() => {})
     } catch (err: unknown) {
       setSubmitError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -428,8 +433,15 @@ export default function WalkReportClient({
       {/* Sticky header */}
       <header className="sticky top-0 z-40 bg-white border-b border-border">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          <h1 className="font-display text-xl text-stone-900">Walk Reports</h1>
-          <span className="text-xs text-stone-400 font-medium truncate max-w-[160px]">{providerName}</span>
+          <div className="flex items-center gap-3">
+            <h1 className="font-display text-xl text-stone-900">Walk Reports</h1>
+            <a href="/pro/grooming"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-colors"
+              style={{ background: 'oklch(0.48 0.17 196 / 0.1)', color: 'oklch(0.44 0.16 196)' }}>
+              ✂️ Grooming
+            </a>
+          </div>
+          <span className="text-xs text-stone-400 font-medium truncate max-w-[140px]">{providerName}</span>
         </div>
       </header>
 
