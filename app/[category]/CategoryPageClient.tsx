@@ -1,9 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams, useSearchParams, useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { createClient } from '@/lib/supabase/client'
 import { getCategoryBySlug, CATEGORIES } from '@/lib/categories'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
 import ProviderCard from '@/components/ProviderCard'
@@ -42,40 +41,22 @@ function ProviderCardSkeleton() {
 
 const EASE_OUT_QUART = [0.25, 0.46, 0.45, 0.94] as const
 
-export default function CategoryPage() {
+interface Props {
+  initialProviders: ProviderWithPhotos[]
+}
+
+export default function CategoryPage({ initialProviders }: Props) {
   const params = useParams()
-  const searchParams = useSearchParams()
   const router = useRouter()
   const slug = params.category as string
   const category = getCategoryBySlug(slug)
 
-  // Neighbourhood is Juhu-only in phase 1
-  const neighbourhood = 'Juhu'
-  // suppress unused warning until locality filtering is implemented
-  void searchParams
-
-  const [providers, setProviders] = useState<ProviderWithPhotos[]>([])
-  const [loading, setLoading] = useState(true)
+  // Data arrives server-rendered — no client-side fetch needed
+  const [providers] = useState<ProviderWithPhotos[]>(initialProviders)
+  const [loading] = useState(false)
   const [view, setView] = useState<'list' | 'map'>('list')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [emergencyOnly, setEmergencyOnly] = useState(false)
-
-  useEffect(() => {
-    if (!category) return
-    setLoading(true)
-    const supabase = createClient()
-    supabase
-      .from('providers')
-      .select('*, provider_photos(*)')
-      .or(`category_slug.eq.${slug},category_slugs.cs.{${slug}}`)
-      .eq('status', 'approved')
-      .order('is_verified', { ascending: false })
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setProviders((data as unknown as ProviderWithPhotos[]) ?? [])
-        setLoading(false)
-      })
-  }, [slug, category])
 
   if (!category) {
     return <div className="py-20 text-center text-muted-foreground">Category not found.</div>
@@ -164,7 +145,7 @@ export default function CategoryPage() {
           {!loading ? (
             <p className="text-sm text-slate-500">
               <span className="font-semibold text-slate-800">{displayedProviders.length}</span>
-              {' '}{displayedProviders.length === 1 ? 'provider' : 'providers'} near {neighbourhood}
+              {' '}{displayedProviders.length === 1 ? 'provider' : 'providers'} near {'Juhu'}
             </p>
           ) : (
             <div className="h-4 w-36 rounded-full bg-amber-100/70 animate-pulse" />
@@ -213,7 +194,7 @@ export default function CategoryPage() {
         >
           <p className="text-3xl mb-3">🔍</p>
           <p className="font-semibold text-slate-800 mb-1">
-            {emergencyOnly ? 'No 24hr / emergency vets listed yet.' : `No ${category.name.toLowerCase()}s listed in ${neighbourhood} yet.`}
+            {emergencyOnly ? 'No 24hr / emergency vets listed yet.' : `No ${category.name.toLowerCase()}s listed in ${'Juhu'} yet.`}
           </p>
           <p className="text-sm text-slate-500 mb-6 text-center max-w-xs">
             {emergencyOnly

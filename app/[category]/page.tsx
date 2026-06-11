@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
+import { createClient } from '@supabase/supabase-js'
 import { getCategoryBySlug } from '@/lib/categories'
+import type { ProviderWithPhotos } from '@/lib/supabase/types'
 import CategoryPageClient from './CategoryPageClient'
 
-// Per-category keyword clusters — keyword-first titles outperform brand-first for non-branded searches
 const CATEGORY_SEO: Record<string, { title: string; description: string; keywords: string[] }> = {
   'dog-walking': {
     title: 'Dog Walker in Mumbai — Verified, WhatsApp Direct | PupStep',
@@ -53,17 +54,37 @@ export async function generateMetadata(
     description,
     keywords,
     alternates: { canonical: `https://pupstep.in/${category}` },
-    openGraph: {
-      title,
-      description,
-      type: 'website',
-      url: `https://pupstep.in/${category}`,
-      siteName: 'PupStep',
-    },
+    openGraph: { title, description, type: 'website', url: `https://pupstep.in/${category}`, siteName: 'PupStep' },
     twitter: { card: 'summary', title, description },
   }
 }
 
-export default function CategoryPage() {
-  return <CategoryPageClient />
+// Fetch providers server-side with service role — bypasses RLS entirely,
+// so signed-in users see the same data as anonymous users.
+async function getProviders(slug: string): Promise<ProviderWithPhotos[]> {
+  const admin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  )
+  const { data, error } = await admin
+    .from('providers')
+    .select('*, provider_photos(*)')
+    .or(`category_slug.eq.${slug},category_slugs.cs.{${slug}}`)
+    .eq('status', 'approved')
+    .order('is_verified', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('[CategoryPage] provider fetch error:', error.message)
+    return []
+  }
+  return (data ?? []) as unknown as ProviderWithPhotos[]
+}
+
+export default async function CategoryPage(
+  { params }: { params: Promise<{ category: string }> }
+) {
+  const { category } = await params
+  const providers = await getProviders(category)
+  return <CategoryPageClient initialProviders={providers} />
 }

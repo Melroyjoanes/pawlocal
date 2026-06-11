@@ -150,6 +150,39 @@ const LavenderSphere = ({ size = 80, style = {} }: { size?: number; style?: Reac
   <Sphere size={size} gradient="radial-gradient(circle at 30% 28%, #EDE9FE, #C4B5FD 50%, #7C3AED)" glow={`0 ${Math.round(size * 0.12)}px ${Math.round(size * 0.28)}px rgba(124,58,237,0.22)`} specW="42%" specH="28%" specTop="16%" specLeft="20%" style={style} />
 )
 
+// ─── Cute bone SVG ─────────────────────────────────────────────────────────────
+function CuteBone({ size = 64, color = '#F59E0B', opacity = 0.55 }: { size?: number; color?: string; opacity?: number }) {
+  return (
+    <svg width={size} height={size * 0.46} viewBox="0 0 100 46" fill="none" style={{ opacity, filter: `drop-shadow(0 4px 10px ${color}55)` }} aria-hidden>
+      {/* Left knob-pair */}
+      <circle cx="14" cy="12" r="11" fill={color} />
+      <circle cx="14" cy="34" r="11" fill={color} />
+      {/* Right knob-pair */}
+      <circle cx="86" cy="12" r="11" fill={color} />
+      <circle cx="86" cy="34" r="11" fill={color} />
+      {/* Shaft */}
+      <rect x="14" y="16" width="72" height="14" rx="7" fill={color} />
+      {/* Specular shine */}
+      <circle cx="14" cy="10" r="4" fill="rgba(255,255,255,0.45)" />
+      <circle cx="86" cy="10" r="4" fill="rgba(255,255,255,0.45)" />
+    </svg>
+  )
+}
+
+// ─── Single paw print SVG ─────────────────────────────────────────────────────
+function PawPrint({ size = 28, color = '#F07030', opacity = 0.35 }: { size?: number; color?: string; opacity?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill={color} style={{ opacity }} aria-hidden>
+      {/* Main pad */}
+      <ellipse cx="20" cy="28" rx="9" ry="7.5" />
+      {/* Toe pads */}
+      <ellipse cx="10" cy="19" rx="4.5" ry="5.5" />
+      <ellipse cx="20" cy="15" rx="4.5" ry="5.5" />
+      <ellipse cx="30" cy="19" rx="4.5" ry="5.5" />
+    </svg>
+  )
+}
+
 // ─── ClayCard ─────────────────────────────────────────────────────────────────
 function ClayCard({ ckey = 'white', children, className = '', style = {}, href }: {
   ckey?: CKey; children: React.ReactNode; className?: string; style?: React.CSSProperties; href?: string
@@ -320,20 +353,46 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
         {/* Dot grid */}
         <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(180,83,9,0.055) 1px, transparent 1px)', backgroundSize: '28px 28px' }} aria-hidden />
 
-        {/* 3D Spheres */}
+        {/* Hero decorations — 2 spheres + bone + paw trail */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+          {/* Keep: big amber sphere top-right */}
           <motion.div style={{ position: 'absolute', top: -60, right: -50 }} animate={{ y: [0, -18, 0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}>
             <AmberSphere size={280} />
           </motion.div>
+          {/* Keep: teal sphere bottom-left */}
           <motion.div style={{ position: 'absolute', bottom: -30, left: 80 }} animate={{ y: [0, -12, 0] }} transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}>
             <TealSphere size={160} />
           </motion.div>
-          <motion.div style={{ position: 'absolute', top: '35%', left: '6%' }} animate={{ y: [0, -8, 0] }} transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut', delay: 0.7 }}>
-            <LavenderSphere size={72} />
+
+          {/* Cute bone — mid left, floating & rotating gently */}
+          <motion.div
+            style={{ position: 'absolute', top: '32%', left: '4%' }}
+            animate={{ y: [0, -10, 0], rotate: [-18, -14, -18] }}
+            transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+          >
+            <CuteBone size={72} color="#F59E0B" opacity={0.55} />
           </motion.div>
-          <motion.div style={{ position: 'absolute', top: '55%', right: '3%' }} animate={{ y: [0, -6, 0] }} transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut', delay: 2 }}>
-            <AmberSphere size={44} />
-          </motion.div>
+
+          {/* Paw print trail — walking diagonally across the hero */}
+          {[
+            { top: '18%', left: '14%',  size: 22, rotate: -15, delay: 0 },
+            { top: '26%', left: '22%',  size: 18, rotate: -10, delay: 0.15 },
+            { top: '22%', left: '30%',  size: 20, rotate: -18, delay: 0.3 },
+            { top: '68%', right: '5%',  size: 20, rotate:  20, delay: 0 },
+            { top: '76%', right: '12%', size: 16, rotate:  15, delay: 0.2 },
+            { top: '60%', right: '8%',  size: 14, rotate:  25, delay: 0.4 },
+          ].map(({ top, left, right, size, rotate, delay }, i) => (
+            <motion.div
+              key={i}
+              style={{ position: 'absolute', top, left, right, transform: `rotate(${rotate}deg)` }}
+              animate={{ opacity: [0.28, 0.48, 0.28] }}
+              transition={{ duration: 3.2 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay }}
+            >
+              <PawPrint size={size} color="#F07030" opacity={1} />
+            </motion.div>
+          ))}
+
+          {/* Ambient warm bloom */}
           <div style={{ position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)', width: 600, height: 600, borderRadius: '50%', background: '#FDE68A', opacity: 0.18, filter: 'blur(100px)' }} />
         </div>
 
