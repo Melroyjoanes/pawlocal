@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'melroy@verfolia.com'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? ''
 
 function adminDb() {
   return createClient(

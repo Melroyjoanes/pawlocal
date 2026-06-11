@@ -9,7 +9,7 @@ function isProtected(pathname: string) {
   return null
 }
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Always set x-pathname so the root layout can detect /pro, /admin, /track

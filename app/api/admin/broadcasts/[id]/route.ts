@@ -6,7 +6,7 @@ function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'melroy@verfolia.com'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? ''
 
 // PATCH /api/admin/broadcasts/[id] — close/reopen a broadcast (admin only)
 export async function PATCH(

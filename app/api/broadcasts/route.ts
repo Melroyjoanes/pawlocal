@@ -4,6 +4,15 @@ import { cookies } from 'next/headers'
 import type { Database } from '@/lib/supabase/types'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 
+function esc(s: unknown): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+}
+
 const SERVICE_LABELS: Record<string, { icon: string; label: string }> = {
   'dog-walking':  { icon: '🦮', label: 'Dog Walking' },
   'grooming':     { icon: '✂️', label: 'Grooming' },
@@ -192,11 +201,20 @@ export async function POST(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   // Notify admin (fire-and-forget)
-  if (process.env.RESEND_API_KEY) {
+  const adminEmail = process.env.ADMIN_EMAIL
+  if (process.env.RESEND_API_KEY && adminEmail) {
     const svc = SERVICE_LABELS[service_slug] ?? { icon: '🐾', label: service_slug }
     const phone = digits.slice(-10)
     const waUrl = `https://wa.me/91${phone}`
     const adminUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/admin`
+
+    const safeName   = esc(poster_name)
+    const safeArea   = esc(area.trim())
+    const safeDate   = esc(date_needed.trim())
+    const safePet    = esc(pet_description.trim())
+    const safeBudget = esc(budget?.trim())
+    const safeNotes  = esc(notes?.trim())
+    const safeLabel  = esc(svc.label)
 
     fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -206,28 +224,28 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         from: 'PupStep <onboarding@resend.dev>',
-        to: process.env.ADMIN_EMAIL ?? 'melroy@verfolia.com',
-        subject: `📣 New broadcast: ${svc.label} in ${area.trim()}`,
+        to: adminEmail,
+        subject: `New broadcast: ${safeLabel} in ${safeArea}`,
         html: `
 <!DOCTYPE html>
 <html>
 <body style="font-family: -apple-system, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px; background: #f8fafc; color: #1e293b;">
   <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
     <p style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; margin: 0 0 12px;">New Broadcast · PupStep</p>
-    <h2 style="margin: 0 0 4px; font-size: 20px;">${svc.icon} ${svc.label}</h2>
-    <p style="margin: 0; color: #64748b; font-size: 14px;">${area.trim()} · ${date_needed.trim()}</p>
+    <h2 style="margin: 0 0 4px; font-size: 20px;">${svc.icon} ${safeLabel}</h2>
+    <p style="margin: 0; color: #64748b; font-size: 14px;">${safeArea} · ${safeDate}</p>
   </div>
   <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0; margin-bottom: 16px;">
     <table style="width: 100%; border-collapse: collapse;">
-      <tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px; width: 80px;">From</td><td style="padding: 6px 0; font-size: 14px; font-weight: 600;">${poster_name}</td></tr>
-      <tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px;">Pet</td><td style="padding: 6px 0; font-size: 14px;">${pet_description.trim()}</td></tr>
-      <tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px;">When</td><td style="padding: 6px 0; font-size: 14px;">${date_needed.trim()}</td></tr>
-      ${budget?.trim() ? `<tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px;">Budget</td><td style="padding: 6px 0; font-size: 14px;">${budget.trim()}</td></tr>` : ''}
-      ${notes?.trim() ? `<tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px;">Notes</td><td style="padding: 6px 0; font-size: 14px; font-style: italic;">${notes.trim()}</td></tr>` : ''}
+      <tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px; width: 80px;">From</td><td style="padding: 6px 0; font-size: 14px; font-weight: 600;">${safeName}</td></tr>
+      <tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px;">Pet</td><td style="padding: 6px 0; font-size: 14px;">${safePet}</td></tr>
+      <tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px;">When</td><td style="padding: 6px 0; font-size: 14px;">${safeDate}</td></tr>
+      ${budget?.trim() ? `<tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px;">Budget</td><td style="padding: 6px 0; font-size: 14px;">${safeBudget}</td></tr>` : ''}
+      ${notes?.trim() ? `<tr><td style="padding: 6px 0; color: #94a3b8; font-size: 13px;">Notes</td><td style="padding: 6px 0; font-size: 14px; font-style: italic;">${safeNotes}</td></tr>` : ''}
     </table>
   </div>
   <a href="${waUrl}" style="display: block; background: #16a34a; color: white; text-decoration: none; padding: 16px; border-radius: 12px; text-align: center; font-weight: 700; font-size: 16px; margin-bottom: 12px;">
-    💬 WhatsApp ${poster_name}
+    WhatsApp ${safeName}
   </a>
   <a href="${adminUrl}" style="display: block; background: white; color: #475569; text-decoration: none; padding: 12px; border-radius: 12px; text-align: center; font-size: 14px; border: 1px solid #e2e8f0;">
     Open Admin Panel →

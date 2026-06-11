@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import LandingPage from '@/components/LandingPage'
+import ProviderAutoRedirect from '@/components/ProviderAutoRedirect'
 
 // Revalidate every 5 minutes — provider counts change rarely, no need to hit
 // Supabase on every single request. ISR serves cached HTML instantly.
@@ -158,6 +159,7 @@ export default async function HomePage({
           })
         }}
       />
+      <ProviderAutoRedirect />
       <LandingPage countMap={countMap} totalProviders={totalProviders} neighbourhood={neighbourhood} />
     </>
   )

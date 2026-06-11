@@ -13,8 +13,12 @@ function resolveBase(request: NextRequest): string {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const code   = searchParams.get('code')
-  const next   = searchParams.get('next') ?? '/'
   const base   = resolveBase(request)
+
+  // Reject anything that isn't a same-site path — prevents open-redirect attacks
+  // where `?next=@attacker.com` resolves to https://pupstep.in@attacker.com
+  const rawNext = searchParams.get('next') ?? '/'
+  const next = rawNext.startsWith('/') && !rawNext.includes('://') && !rawNext.startsWith('//') ? rawNext : '/'
 
   if (!code) {
     return NextResponse.redirect(`${base}/?auth_error=true`)

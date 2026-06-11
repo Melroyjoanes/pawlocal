@@ -190,6 +190,8 @@
   }
   html {
     @apply font-sans;
+    /* Remove 300ms tap delay on mobile without disabling zoom */
+    touch-action: manipulation;
   }
 }
 
