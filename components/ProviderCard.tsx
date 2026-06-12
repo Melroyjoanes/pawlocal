@@ -22,6 +22,14 @@ export default function ProviderCard({ provider, category }: Props) {
   const primaryPhoto =
     provider.provider_photos.find((p) => p.is_primary) ?? provider.provider_photos[0]
 
+  // Use per-service price if available, else fall back to global price_min/max
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const svcPrices = (provider as any).service_prices as Record<string, { min?: number; max?: number; unit?: string }> | null
+  const svcPrice = svcPrices?.[category.slug]
+  const displayMin  = svcPrice?.min  ?? provider.price_min
+  const displayMax  = svcPrice?.max  ?? provider.price_max
+  const displayUnit = svcPrice?.unit ?? provider.price_unit
+
   return (
     // Native <Link> → Next.js prefetches on viewport intersection → navigation feels instant
     <Link
@@ -100,7 +108,7 @@ export default function ProviderCard({ provider, category }: Props) {
           </div>
 
           {/* Price */}
-          {provider.price_min && (
+          {displayMin && (
             <div
               className="text-right shrink-0 pl-1 px-2.5 py-1"
               style={{
@@ -111,12 +119,10 @@ export default function ProviderCard({ provider, category }: Props) {
               }}
             >
               <p className="text-sm font-bold text-amber-900 leading-none">
-                ₹{provider.price_min}
-                {provider.price_max && provider.price_max !== provider.price_min
-                  ? `–${provider.price_max}`
-                  : ''}
+                ₹{displayMin}
+                {displayMax && displayMax !== displayMin ? `–${displayMax}` : ''}
               </p>
-              <p className="text-[9px] font-semibold text-amber-700 mt-0.5 opacity-80">{provider.price_unit}</p>
+              <p className="text-[9px] font-semibold text-amber-700 mt-0.5 opacity-80">{displayUnit}</p>
             </div>
           )}
         </div>

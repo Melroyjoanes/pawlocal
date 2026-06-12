@@ -94,8 +94,7 @@ function JoinForm() {
     bio: '',
     area: '',
     category_slugs: [] as string[],
-    price_min: '',
-    price_max: '',
+    service_prices: {} as Record<string, { min: string; max: string; unit: string }>,
     price_unit: 'per session',
     hours_from: '09:00',
     hours_to: '18:00',
@@ -115,11 +114,26 @@ function JoinForm() {
   }, [fromGoogle, googleName, googleEmail])
 
   function toggleCategory(slug: string) {
+    setForm(prev => {
+      const already = prev.category_slugs.includes(slug)
+      const newSlugs = already
+        ? prev.category_slugs.filter(s => s !== slug)
+        : [...prev.category_slugs, slug]
+      // Remove price entry when category is deselected
+      const newPrices = { ...prev.service_prices }
+      if (already) delete newPrices[slug]
+      else if (!newPrices[slug]) newPrices[slug] = { min: '', max: '', unit: 'per session' }
+      return { ...prev, category_slugs: newSlugs, service_prices: newPrices }
+    })
+  }
+
+  function updateServicePrice(slug: string, field: 'min' | 'max' | 'unit', value: string) {
     setForm(prev => ({
       ...prev,
-      category_slugs: prev.category_slugs.includes(slug)
-        ? prev.category_slugs.filter(s => s !== slug)
-        : [...prev.category_slugs, slug],
+      service_prices: {
+        ...prev.service_prices,
+        [slug]: { ...prev.service_prices[slug], [field]: value },
+      },
     }))
   }
 
@@ -167,9 +181,13 @@ function JoinForm() {
         area: form.area,
         address: form.area + ', Mumbai',
         photo_urls: photoUrl ? [photoUrl] : [],
-        price_min: form.price_min ? Number(form.price_min) : null,
-        price_max: form.price_max ? Number(form.price_max) : null,
-        price_unit: form.price_unit,
+        service_prices: form.service_prices,
+        // Set global price from first selected category for backward compat
+        price_min: form.service_prices[form.category_slugs[0]]?.min
+          ? Number(form.service_prices[form.category_slugs[0]].min) : null,
+        price_max: form.service_prices[form.category_slugs[0]]?.max
+          ? Number(form.service_prices[form.category_slugs[0]].max) : null,
+        price_unit: form.service_prices[form.category_slugs[0]]?.unit ?? form.price_unit,
         hours_from: form.hours_from,
         hours_to: form.hours_to,
         working_days: form.working_days,
@@ -472,42 +490,54 @@ function JoinForm() {
             </select>
           </div>
 
-          {/* Pricing */}
-          <div className="bg-white border border-border rounded-2xl p-5 flex flex-col gap-4">
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Pricing <span className="font-normal normal-case tracking-normal text-slate-400">(optional — you can add this later)</span></p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">Min price (₹)</label>
-                <input
-                  type="number"
-                  value={form.price_min}
-                  onChange={e => setForm({ ...form, price_min: e.target.value })}
-                  placeholder="e.g. 300"
-                  className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 mb-1.5">Max price (₹)</label>
-                <input
-                  type="number"
-                  value={form.price_max}
-                  onChange={e => setForm({ ...form, price_max: e.target.value })}
-                  placeholder="e.g. 600"
-                  className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-                />
-              </div>
+          {/* Pricing — one block per selected category */}
+          {form.category_slugs.length > 0 && (
+            <div className="bg-white border border-border rounded-2xl p-5 flex flex-col gap-5">
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                Pricing <span className="font-normal normal-case tracking-normal text-slate-400">(optional — you can add this later)</span>
+              </p>
+              {form.category_slugs.map(slug => {
+                const catLabel = CATEGORIES.find(c => c.slug === slug)?.name ?? slug
+                const p = form.service_prices[slug] ?? { min: '', max: '', unit: 'per session' }
+                return (
+                  <div key={slug} className="flex flex-col gap-3">
+                    <p className="text-xs font-semibold text-slate-700">
+                      {catLabel} pricing
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Min price (₹)</label>
+                        <input
+                          type="number"
+                          value={p.min}
+                          onChange={e => updateServicePrice(slug, 'min', e.target.value)}
+                          placeholder="e.g. 300"
+                          className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-slate-500 mb-1.5">Max price (₹)</label>
+                        <input
+                          type="number"
+                          value={p.max}
+                          onChange={e => updateServicePrice(slug, 'max', e.target.value)}
+                          placeholder="e.g. 600"
+                          className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        />
+                      </div>
+                    </div>
+                    <select
+                      value={p.unit}
+                      onChange={e => updateServicePrice(slug, 'unit', e.target.value)}
+                      className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                    >
+                      {PRICE_UNITS.map(u => <option key={u}>{u}</option>)}
+                    </select>
+                  </div>
+                )
+              })}
             </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-600 mb-1.5">Price unit</label>
-              <select
-                value={form.price_unit}
-                onChange={e => setForm({ ...form, price_unit: e.target.value })}
-                className="w-full border border-border rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
-              >
-                {PRICE_UNITS.map(u => <option key={u}>{u}</option>)}
-              </select>
-            </div>
-          </div>
+          )}
 
           {/* Hours */}
           <div className="bg-white border border-border rounded-2xl p-5 flex flex-col gap-4">
