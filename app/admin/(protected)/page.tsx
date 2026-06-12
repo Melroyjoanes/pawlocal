@@ -6,7 +6,7 @@ import { getCategoryBySlug } from '@/lib/categories'
 import { Stars } from '@/components/StarRating'
 
 type ProviderStatus = 'pending' | 'approved' | 'rejected'
-type AdminTab = 'providers' | 'broadcasts' | 'reports' | 'reviews' | 'stats'
+type AdminTab = 'providers' | 'broadcasts' | 'reports' | 'grooming' | 'reviews' | 'stats'
 
 interface Broadcast {
   id: string
@@ -37,6 +37,31 @@ interface WalkReport {
   customer: { email: string; name: string | null } | null
   created_at: string
   provider_id: string
+  providers: {
+    id: string
+    name: string
+    whatsapp: string
+    category_slug: string
+  } | null
+}
+
+interface GroomingReport {
+  id: string
+  token: string
+  dog_name: string
+  grooming_date: string
+  duration_mins: number
+  services_done: string[]
+  ticks_found: number
+  skin_condition: string
+  ear_condition: string
+  nail_condition: string
+  coat_condition: string
+  behavior: string
+  before_photo_url: string | null
+  after_photo_url: string | null
+  notes: string | null
+  created_at: string
   providers: {
     id: string
     name: string
@@ -617,6 +642,9 @@ export default function AdminPage() {
   const [approvedProviders, setApprovedProviders] = useState<any[]>([])
   const [walkReports, setWalkReports] = useState<WalkReport[]>([])
   const [reportsLoading, setReportsLoading] = useState(false)
+  const [groomingReports, setGroomingReports] = useState<GroomingReport[]>([])
+  const [groomingReportsLoading, setGroomingReportsLoading] = useState(false)
+  const [groomingCount, setGroomingCount] = useState(0)
   const [pendingCount, setPendingCount] = useState(0)
   const [broadcastCount, setBroadcastCount] = useState(0)
   const [reportsCount, setReportsCount] = useState(0)
@@ -661,6 +689,13 @@ export default function AdminPage() {
       .catch(() => {})
   }, [])
 
+  useEffect(() => {
+    fetch('/api/admin/grooming-reports')
+      .then((r) => r.json())
+      .then((data) => setGroomingCount(Array.isArray(data) ? data.length : 0))
+      .catch(() => {})
+  }, [])
+
   async function loadProviders(status: ProviderStatus) {
     setLoading(true)
     const data = await fetch(`/api/admin/providers?status=${status}`).then((r) => r.json()).catch(() => [])
@@ -695,6 +730,14 @@ export default function AdminPage() {
     setReportsLoading(false)
   }
 
+  async function loadGroomingReports() {
+    setGroomingReportsLoading(true)
+    const data = await fetch('/api/admin/grooming-reports').then((r) => r.json()).catch(() => [])
+    setGroomingReports(Array.isArray(data) ? data : [])
+    setGroomingCount(Array.isArray(data) ? data.length : 0)
+    setGroomingReportsLoading(false)
+  }
+
   async function loadStats() {
     setStatsLoading(true)
     const data = await fetch('/api/admin/stats').then((r) => r.json()).catch(() => null)
@@ -718,6 +761,7 @@ export default function AdminPage() {
   useEffect(() => { if (tab === 'reviews') loadReviews() }, [tab])
   useEffect(() => { if (tab === 'broadcasts') loadBroadcasts() }, [tab])
   useEffect(() => { if (tab === 'reports') loadWalkReports() }, [tab])
+  useEffect(() => { if (tab === 'grooming') loadGroomingReports() }, [tab])
   useEffect(() => { if (tab === 'stats') loadStats() }, [tab])
 
   async function updateStatus(id: string, status: 'approved' | 'rejected') {
@@ -793,7 +837,8 @@ export default function AdminPage() {
         {([
           { key: 'providers', label: '🏠 Providers', badge: pendingCount, badgeColor: 'bg-red-500' },
           { key: 'broadcasts', label: '📣 Broadcasts', badge: broadcastCount, badgeColor: 'bg-amber-500' },
-          { key: 'reports', label: '🐕 Reports', badge: reportsCount, badgeColor: 'bg-teal-500' },
+          { key: 'reports', label: '🐕 Walks', badge: reportsCount, badgeColor: 'bg-teal-500' },
+          { key: 'grooming', label: '✂️ Grooming', badge: groomingCount, badgeColor: 'bg-purple-500' },
           { key: 'reviews', label: '⭐ Reviews', badge: 0, badgeColor: '' },
           { key: 'stats', label: '📊 Stats', badge: 0, badgeColor: '' },
         ] as { key: AdminTab; label: string; badge: number; badgeColor: string }[]).map(({ key, label, badge, badgeColor }) => (
@@ -976,6 +1021,84 @@ export default function AdminPage() {
                 </div>
               )}
             </>
+          )}
+        </>
+      )}
+
+      {/* ── GROOMING REPORTS TAB ─────────────────────────────────── */}
+      {tab === 'grooming' && (
+        <>
+          <div className="grid grid-cols-1 gap-3 mb-5">
+            <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4">
+              <p className="text-2xl font-bold text-purple-700">{groomingReports.length}</p>
+              <p className="text-xs font-medium text-purple-600 mt-0.5">Grooming sessions logged</p>
+            </div>
+          </div>
+
+          {groomingReportsLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => <div key={i} className="bg-white rounded-2xl border border-border p-4 animate-pulse h-24" />)}
+            </div>
+          ) : groomingReports.length === 0 ? (
+            <div className="py-20 text-center">
+              <div className="text-4xl mb-3">✂️</div>
+              <p className="font-semibold text-slate-700">No grooming reports yet</p>
+              <p className="text-sm text-slate-400 mt-1">Providers submit these after grooming sessions.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {groomingReports.map((r) => (
+                <div key={r.id} className="bg-white border border-border rounded-2xl p-4">
+                  <div className="flex gap-3 items-start">
+                    <div className="w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center text-xl"
+                      style={{ background: 'oklch(0.48 0.17 196 / 0.08)' }}>
+                      {r.after_photo_url
+                        ? <img src={r.after_photo_url} alt={r.dog_name} className="w-full h-full rounded-xl object-cover" />
+                        : '✂️'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-slate-900">{r.dog_name}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            by <span className="font-medium">{r.providers?.name ?? 'Unknown groomer'}</span>
+                          </p>
+                        </div>
+                        <span className="text-[11px] text-slate-400 whitespace-nowrap">{timeAgo(r.created_at)}</span>
+                      </div>
+                      <div className="flex gap-3 mt-2 text-xs text-slate-500 flex-wrap">
+                        <span>⏱ {r.duration_mins} min</span>
+                        {r.ticks_found > 0 && <span className="text-orange-600 font-semibold">🕷️ {r.ticks_found} tick{r.ticks_found !== 1 ? 's' : ''}</span>}
+                        {r.services_done?.length > 0 && <span>🛁 {r.services_done.length} services</span>}
+                      </div>
+                      <div className="flex gap-2 mt-2 flex-wrap">
+                        {r.skin_condition !== 'normal' && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-semibold">Skin: {r.skin_condition}</span>
+                        )}
+                        {r.ear_condition !== 'clean' && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold">Ear: {r.ear_condition}</span>
+                        )}
+                        {r.nail_condition !== 'healthy' && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-semibold">Nails: {r.nail_condition}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {r.providers?.whatsapp && (
+                    <div className="mt-3 pt-3 border-t border-border flex gap-2">
+                      <a
+                        href={`/grooming-report/${r.token}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 text-center py-1.5 rounded-lg border border-border text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                      >
+                        View report →
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </>
       )}

@@ -138,6 +138,90 @@ function InfoRow({ label, value }: { label: string; value: string | null | undef
   )
 }
 
+// ── Collapsible extra section ─────────────────────────────────────────────────
+
+function CollapsibleSection({
+  icon, title, subtitle, href, children,
+}: {
+  icon: string
+  title: string
+  subtitle: string
+  href: string
+  children: React.ReactNode
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-stone-50"
+      >
+        <span className="text-xl flex-shrink-0">{icon}</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-stone-800">{title}</p>
+          <p className="text-xs text-stone-400 mt-0.5">{subtitle}</p>
+        </div>
+        <span className="text-stone-300 text-sm flex-shrink-0 transition-transform duration-200" style={{ transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
+      </button>
+      {open && (
+        <div className="border-t border-stone-100 px-5 py-4 space-y-3">
+          {children}
+          <a
+            href={href}
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-stone-200 text-stone-600 text-sm font-semibold hover:bg-stone-50 transition-colors"
+          >
+            Open full page →
+          </a>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MoreSections() {
+  return (
+    <div className="space-y-3">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 pt-2">More</p>
+
+      <CollapsibleSection
+        icon="📊"
+        title="Dashboard"
+        subtitle="Profile views, WhatsApp clicks, reach"
+        href="/pro/dashboard"
+      >
+        <p className="text-sm text-stone-500 leading-relaxed">
+          See how many people viewed your profile, clicked WhatsApp, and found you — updated daily.
+        </p>
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        icon="📒"
+        title="Bookings"
+        subtitle="Booking requests from customers"
+        href="/pro/bookings"
+      >
+        <p className="text-sm text-stone-500 leading-relaxed">
+          View and manage booking requests. When a customer books through your profile, it appears here.
+        </p>
+      </CollapsibleSection>
+
+      <CollapsibleSection
+        icon="🏃"
+        title="Fitness"
+        subtitle="Steps, distance, walk streaks"
+        href="/pro/fitness"
+      >
+        <p className="text-sm text-stone-500 leading-relaxed">
+          Track your activity across all walks — total distance, steps, and your walking streak.
+        </p>
+      </CollapsibleSection>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function ProProfileClient({ provider }: Props) {
   const [mode, setMode] = useState<'view' | 'edit'>('view')
   const [saving, setSaving] = useState(false)
@@ -357,6 +441,9 @@ export default function ProProfileClient({ provider }: Props) {
 
         {/* Review link */}
         <ReviewLinkPanel whatsapp={provider.whatsapp} />
+
+        {/* ── More sections ── */}
+        <MoreSections />
 
         </div>{/* end inner */}
       </div>

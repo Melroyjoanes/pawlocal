@@ -43,6 +43,8 @@ export default async function ReportsPage() {
   const categorySlugs: string[] = (provider.category_slugs as string[]) ?? []
   const isGroomer =
     provider.category_slug === 'grooming' || categorySlugs.includes('grooming')
+  const isWalker =
+    provider.category_slug === 'dog-walking' || categorySlugs.includes('dog-walking')
 
   return (
     <ProReportsPage
@@ -52,6 +54,7 @@ export default async function ReportsPage() {
       providerName={provider.name as string}
       verificationTier={(provider.verification_tier as string) ?? null}
       isGroomer={isGroomer}
+      isWalker={isWalker}
     />
   )
 }

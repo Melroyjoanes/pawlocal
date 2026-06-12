@@ -25,7 +25,7 @@ export default async function ProPage({
       .order('created_at', { ascending: true }).limit(1).maybeSingle()
 
     if (provider?.status === 'approved') {
-      redirect('/pro/dashboard')
+      redirect('/pro/reports')
     }
 
     if (provider?.status === 'pending') {

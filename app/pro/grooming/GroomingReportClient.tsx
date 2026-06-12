@@ -106,11 +106,14 @@ function shareUrl(token: string) {
 // ─── ConditionPicker ─────────────────────────────────────────────────────────
 
 function ConditionPicker({
-  label, options, value, onChange,
-}: { label: string; options: ConditionOption[]; value: string; onChange: (v: string) => void }) {
+  label, subLabel, options, value, onChange,
+}: { label: string; subLabel?: string; options: ConditionOption[]; value: string; onChange: (v: string) => void }) {
   return (
     <div>
-      <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-2">{label}</p>
+      <div className="flex items-baseline gap-2 mb-2">
+        <p className="text-xs font-semibold text-stone-400 uppercase tracking-wider">{label}</p>
+        {subLabel && <p className="text-[10px] text-stone-300 font-medium">{subLabel}</p>}
+      </div>
       <div className="flex gap-2 flex-wrap">
         {options.map(o => (
           <button
@@ -517,9 +520,10 @@ export default function GroomingReportClient({ initialReports, providerId, provi
                     }}>
                     {/* Header with live count */}
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                        🕷️ Ticks Found
-                      </p>
+                      <div>
+                        <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">🕷️ Ticks Found</p>
+                        <p className="text-[10px] text-stone-300 font-medium">किलनी मिली</p>
+                      </div>
                       {tickLocations.length > 0 && (
                         <span className="text-sm font-bold text-orange-600">
                           {tickLocations.length} tick{tickLocations.length !== 1 ? 's' : ''}
@@ -564,14 +568,14 @@ export default function GroomingReportClient({ initialReports, providerId, provi
                   {/* Health findings */}
                   <div className="space-y-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-stone-400">Health Findings</p>
-                    <ConditionPicker label="Skin" options={SKIN_OPTIONS} value={skinCondition} onChange={setSkinCondition} />
-                    <ConditionPicker label="Ears" options={EAR_OPTIONS} value={earCondition} onChange={setEarCondition} />
-                    <ConditionPicker label="Nails" options={NAIL_OPTIONS} value={nailCondition} onChange={setNailCondition} />
-                    <ConditionPicker label="Coat" options={COAT_OPTIONS} value={coatCondition} onChange={setCoatCondition} />
+                    <ConditionPicker label="Skin Condition" subLabel="त्वचा की स्थिति" options={SKIN_OPTIONS} value={skinCondition} onChange={setSkinCondition} />
+                    <ConditionPicker label="Ear Condition" subLabel="कानों की स्थिति" options={EAR_OPTIONS} value={earCondition} onChange={setEarCondition} />
+                    <ConditionPicker label="Nail Condition" subLabel="नाखूनों की स्थिति" options={NAIL_OPTIONS} value={nailCondition} onChange={setNailCondition} />
+                    <ConditionPicker label="Coat Condition" subLabel="बालों की स्थिति" options={COAT_OPTIONS} value={coatCondition} onChange={setCoatCondition} />
                   </div>
 
                   {/* Behavior */}
-                  <ConditionPicker label="Behavior During Session" options={BEHAVIOR_OPTIONS} value={behavior} onChange={setBehavior} />
+                  <ConditionPicker label="Behaviour" subLabel="व्यवहार" options={BEHAVIOR_OPTIONS} value={behavior} onChange={setBehavior} />
 
                   {/* Before photo */}
                   <div>
