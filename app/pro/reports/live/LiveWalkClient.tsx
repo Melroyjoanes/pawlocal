@@ -472,10 +472,10 @@ export default function LiveWalkClient({
     routePointsRef.current = []
   }
 
-  const siteUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal.in')
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in')
   const shareUrl = `${siteUrl}/walk-report/${reportToken}`
   const whatsappText = encodeURIComponent(
-    `Here is ${dogName ? `${dogName}'s` : "your dog's"} walk report from PawLocal! 🐾\n${shareUrl}`
+    `Here is ${dogName ? `${dogName}'s` : "your dog's"} walk report! 🐾\n${shareUrl}`
   )
 
   return (

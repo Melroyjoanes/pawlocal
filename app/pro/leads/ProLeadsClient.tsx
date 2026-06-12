@@ -130,7 +130,7 @@ export default function ProLeadsClient({ broadcasts, providerName }: Props) {
                         ✓ Interest noted
                       </div>
                       <a
-                        href={`https://wa.me/${b.poster_whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi! I'm ${providerName} from PawLocal. I saw your request for ${formatSlug(b.service_slug)} in ${b.area} and I'd love to help. When would you like to connect?`)}`}
+                        href={`https://wa.me/${b.poster_whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi! I'm ${providerName} from PupStep. I saw your request for ${formatSlug(b.service_slug)} in ${b.area} and I'd love to help. When would you like to connect?`)}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center justify-center gap-2 w-full py-3.5 text-sm font-bold text-white transition-all active:opacity-90"

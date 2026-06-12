@@ -14,7 +14,7 @@ export default function AccountClient({ next }: Props) {
       <div className="text-center mb-8">
         <span className="text-5xl">🐾</span>
         <h1 className="text-2xl font-bold text-slate-900 mt-4 mb-2">
-          Welcome to PawLocal
+          Welcome to PupStep
         </h1>
         <p className="text-sm text-slate-500">
           {next

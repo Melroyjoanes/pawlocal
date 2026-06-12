@@ -59,7 +59,7 @@ export default function InsurancePage() {
 
         {/* CTA */}
         <a
-          href="https://wa.me/917977335733?text=Hi%20PawLocal!%20I'm%20interested%20in%20pet%20insurance%20for%20my%20pet%20in%20Juhu."
+          href="https://wa.me/917977335733?text=Hi%20PupStep!%20I'm%20interested%20in%20pet%20insurance%20for%20my%20pet%20in%20Juhu."
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-bold text-white text-base"
@@ -73,7 +73,7 @@ export default function InsurancePage() {
         </a>
 
         <p className="text-center text-xs text-slate-400 pb-4">
-          We partner with licensed Indian insurers. PawLocal earns a referral fee — this never affects your premium.
+          We partner with licensed Indian insurers. PupStep earns a referral fee — this never affects your premium.
         </p>
       </div>
     </div>

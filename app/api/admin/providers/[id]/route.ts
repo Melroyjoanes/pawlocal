@@ -94,7 +94,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   <div style="text-align:center;margin-bottom:28px;">
     <div style="font-size:48px;margin-bottom:12px;">🐾</div>
     <h1 style="font-size:22px;font-weight:800;color:#0f172a;margin:0 0 8px;">You're approved, ${firstName}!</h1>
-    <p style="font-size:14px;color:#475569;margin:0;">Your PawLocal profile is live. Click below to access your provider dashboard.</p>
+    <p style="font-size:14px;color:#475569;margin:0;">Your PupStep profile is live. Click below to access your provider dashboard.</p>
   </div>
   <a href="${magicLink}" style="display:block;text-align:center;background:oklch(0.48 0.17 196);color:white;font-weight:700;font-size:15px;padding:16px 28px;border-radius:12px;text-decoration:none;margin-bottom:20px;">
     Access my dashboard →

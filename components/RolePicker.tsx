@@ -44,7 +44,7 @@ export default function RolePicker({ userName, userAvatar }: Props) {
         <h1 className="text-2xl font-bold text-slate-900 mb-1">
           Welcome, {firstName}! 👋
         </h1>
-        <p className="text-sm text-slate-500">What brings you to PawLocal?</p>
+        <p className="text-sm text-slate-500">What brings you to PupStep?</p>
       </div>
 
       <div className="flex flex-col gap-4">

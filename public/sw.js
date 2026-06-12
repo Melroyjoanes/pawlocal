@@ -1,7 +1,7 @@
 self.addEventListener('push', function(event) {
   if (!event.data) return
   let data
-  try { data = event.data.json() } catch { data = { title: 'PawLocal', body: event.data.text() } }
+  try { data = event.data.json() } catch { data = { title: 'PupStep', body: event.data.text() } }
 
   const options = {
     body: data.body ?? 'You have a new notification',
@@ -13,7 +13,7 @@ self.addEventListener('push', function(event) {
   }
 
   event.waitUntil(
-    self.registration.showNotification(data.title ?? 'PawLocal', options)
+    self.registration.showNotification(data.title ?? 'PupStep', options)
   )
 })
 

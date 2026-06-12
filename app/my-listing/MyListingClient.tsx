@@ -22,7 +22,7 @@ export default function MyListingClient() {
         </div>
         <h1 className="text-xl font-bold text-slate-900 mb-1">Access my dashboard</h1>
         <p className="text-sm text-slate-500 mb-7 leading-relaxed">
-          Sign in with the Google account linked to your PawLocal profile.
+          Sign in with the Google account linked to your PupStep profile.
         </p>
 
         {/* Primary: Google sign-in — /dashboard auto-finds their linked profile */}
