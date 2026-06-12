@@ -173,6 +173,7 @@ export default function LiveWalkClient({
   const [photos, setPhotos] = useState<string[]>([])
   const [dogName, setDogName] = useState('')
   const [notes, setNotes] = useState('')
+  const [mood, setMood] = useState('')
   const [saving, setSaving] = useState(false)
   const [reportToken, setReportToken] = useState('')
   const [copied, setCopied] = useState(false)
@@ -331,6 +332,22 @@ export default function LiveWalkClient({
     }
   }
 
+  const MOODS = [
+    { value: 'great',   emoji: '😊', label: 'Great' },
+    { value: 'good',    emoji: '😐', label: 'Good' },
+    { value: 'tired',   emoji: '😴', label: 'Tired' },
+    { value: 'anxious', emoji: '😟', label: 'Anxious' },
+  ]
+
+  const NOTE_TEMPLATES = [
+    'Was very playful today',
+    'Saw other dogs',
+    'Had a great appetite',
+    'A bit tired today',
+    'Very well behaved',
+    'Pulled on leash a bit',
+  ]
+
   async function handleGenerateReport() {
     if (!dogName.trim()) {
       alert("Please enter the dog's name.")
@@ -338,6 +355,8 @@ export default function LiveWalkClient({
     }
     setSaving(true)
     try {
+      const moodPrefix = mood ? `[Mood: ${MOODS.find(m => m.value === mood)?.emoji} ${mood}] ` : ''
+      const finalNotes = moodPrefix + (notes.trim() || '')
       const res = await fetch('/api/walk-reports', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -346,7 +365,7 @@ export default function LiveWalkClient({
           duration_mins: Math.floor(elapsed / 60),
           poop_count: poopEvents.length,
           pee_count: peeEvents.length,
-          notes: notes.trim() || null,
+          notes: finalNotes || null,
           photo_url: photos[0] ?? null,
           route_points: routePointsRef.current,
           distance_meters: distance,
@@ -384,6 +403,7 @@ export default function LiveWalkClient({
     setPhotos([])
     setDogName('')
     setNotes('')
+    setMood('')
     setReportToken('')
     setCopied(false)
     routePointsRef.current = []
@@ -655,6 +675,29 @@ export default function LiveWalkClient({
                 />
               </div>
 
+              {/* Mood picker */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  How was the mood?
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {MOODS.map(({ value, emoji, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => setMood(m => m === value ? '' : value)}
+                      className={`flex flex-col items-center justify-center py-3 rounded-xl bg-white transition-all active:scale-95 ${
+                        mood === value
+                          ? 'border-2 border-teal-500 text-teal-600'
+                          : 'border border-gray-200 text-gray-500'
+                      }`}
+                    >
+                      <span className="text-2xl select-none">{emoji}</span>
+                      <span className="text-xs font-semibold mt-1">{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Notes */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -667,6 +710,21 @@ export default function LiveWalkClient({
                   rows={3}
                   className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
                 />
+                {/* Quick note templates */}
+                <div className="mt-2">
+                  <p className="text-xs text-gray-400 font-semibold mb-2">Quick notes (tap to add)</p>
+                  <div className="flex flex-wrap gap-2">
+                    {NOTE_TEMPLATES.map((template) => (
+                      <button
+                        key={template}
+                        onClick={() => setNotes(n => n ? n + ' ' + template : template)}
+                        className="text-xs font-medium px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 active:scale-95 transition-transform"
+                      >
+                        {template}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Photos */}

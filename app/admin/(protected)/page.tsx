@@ -557,7 +557,7 @@ function BroadcastAdminCard({
 }
 
 // ── Walk report card (admin view) ────────────────────────────────
-function WalkReportAdminCard({ r }: { r: WalkReport }) {
+function WalkReportAdminCard({ r, views30d }: { r: WalkReport; views30d?: number }) {
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://pupstep.in'
 
   return (
@@ -576,6 +576,11 @@ function WalkReportAdminCard({ r }: { r: WalkReport }) {
               <p className="font-semibold text-slate-900">{r.dog_name}</p>
               <p className="text-xs text-slate-500 mt-0.5">
                 by <span className="font-medium">{r.providers?.name ?? 'Unknown walker'}</span>
+                {views30d !== undefined && views30d > 0 && (
+                  <span className="ml-2 inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600">
+                    👁 {views30d}
+                  </span>
+                )}
               </p>
             </div>
             <span className="text-[11px] text-slate-400 whitespace-nowrap">{timeAgo(r.created_at)}</span>
@@ -666,8 +671,16 @@ export default function AdminPage() {
     }[]
   } | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
+  const [providerStats, setProviderStats] = useState<Record<string, { views30d: number; reportsThisWeek: number }>>({})
 
   // Load counts on mount — all via admin API routes (service role, bypasses RLS)
+  useEffect(() => {
+    fetch('/api/admin/provider-stats')
+      .then(r => r.json())
+      .then(d => { if (!d.error) setProviderStats(d) })
+      .catch(() => {})
+  }, [])
+
   useEffect(() => {
     fetch('/api/admin/providers?status=pending')
       .then((r) => r.json())
@@ -1006,7 +1019,7 @@ export default function AdminPage() {
                     Claimed ({claimedReports.length})
                   </p>
                   <div className="flex flex-col gap-3">
-                    {claimedReports.map((r) => <WalkReportAdminCard key={r.id} r={r} />)}
+                    {claimedReports.map((r) => <WalkReportAdminCard key={r.id} r={r} views30d={r.provider_id ? providerStats[r.provider_id]?.views30d : undefined} />)}
                   </div>
                 </div>
               )}
@@ -1016,7 +1029,7 @@ export default function AdminPage() {
                     Not claimed ({unclaimedReports.length})
                   </p>
                   <div className="flex flex-col gap-3">
-                    {unclaimedReports.map((r) => <WalkReportAdminCard key={r.id} r={r} />)}
+                    {unclaimedReports.map((r) => <WalkReportAdminCard key={r.id} r={r} views30d={r.provider_id ? providerStats[r.provider_id]?.views30d : undefined} />)}
                   </div>
                 </div>
               )}

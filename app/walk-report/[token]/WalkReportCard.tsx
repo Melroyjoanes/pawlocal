@@ -254,6 +254,15 @@ export default function WalkReportCard({
   const [shareUrl, setShareUrl] = useState('')
   const prefersReduced = useReducedMotion()
 
+  // Track parent view on mount
+  useEffect(() => {
+    fetch('/api/care-card-view', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: report.token, type: 'walk' }),
+    }).catch(() => {})
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Set share URL client-side only
   useEffect(() => {
     setShareUrl(window.location.href.split('?')[0])
