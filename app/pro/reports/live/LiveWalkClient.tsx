@@ -180,6 +180,9 @@ export default function LiveWalkClient({
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [gpsError, setGpsError] = useState<string | null>(null)
   const [currentPos, setCurrentPos] = useState<{ lat: number; lng: number } | null>(null)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [shareToken, setShareToken] = useState<string | null>(null)
+  const [liveShareCopied, setLiveShareCopied] = useState(false)
 
   const routePointsRef = useRef<{ lat: number; lng: number }[]>([])
   const watchIdRef = useRef<number | null>(null)
@@ -189,6 +192,10 @@ export default function LiveWalkClient({
   const startTimeRef = useRef<number>(0)
   // Screen Wake Lock — keeps screen on so GPS never pauses
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
+  // Ref so interval closure can always read the latest session ID
+  const sessionIdRef = useRef<string | null>(null)
+  // Interval that pushes live location to walk_sessions every 10 s
+  const locationUpdateIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Acquire wake lock — call on walk start and on visibility restore
   const requestWakeLock = useCallback(async () => {
@@ -241,6 +248,22 @@ export default function LiveWalkClient({
     // Request wake lock — prevents screen from locking mid-walk
     await requestWakeLock()
 
+    // Create live walk session for customer tracking
+    fetch('/api/walk-sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pet_name: null }), // pet_name filled in at summary
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.share_token) {
+          sessionIdRef.current = data.id
+          setSessionId(data.id)
+          setShareToken(data.share_token)
+        }
+      })
+      .catch(() => {})
+
     // Start GPS
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
@@ -258,6 +281,25 @@ export default function LiveWalkClient({
       },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
     )
+
+    // Push live location every 10 seconds while walking
+    locationUpdateIntervalRef.current = setInterval(() => {
+      const last = routePointsRef.current[routePointsRef.current.length - 1]
+      if (!last || !sessionIdRef.current) return
+      // Read current poop/pee events from state via a closure-safe approach:
+      // we read from the DOM-independent refs or pass through a callback.
+      // Since setPoopEvents / setPeeEvents are async, we use a snapshot approach
+      // and re-read via a ref that is kept in sync below.
+      fetch('/api/walk-sessions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionIdRef.current,
+          current_lat: last.lat,
+          current_lng: last.lng,
+        }),
+      }).catch(() => {})
+    }, 10000)
   }, [requestWakeLock])
 
   const stopTracking = useCallback(() => {
@@ -268,6 +310,23 @@ export default function LiveWalkClient({
     if (timerRef.current !== null) {
       clearInterval(timerRef.current)
       timerRef.current = null
+    }
+    // Clear location update interval
+    if (locationUpdateIntervalRef.current) {
+      clearInterval(locationUpdateIntervalRef.current)
+      locationUpdateIntervalRef.current = null
+    }
+    // Mark session as completed
+    if (sessionIdRef.current) {
+      fetch('/api/walk-sessions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionIdRef.current,
+          status: 'completed',
+          ended_at: new Date().toISOString(),
+        }),
+      }).catch(() => {})
     }
     // Release wake lock — screen can sleep again after walk ends
     wakeLockRef.current?.release().catch(() => {})
@@ -406,12 +465,17 @@ export default function LiveWalkClient({
     setMood('')
     setReportToken('')
     setCopied(false)
+    setSessionId(null)
+    setShareToken(null)
+    setLiveShareCopied(false)
+    sessionIdRef.current = null
     routePointsRef.current = []
   }
 
-  const shareUrl = `https://pupstep.in/walk-report/${reportToken}`
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pawlocal.in')
+  const shareUrl = `${siteUrl}/walk-report/${reportToken}`
   const whatsappText = encodeURIComponent(
-    `Here is ${dogName ? `${dogName}'s` : "your dog's"} walk report from PupStep! 🐾\n${shareUrl}`
+    `Here is ${dogName ? `${dogName}'s` : "your dog's"} walk report from PawLocal! 🐾\n${shareUrl}`
   )
 
   return (
@@ -609,6 +673,27 @@ export default function LiveWalkClient({
                   </div>
                 )}
               </div>
+
+              {/* Live share button — appears once session is created */}
+              {shareToken && (
+                <button
+                  onClick={() => {
+                    const url = `${window.location.origin}/track/${shareToken}`
+                    navigator.clipboard.writeText(url).then(() => {
+                      setLiveShareCopied(true)
+                      setTimeout(() => setLiveShareCopied(false), 2500)
+                    }).catch(() => {})
+                  }}
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl border-2 font-semibold text-sm transition-all active:scale-95"
+                  style={{
+                    borderColor: liveShareCopied ? '#22c55e' : 'oklch(0.48 0.17 196)',
+                    color: liveShareCopied ? '#22c55e' : 'oklch(0.48 0.17 196)',
+                    background: liveShareCopied ? '#f0fdf4' : 'transparent',
+                  }}
+                >
+                  {liveShareCopied ? '✓ Link copied!' : '📍 Share live location with owner'}
+                </button>
+              )}
 
               {/* End Walk */}
               <div className="mt-auto">

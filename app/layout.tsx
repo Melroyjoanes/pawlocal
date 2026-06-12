@@ -31,7 +31,7 @@ export const viewport = {
 // Resolve base URL: custom domain → Vercel auto URL → fallback
 // Hardcoded stable URL — Next.js on Vercel overrides env-based metadataBase
 // with VERCEL_URL (deployment-specific hash URL), breaking og:image for WhatsApp.
-const siteUrl = 'https://pupstep.in'
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

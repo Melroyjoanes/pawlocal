@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import OnboardingOverlay from './OnboardingOverlay'
 
 type WalkReport = {
   id: string; token: string; dog_name: string; duration_mins: number
@@ -134,6 +135,70 @@ function CareCardRow({ card, onDelete }: { card: CareCardItem; onDelete: (id: st
   )
 }
 
+function PushNotificationBanner() {
+  const [status, setStatus] = useState<'idle' | 'subscribed' | 'denied' | 'unsupported'>('idle')
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setStatus('unsupported')
+      return
+    }
+    if (Notification.permission === 'granted') setStatus('subscribed')
+    else if (Notification.permission === 'denied') setStatus('denied')
+  }, [])
+
+  async function enable() {
+    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) return
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js')
+      const permission = await Notification.requestPermission()
+      if (permission !== 'granted') { setStatus('denied'); return }
+
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY),
+      })
+
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(sub.toJSON()),
+      })
+      setStatus('subscribed')
+    } catch {
+      setStatus('denied')
+    }
+  }
+
+  function urlBase64ToUint8Array(base64String: string) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4)
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+    const rawData = window.atob(base64)
+    return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)))
+  }
+
+  if (status === 'subscribed' || status === 'unsupported' || !process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) return null
+  if (status === 'denied') return null
+
+  return (
+    <button
+      onClick={enable}
+      className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl text-left mb-4 transition-all active:scale-[0.98]"
+      style={{
+        background: 'linear-gradient(135deg, #fffbeb, #fef9c3)',
+        border: '1px solid #fde68a',
+      }}
+    >
+      <span className="text-xl flex-shrink-0">🔔</span>
+      <div className="flex-1">
+        <p className="text-xs font-bold text-amber-900">Enable notifications</p>
+        <p className="text-[10px] text-amber-700 mt-0.5">Get notified when a parent views your care card</p>
+      </div>
+      <span className="text-xs font-bold text-amber-700">Enable →</span>
+    </button>
+  )
+}
+
 export default function ProReportsPage({
   walkReports: initialWalkReports,
   groomingReports: initialGroomingReports,
@@ -184,6 +249,7 @@ export default function ProReportsPage({
 
   return (
     <div className="min-h-dvh pb-28" style={{ background: 'oklch(0.975 0.006 85)' }}>
+      <OnboardingOverlay isGroomer={isGroomer} />
 
       {/* ── Hero CTA zone ── */}
       <div className="max-w-lg mx-auto px-4 pt-6 pb-2">
@@ -268,6 +334,8 @@ export default function ProReportsPage({
 
       {/* ── Feed section ── */}
       <div className="max-w-lg mx-auto px-4 mt-6">
+
+        <PushNotificationBanner />
 
         {/* Section label + filter pills */}
         <div className="flex items-center gap-3 mb-4">

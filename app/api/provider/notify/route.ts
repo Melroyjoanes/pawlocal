@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         <p><strong>Category:</strong> ${safeCategory}</p>
         <p><strong>WhatsApp:</strong> ${safeWhatsapp}</p>
         <p><strong>Phone:</strong> ${safePhone || 'N/A'}</p>
-        <p><a href="https://pupstep.in/admin">Review in admin dashboard →</a></p>
+        <p><a href="${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/admin">Review in admin dashboard →</a></p>
       `,
     }),
   })

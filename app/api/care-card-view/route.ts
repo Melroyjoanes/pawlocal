@@ -30,6 +30,15 @@ export async function POST(req: NextRequest) {
       metadata: { token, type },
     })
 
+    // Fire push notification — non-blocking
+    import('@/lib/push/send').then(({ sendPushToProvider }) => {
+      sendPushToProvider(report.provider_id, {
+        title: '👀 Someone viewed your care card!',
+        body: 'A pet parent just opened the care card you sent. They loved it!',
+        url: '/pro/reports',
+      })
+    }).catch(() => {})
+
     return NextResponse.json({ ok: true })
   } catch {
     return NextResponse.json({ ok: true }) // never fail silently for tracking

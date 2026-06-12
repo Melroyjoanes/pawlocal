@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
             <p style="margin:0;color:#15803d;"><strong>Action needed:</strong> Go to the admin broadcasts tab, find this request, and use "Notify these providers" to connect <strong>${safeName}</strong> with the customer on WhatsApp.</p>
           </div>
           <p style="margin-top:16px;font-size:12px;color:#94a3b8;">
-            Admin: <a href="https://pupstep.in/admin">pupstep.in/admin</a>
+            Admin: <a href="${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/admin">${process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : 'pupstep.in'}/admin</a>
           </p>
         `,
       }),

@@ -30,7 +30,7 @@ export async function generateMetadata(
     title,
     description,
     keywords: [`${serviceLabel} Mumbai`, `${serviceLabel} Juhu`, data.name, `verified ${serviceLabel}`, 'WhatsApp pet services Mumbai'],
-    alternates: { canonical: `https://pupstep.in/provider/${id}` },
+    alternates: { canonical: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/provider/${id}` },
     openGraph: { title, description, type: 'profile', siteName: 'PupStep' },
   }
 }
@@ -90,7 +90,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
     .sort((a, b) => a.sort_order - b.sort_order)
 
   const shareUrl = `https://wa.me/?text=${encodeURIComponent(
-    `🐾 Check out ${provider.name} for ${category.name} near Juhu!\n\nhttps://pupstep.in/provider/${provider.id}`
+    `🐾 Check out ${provider.name} for ${category.name} near Juhu!\n\n${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/provider/${provider.id}`
   )}`
 
   function formatHour(t: string) {
@@ -140,7 +140,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
             "@type": "LocalBusiness",
             "name": provider.name,
             "description": provider.bio ?? `${provider.name} — verified ${serviceLabel} in Mumbai.`,
-            "url": `https://pupstep.in/provider/${provider.id}`,
+            "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/provider/${provider.id}`,
             "image": primaryPhoto?.url ?? undefined,
             "address": {
               "@type": "PostalAddress",

@@ -60,10 +60,10 @@ export default async function HomePage({
             "@type": "WebSite",
             "name": "PupStep",
             "alternateName": "PupStep — Mumbai's Verified Pet People",
-            "url": "https://pupstep.in",
+            "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}`,
             "potentialAction": {
               "@type": "SearchAction",
-              "target": { "@type": "EntryPoint", "urlTemplate": "https://pupstep.in/search?q={search_term_string}" },
+              "target": { "@type": "EntryPoint", "urlTemplate": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/search?q={search_term_string}` },
               "query-input": "required name=search_term_string"
             }
           })
@@ -77,8 +77,8 @@ export default async function HomePage({
             "@context": "https://schema.org",
             "@type": "Organization",
             "name": "PupStep",
-            "url": "https://pupstep.in",
-            "logo": "https://pupstep.in/api/og",
+            "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}`,
+            "logo": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/api/og`,
             "description": "Mumbai's most trusted hyperlocal pet services directory. Verified walkers, vets, groomers and more — WhatsApp direct, zero booking fees.",
             "areaServed": { "@type": "City", "name": "Mumbai", "containedInPlace": { "@type": "Country", "name": "India" } },
             "foundingLocation": { "@type": "Place", "name": "Juhu, Mumbai, India" },
@@ -95,8 +95,8 @@ export default async function HomePage({
             "@type": "LocalBusiness",
             "name": "PupStep",
             "description": "Mumbai's verified pet people. Find trusted dog walkers, vets, groomers, trainers and pet stores near you.",
-            "url": "https://pupstep.in",
-            "image": "https://pupstep.in/api/og",
+            "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}`,
+            "image": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/api/og`,
             "telephone": "",
             "address": { "@type": "PostalAddress", "addressLocality": "Juhu", "addressRegion": "Mumbai", "addressCountry": "IN" },
             "geo": { "@type": "GeoCoordinates", "latitude": 19.1075, "longitude": 72.8263 },
@@ -133,7 +133,7 @@ export default async function HomePage({
               {
                 "@type": "Question",
                 "name": "How do I find a dog walker in Mumbai on PupStep?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Visit pupstep.in/dog-walking to browse verified dog walkers near you in Mumbai. Each walker has a detailed profile with reviews, GPS walk reports, and a direct WhatsApp button. No middleman, no booking fees." }
+                "acceptedAnswer": { "@type": "Answer", "text": `Visit ${process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : 'pupstep.in'}/dog-walking to browse verified dog walkers near you in Mumbai. Each walker has a detailed profile with reviews, GPS walk reports, and a direct WhatsApp button. No middleman, no booking fees.` }
               },
               {
                 "@type": "Question",
@@ -153,7 +153,7 @@ export default async function HomePage({
               {
                 "@type": "Question",
                 "name": "How do I find a vet near me in Mumbai?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Visit pupstep.in/vet to find trusted veterinary clinics near you in Mumbai. All vets are verified. You can see their location on a map, read reviews, and WhatsApp them directly." }
+                "acceptedAnswer": { "@type": "Answer", "text": `Visit ${process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : 'pupstep.in'}/vet to find trusted veterinary clinics near you in Mumbai. All vets are verified. You can see their location on a map, read reviews, and WhatsApp them directly.` }
               }
             ]
           })

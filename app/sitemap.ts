@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 export const revalidate = 86400 // rebuild sitemap once per day
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const base = 'https://pupstep.in'
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: base,                  lastModified: new Date(), changeFrequency: 'daily',   priority: 1.0 },

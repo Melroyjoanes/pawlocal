@@ -169,7 +169,7 @@ function ProviderCard({
 
   const category = getCategoryBySlug(p.category_slug)
   const primaryPhoto = p.provider_photos?.find((ph) => ph.is_primary) ?? p.provider_photos?.[0]
-  const profileUrl = `${typeof window !== 'undefined' ? window.location.origin : 'https://pupstep.in'}/provider/${p.id}`
+  const profileUrl = `${typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in')}/provider/${p.id}`
   const waDigits = p.whatsapp?.replace(/\D/g, '').slice(-10) ?? ''
   const waDirectUrl = waDigits ? `https://wa.me/91${waDigits}` : null
 
@@ -558,7 +558,7 @@ function BroadcastAdminCard({
 
 // ── Walk report card (admin view) ────────────────────────────────
 function WalkReportAdminCard({ r, views30d }: { r: WalkReport; views30d?: number }) {
-  const siteUrl = typeof window !== 'undefined' ? window.location.origin : 'https://pupstep.in'
+  const siteUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in')
 
   return (
     <div className="bg-white border border-border rounded-2xl p-4">

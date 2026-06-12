@@ -26,7 +26,7 @@ const TIMELINE = [
   {
     icon: '○',
     label: 'Access your dashboard',
-    description: 'Visit pupstep.in/pro — sign in with Google and you\'ll land on your dashboard.',
+    description: `Visit ${process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : 'pupstep.in'}/pro — sign in with Google and you'll land on your dashboard.`,
     done: false,
   },
 ]

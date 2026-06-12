@@ -312,7 +312,7 @@ export default function GroomingReportCard({ report }: { report: Report }) {
 
         {/* ── Footer ── */}
         <div className="text-center pt-4 pb-8">
-          <a href="https://pupstep.in" className="text-xs text-stone-400 hover:text-stone-600 transition-colors">
+          <a href={typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in')} className="text-xs text-stone-400 hover:text-stone-600 transition-colors">
             Powered by PupStep
           </a>
         </div>

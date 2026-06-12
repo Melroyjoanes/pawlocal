@@ -5,7 +5,7 @@ import GroomingReportCard from './GroomingReportCard'
 type Props = { params: Promise<{ token: string }> }
 
 async function fetchReport(token: string) {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://pupstep.in'
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
   try {
     const res = await fetch(`${base}/api/grooming-reports/${token}`, {
       next: { revalidate: 60 },
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (ticks_found > 0) ogParams.set('ticks', String(ticks_found))
   if (report.is_verified) ogParams.set('verified', '1')
 
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? 'https://pupstep.in'
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
   const ogImageUrl = `${base}/api/og/grooming-report/${token}?${ogParams.toString()}`
 
   return {

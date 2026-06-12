@@ -676,7 +676,7 @@ export default function DashboardClient({
           <div>
             <p className="text-sm font-semibold text-emerald-800">Welcome to your dashboard!</p>
             <p className="text-xs text-emerald-600 mt-0.5">
-              Access your dashboard anytime at <strong>pupstep.in/dashboard</strong>
+              Access your dashboard anytime at <strong>{window.location.host}/dashboard</strong>
             </p>
           </div>
         </div>
@@ -758,7 +758,7 @@ export default function DashboardClient({
           <button
             type="button"
             onClick={() => {
-              navigator.clipboard.writeText(`https://pupstep.in/provider/${provider.id}`)
+              navigator.clipboard.writeText(`${window.location.origin}/provider/${provider.id}`)
                 .then(() => alert('Profile link copied! Share it on WhatsApp.'))
             }}
             className="mt-4 px-5 py-2.5 rounded-xl text-sm font-semibold border border-border text-slate-700 hover:bg-muted transition-colors"

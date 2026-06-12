@@ -124,7 +124,7 @@ export default function EditProviderClient({
 
   // ── Render: setup wizard (shown after claiming) ──────────────
   if (setupMode && !setupDone) {
-    const profileUrl = `https://pupstep.in/provider/${provider.id}`
+    const profileUrl = `${window.location.origin}/provider/${provider.id}`
     const waShareUrl = `https://wa.me/?text=${encodeURIComponent(
       `Hi! I just listed my ${category.name.toLowerCase()} services on PupStep 🐾\nCheck my profile: ${profileUrl}`
     )}`
@@ -149,7 +149,7 @@ export default function EditProviderClient({
                 rel="noopener noreferrer"
                 className="text-sm font-medium text-[var(--pl-teal)] underline underline-offset-2 flex-1 truncate"
               >
-                pupstep.in/provider/{provider.id.slice(0, 8)}…
+                {window.location.host}/provider/{provider.id.slice(0, 8)}…
               </a>
               <button
                 type="button"
@@ -405,12 +405,12 @@ export default function EditProviderClient({
           rel="noopener noreferrer"
           className="text-xs font-medium text-[var(--pl-teal)] underline underline-offset-2 truncate"
         >
-          pupstep.in/provider/{provider.id.slice(0, 8)}…
+          {window.location.host}/provider/{provider.id.slice(0, 8)}…
         </a>
         <button
           type="button"
           onClick={() => {
-            navigator.clipboard.writeText(`https://pupstep.in/provider/${provider.id}`)
+            navigator.clipboard.writeText(`${window.location.origin}/provider/${provider.id}`)
               .then(() => alert('Profile link copied!'))
           }}
           className="ml-auto text-xs text-slate-400 hover:text-slate-700 shrink-0 transition-colors"

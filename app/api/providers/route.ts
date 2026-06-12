@@ -84,8 +84,8 @@ export async function POST(req: NextRequest) {
       .split('-')
       .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ')
-    const adminUrl = `https://pupstep.in/admin`
-    const profileUrl = `https://pupstep.in/provider/${provider.id}`
+    const adminUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/admin`
+    const profileUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/provider/${provider.id}`
 
     const safeName     = esc(name)
     const safeCategory = esc(categoryLabel)

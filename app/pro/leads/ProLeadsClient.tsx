@@ -123,20 +123,37 @@ export default function ProLeadsClient({ broadcasts, providerName }: Props) {
                     )}
                   </div>
 
-                  {/* CTA — "I'm Interested" instead of direct WhatsApp */}
-                  <button
-                    onClick={() => handleInterest(b.id, b.service_slug, b.area)}
-                    disabled={sent}
-                    className="flex items-center justify-center gap-2 w-full py-3.5 text-sm font-bold transition-all"
-                    style={sent ? {
-                      background: '#F0FDF4', color: '#15803D',
-                    } : {
-                      background: 'linear-gradient(160deg, oklch(0.52 0.17 196) 0%, oklch(0.44 0.16 196) 100%)',
-                      color: '#fff',
-                    }}
-                  >
-                    {sent ? '✓ Interest sent — we\'ll connect you' : '🙋 I\'m Interested'}
-                  </button>
+                  {/* CTA */}
+                  {sent ? (
+                    <div className="flex flex-col">
+                      <div className="flex items-center justify-center gap-2 w-full py-2.5 text-xs font-bold text-emerald-700 bg-emerald-50">
+                        ✓ Interest noted
+                      </div>
+                      <a
+                        href={`https://wa.me/${b.poster_whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi! I'm ${providerName} from PawLocal. I saw your request for ${formatSlug(b.service_slug)} in ${b.area} and I'd love to help. When would you like to connect?`)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 w-full py-3.5 text-sm font-bold text-white transition-all active:opacity-90"
+                        style={{ background: '#25D366' }}
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+                          <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.845L.057 23.428a.5.5 0 00.609.61l5.64-1.476A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.91 0-3.698-.5-5.244-1.373l-.375-.217-3.888 1.018 1.034-3.774-.237-.389A9.937 9.937 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+                        </svg>
+                        Chat with {b.poster_name} on WhatsApp
+                      </a>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleInterest(b.id, b.service_slug, b.area)}
+                      className="flex items-center justify-center gap-2 w-full py-3.5 text-sm font-bold text-white transition-all active:opacity-90"
+                      style={{
+                        background: 'linear-gradient(160deg, oklch(0.52 0.17 196) 0%, oklch(0.44 0.16 196) 100%)',
+                      }}
+                    >
+                      🙋 I&apos;m Interested
+                    </button>
+                  )}
                 </motion.div>
               )
             })}

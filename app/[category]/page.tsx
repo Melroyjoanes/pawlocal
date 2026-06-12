@@ -56,8 +56,8 @@ export async function generateMetadata(
     title,
     description,
     keywords,
-    alternates: { canonical: `https://pupstep.in/${category}` },
-    openGraph: { title, description, type: 'website', url: `https://pupstep.in/${category}`, siteName: 'PupStep' },
+    alternates: { canonical: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/${category}` },
+    openGraph: { title, description, type: 'website', url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/${category}`, siteName: 'PupStep' },
     twitter: { card: 'summary', title, description },
   }
 }

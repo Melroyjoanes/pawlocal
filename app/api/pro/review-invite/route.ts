@@ -46,6 +46,6 @@ export async function POST() {
     return NextResponse.json({ error: error?.message ?? 'Failed to create invite' }, { status: 500 })
   }
 
-  const url = `https://pupstep.in/review/${invite.token}`
+  const url = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/review/${invite.token}`
   return NextResponse.json({ token: invite.token, url })
 }

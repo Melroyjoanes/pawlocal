@@ -102,7 +102,7 @@ export async function generateMetadata({
   ].filter(Boolean).join(' ')
 
   // Use configured site URL, fall back to Vercel's automatic URL, then the known Vercel deployment
-  const canonicalUrl = `https://pupstep.in/walk-report/${token}`
+  const canonicalUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/walk-report/${token}`
 
   // Embed report data as URL params so the OG image route doesn't need a DB query.
   // WhatsApp's scraper times out on cold-start serverless + DB latency (> ~5s).
@@ -115,7 +115,7 @@ export async function generateMetadata({
     ogParams.set('dist', String(Math.round(report.distance_meters)))
   }
   if (report.is_verified) ogParams.set('verified', '1')
-  const ogImageUrl = `https://pupstep.in/api/og/walk-report/${token}?${ogParams.toString()}`
+  const ogImageUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/api/og/walk-report/${token}?${ogParams.toString()}`
 
   return {
     title,
