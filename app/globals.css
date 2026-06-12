@@ -209,9 +209,12 @@
     border-radius: 28px;
     transition: box-shadow 0.22s ease, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
-  .clay-card:hover {
-    box-shadow: var(--sh-clay-hover);
-    transform: translateY(-4px) scale(1.01);
+  /* Only apply hover lift on pointer devices — touch devices get active:scale instead */
+  @media (hover: hover) {
+    .clay-card:hover {
+      box-shadow: var(--sh-clay-hover);
+      transform: translateY(-4px) scale(1.01);
+    }
   }
 
   /* Teal primary button — updated to logo teal */

@@ -22,9 +22,7 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
       <header
         className="sticky top-0 z-40"
         style={{
-          background: 'rgba(255,251,235,0.94)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
+          background: 'rgba(255,251,235,0.97)',
           borderBottom: '1px solid oklch(0.906 0.06 88)',
         }}
       >

@@ -1,7 +1,6 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
+import Link from 'next/link'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
 import type { CategoryConfig } from '@/lib/categories'
 import VerificationBadge from '@/components/VerificationBadge'
@@ -20,21 +19,15 @@ function formatHour(t: string) {
 }
 
 export default function ProviderCard({ provider, category }: Props) {
-  const router = useRouter()
   const primaryPhoto =
     provider.provider_photos.find((p) => p.is_primary) ?? provider.provider_photos[0]
-  const whatsappUrl = `https://wa.me/91${provider.whatsapp.replace(/\D/g, '')}`
 
   return (
-    <motion.div
-      className="group flex gap-4 p-4 clay-card cursor-pointer"
-      role="link"
-      tabIndex={0}
-      onClick={() => router.push(`/provider/${provider.id}`)}
-      onKeyDown={(e) => e.key === 'Enter' && router.push(`/provider/${provider.id}`)}
-      whileHover={{ y: -4, scale: 1.01 }}
-      whileTap={{ y: 1, scale: 0.99 }}
-      transition={{ type: 'spring', stiffness: 380, damping: 24 }}
+    // Native <Link> → Next.js prefetches on viewport intersection → navigation feels instant
+    <Link
+      href={`/provider/${provider.id}`}
+      className="group flex gap-4 p-4 clay-card cursor-pointer active:scale-[0.985] transition-transform duration-100"
+      style={{ touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
     >
       {/* Photo */}
       <div
@@ -49,7 +42,9 @@ export default function ProviderCard({ provider, category }: Props) {
           <img
             src={primaryPhoto.url}
             alt={provider.name}
-            className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-300"
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover"
             style={{ borderRadius: 20 }}
           />
         ) : (
@@ -140,27 +135,21 @@ export default function ProviderCard({ provider, category }: Props) {
           <p className="text-xs text-slate-400 mt-1.5 line-clamp-1">{provider.bio}</p>
         )}
 
-        {/* CTAs — navigate to profile (auth-gated WhatsApp redirect happens there) */}
+        {/* CTAs */}
         <div className="flex items-center gap-2 mt-3">
-          <button
-            onClick={() => router.push(`/provider/${provider.id}`)}
-            className="flex items-center gap-1.5 text-xs font-bold text-white px-3.5 py-1.5 clay-btn-wa"
-          >
+          <span className="flex items-center gap-1.5 text-xs font-bold text-white px-3.5 py-1.5 clay-btn-wa pointer-events-none">
             💬 WhatsApp
-          </button>
+          </span>
           {provider.phone && (
-            <button
-              onClick={() => router.push(`/provider/${provider.id}`)}
-              className="text-xs font-semibold px-3.5 py-1.5 clay-btn-ghost"
-            >
+            <span className="text-xs font-semibold px-3.5 py-1.5 clay-btn-ghost pointer-events-none">
               📞 Call
-            </button>
+            </span>
           )}
           <span className="ml-auto text-xs font-semibold flex items-center gap-0.5 shrink-0" style={{ color: 'var(--pl-teal)' }}>
             View →
           </span>
         </div>
       </div>
-    </motion.div>
+    </Link>
   )
 }

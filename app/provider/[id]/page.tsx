@@ -55,31 +55,32 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
   const category = getCategoryBySlug(provider.category_slug)
   if (!category) notFound()
 
-  const { data: reviewsData } = await supabase
-    .from('reviews')
-    .select('*')
-    .eq('provider_id', id)
-    .eq('status', 'approved')
-    .order('created_at', { ascending: false })
+  // Fire all 3 queries in parallel — saves ~200-400ms vs sequential awaits
+  const [reviewsResult, jobsResult, walksResult] = await Promise.all([
+    supabase
+      .from('reviews')
+      .select('*')
+      .eq('provider_id', id)
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('booking_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider_id', id)
+      .eq('status', 'completed'),
+    (supabase as any)
+      .from('walk_sessions')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider_id', provider.id)
+      .eq('status', 'completed'),
+  ])
 
-  const reviews = (reviewsData ?? []) as unknown as Review[]
+  const reviews = (reviewsResult.data ?? []) as unknown as Review[]
   const avgRating = reviews.length
     ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length
     : 0
 
-  const { count: jobsCompleted } = await supabase
-    .from('booking_requests')
-    .select('*', { count: 'exact', head: true })
-    .eq('provider_id', id)
-    .eq('status', 'completed')
-
-  const { count: walksCompleted } = await (supabase as any)
-    .from('walk_sessions')
-    .select('*', { count: 'exact', head: true })
-    .eq('provider_id', provider.id)
-    .eq('status', 'completed')
-
-  const totalJobs = (jobsCompleted ?? 0) + (walksCompleted ?? 0)
+  const totalJobs = (jobsResult.count ?? 0) + (walksResult.count ?? 0)
   const memberSince = new Date(provider.created_at).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
 
   const primaryPhoto =
@@ -185,12 +186,16 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
             <img
               src={galleryPhotos[0].url}
               alt=""
+              fetchPriority="high"
+              decoding="async"
               className="absolute inset-0 w-full h-full object-cover"
             />
           ) : primaryPhoto ? (
             <img
               src={primaryPhoto.url}
               alt=""
+              fetchPriority="high"
+              decoding="async"
               className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
@@ -220,7 +225,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
             }}
           >
             {primaryPhoto ? (
-              <img src={primaryPhoto.url} alt={provider.name} className="w-full h-full object-cover" />
+              <img src={primaryPhoto.url} alt={provider.name} fetchPriority="high" decoding="async" className="w-full h-full object-cover" />
             ) : (
               <div
                 className="w-full h-full flex items-center justify-center text-4xl"
@@ -498,7 +503,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
             <div className="grid grid-cols-3 gap-2">
               {galleryPhotos.map((photo) => (
                 <div key={photo.id} className="aspect-square rounded-xl overflow-hidden bg-stone-100">
-                  <img src={photo.url} alt="" className="w-full h-full object-cover" />
+                  <img src={photo.url} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 </div>
               ))}
             </div>
