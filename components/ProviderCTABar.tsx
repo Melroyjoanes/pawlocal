@@ -156,7 +156,6 @@ export default function ProviderCTABar({
           pendingAction === 'save'     ? `Sign in to save ${providerName} to your list` :
           'Sign in to continue'
         }
-        onSuccess={handleAuthSuccess}
         redirectTo={`/provider/${providerId}`}
       />
 

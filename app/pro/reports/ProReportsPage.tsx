@@ -27,6 +27,7 @@ type Props = {
   providerId: string
   providerName: string
   verificationTier: string | null
+  isGroomer: boolean
 }
 
 type Tab = 'walks' | 'grooming'
@@ -34,7 +35,7 @@ type Tab = 'walks' | 'grooming'
 const SPRING = { type: 'spring', stiffness: 380, damping: 32 } as const
 
 export default function ProReportsPage({
-  walkReports, groomingReports, providerId, providerName, verificationTier,
+  walkReports, groomingReports, providerId, providerName, verificationTier, isGroomer,
 }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('walks')
   const dirRef = useRef(0)
@@ -59,15 +60,15 @@ export default function ProReportsPage({
               border: '1px solid rgba(226,220,200,0.6)',
             }}>
 
-            {/* Sliding pill — animates with spring via translateX */}
+            {/* Sliding pill */}
             <motion.div
               className="absolute inset-y-1 rounded-xl bg-white pointer-events-none"
               style={{
                 left: 4,
-                width: 'calc(50% - 6px)',
+                width: isGroomer ? 'calc(50% - 6px)' : 'calc(100% - 8px)',
                 boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 8px rgba(15,45,50,0.1)',
               }}
-              animate={{ x: activeTab === 'grooming' ? 'calc(100% + 4px)' : '0%' }}
+              animate={{ x: isGroomer && activeTab === 'grooming' ? 'calc(100% + 4px)' : '0%' }}
               transition={SPRING}
             />
 
@@ -81,15 +82,17 @@ export default function ProReportsPage({
               <span>🐾</span> Walks
             </button>
 
-            <button
-              type="button"
-              onClick={() => switchTab('grooming')}
-              className="flex-1 relative z-10 py-2 flex items-center justify-center gap-1.5 text-sm font-bold transition-colors rounded-xl"
-              style={{ color: activeTab === 'grooming' ? '#1C1917' : '#A8A29E' }}
-              aria-selected={activeTab === 'grooming'}
-            >
-              <span>✂️</span> Grooming
-            </button>
+            {isGroomer && (
+              <button
+                type="button"
+                onClick={() => switchTab('grooming')}
+                className="flex-1 relative z-10 py-2 flex items-center justify-center gap-1.5 text-sm font-bold transition-colors rounded-xl"
+                style={{ color: activeTab === 'grooming' ? '#1C1917' : '#A8A29E' }}
+                aria-selected={activeTab === 'grooming'}
+              >
+                <span>✂️</span> Grooming
+              </button>
+            )}
           </div>
 
           <span className="text-xs text-stone-400 font-medium truncate max-w-[100px] flex-shrink-0">
@@ -113,7 +116,7 @@ export default function ProReportsPage({
           exit="exit"
           transition={{ type: 'spring', duration: 0.3, bounce: 0 }}
         >
-          {activeTab === 'walks' ? (
+          {activeTab === 'walks' || !isGroomer ? (
             <WalkReportClient
               initialReports={walkReports}
               providerId={providerId}
