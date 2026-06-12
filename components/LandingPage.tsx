@@ -421,8 +421,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
             </motion.div>
           ))}
 
-          {/* Ambient warm bloom */}
-          <div style={{ position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)', width: 600, height: 600, borderRadius: '50%', background: '#FDE68A', opacity: 0.18, filter: 'blur(100px)' }} />
+          {/* Ambient warm bloom — removed filter:blur(100px), too GPU-expensive on mobile */}
         </div>
 
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8 py-16 lg:py-20 w-full">
@@ -471,7 +470,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
               {/* Dog photo */}
               <motion.div animate={{ y: [0, -12, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
                 className="relative" style={{ width: 'clamp(220px, 28vw, 360px)', height: 'clamp(220px, 28vw, 360px)' }}>
-                <div style={{ position: 'absolute', inset: -16, borderRadius: '50%', background: 'radial-gradient(ellipse, #FDE68A 0%, #FED7AA 45%, transparent 72%)', opacity: 0.85, filter: 'blur(22px)' }} aria-hidden />
+                <div style={{ position: 'absolute', inset: -16, borderRadius: '50%', background: 'radial-gradient(ellipse, #FDE68A 0%, #FED7AA 45%, transparent 72%)', opacity: 0.55 }} aria-hidden />
                 <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: '7px solid #FEF3C7', boxShadow: '0 10px 0px rgba(180,83,9,0.18), 0 28px 64px rgba(253,230,138,0.5)' }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={HERO_DOG} alt="Happy dog in Juhu" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 25%' }} />
@@ -494,7 +493,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
 
               {/* Card stack */}
               <div className="relative w-full flex justify-center">
-                <div className="absolute inset-0 scale-110 rounded-3xl pointer-events-none" style={{ background: 'linear-gradient(135deg, #FDE68A, #FECDD3)', opacity: 0.3, filter: 'blur(40px)' }} aria-hidden />
+                <div className="absolute inset-0 scale-110 rounded-3xl pointer-events-none" style={{ background: 'linear-gradient(135deg, #FDE68A, #FECDD3)', opacity: 0.18 }} aria-hidden />
                 <CardStack />
               </div>
             </motion.div>
@@ -586,7 +585,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
                           style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: photoPos, transition: 'transform 0.5s ease', display: 'block' }}
                           className="group-hover:scale-105" />
                         <div style={{ position: 'absolute', inset: 0, background: t.bg, opacity: 0.16, mixBlendMode: 'multiply', pointerEvents: 'none' }} aria-hidden />
-                        <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)', borderRadius: 100, padding: '4px 11px', fontSize: 11, fontWeight: 700, color: count ? t.text : '#94A3B8', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                        <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(255,255,255,0.96)', borderRadius: 100, padding: '4px 11px', fontSize: 11, fontWeight: 700, color: count ? t.text : '#94A3B8', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
                           {count ? `${count} nearby` : 'Coming soon'}
                         </div>
                       </div>
@@ -692,8 +691,8 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
       {/* ═══════════ PET BROADCAST ═══════════ */}
       <section style={{ ...BLEED, background: 'linear-gradient(135deg, #0D3528 0%, #1A5C42 50%, #0D3528 100%)', position: 'relative', overflow: 'hidden' }} className="py-12 sm:py-16">
         <div className="absolute inset-0 pointer-events-none" aria-hidden>
-          <div style={{ position: 'absolute', top: -80, right: -60, width: 420, height: 420, borderRadius: '50%', background: '#F07030', opacity: 0.1, filter: 'blur(90px)' }} />
-          <div style={{ position: 'absolute', bottom: -40, left: -40, width: 320, height: 320, borderRadius: '50%', background: '#6EE7B7', opacity: 0.06, filter: 'blur(70px)' }} />
+          <div style={{ position: 'absolute', top: -80, right: -60, width: 420, height: 420, borderRadius: '50%', background: '#F07030', opacity: 0.06 }} />
+          <div style={{ position: 'absolute', bottom: -40, left: -40, width: 320, height: 320, borderRadius: '50%', background: '#6EE7B7', opacity: 0.04 }} />
         </div>
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
           <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
@@ -783,7 +782,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
       {/* ═══════════ MOBILE STICKY BAR ═══════════ */}
       <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.55, ease: EASE_EXP, delay: 1.8 }}
         className="lg:hidden fixed bottom-0 inset-x-0 z-50"
-        style={{ background: 'rgba(255,251,235,0.96)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderTop: '1px solid #FDE68A', paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
+        style={{ background: 'rgba(255,251,235,0.98)', borderTop: '1px solid #FDE68A', paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
         <div className="flex gap-3 px-4 pt-3 pb-3">
           <Link href="/dog-walking" className="flex-1 flex items-center justify-center py-3.5 rounded-2xl text-sm font-bold"
             style={{ background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)', boxShadow: '0 4px 0px rgba(175,65,10,0.30), 0 8px 20px rgba(245,107,34,0.35)', color: '#451A03' }}>
