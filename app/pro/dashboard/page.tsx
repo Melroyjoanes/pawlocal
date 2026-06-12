@@ -24,7 +24,7 @@ export default async function ProDashboardPage() {
     .select('*, provider_photos(url, is_primary)')
     .eq('email', user.email!)
     .eq('status', 'approved')
-    .single()
+    .limit(1).maybeSingle()
 
   if (!provider) redirect('/pro')
 

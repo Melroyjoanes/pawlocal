@@ -19,7 +19,7 @@ export default async function ProProfilePage() {
     .select('*')
     .eq('email', user.email)
     .eq('status', 'approved')
-    .single()
+    .limit(1).maybeSingle()
 
   if (!provider) redirect('/pro')
 

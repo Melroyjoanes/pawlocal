@@ -18,7 +18,7 @@ export default async function ProBookingsPage() {
     .select('id, name, category_slug, category_slugs')
     .eq('email', user.email!)
     .eq('status', 'approved')
-    .single()
+    .limit(1).maybeSingle()
 
   if (!provider) redirect('/pro')
 

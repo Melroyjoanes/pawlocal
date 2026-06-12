@@ -52,11 +52,21 @@ export async function GET(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
+    // A provider may have multiple rows (different categories) — use limit+find
+    // so .single() doesn't throw when there are 2+ listings for the same email.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: provider } = await (admin.from('providers') as any)
+    const { data: providerRows } = await (admin.from('providers') as any)
       .select('id, status')
       .eq('email', user.email)
-      .single()
+      .limit(10)
+
+    // Prefer approved > pending > rejected
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const provider = (providerRows as any[])?.find((p) => p.status === 'approved')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ?? (providerRows as any[])?.find((p) => p.status === 'pending')
+      ?? providerRows?.[0]
+      ?? null
 
     if (provider) {
       if (provider.status === 'approved') {
