@@ -322,7 +322,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
       </div>
 
       {/* ── Content body ─────────────────────────────────────────────── */}
-      <div className="pt-1">
+      <div className="pt-1 px-2">
 
         {/* Availability note */}
         {provider.is_available === false && (
@@ -337,7 +337,7 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         )}
 
         {/* ── Quick-scan info strip ─────────────────────────────────── */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-5">
           {provider.price_min && (
             <span
               className="clay-chip inline-flex items-center gap-1 px-4 py-2 text-sm font-semibold"
@@ -396,8 +396,8 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
           </div>
         )}
 
-        {/* Intro note — teal soft box, no side stripe */}
-        {p.intro_note && (
+        {/* Intro note — only show if it's a real sentence, not just "11 years" */}
+        {p.intro_note && p.intro_note.trim().length > 30 && (
           <div
             className="mb-6 px-4 py-3.5 rounded-2xl text-base leading-relaxed"
             style={{
@@ -423,8 +423,18 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
         )}
 
         {/* Bio */}
-        {provider.bio && (
-          <p className="text-muted-foreground leading-relaxed mb-7">{provider.bio}</p>
+        {provider.bio && provider.bio.trim().length > 0 && (
+          <p
+            className="leading-relaxed mb-7"
+            style={{
+              color: provider.bio.length < 80
+                ? 'oklch(0.58 0.03 75)'   // short instagram-style bio → muted
+                : 'oklch(0.42 0.03 75)',   // longer real bio → normal
+              fontSize: provider.bio.length < 80 ? '0.8125rem' : '0.9375rem',
+            }}
+          >
+            {provider.bio}
+          </p>
         )}
 
         {/* Trainer details */}
