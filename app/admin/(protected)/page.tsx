@@ -129,7 +129,7 @@ function ProviderCard({
       if (!res.ok) throw new Error(data.error ?? 'Failed')
       const firstName = p.name.split(' ')[0]
       const waText = encodeURIComponent(
-        `Hi ${firstName}! Your PawLocal provider dashboard is ready 🐾\n\nClick this link to sign in and manage your profile, update availability, and see who contacted you:\n${data.magicLink}\n\n(Link expires in 1 hour. Next time just go to pupstep.in/pro)`
+        `Hi ${firstName}! Your PupStep provider dashboard is ready 🐾\n\nClick this link to sign in and manage your profile, update availability, and see who contacted you:\n${data.magicLink}\n\n(Link expires in 1 hour. Next time just go to pupstep.in/pro)`
       )
       const digits = p.whatsapp.replace(/\D/g, '').slice(-10)
       window.open(`https://wa.me/91${digits}?text=${waText}`, '_blank', 'noopener,noreferrer')
