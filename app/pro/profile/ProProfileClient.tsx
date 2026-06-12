@@ -138,84 +138,183 @@ function InfoRow({ label, value }: { label: string; value: string | null | undef
   )
 }
 
-// ── Collapsible extra section ─────────────────────────────────────────────────
+// ── Dashboard stats accordion ─────────────────────────────────────────────────
 
-function CollapsibleSection({
-  icon, title, subtitle, href, children,
-}: {
-  icon: string
-  title: string
-  subtitle: string
-  href: string
-  children: React.ReactNode
-}) {
+type DashStats = { viewsThisMonth: number; whatsappTapsThisMonth: number; totalViews: number }
+type Booking = {
+  id: string; date: string; service: string
+  owner_name: string; pet_name: string; amount_inr: number
+  duration_min: number; notes: string | null; status: string
+}
+
+function DashboardAccordion() {
   const [open, setOpen] = useState(false)
+  const [stats, setStats] = useState<DashStats | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  async function load() {
+    if (stats || loading) return
+    setLoading(true)
+    try {
+      const data = await fetch('/api/pro/stats').then(r => r.json())
+      if (!data.error) setStats(data)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function toggle() {
+    if (!open) load()
+    setOpen(o => !o)
+  }
+
   return (
     <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
       <button
         type="button"
-        onClick={() => setOpen(o => !o)}
+        onClick={toggle}
         className="w-full flex items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-stone-50"
       >
-        <span className="text-xl flex-shrink-0">{icon}</span>
+        <span className="text-xl flex-shrink-0">📊</span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-stone-800">{title}</p>
-          <p className="text-xs text-stone-400 mt-0.5">{subtitle}</p>
+          <p className="text-sm font-bold text-stone-800">Dashboard</p>
+          <p className="text-xs text-stone-400 mt-0.5">Profile views &amp; reach</p>
         </div>
-        <span className="text-stone-300 text-sm flex-shrink-0 transition-transform duration-200" style={{ transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
+        <span className="text-stone-300 text-sm flex-shrink-0 transition-transform duration-200"
+          style={{ transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
       </button>
+
       {open && (
-        <div className="border-t border-stone-100 px-5 py-4 space-y-3">
-          {children}
-          <a
-            href={href}
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-stone-200 text-stone-600 text-sm font-semibold hover:bg-stone-50 transition-colors"
-          >
-            Open full page →
-          </a>
+        <div className="border-t border-stone-100 px-5 py-4">
+          {loading ? (
+            <div className="grid grid-cols-3 gap-3">
+              {[1,2,3].map(i => <div key={i} className="h-14 rounded-xl bg-stone-100 animate-pulse" />)}
+            </div>
+          ) : stats ? (
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { label: 'Views (30d)', value: stats.viewsThisMonth, color: 'bg-teal-50 text-teal-700' },
+                { label: 'WhatsApp taps', value: stats.whatsappTapsThisMonth, color: 'bg-green-50 text-green-700' },
+                { label: 'Total views', value: stats.totalViews, color: 'bg-stone-50 text-stone-700' },
+              ].map(t => (
+                <div key={t.label} className={`rounded-xl p-3 ${t.color}`}>
+                  <p className="text-xl font-bold leading-none">{t.value}</p>
+                  <p className="text-[10px] font-medium mt-1 opacity-80 leading-tight">{t.label}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-stone-400">Could not load stats.</p>
+          )}
         </div>
       )}
     </div>
   )
 }
 
+// ── Bookings accordion ────────────────────────────────────────────────────────
+
+function BookingsAccordion() {
+  const [open, setOpen] = useState(false)
+  const [bookings, setBookings] = useState<Booking[] | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  async function load() {
+    if (bookings || loading) return
+    setLoading(true)
+    try {
+      const data = await fetch('/api/pro/bookings').then(r => r.json())
+      setBookings(Array.isArray(data) ? data : [])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function toggle() {
+    if (!open) load()
+    setOpen(o => !o)
+  }
+
+  function fmtDate(d: string) {
+    try { return new Date(d).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) }
+    catch { return d }
+  }
+
+  const statusColor: Record<string, string> = {
+    confirmed: 'bg-emerald-50 text-emerald-700',
+    pending: 'bg-amber-50 text-amber-700',
+    cancelled: 'bg-red-50 text-red-500',
+    completed: 'bg-stone-100 text-stone-500',
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
+      <button
+        type="button"
+        onClick={toggle}
+        className="w-full flex items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-stone-50"
+      >
+        <span className="text-xl flex-shrink-0">📒</span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold text-stone-800">Bookings</p>
+          <p className="text-xs text-stone-400 mt-0.5">Customer booking requests</p>
+        </div>
+        <span className="text-stone-300 text-sm flex-shrink-0 transition-transform duration-200"
+          style={{ transform: open ? 'rotate(180deg)' : 'none' }}>▾</span>
+      </button>
+
+      {open && (
+        <div className="border-t border-stone-100 px-5 py-4">
+          {loading ? (
+            <div className="space-y-2">
+              {[1,2].map(i => <div key={i} className="h-14 rounded-xl bg-stone-100 animate-pulse" />)}
+            </div>
+          ) : !bookings || bookings.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-2xl mb-2">📭</p>
+              <p className="text-sm text-stone-500">No bookings yet.</p>
+              <p className="text-xs text-stone-400 mt-1">When customers book through your profile, they appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {bookings.slice(0, 8).map(b => (
+                <div key={b.id} className="flex items-start gap-3 py-2.5 border-b border-stone-50 last:border-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-stone-800 truncate">
+                        {b.owner_name || 'Customer'}{b.pet_name ? ` · ${b.pet_name}` : ''}
+                      </p>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold capitalize ${statusColor[b.status] ?? 'bg-stone-100 text-stone-500'}`}>
+                        {b.status}
+                      </span>
+                    </div>
+                    <p className="text-xs text-stone-400 mt-0.5">
+                      {b.service.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                      {' · '}{fmtDate(b.date)}
+                      {b.amount_inr > 0 ? ` · ₹${b.amount_inr}` : ''}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {bookings.length > 8 && (
+                <p className="text-xs text-stone-400 text-center pt-1">+{bookings.length - 8} more</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── More sections wrapper ─────────────────────────────────────────────────────
+
 function MoreSections() {
   return (
     <div className="space-y-3">
       <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 pt-2">More</p>
-
-      <CollapsibleSection
-        icon="📊"
-        title="Dashboard"
-        subtitle="Profile views, WhatsApp clicks, reach"
-        href="/pro/dashboard"
-      >
-        <p className="text-sm text-stone-500 leading-relaxed">
-          See how many people viewed your profile, clicked WhatsApp, and found you — updated daily.
-        </p>
-      </CollapsibleSection>
-
-      <CollapsibleSection
-        icon="📒"
-        title="Bookings"
-        subtitle="Booking requests from customers"
-        href="/pro/bookings"
-      >
-        <p className="text-sm text-stone-500 leading-relaxed">
-          View and manage booking requests. When a customer books through your profile, it appears here.
-        </p>
-      </CollapsibleSection>
-
-      <CollapsibleSection
-        icon="🏃"
-        title="Fitness"
-        subtitle="Steps, distance, walk streaks"
-        href="/pro/fitness"
-      >
-        <p className="text-sm text-stone-500 leading-relaxed">
-          Track your activity across all walks — total distance, steps, and your walking streak.
-        </p>
-      </CollapsibleSection>
+      <DashboardAccordion />
+      <BookingsAccordion />
     </div>
   )
 }
