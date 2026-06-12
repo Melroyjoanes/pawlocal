@@ -20,7 +20,7 @@ export default async function LiveWalkPage() {
     .select('id, name')
     .eq('email', user.email)
     .eq('status', 'approved')
-    .limit(1).maybeSingle()
+    .order('created_at', { ascending: true }).limit(1).maybeSingle()
 
   if (!provider) redirect('/pro')
 

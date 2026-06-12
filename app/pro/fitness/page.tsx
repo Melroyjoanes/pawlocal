@@ -18,7 +18,7 @@ export default async function ProFitnessPage() {
     .select('id, name, category_slug')
     .eq('email', user.email!)
     .eq('status', 'approved')
-    .limit(1).maybeSingle()
+    .order('created_at', { ascending: true }).limit(1).maybeSingle()
 
   if (!provider) redirect('/pro')
 

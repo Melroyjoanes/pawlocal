@@ -22,7 +22,7 @@ export default async function ProPage({
     const { data: provider } = await (admin.from('providers') as any)
       .select('id, status')
       .eq('email', user.email)
-      .limit(1).maybeSingle()
+      .order('created_at', { ascending: true }).limit(1).maybeSingle()
 
     if (provider?.status === 'approved') {
       redirect('/pro/dashboard')

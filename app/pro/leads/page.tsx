@@ -35,7 +35,7 @@ export default async function ProLeadsPage() {
     .select('id, name, category_slug, category_slugs')
     .eq('email', user.email)
     .eq('status', 'approved')
-    .limit(1).maybeSingle()
+    .order('created_at', { ascending: true }).limit(1).maybeSingle()
 
   if (!provider) redirect('/pro')
 
