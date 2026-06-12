@@ -35,10 +35,25 @@ interface ClaimedReport {
   photo_url: string | null
   providers?: { name: string; is_verified: boolean }
 }
+interface ClaimedGroomingReport {
+  id: string
+  token: string
+  dog_name: string
+  grooming_date: string
+  duration_mins: number
+  services_done: string[]
+  ticks_found: number
+  skin_condition: string | null
+  coat_condition: string | null
+  before_photo_url: string | null
+  after_photo_url: string | null
+  providers?: { name: string; is_verified: boolean }
+}
 interface Props {
   broadcasts: Broadcast[]; reviews: Review[]
   savedProviders: SavedProvider[]; bookingRequests: BookingRequest[]
   claimedReports: ClaimedReport[]
+  claimedGroomingReports: ClaimedGroomingReport[]
   userDisplay: string; userAvatar?: string | null; userId: string
 }
 
@@ -61,12 +76,30 @@ const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
 }
 const EASE = [0.25, 0.46, 0.45, 0.94] as const
 
-type Tab = 'broadcasts' | 'saved' | 'reviews' | 'bookings'
+const SERVICE_NAMES: Record<string, string> = {
+  bath: 'Bath', blow_dry: 'Blow Dry', ear_clean: 'Ear Clean',
+  teeth_brush: 'Teeth Brush', tick_shampoo: 'Tick Shampoo',
+  nail_clip: 'Nail Clip', haircut: 'Haircut', de_shedding: 'De-shedding',
+  paw_massage: 'Paw Massage',
+}
+const CONDITION_STYLE: Record<string, { bg: string; color: string }> = {
+  normal: { bg: '#F0FDF4', color: '#15803D' },
+  shiny:  { bg: '#F0FDF4', color: '#15803D' },
+  healthy:{ bg: '#F0FDF4', color: '#15803D' },
+  clean:  { bg: '#F0FDF4', color: '#15803D' },
+  dry:    { bg: '#FFFBEB', color: '#92400E' },
+  dull:   { bg: '#FFFBEB', color: '#92400E' },
+  irritated: { bg: '#FFF1F2', color: '#BE123C' },
+  infected:  { bg: '#FFF1F2', color: '#BE123C' },
+}
+
+type Tab = 'broadcasts' | 'saved' | 'reviews' | 'bookings' | 'grooming'
 const TABS: { id: Tab; label: string; emoji: string }[] = [
   { id: 'broadcasts', label: 'Broadcasts', emoji: '📣' },
   { id: 'saved',      label: 'Saved',      emoji: '❤️' },
   { id: 'reviews',    label: 'Reviews',    emoji: '⭐' },
   { id: 'bookings',   label: 'Walk Reports', emoji: '🐕' },
+  { id: 'grooming',   label: 'Grooming',   emoji: '✂️' },
 ]
 
 function EmptyState({ emoji, title, sub, cta, ctaHref }: {
@@ -96,7 +129,7 @@ function EmptyState({ emoji, title, sub, cta, ctaHref }: {
 
 export default function MyAccountClient({
   broadcasts: initialBroadcasts, reviews, savedProviders: initialSaved, bookingRequests,
-  claimedReports,
+  claimedReports, claimedGroomingReports,
   userDisplay, userAvatar,
 }: Props) {
   const [tab, setTab] = useState<Tab>('broadcasts')
@@ -169,6 +202,7 @@ export default function MyAccountClient({
     saved: savedProviders.length,
     reviews: reviews.length,
     bookings: claimedReports.length,
+    grooming: claimedGroomingReports.length,
   }
 
   return (
@@ -437,6 +471,103 @@ export default function MyAccountClient({
                     {r.comment && <p className="text-sm text-slate-600 leading-relaxed">{r.comment}</p>}
                   </div>
                 ))
+              )}
+            </div>
+          )}
+
+          {/* GROOMING REPORTS */}
+          {tab === 'grooming' && (
+            <div className="flex flex-col gap-4">
+              {claimedGroomingReports.length === 0 ? (
+                <EmptyState
+                  emoji="✂️"
+                  title="No grooming reports yet"
+                  sub="When your groomer sends a report after the session, it will appear here."
+                />
+              ) : (
+                <>
+                  {/* Summary card */}
+                  <div className="rounded-2xl p-4" style={{
+                    background: 'linear-gradient(135deg, #FDF4FF 0%, #FAF0FF 100%)',
+                    border: '1.5px solid #E9D5FF',
+                  }}>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-purple-600 mb-3">
+                      {claimedGroomingReports[0]?.dog_name}&apos;s grooming history
+                    </p>
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      {[
+                        { icon: '✂️', value: claimedGroomingReports.length, label: 'Sessions' },
+                        { icon: '🪲', value: claimedGroomingReports.reduce((s, r) => s + (r.ticks_found ?? 0), 0), label: 'Ticks found' },
+                        { icon: '⏱', value: `${claimedGroomingReports.reduce((s, r) => s + r.duration_mins, 0)}m`, label: 'Total time' },
+                      ].map(s => (
+                        <div key={s.label}>
+                          <p className="text-lg">{s.icon}</p>
+                          <p className="text-base font-bold text-slate-900 leading-tight">{s.value}</p>
+                          <p className="text-[9px] text-slate-500 mt-0.5">{s.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Report history feed */}
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-0.5">Grooming history</p>
+                  {claimedGroomingReports.map(r => (
+                    <a
+                      key={r.id}
+                      href={`/grooming-report/${r.token}`}
+                      className="rounded-2xl overflow-hidden flex gap-3 items-center p-3 transition-transform active:scale-[0.99]"
+                      style={{
+                        background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
+                        boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 4px 12px rgba(15,45,50,0.06)',
+                        border: '1px solid rgba(226,220,200,0.7)',
+                      }}
+                    >
+                      {/* Before/after photo or emoji */}
+                      <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-purple-50 flex items-center justify-center text-2xl">
+                        {r.after_photo_url
+                          ? <img src={r.after_photo_url} alt={r.dog_name} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
+                          : r.before_photo_url
+                          ? <img src={r.before_photo_url} alt={r.dog_name} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
+                          : '✂️'}
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-1 mb-0.5">
+                          <p className="font-semibold text-slate-900 text-sm truncate">{r.dog_name}</p>
+                          <span className="text-[10px] text-slate-400 flex-shrink-0">
+                            {new Date(r.grooming_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                          </span>
+                        </div>
+                        {r.providers && (
+                          <p className="text-[10px] text-slate-400 mb-1">by {r.providers.name}{r.providers.is_verified ? ' ✓' : ''}</p>
+                        )}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] text-slate-500">⏱ {r.duration_mins}m</span>
+                          {r.ticks_found > 0 && (
+                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: '#FFF1F2', color: '#BE123C' }}>
+                              🪲 {r.ticks_found} tick{r.ticks_found > 1 ? 's' : ''}
+                            </span>
+                          )}
+                          {r.coat_condition && (
+                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full capitalize"
+                              style={CONDITION_STYLE[r.coat_condition] ?? { bg: '#F8FAFC', color: '#64748B' }}>
+                              coat: {r.coat_condition}
+                            </span>
+                          )}
+                        </div>
+                        {r.services_done?.length > 0 && (
+                          <p className="text-[10px] text-slate-400 mt-1 truncate">
+                            {r.services_done.map(s => SERVICE_NAMES[s] ?? s).join(' · ')}
+                          </p>
+                        )}
+                      </div>
+
+                      <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </a>
+                  ))}
+                </>
               )}
             </div>
           )}

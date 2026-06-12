@@ -86,13 +86,20 @@ export default async function MyAccountPage() {
     status: string; created_at: string; providers?: { name: string; category_slug: string };
   }[] = (bookingRequestsRaw ?? []) as unknown as typeof bookingRequests
 
-  // Fetch claimed walk reports for this user
+  // Fetch claimed walk reports + grooming reports in parallel
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: claimedReports } = await (admin().from('walk_reports') as any)
-    .select('id, token, dog_name, walk_date, duration_mins, poop_count, pee_count, distance_meters, photo_url, providers(name, is_verified)')
-    .eq('customer_id', user.id)
-    .order('walk_date', { ascending: false })
-    .limit(20)
+  const [{ data: claimedReports }, { data: claimedGroomingReports }] = await Promise.all([
+    (admin().from('walk_reports') as any)
+      .select('id, token, dog_name, walk_date, duration_mins, poop_count, pee_count, distance_meters, photo_url, providers(name, is_verified)')
+      .eq('customer_id', user.id)
+      .order('walk_date', { ascending: false })
+      .limit(20),
+    (admin().from('grooming_reports') as any)
+      .select('id, token, dog_name, grooming_date, duration_mins, services_done, ticks_found, skin_condition, coat_condition, before_photo_url, after_photo_url, providers(name, is_verified)')
+      .eq('customer_id', user.id)
+      .order('grooming_date', { ascending: false })
+      .limit(20),
+  ])
 
   // Saved providers come from localStorage — server can't read it, so pass empty array
   // MyAccountClient will hydrate from localStorage on mount
@@ -113,6 +120,7 @@ export default async function MyAccountPage() {
       savedProviders={savedProviders}
       bookingRequests={bookingRequests}
       claimedReports={claimedReports ?? []}
+      claimedGroomingReports={claimedGroomingReports ?? []}
       userDisplay={userDisplay}
       userAvatar={userAvatar}
       userId={user.id}
