@@ -286,7 +286,7 @@ export default function GroomingReportClient({ initialReports, providerId, provi
   const [dogName, setDogName] = useState('')
   const [duration, setDuration] = useState(60)
   const [servicesDone, setServicesDone] = useState<string[]>([])
-  const [ticksFound, setTicksFound] = useState(0)
+  // ticksFound is derived from the number of zones selected on the map
   const [tickLocations, setTickLocations] = useState<TickZoneId[]>([])
   const [skinCondition, setSkinCondition] = useState('normal')
   const [earCondition, setEarCondition] = useState('clean')
@@ -311,7 +311,7 @@ export default function GroomingReportClient({ initialReports, providerId, provi
   const supabase = createClient()
 
   function resetForm() {
-    setDogName(''); setDuration(60); setServicesDone([]); setTicksFound(0)
+    setDogName(''); setDuration(60); setServicesDone([])
     setTickLocations([]); setSkinCondition('normal'); setEarCondition('clean')
     setNailCondition('healthy'); setCoatCondition('shiny'); setBehavior('calm')
     setBeforePhotoUrl(null); setAfterPhotoUrl(null)
@@ -364,7 +364,7 @@ export default function GroomingReportClient({ initialReports, providerId, provi
           grooming_date: new Date().toISOString(),
           duration_mins: duration,
           services_done: servicesDone,
-          ticks_found: ticksFound,
+          ticks_found: tickLocations.length,
           tick_locations: tickLocations,
           skin_condition: skinCondition,
           ear_condition: earCondition,
@@ -384,7 +384,7 @@ export default function GroomingReportClient({ initialReports, providerId, provi
         id: json.id, token: json.token,
         dog_name: dogName, grooming_date: new Date().toISOString(),
         duration_mins: duration, services_done: servicesDone,
-        ticks_found: ticksFound, tick_locations: tickLocations,
+        ticks_found: tickLocations.length, tick_locations: tickLocations,
         skin_condition: skinCondition, ear_condition: earCondition,
         nail_condition: nailCondition, coat_condition: coatCondition,
         behavior, before_photo_url: beforePhotoUrl,
@@ -399,7 +399,7 @@ export default function GroomingReportClient({ initialReports, providerId, provi
         dog: dogName, groomer: providerName,
         services: String(servicesDone.length),
       })
-      if (ticksFound > 0) warmParams.set('ticks', String(ticksFound))
+      if (tickLocations.length > 0) warmParams.set('ticks', String(tickLocations.length))
       fetch(`/api/og/grooming-report/${json.token}?${warmParams}`).catch(() => {})
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Something went wrong')
@@ -511,61 +511,54 @@ export default function GroomingReportClient({ initialReports, providerId, provi
 
                   {/* ── Ticks section ── */}
                   <div className="rounded-2xl p-4 space-y-4"
-                    style={{ background: ticksFound > 0 ? 'rgba(240,112,48,0.06)' : 'oklch(0.975 0.006 85)', border: ticksFound > 0 ? '1.5px solid rgba(240,112,48,0.2)' : '1.5px solid rgba(226,220,200,0.5)' }}>
-                    <div>
-                      <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">
+                    style={{
+                      background: tickLocations.length > 0 ? 'rgba(240,112,48,0.06)' : 'oklch(0.975 0.006 85)',
+                      border: tickLocations.length > 0 ? '1.5px solid rgba(240,112,48,0.2)' : '1.5px solid rgba(226,220,200,0.5)',
+                    }}>
+                    {/* Header with live count */}
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
                         🕷️ Ticks Found
                       </p>
-                      <div className="flex items-center gap-4">
-                        <button type="button" onClick={() => { setTicksFound(Math.max(0, ticksFound - 1)); if (ticksFound <= 1) setTickLocations([]) }}
-                          className="w-11 h-11 rounded-xl bg-white text-stone-500 font-bold text-xl flex items-center justify-center border border-stone-200 active:scale-95 disabled:opacity-30"
-                          disabled={ticksFound === 0}>−</button>
-                        <div className="flex-1 text-center">
-                          <span className={`text-3xl font-bold ${ticksFound > 0 ? 'text-orange-600' : 'text-stone-900'}`}>{ticksFound}</span>
-                          <span className="text-sm text-stone-400 ml-1">ticks</span>
-                        </div>
-                        <button type="button" onClick={() => setTicksFound(t => t + 1)}
-                          className="w-11 h-11 rounded-xl font-bold text-xl flex items-center justify-center text-white border-0 active:scale-95"
-                          style={{ background: '#F07030' }}>+</button>
-                      </div>
+                      {tickLocations.length > 0 && (
+                        <span className="text-sm font-bold text-orange-600">
+                          {tickLocations.length} tick{tickLocations.length !== 1 ? 's' : ''}
+                        </span>
+                      )}
                     </div>
 
-                    {/* Tick heat-map — shown when ticks > 0 */}
-                    <AnimatePresence>
-                      {ticksFound > 0 && (
-                        <motion.div key="heatmap" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3 }}>
-                          <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-3">
-                            Where were they? <span className="text-stone-300 font-normal normal-case">(tap to mark)</span>
+                    <p className="text-xs text-stone-400">
+                      Tap a body zone for each tick you found — each tap counts as one.
+                    </p>
+
+                    {/* Always-visible map */}
+                    <div className="flex gap-4 items-start">
+                      <DogBodyMap selected={tickLocations} onChange={setTickLocations} mode="edit" size={160} />
+                      <div className="flex-1">
+                        {tickLocations.length === 0 ? (
+                          <p className="text-xs text-stone-400 mt-6 leading-relaxed">
+                            No ticks marked yet. Tap the body zones on the left.
                           </p>
-                          <div className="flex gap-4 items-start">
-                            <DogBodyMap selected={tickLocations} onChange={setTickLocations} mode="edit" size={160} />
-                            <div className="flex-1">
-                              {tickLocations.length === 0 ? (
-                                <p className="text-xs text-stone-400 mt-4">Tap the body zones on the left to mark where ticks were found.</p>
-                              ) : (
-                                <div className="space-y-1.5">
-                                  <p className="text-xs font-semibold text-stone-400 mb-2">Marked zones:</p>
-                                  {tickLocations.map(z => {
-                                    const zone = TICK_ZONES.find(t => t.id === z)
-                                    return (
-                                      <button key={z} type="button"
-                                        onClick={() => setTickLocations(prev => prev.filter(l => l !== z))}
-                                        className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-xs font-semibold text-left active:scale-95"
-                                        style={{ background: 'rgba(240,112,48,0.12)', color: '#C44010' }}>
-                                        <span>🕷️</span>
-                                        <span className="flex-1">{zone?.label ?? z}</span>
-                                        <span className="text-stone-300 text-xs">✕</span>
-                                      </button>
-                                    )
-                                  })}
-                                </div>
-                              )}
-                            </div>
+                        ) : (
+                          <div className="space-y-1.5">
+                            <p className="text-xs font-semibold text-stone-400 mb-2">Found on:</p>
+                            {tickLocations.map(z => {
+                              const zone = TICK_ZONES.find(t => t.id === z)
+                              return (
+                                <button key={z} type="button"
+                                  onClick={() => setTickLocations(prev => prev.filter(l => l !== z))}
+                                  className="flex items-center gap-2 w-full px-2.5 py-1.5 rounded-lg text-xs font-semibold text-left active:scale-95"
+                                  style={{ background: 'rgba(240,112,48,0.12)', color: '#C44010' }}>
+                                  <span>🕷️</span>
+                                  <span className="flex-1">{zone?.label ?? z}</span>
+                                  <span className="text-stone-300 text-xs">✕</span>
+                                </button>
+                              )
+                            })}
                           </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Health findings */}
