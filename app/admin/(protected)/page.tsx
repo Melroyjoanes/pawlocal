@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import type { ProviderWithPhotos, Review } from '@/lib/supabase/types'
 import { getCategoryBySlug } from '@/lib/categories'
 import { Stars } from '@/components/StarRating'
@@ -640,11 +639,12 @@ export default function AdminPage() {
   } | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
 
-  // Load counts on mount
+  // Load counts on mount — all via admin API routes (service role, bypasses RLS)
   useEffect(() => {
-    const supabase = createClient()
-    supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending')
-      .then(({ count }) => setPendingCount(count ?? 0))
+    fetch('/api/admin/providers?status=pending')
+      .then((r) => r.json())
+      .then((data) => setPendingCount(Array.isArray(data) ? data.length : 0))
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -655,50 +655,34 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase.from('walk_reports').select('id', { count: 'exact', head: true })
-      .then(({ count }) => setReportsCount(count ?? 0))
+    fetch('/api/admin/walk-reports')
+      .then((r) => r.json())
+      .then((data) => setReportsCount(Array.isArray(data) ? data.length : 0))
+      .catch(() => {})
   }, [])
 
   async function loadProviders(status: ProviderStatus) {
     setLoading(true)
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('providers')
-      .select('*, provider_photos(*)')
-      .eq('status', status)
-      .order('created_at', { ascending: false })
-    setProviders((data as unknown as ProviderWithPhotos[]) ?? [])
+    const data = await fetch(`/api/admin/providers?status=${status}`).then((r) => r.json()).catch(() => [])
+    setProviders((Array.isArray(data) ? data : []) as unknown as ProviderWithPhotos[])
     setLoading(false)
   }
 
   async function loadReviews() {
     setReviewsLoading(true)
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('reviews')
-      .select('*, providers(name)')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setReviews((data ?? []).map((r: any) => ({ ...r, provider_name: r.providers?.name })))
+    const data = await fetch('/api/admin/reviews').then((r) => r.json()).catch(() => [])
+    setReviews(Array.isArray(data) ? data : [])
     setReviewsLoading(false)
   }
 
   async function loadBroadcasts() {
     setBroadcastsLoading(true)
-    const supabase = createClient()
-    const [broadcastRes, provResult] = await Promise.all([
-      fetch('/api/admin/broadcasts'),
-      supabase
-        .from('providers')
-        .select('id, name, whatsapp, category_slugs, category_slug, provider_photos(*)')
-        .eq('status', 'approved')
-        .limit(200),
+    const [broadcastData, provData] = await Promise.all([
+      fetch('/api/admin/broadcasts').then((r) => r.json()).catch(() => []),
+      fetch('/api/admin/providers?status=approved').then((r) => r.json()).catch(() => []),
     ])
-    const data = await broadcastRes.json().catch(() => [])
-    setBroadcasts(Array.isArray(data) ? data : [])
-    setApprovedProviders(provResult.data ?? [])
+    setBroadcasts(Array.isArray(broadcastData) ? broadcastData : [])
+    setApprovedProviders(Array.isArray(provData) ? provData : [])
     setBroadcastsLoading(false)
   }
 
@@ -713,43 +697,19 @@ export default function AdminPage() {
 
   async function loadStats() {
     setStatsLoading(true)
-    const supabase = createClient()
-
-    const [approvedRes, pendingRes, rejectedRes, broadcastRes, providersRes, analyticsRes, walkReportsRes, claimedRes] = await Promise.all([
-      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
-      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-      supabase.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'rejected'),
-      fetch('/api/broadcasts').then(r => r.json()).catch(() => []),
-      supabase.from('providers').select('id, name, category_slug, neighbourhood, created_at').eq('status', 'approved').order('created_at', { ascending: false }),
-      supabase.from('provider_analytics').select('provider_id, event_type'),
-      supabase.from('walk_reports').select('id', { count: 'exact', head: true }),
-      supabase.from('walk_reports').select('id', { count: 'exact', head: true }).not('customer_id', 'is', null),
-    ])
-
-    const analytics = analyticsRes.data ?? []
-    const providerList = providersRes.data ?? []
-
-    const providerStats = providerList.map((p: any) => {
-      const events = analytics.filter((a: any) => a.provider_id === p.id)
-      return {
-        id: p.id,
-        name: p.name,
-        category: p.category_slug,
-        neighbourhood: p.neighbourhood ?? 'Juhu',
-        created_at: p.created_at,
-        whatsapp_clicks: events.filter((a: any) => a.event_type === 'whatsapp_click').length,
-        profile_views: events.filter((a: any) => a.event_type === 'view').length,
-      }
-    }).sort((a: any, b: any) => b.whatsapp_clicks - a.whatsapp_clicks)
-
+    const data = await fetch('/api/admin/stats').then((r) => r.json()).catch(() => null)
+    if (!data || data.error) {
+      setStatsLoading(false)
+      return
+    }
     setStats({
-      totalApproved: approvedRes.count ?? 0,
-      totalPending: pendingRes.count ?? 0,
-      totalRejected: rejectedRes.count ?? 0,
-      totalBroadcasts: Array.isArray(broadcastRes) ? broadcastRes.length : 0,
-      totalWalkReports: walkReportsRes.count ?? 0,
-      claimedReports: claimedRes.count ?? 0,
-      providerStats,
+      totalApproved: data.totalApproved,
+      totalPending: data.totalPending,
+      totalRejected: data.totalRejected,
+      totalBroadcasts: data.totalBroadcasts,
+      totalWalkReports: data.totalWalkReports,
+      claimedReports: data.claimedReports,
+      providerStats: data.providerStats,
     })
     setStatsLoading(false)
   }

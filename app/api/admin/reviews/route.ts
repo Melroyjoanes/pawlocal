@@ -11,19 +11,24 @@ function adminDb() {
   )
 }
 
+// GET /api/admin/reviews — returns pending reviews with provider name
 export async function GET() {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (user.email !== ADMIN_EMAIL) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!user || user.email !== ADMIN_EMAIL) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
-  // DB read — direct admin client bypasses RLS
-  const { data, error } = await adminDb()
-    .from('broadcasts')
-    .select('*')
+  const db = adminDb()
+  const { data, error } = await db
+    .from('reviews')
+    .select('*, providers(name)')
+    .eq('status', 'pending')
     .order('created_at', { ascending: false })
-    .limit(100)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const reviews = (data ?? []).map((r: any) => ({ ...r, provider_name: r.providers?.name }))
+  return NextResponse.json(reviews)
 }

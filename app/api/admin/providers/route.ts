@@ -11,29 +11,26 @@ function adminDb() {
   )
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  const { id } = await params
-
+// GET /api/admin/providers?status=pending|approved|rejected
+export async function GET(req: NextRequest) {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || user.email !== ADMIN_EMAIL) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { status } = await req.json()
-  if (!['approved', 'rejected'].includes(status)) {
+  const status = req.nextUrl.searchParams.get('status') ?? 'pending'
+  if (!['pending', 'approved', 'rejected'].includes(status)) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
   }
 
-  // DB write — direct admin client bypasses RLS
-  const { error } = await adminDb()
-    .from('reviews')
-    .update({ status } as never)
-    .eq('id', id)
+  const db = adminDb()
+  const { data, error } = await db
+    .from('providers')
+    .select('*, provider_photos(*)')
+    .eq('status', status)
+    .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true })
+  return NextResponse.json(data ?? [])
 }
