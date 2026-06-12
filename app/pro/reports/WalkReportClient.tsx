@@ -443,25 +443,29 @@ export default function WalkReportClient({
 
       <main className="max-w-lg mx-auto px-4 py-5 space-y-6">
 
-        {/* ── Start a Walk CTA ── */}
-        <a
-          href="/pro/reports/live"
-          className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-bold text-white text-base transition-all"
-          style={{
-            background: 'linear-gradient(160deg, oklch(0.52 0.17 196) 0%, oklch(0.44 0.16 196) 100%)',
-            boxShadow: '0 4px 0px oklch(0.35 0.14 196), 0 8px 24px oklch(0.48 0.17 196 / 0.3)',
-          }}
-        >
-          <span className="text-xl">🐕</span>
-          Start a Walk — GPS Tracking
-          <span className="text-lg opacity-70">→</span>
-        </a>
+        {/* GPS CTA only shown when WalkReportClient is the primary page (not embedded in ProReportsPage) */}
+        {!hideHeader && (
+          <>
+            <a
+              href="/pro/reports/live"
+              className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-bold text-white text-base transition-all"
+              style={{
+                background: 'linear-gradient(160deg, oklch(0.52 0.17 196) 0%, oklch(0.44 0.16 196) 100%)',
+                boxShadow: '0 4px 0px oklch(0.35 0.14 196), 0 8px 24px oklch(0.48 0.17 196 / 0.3)',
+              }}
+            >
+              <span className="text-xl">🐕</span>
+              Start a Walk — GPS Tracking
+              <span className="text-lg opacity-70">→</span>
+            </a>
 
-        <div className="flex items-center gap-3 my-4">
-          <div className="flex-1 h-px bg-border" />
-          <span className="text-xs text-stone-400 font-medium">or log manually</span>
-          <div className="flex-1 h-px bg-border" />
-        </div>
+            <div className="flex items-center gap-3 my-4">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-stone-400 font-medium">or log manually</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+          </>
+        )}
 
         {/* ── Log a Walk form ── */}
         <section>

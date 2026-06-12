@@ -312,9 +312,8 @@ function BookingsAccordion() {
 function MoreSections() {
   return (
     <div className="space-y-3">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 pt-2">More</p>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 pt-2">Stats</p>
       <DashboardAccordion />
-      <BookingsAccordion />
     </div>
   )
 }
