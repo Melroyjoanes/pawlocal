@@ -1,5 +1,11 @@
 'use client'
 
+import { useRef } from 'react'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
+
+gsap.registerPlugin(useGSAP)
+
 export const TICK_ZONES = [
   { id: 'left_ear',      label: 'Left Ear'   },
   { id: 'right_ear',     label: 'Right Ear'  },
@@ -14,272 +20,293 @@ export const TICK_ZONES = [
 
 export type TickZoneId = (typeof TICK_ZONES)[number]['id']
 
-// 14 clickable hit areas across the 9 zones (bilateral zones have 2-4 areas)
-const CLICK_AREAS: { zoneId: TickZoneId; cx: number; cy: number; rx: number; ry: number }[] = [
-  { zoneId: 'left_ear',     cx: 38,  cy: 58,  rx: 24, ry: 30 },
-  { zoneId: 'right_ear',    cx: 142, cy: 58,  rx: 24, ry: 30 },
-  { zoneId: 'neck',         cx: 90,  cy: 97,  rx: 26, ry: 12 },
-  { zoneId: 'back',         cx: 90,  cy: 148, rx: 40, ry: 26 },
-  { zoneId: 'belly',        cx: 90,  cy: 196, rx: 38, ry: 22 },
-  { zoneId: 'armpits',      cx: 50,  cy: 128, rx: 15, ry: 15 }, // left
-  { zoneId: 'armpits',      cx: 130, cy: 128, rx: 15, ry: 15 }, // right
-  { zoneId: 'groin',        cx: 52,  cy: 204, rx: 15, ry: 15 }, // left
-  { zoneId: 'groin',        cx: 128, cy: 204, rx: 15, ry: 15 }, // right
-  { zoneId: 'base_of_tail', cx: 90,  cy: 250, rx: 18, ry: 20 },
-  { zoneId: 'between_toes', cx: 42,  cy: 155, rx: 14, ry: 11 }, // front left paw
-  { zoneId: 'between_toes', cx: 138, cy: 155, rx: 14, ry: 11 }, // front right paw
-  { zoneId: 'between_toes', cx: 44,  cy: 226, rx: 14, ry: 11 }, // back left paw
-  { zoneId: 'between_toes', cx: 136, cy: 226, rx: 14, ry: 11 }, // back right paw
+// SVG viewBox: 100 wide × 134 tall  ≈ 830:1110 image ratio
+const VB_W = 100
+const VB_H = 134
+
+// Clickable hit areas — SVG coordinate space
+const HIT_AREAS: { zoneId: TickZoneId; cx: number; cy: number; r: number }[] = [
+  { zoneId: 'left_ear',     cx: 18,  cy: 14,  r: 10 },
+  { zoneId: 'right_ear',    cx: 82,  cy: 14,  r: 10 },
+  { zoneId: 'neck',         cx: 50,  cy: 30,  r: 8  },
+  { zoneId: 'back',         cx: 50,  cy: 48,  r: 12 },
+  { zoneId: 'belly',        cx: 50,  cy: 66,  r: 13 },
+  { zoneId: 'armpits',      cx: 10,  cy: 46,  r: 9  },
+  { zoneId: 'armpits',      cx: 90,  cy: 46,  r: 9  },
+  { zoneId: 'groin',        cx: 50,  cy: 85,  r: 10 },
+  { zoneId: 'base_of_tail', cx: 50,  cy: 122, r: 7  },
+  { zoneId: 'between_toes', cx: 18,  cy: 107, r: 8  },
+  { zoneId: 'between_toes', cx: 82,  cy: 107, r: 8  },
 ]
 
-// Representative center per zone for tick dot rendering
-const ZONE_CENTERS: Record<TickZoneId, { cx: number; cy: number }[]> = {
-  left_ear:     [{ cx: 38,  cy: 58  }],
-  right_ear:    [{ cx: 142, cy: 58  }],
-  neck:         [{ cx: 90,  cy: 97  }],
-  back:         [{ cx: 90,  cy: 148 }],
-  belly:        [{ cx: 90,  cy: 196 }],
-  armpits:      [{ cx: 50,  cy: 128 }, { cx: 130, cy: 128 }],
-  groin:        [{ cx: 52,  cy: 204 }, { cx: 128, cy: 204 }],
-  base_of_tail: [{ cx: 90,  cy: 250 }],
-  between_toes: [
-    { cx: 42,  cy: 155 },
-    { cx: 138, cy: 155 },
-    { cx: 44,  cy: 226 },
-    { cx: 136, cy: 226 },
-  ],
+// Representative dot centers per zone
+const MARKER_CENTERS: Record<TickZoneId, { cx: number; cy: number }[]> = {
+  left_ear:     [{ cx: 18, cy: 14 }],
+  right_ear:    [{ cx: 82, cy: 14 }],
+  neck:         [{ cx: 50, cy: 30 }],
+  back:         [{ cx: 50, cy: 48 }],
+  belly:        [{ cx: 50, cy: 66 }],
+  armpits:      [{ cx: 10, cy: 46 }, { cx: 90, cy: 46 }],
+  groin:        [{ cx: 50, cy: 85 }],
+  base_of_tail: [{ cx: 50, cy: 122 }],
+  between_toes: [{ cx: 18, cy: 107 }, { cx: 82, cy: 107 }],
 }
 
+// Sparkle positions (% of container)
+const SPARKLES = [
+  { x:  8, y:  4, c: '✨' },
+  { x: 92, y:  4, c: '✨' },
+  { x:  2, y: 38, c: '🌿' },
+  { x: 98, y: 38, c: '🌿' },
+  { x: 50, y:  0, c: '⭐' },
+  { x: 18, y: 92, c: '✨' },
+  { x: 82, y: 92, c: '✨' },
+  { x: 50, y: 97, c: '🌿' },
+]
+
+type Mood = 'happy' | 'mild' | 'sad' | 'distressed'
+
+function getMood(n: number): Mood {
+  if (n === 0) return 'happy'
+  if (n <= 2)  return 'mild'
+  if (n <= 5)  return 'sad'
+  return 'distressed'
+}
+
+function markerFill(mood: Mood) {
+  return mood === 'happy'      ? '#10B981'
+    : mood === 'mild'          ? '#F59E0B'
+    : mood === 'sad'           ? '#EF4444'
+    : /* distressed */           '#DC2626'
+}
+
+// ── Animated tick marker dot (pops in when added in edit mode) ────────────────
+function TickMarker({ cx, cy, color }: { cx: number; cy: number; color: string }) {
+  const gRef = useRef<SVGGElement>(null)
+
+  useGSAP(() => {
+    if (!gRef.current) return
+    gsap.from(gRef.current, {
+      scale: 0, duration: 0.38,
+      ease: 'elastic.out(1.4, 0.5)',
+      transformOrigin: 'center center',
+    })
+  }, { scope: gRef })
+
+  return (
+    <g ref={gRef} className="dbm-tick-marker">
+      {/* Glow ring */}
+      <circle cx={cx} cy={cy} r={6} fill={color} opacity={0.18} />
+      {/* Dot */}
+      <circle cx={cx} cy={cy} r={3.5} fill={color} stroke="white" strokeWidth="1.2" />
+      <text
+        x={cx} y={cy + 1.3}
+        textAnchor="middle" dominantBaseline="middle"
+        fontSize="4.5" fill="white"
+        style={{ userSelect: 'none', pointerEvents: 'none' }}
+      >✕</text>
+    </g>
+  )
+}
+
+// ── Props ─────────────────────────────────────────────────────────────────────
 type Props = {
   selected: TickZoneId[]
   onChange?: (zones: TickZoneId[]) => void
   mode?: 'edit' | 'view'
-  size?: number
+  tickCount?: number  // drives emotional state in view mode
+  size?: number       // max-width in px (backwards compat with existing call sites)
 }
 
-// Paw pad helper — 4 dots in a 2×2 grid around cx,cy
-function PawPads({ cx, cy }: { cx: number; cy: number }) {
-  return (
-    <>
-      <circle cx={cx - 4} cy={cy - 4} r="2.5" fill="#DEB86A" opacity="0.45" />
-      <circle cx={cx + 4} cy={cy - 4} r="2.5" fill="#DEB86A" opacity="0.45" />
-      <circle cx={cx - 4} cy={cy + 4} r="2.5" fill="#DEB86A" opacity="0.45" />
-      <circle cx={cx + 4} cy={cy + 4} r="2.5" fill="#DEB86A" opacity="0.45" />
-      <circle cx={cx}     cy={cy - 8} r="2"   fill="#DEB86A" opacity="0.35" />
-    </>
-  )
-}
+export default function DogBodyMap({
+  selected, onChange, mode = 'edit', tickCount, size,
+}: Props) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const isView = mode === 'view'
+  const ticks = tickCount ?? selected.length
+  const mood  = getMood(ticks)
+  const color = markerFill(mood)
 
-export default function DogBodyMap({ selected, onChange, mode = 'edit', size = 220 }: Props) {
   function toggle(zoneId: TickZoneId) {
-    if (mode !== 'edit' || !onChange) return
+    if (isView || !onChange) return
     onChange(
       selected.includes(zoneId)
         ? selected.filter(z => z !== zoneId)
-        : [...selected, zoneId],
+        : [...selected, zoneId]
     )
   }
 
-  // SVG native size — scale to `size` prop
-  const VB_W = 180
-  const VB_H = 270
-  const svgH = Math.round((VB_H / VB_W) * size)
+  // ── GSAP emotional-state animations ────────────────────────────────────────
+  useGSAP(() => {
+    if (!isView) return
 
-  const BODY_FILL    = '#FEF9EC'
-  const EAR_FILL     = '#FDE68A'
-  const STROKE       = '#DEB86A'
-  const DARK         = '#7C5321'
-  const SEL_FILL     = 'rgba(240,112,48,0.48)'
-  const SEL_STROKE   = '#E05818'
-  const HINT_STROKE  = 'rgba(222,184,106,0.35)'
+    if (mood === 'happy') {
+      // Gentle happy wiggle
+      gsap.fromTo('.dbm-img',
+        { rotation: -2.5, transformOrigin: '50% 65%' },
+        {
+          rotation: 2.5, duration: 0.42, repeat: 3, yoyo: true, ease: 'sine.inOut',
+          onComplete: () => gsap.to('.dbm-img', { rotation: 0, duration: 0.35, ease: 'sine.out' }),
+        }
+      )
+      // Sparkles burst in with stagger from random positions
+      gsap.from('.dbm-sparkle', {
+        scale: 0, opacity: 0, y: 10,
+        stagger: { each: 0.07, from: 'random' },
+        duration: 0.52, ease: 'back.out(1.7)',
+      })
+      // "All Clear" badge bounces in
+      gsap.from('.dbm-happy-badge', {
+        scale: 0, opacity: 0, y: -10,
+        duration: 0.68, ease: 'elastic.out(1.1, 0.5)', delay: 0.55,
+      })
+    } else {
+      // Distressed shake
+      gsap.from('.dbm-img', {
+        x: -5, duration: 0.07, repeat: 5, yoyo: true, ease: 'none',
+      })
+      // Sad face expression scales in
+      gsap.from('.dbm-sad-face', {
+        opacity: 0, scale: 0.65, duration: 0.48,
+        ease: 'back.out(1.3)', delay: 0.2,
+        transformOrigin: '50% 50%',
+      })
+      // Tick markers pulse — faster and more frantic when distressed
+      gsap.to('.dbm-tick-marker', {
+        scale: 1.3, opacity: 0.75,
+        duration: mood === 'distressed' ? 0.4 : 0.68,
+        repeat: -1, yoyo: true,
+        stagger: { each: 0.1, from: 'random' },
+        ease: 'sine.inOut',
+        transformOrigin: 'center center',
+      })
+    }
+  }, { scope: containerRef, dependencies: [mood, isView] })
 
   return (
-    <svg
-      viewBox={`0 0 ${VB_W} ${VB_H}`}
-      width={size}
-      height={svgH}
-      style={{ display: 'block', overflow: 'visible' }}
-      aria-label="Dog body diagram for marking tick locations"
+    <div
+      ref={containerRef}
+      className="relative select-none"
+      style={size ? { maxWidth: size, margin: '0 auto' } : undefined}
     >
-      <defs>
-        {/* Soft drop shadow for body */}
-        <filter id="dogShadow" x="-20%" y="-10%" width="140%" height="130%">
-          <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#DEB86A" floodOpacity="0.18" />
-        </filter>
-      </defs>
-
-      {/* ── SILHOUETTE ────────────────────────────────────────────────── */}
-
-      {/* Body — chest-waist-hip profile */}
-      <path
-        d="
-          M 62 102
-          C 44 108, 40 128, 40 152
-          C 40 172, 42 190, 48 208
-          C 55 224, 68 232, 90 234
-          C 112 232, 125 224, 132 208
-          C 138 190, 140 172, 140 152
-          C 140 128, 136 108, 118 102
-          C 108 98, 72 98, 62 102
-          Z
-        "
-        fill={BODY_FILL}
-        stroke={STROKE}
-        strokeWidth="2"
-        strokeLinejoin="round"
-        filter="url(#dogShadow)"
+      {/* ── Dog illustration ──────────────────────────────────────────────── */}
+      <img
+        src="/images/dog-belly-map.png"
+        alt="Dog body diagram"
+        draggable={false}
+        className="dbm-img w-full h-auto block"
       />
 
-      {/* Head */}
-      <circle cx="90" cy="54" r="36" fill={BODY_FILL} stroke={STROKE} strokeWidth="2" />
+      {/* ── SVG hit areas + tick markers ──────────────────────────────────── */}
+      <svg
+        className="absolute inset-0 w-full h-full"
+        viewBox={`0 0 ${VB_W} ${VB_H}`}
+        preserveAspectRatio="xMidYMid meet"
+        aria-hidden="true"
+      >
+        {/* Clickable zones */}
+        {HIT_AREAS.map((area, i) => {
+          const isSel = selected.includes(area.zoneId)
+          return (
+            <circle
+              key={i}
+              cx={area.cx} cy={area.cy} r={area.r}
+              fill={isSel ? `${color}22` : 'transparent'}
+              stroke={
+                isSel        ? color
+                : mode === 'edit' ? 'rgba(222,184,106,0.32)'
+                : 'none'
+              }
+              strokeWidth={isSel ? 1.5 : 1}
+              strokeDasharray={!isSel && mode === 'edit' ? '2 2' : undefined}
+              onClick={() => toggle(area.zoneId)}
+              style={{ cursor: mode === 'edit' ? 'pointer' : 'default', touchAction: 'manipulation' }}
+            />
+          )
+        })}
 
-      {/* Left ear — large droopy floppy */}
-      <path
-        d="
-          M 60 34
-          C 42 20, 20 36, 22 66
-          C 23 88, 42 96, 58 82
-          C 70 68, 72 50, 60 34
-          Z
-        "
-        fill={EAR_FILL}
-        stroke={STROKE}
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
+        {/* Tick dot markers */}
+        {selected.flatMap(zoneId =>
+          (MARKER_CENTERS[zoneId] ?? []).map((pt, i) => (
+            <TickMarker key={`${zoneId}-${i}`} cx={pt.cx} cy={pt.cy} color={color} />
+          ))
+        )}
+      </svg>
 
-      {/* Right ear — mirror */}
-      <path
-        d="
-          M 120 34
-          C 138 20, 160 36, 158 66
-          C 157 88, 138 96, 122 82
-          C 110 68, 108 50, 120 34
-          Z
-        "
-        fill={EAR_FILL}
-        stroke={STROKE}
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-
-      {/* Neck connector */}
-      <path
-        d="M 64 88 Q 90 82, 116 88 L 118 102 Q 90 97, 62 102 Z"
-        fill={BODY_FILL}
-        stroke={STROKE}
-        strokeWidth="1.5"
-      />
-
-      {/* Front left leg */}
-      <ellipse cx="44" cy="138" rx="14" ry="23"
-        fill={BODY_FILL} stroke={STROKE} strokeWidth="2"
-        transform="rotate(-6 44 138)" />
-
-      {/* Front right leg */}
-      <ellipse cx="136" cy="138" rx="14" ry="23"
-        fill={BODY_FILL} stroke={STROKE} strokeWidth="2"
-        transform="rotate(6 136 138)" />
-
-      {/* Back left leg */}
-      <ellipse cx="46" cy="210" rx="14" ry="23"
-        fill={BODY_FILL} stroke={STROKE} strokeWidth="2"
-        transform="rotate(5 46 210)" />
-
-      {/* Back right leg */}
-      <ellipse cx="134" cy="210" rx="14" ry="23"
-        fill={BODY_FILL} stroke={STROKE} strokeWidth="2"
-        transform="rotate(-5 134 210)" />
-
-      {/* Tail */}
-      <ellipse cx="90" cy="256" rx="9" ry="18"
-        fill={EAR_FILL} stroke={STROKE} strokeWidth="2" />
-
-      {/* ── DETAILS ───────────────────────────────────────────────────── */}
-
-      {/* Snout area */}
-      <ellipse cx="90" cy="78" rx="16" ry="12"
-        fill="#FEF3C7" stroke={STROKE} strokeWidth="1.5" />
-
-      {/* Nose */}
-      <ellipse cx="90" cy="28" rx="7" ry="5" fill={DARK} />
-
-      {/* Eyes */}
-      <circle cx="74" cy="50" r="3.5" fill={DARK} />
-      <circle cx="106" cy="50" r="3.5" fill={DARK} />
-      {/* Eye shine */}
-      <circle cx="76" cy="49" r="1.2" fill="white" />
-      <circle cx="108" cy="49" r="1.2" fill="white" />
-
-      {/* Spine dots */}
-      {[130, 152, 174, 196].map(y => (
-        <circle key={y} cx="90" cy={y} r="2.5" fill={STROKE} opacity="0.28" />
-      ))}
-
-      {/* Paw pads */}
-      <PawPads cx={44}  cy={153} />
-      <PawPads cx={136} cy={153} />
-      <PawPads cx={46}  cy={224} />
-      <PawPads cx={134} cy={224} />
-
-      {/* Ear inner crease lines */}
-      <path d="M 42 48 Q 38 62, 40 76"
-        fill="none" stroke={STROKE} strokeWidth="1.2" strokeLinecap="round" opacity="0.4" />
-      <path d="M 138 48 Q 142 62, 140 76"
-        fill="none" stroke={STROKE} strokeWidth="1.2" strokeLinecap="round" opacity="0.4" />
-
-      {/* ── ZONE HIT AREAS ────────────────────────────────────────────── */}
-      {CLICK_AREAS.map((area, i) => {
-        const isSelected = selected.includes(area.zoneId)
-        return (
-          <ellipse
-            key={i}
-            cx={area.cx}
-            cy={area.cy}
-            rx={area.rx}
-            ry={area.ry}
-            fill={isSelected ? SEL_FILL : 'transparent'}
-            stroke={isSelected ? SEL_STROKE : mode === 'edit' ? HINT_STROKE : 'none'}
-            strokeWidth={isSelected ? 1.5 : 1}
-            strokeDasharray={!isSelected && mode === 'edit' ? '3 2' : undefined}
-            onClick={() => toggle(area.zoneId)}
+      {/* ── Happy state: sparkles + badge ────────────────────────────────── */}
+      {isView && mood === 'happy' && (
+        <>
+          {SPARKLES.map((s, i) => (
+            <div
+              key={i}
+              className="dbm-sparkle absolute pointer-events-none text-sm leading-none"
+              style={{ left: `${s.x}%`, top: `${s.y}%`, transform: 'translate(-50%, -50%)' }}
+            >
+              {s.c}
+            </div>
+          ))}
+          <div
+            className="dbm-happy-badge absolute left-1/2 -translate-x-1/2 whitespace-nowrap
+                        px-4 py-1.5 rounded-full text-xs font-bold"
             style={{
-              cursor: mode === 'edit' ? 'pointer' : 'default',
-              touchAction: 'manipulation',
+              top: '46%',
+              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+              color: 'white',
+              boxShadow: '0 4px 16px rgba(16,185,129,0.42)',
             }}
-          />
-        )
-      })}
-
-      {/* ── TICK DOT MARKERS ─────────────────────────────────────────── */}
-      {selected.flatMap(zoneId =>
-        (ZONE_CENTERS[zoneId] ?? []).map((pt, i) => (
-          <g key={`${zoneId}-${i}`}>
-            {/* Glow ring */}
-            <circle cx={pt.cx} cy={pt.cy} r="9"
-              fill={SEL_STROKE} opacity="0.18" />
-            {/* Dot */}
-            <circle cx={pt.cx} cy={pt.cy} r="5.5"
-              fill={SEL_STROKE} stroke="white" strokeWidth="1.5" />
-            {/* 🕷 indicator — rendered as text (SVG emoji) */}
-            <text x={pt.cx} y={pt.cy + 1}
-              textAnchor="middle" dominantBaseline="middle"
-              fontSize="7" style={{ userSelect: 'none', pointerEvents: 'none' }}>
-              ✕
-            </text>
-          </g>
-        ))
+          >
+            ✓ All Clear!
+          </div>
+        </>
       )}
 
-      {/* ── EDIT HINT ─────────────────────────────────────────────────── */}
+      {/* ── Sad expression overlay — positioned over the dog's face ──────── */}
+      {/*    left 24% / top 4% / width 52% / height 28% targets the face area */}
+      {isView && mood !== 'happy' && (
+        <div
+          className="dbm-sad-face absolute pointer-events-none"
+          style={{ left: '24%', top: '4%', width: '52%', height: '28%', zIndex: 10 }}
+        >
+          <svg viewBox="0 0 100 58" className="w-full h-full" overflow="visible">
+            {/* Cover the dog's original happy eyes with skin colour */}
+            <ellipse cx="32" cy="43" rx="9" ry="8" fill="#FAF0DC" />
+            <ellipse cx="68" cy="43" rx="9" ry="8" fill="#FAF0DC" />
+
+            {/* Worried / furrowed brows */}
+            <path d="M 18 25 Q 32 17, 44 23"
+              stroke="#5C3D1E" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+            <path d="M 82 25 Q 68 17, 56 23"
+              stroke="#5C3D1E" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+
+            {/* Sad open eyes */}
+            <ellipse cx="32" cy="43" rx="8" ry="8" fill="#4B3621" />
+            <ellipse cx="68" cy="43" rx="8" ry="8" fill="#4B3621" />
+            {/* Highlights */}
+            <circle cx="35" cy="41" r="2.5" fill="white" />
+            <circle cx="71" cy="41" r="2.5" fill="white" />
+
+            {/* Teardrop(s) — one for sad, two for distressed */}
+            <path d="M 30 52 Q 28 59, 30 63 Q 32 59, 30 52" fill="#93C5FD" />
+            {mood === 'distressed' && (
+              <path d="M 70 52 Q 68 59, 70 63 Q 72 59, 70 52" fill="#93C5FD" />
+            )}
+
+            {/* Frown */}
+            <path d="M 37 56 Q 50 50, 63 56"
+              stroke="#4B3621" strokeWidth="3" fill="none" strokeLinecap="round" />
+          </svg>
+        </div>
+      )}
+
+      {/* ── Edit mode tap hint ────────────────────────────────────────────── */}
       {mode === 'edit' && selected.length === 0 && (
-        <text x="90" y="264" textAnchor="middle"
-          fontSize="8.5" fill={STROKE}
-          fontFamily="system-ui, -apple-system, sans-serif"
-          opacity="0.7">
-          tap zones where ticks were found
-        </text>
+        <p
+          className="absolute bottom-1 inset-x-0 text-center font-medium pointer-events-none"
+          style={{ fontSize: '9px', color: 'oklch(0.65 0.12 75)', opacity: 0.7 }}
+        >
+          tap areas where ticks were found
+        </p>
       )}
-    </svg>
+    </div>
   )
 }

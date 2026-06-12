@@ -168,35 +168,57 @@ export default function GroomingReportCard({ report }: { report: Report }) {
           </div>
         )}
 
-        {/* ── Tick Section ── */}
-        {report.ticks_found > 0 && (
-          <div className="rounded-2xl p-4 space-y-4"
-            style={{
-              background: 'rgba(240,112,48,0.05)',
-              border: '1.5px solid rgba(240,112,48,0.2)',
-              boxShadow: '0 6px 20px rgba(240,112,48,0.08)',
-            }}>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0"
-                style={{ background: 'rgba(240,112,48,0.12)' }}>🕷️</div>
-              <div>
-                <p className="font-bold text-stone-900">
-                  {report.ticks_found} tick{report.ticks_found !== 1 ? 's' : ''} removed
-                </p>
-                <p className="text-xs text-stone-400 mt-0.5">
-                  Anti-tick shampoo{report.services_done.includes('tick_shampoo') ? ' used ✓' : ' recommended'}
+        {/* ── Tick Check — always shown with emotional state ── */}
+        <div className="rounded-2xl overflow-hidden"
+          style={report.ticks_found > 0 ? {
+            background: 'rgba(240,112,48,0.04)',
+            border: '1.5px solid rgba(240,112,48,0.18)',
+            boxShadow: '0 6px 20px rgba(240,112,48,0.07)',
+          } : {
+            background: 'rgba(16,185,129,0.04)',
+            border: '1.5px solid rgba(16,185,129,0.2)',
+            boxShadow: '0 6px 20px rgba(16,185,129,0.07)',
+          }}>
+
+          {/* Section label */}
+          <div className="px-4 pt-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-stone-400">
+              Tick Check
+            </p>
+          </div>
+
+          {/* The dog — full-width emotional display */}
+          <DogBodyMap
+            selected={tickZones}
+            mode="view"
+            tickCount={report.ticks_found}
+          />
+
+          {/* Result text below the dog */}
+          <div className="px-4 pb-4">
+            {report.ticks_found === 0 ? (
+              <div className="text-center pt-1 pb-1">
+                <p className="text-sm font-bold text-emerald-700">No ticks found!</p>
+                <p className="text-xs text-emerald-600 mt-0.5">
+                  Your pup is tick-free from this session 🌿
                 </p>
               </div>
-            </div>
-
-            {tickZones.length > 0 && (
-              <>
-                <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider">
-                  Where they were found:
-                </p>
-                <div className="flex gap-4 items-start">
-                  <DogBodyMap selected={tickZones} mode="view" size={150} />
-                  <div className="flex-1 space-y-1.5">
+            ) : (
+              <div className="pt-2 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                    style={{ background: 'rgba(240,112,48,0.12)' }}>🕷️</div>
+                  <div>
+                    <p className="font-bold text-stone-900">
+                      {report.ticks_found} tick{report.ticks_found !== 1 ? 's' : ''} removed
+                    </p>
+                    <p className="text-xs text-stone-400 mt-0.5">
+                      Anti-tick shampoo{report.services_done.includes('tick_shampoo') ? ' used ✓' : ' recommended'}
+                    </p>
+                  </div>
+                </div>
+                {tickZones.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
                     {tickZones.map(z => {
                       const zone = TICK_ZONES.find(t => t.id === z)
                       return (
@@ -208,11 +230,11 @@ export default function GroomingReportCard({ report }: { report: Report }) {
                       )
                     })}
                   </div>
-                </div>
-              </>
+                )}
+              </div>
             )}
           </div>
-        )}
+        </div>
 
         {/* ── Health Findings ── */}
         <div className="rounded-2xl p-4" style={{
