@@ -64,6 +64,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if ('hours_to' in body) update.hours_to = body.hours_to
   if ('working_days' in body) update.working_days = body.working_days
   if ('business_name' in body) update.business_name = body.business_name?.trim() || null
+  if ('service_prices' in body) update.service_prices = body.service_prices ?? {}
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })

@@ -343,25 +343,33 @@ export default async function ProviderPage({ params }: { params: Promise<{ id: s
 
         {/* ── Quick-scan info strip ─────────────────────────────────── */}
         <div className="flex flex-wrap gap-2 mb-5">
-          {provider.price_min && (
-            <span
-              className="clay-chip inline-flex items-center gap-1 px-4 py-2 text-sm font-semibold"
-              style={{
-                background: 'oklch(0.97 0.06 75 / 0.5)',
-                border: '1px solid oklch(0.88 0.12 75)',
-                color: 'oklch(0.40 0.15 75)',
-                boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85)',
-              }}
-            >
-              ₹{provider.price_min}
-              {provider.price_max && provider.price_max !== provider.price_min && `–${provider.price_max}`}
-              {provider.price_unit && (
-                <span className="font-normal text-xs ml-0.5 opacity-70">
-                  /{provider.price_unit.replace('per ', '')}
+          {/* Per-service pricing chips */}
+          {provider.service_prices && Object.keys(provider.service_prices).length > 0
+            ? Object.entries(provider.service_prices as Record<string, { min: number | null; max: number | null; unit: string }>).map(([slug, sp]) => {
+                if (!sp.min) return null
+                const catLabel = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+                return (
+                  <span key={slug}
+                    className="clay-chip inline-flex items-center gap-1 px-4 py-2 text-sm font-semibold"
+                    style={{ background: 'oklch(0.97 0.06 75 / 0.5)', border: '1px solid oklch(0.88 0.12 75)', color: 'oklch(0.40 0.15 75)', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85)' }}
+                  >
+                    {catLabel}: ₹{sp.min}{sp.max && sp.max !== sp.min ? `–${sp.max}` : ''}
+                    <span className="font-normal text-xs ml-0.5 opacity-70">{sp.unit.replace('per ', '/')}</span>
+                  </span>
+                )
+              })
+            : provider.price_min
+              ? (
+                <span className="clay-chip inline-flex items-center gap-1 px-4 py-2 text-sm font-semibold"
+                  style={{ background: 'oklch(0.97 0.06 75 / 0.5)', border: '1px solid oklch(0.88 0.12 75)', color: 'oklch(0.40 0.15 75)', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85)' }}
+                >
+                  ₹{provider.price_min}
+                  {provider.price_max && provider.price_max !== provider.price_min && `–${provider.price_max}`}
+                  {provider.price_unit && <span className="font-normal text-xs ml-0.5 opacity-70">/{provider.price_unit.replace('per ', '')}</span>}
                 </span>
-              )}
-            </span>
-          )}
+              )
+              : null
+          }
           <span
             className="clay-chip inline-flex items-center gap-2 px-4 py-2 text-sm font-medium"
             style={{ background: 'oklch(0.96 0.04 196 / 0.5)', border: '1px solid oklch(0.88 0.06 196)', color: 'oklch(0.36 0.12 196)', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85)' }}

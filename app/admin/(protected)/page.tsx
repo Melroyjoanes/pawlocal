@@ -140,9 +140,17 @@ function EditProviderModal({
   const [neighbourhood, setNeighbourhood] = useState(p.neighbourhood ?? '')
   const [categorySlug, setCategorySlug] = useState<string>(p.category_slug ?? 'dog-walking')
   const [categorySlugs, setCategorySlugs] = useState<string[]>(p.category_slugs ?? [])
-  const [priceMin, setPriceMin] = useState(p.price_min != null ? String(p.price_min) : '')
-  const [priceMax, setPriceMax] = useState(p.price_max != null ? String(p.price_max) : '')
-  const [priceUnit, setPriceUnit] = useState(p.price_unit ?? '/walk')
+  type ServicePrice = { min: string; max: string; unit: string }
+  const initialPrices: Record<string, ServicePrice> = {}
+  const existingPrices = (p as ProviderWithPhotos & { service_prices?: Record<string, { min: number | null; max: number | null; unit: string }> }).service_prices ?? {}
+  for (const [slug, val] of Object.entries(existingPrices)) {
+    initialPrices[slug] = { min: val.min != null ? String(val.min) : '', max: val.max != null ? String(val.max) : '', unit: val.unit ?? '/session' }
+  }
+  const [servicePrices, setServicePrices] = useState<Record<string, ServicePrice>>(initialPrices)
+
+  function updateServicePrice(slug: string, field: keyof ServicePrice, value: string) {
+    setServicePrices(prev => ({ ...prev, [slug]: { ...prev[slug] ?? { min: '', max: '', unit: '/session' }, [field]: value } }))
+  }
   const [hoursFrom, setHoursFrom] = useState(p.hours_from ?? '06:00')
   const [hoursTo, setHoursTo] = useState(p.hours_to ?? '20:00')
   const [workingDays, setWorkingDays] = useState<string[]>(p.working_days ?? [])
@@ -170,10 +178,15 @@ function EditProviderModal({
           name, business_name: businessName, email, whatsapp, phone, bio,
           address, neighbourhood, category_slug: categorySlug,
           category_slugs: categorySlugs,
-          price_min: priceMin !== '' ? Number(priceMin) : null,
-          price_max: priceMax !== '' ? Number(priceMax) : null,
-          price_unit: priceUnit, hours_from: hoursFrom, hours_to: hoursTo,
+          hours_from: hoursFrom, hours_to: hoursTo,
           working_days: workingDays,
+          service_prices: Object.fromEntries(
+            Object.entries(servicePrices).map(([slug, v]) => [slug, {
+              min: v.min !== '' ? Number(v.min) : null,
+              max: v.max !== '' ? Number(v.max) : null,
+              unit: v.unit,
+            }])
+          ),
         }),
       })
       const json = await res.json()
@@ -183,10 +196,15 @@ function EditProviderModal({
         email: email || undefined, whatsapp, phone: phone || null, bio: bio || null,
         address, neighbourhood, category_slug: categorySlug as never,
         category_slugs: categorySlugs,
-        price_min: priceMin !== '' ? Number(priceMin) : null,
-        price_max: priceMax !== '' ? Number(priceMax) : null,
-        price_unit: priceUnit, hours_from: hoursFrom, hours_to: hoursTo,
+        hours_from: hoursFrom, hours_to: hoursTo,
         working_days: workingDays,
+        service_prices: Object.fromEntries(
+          Object.entries(servicePrices).map(([slug, v]) => [slug, {
+            min: v.min !== '' ? Number(v.min) : null,
+            max: v.max !== '' ? Number(v.max) : null,
+            unit: v.unit,
+          }])
+        ),
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save')
@@ -295,25 +313,36 @@ function EditProviderModal({
             </div>
           </div>
 
-          {/* Pricing */}
+          {/* Pricing — per service */}
           <div className={sectionCls}>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Pricing</p>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className={labelCls}>Min ₹</label>
-                <input className={inputCls} type="number" value={priceMin} onChange={e => setPriceMin(e.target.value)} placeholder="300" />
-              </div>
-              <div>
-                <label className={labelCls}>Max ₹</label>
-                <input className={inputCls} type="number" value={priceMax} onChange={e => setPriceMax(e.target.value)} placeholder="500" />
-              </div>
-              <div>
-                <label className={labelCls}>Per</label>
-                <select className={inputCls} value={priceUnit} onChange={e => setPriceUnit(e.target.value)}>
-                  {PRICE_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                </select>
-              </div>
-            </div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Pricing</p>
+            <p className="text-xs text-slate-400 mb-3">Set different prices per service</p>
+            {[categorySlug, ...categorySlugs.filter(s => s !== categorySlug)].map(slug => {
+              const cat = CATEGORY_OPTIONS.find(c => c.value === slug)
+              if (!cat) return null
+              const sp = servicePrices[slug] ?? { min: '', max: '', unit: '/session' }
+              return (
+                <div key={slug} className="mb-4">
+                  <p className="text-xs font-semibold text-slate-600 mb-2">{cat.label}</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className={labelCls}>Min ₹</label>
+                      <input className={inputCls} type="number" value={sp.min} onChange={e => updateServicePrice(slug, 'min', e.target.value)} placeholder="300" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Max ₹</label>
+                      <input className={inputCls} type="number" value={sp.max} onChange={e => updateServicePrice(slug, 'max', e.target.value)} placeholder="500" />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Per</label>
+                      <select className={inputCls} value={sp.unit} onChange={e => updateServicePrice(slug, 'unit', e.target.value)}>
+                        {PRICE_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
 
           {/* Schedule */}

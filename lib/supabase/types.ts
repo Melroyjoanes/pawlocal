@@ -30,6 +30,7 @@ export type Provider = {
   price_min: number | null
   price_max: number | null
   price_unit: string
+  service_prices: Record<string, { min: number | null; max: number | null; unit: string }> | null
   hours_from: string
   hours_to: string
   working_days: string[]
