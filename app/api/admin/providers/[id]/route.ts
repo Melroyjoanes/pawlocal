@@ -19,20 +19,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const { id } = await params
   const body = await req.json()
 
-  type ProviderUpdate = {
-    status?: 'approved' | 'rejected'
-    is_verified?: boolean
-    verification_tier?: string
-    lat?: number
-    lng?: number
-  }
-  const update: ProviderUpdate = {}
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const update: Record<string, any> = {}
 
   if ('status' in body) {
     if (!['approved', 'rejected'].includes(body.status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
     }
-    update.status = body.status as 'approved' | 'rejected'
+    update.status = body.status
   }
 
   if ('is_verified' in body) update.is_verified = Boolean(body.is_verified)
@@ -41,7 +35,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!['contacted', 'verified', 'certified'].includes(body.verification_tier)) {
       return NextResponse.json({ error: 'Invalid verification_tier' }, { status: 400 })
     }
-    update.verification_tier = body.verification_tier as string
+    update.verification_tier = body.verification_tier
   }
 
   if ('lat' in body && 'lng' in body) {
@@ -52,6 +46,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       update.lng = lng
     }
   }
+
+  // Full provider field edits
+  if ('name' in body && body.name?.trim()) update.name = body.name.trim()
+  if ('email' in body) update.email = body.email?.trim() || null
+  if ('whatsapp' in body && body.whatsapp?.trim()) update.whatsapp = body.whatsapp.trim()
+  if ('phone' in body) update.phone = body.phone?.trim() || null
+  if ('bio' in body) update.bio = body.bio?.trim() || null
+  if ('address' in body && body.address?.trim()) update.address = body.address.trim()
+  if ('neighbourhood' in body && body.neighbourhood?.trim()) update.neighbourhood = body.neighbourhood.trim()
+  if ('category_slug' in body) update.category_slug = body.category_slug
+  if ('category_slugs' in body) update.category_slugs = body.category_slugs
+  if ('price_min' in body) update.price_min = body.price_min != null ? Number(body.price_min) : null
+  if ('price_max' in body) update.price_max = body.price_max != null ? Number(body.price_max) : null
+  if ('price_unit' in body) update.price_unit = body.price_unit
+  if ('hours_from' in body) update.hours_from = body.hours_from
+  if ('hours_to' in body) update.hours_to = body.hours_to
+  if ('working_days' in body) update.working_days = body.working_days
+  if ('business_name' in body) update.business_name = body.business_name?.trim() || null
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })

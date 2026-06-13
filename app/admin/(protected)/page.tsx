@@ -107,6 +107,261 @@ function TierBadge({ tier }: { tier: string }) {
   return <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Listed</span>
 }
 
+// ── Edit Provider Modal ───────────────────────────────────────────
+const CATEGORY_OPTIONS = [
+  { value: 'dog-walking', label: '🦮 Dog Walking' },
+  { value: 'grooming', label: '✂️ Grooming' },
+  { value: 'veterinary', label: '🏥 Veterinary' },
+  { value: 'pet-store', label: '🛒 Pet Store' },
+  { value: 'dog-training', label: '🎓 Dog Training' },
+  { value: 'pet-boarding', label: '🏠 Pet Boarding' },
+]
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+const PRICE_UNITS = ['/walk', '/session', '/month', '/visit', '/hour', '/night']
+
+function EditProviderModal({
+  provider,
+  onClose,
+}: {
+  provider: ProviderWithPhotos
+  onClose: (updated?: Partial<ProviderWithPhotos>) => void
+}) {
+  const p = provider as ProviderWithPhotos & { email?: string }
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const [name, setName] = useState(p.name ?? '')
+  const [businessName, setBusinessName] = useState(p.business_name ?? '')
+  const [email, setEmail] = useState(p.email ?? '')
+  const [whatsapp, setWhatsapp] = useState(p.whatsapp ?? '')
+  const [phone, setPhone] = useState(p.phone ?? '')
+  const [bio, setBio] = useState(p.bio ?? '')
+  const [address, setAddress] = useState(p.address ?? '')
+  const [neighbourhood, setNeighbourhood] = useState(p.neighbourhood ?? '')
+  const [categorySlug, setCategorySlug] = useState<string>(p.category_slug ?? 'dog-walking')
+  const [categorySlugs, setCategorySlugs] = useState<string[]>(p.category_slugs ?? [])
+  const [priceMin, setPriceMin] = useState(p.price_min != null ? String(p.price_min) : '')
+  const [priceMax, setPriceMax] = useState(p.price_max != null ? String(p.price_max) : '')
+  const [priceUnit, setPriceUnit] = useState(p.price_unit ?? '/walk')
+  const [hoursFrom, setHoursFrom] = useState(p.hours_from ?? '06:00')
+  const [hoursTo, setHoursTo] = useState(p.hours_to ?? '20:00')
+  const [workingDays, setWorkingDays] = useState<string[]>(p.working_days ?? [])
+
+  function toggleCategorySlug(slug: string) {
+    setCategorySlugs(prev =>
+      prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]
+    )
+  }
+
+  function toggleDay(day: string) {
+    setWorkingDays(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    )
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/admin/providers/${p.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name, business_name: businessName, email, whatsapp, phone, bio,
+          address, neighbourhood, category_slug: categorySlug,
+          category_slugs: categorySlugs,
+          price_min: priceMin !== '' ? Number(priceMin) : null,
+          price_max: priceMax !== '' ? Number(priceMax) : null,
+          price_unit: priceUnit, hours_from: hoursFrom, hours_to: hoursTo,
+          working_days: workingDays,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Failed to save')
+      onClose({
+        name, business_name: businessName || null,
+        email: email || undefined, whatsapp, phone: phone || null, bio: bio || null,
+        address, neighbourhood, category_slug: categorySlug as never,
+        category_slugs: categorySlugs,
+        price_min: priceMin !== '' ? Number(priceMin) : null,
+        price_max: priceMax !== '' ? Number(priceMax) : null,
+        price_unit: priceUnit, hours_from: hoursFrom, hours_to: hoursTo,
+        working_days: workingDays,
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const inputCls = 'w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white'
+  const labelCls = 'block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1'
+  const sectionCls = 'border-t border-slate-100 pt-4'
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ background: 'rgba(0,0,0,0.5)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col"
+        style={{ maxHeight: '92dvh' }}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 flex-shrink-0">
+          <div>
+            <h2 className="font-bold text-slate-900">Edit Provider</h2>
+            <p className="text-xs text-slate-400">{p.name}</p>
+          </div>
+          <button onClick={() => onClose()} className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-colors text-lg">✕</button>
+        </div>
+
+        {/* Scrollable fields */}
+        <div className="overflow-y-auto flex-1 px-5 py-4 space-y-4">
+
+          {/* Basic Info */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <label className={labelCls}>Full Name</label>
+              <input className={inputCls} value={name} onChange={e => setName(e.target.value)} />
+            </div>
+            <div className="col-span-2">
+              <label className={labelCls}>Business Name (optional)</label>
+              <input className={inputCls} value={businessName} onChange={e => setBusinessName(e.target.value)} placeholder="e.g. Happy Paws Grooming" />
+            </div>
+            <div className="col-span-2">
+              <label className={labelCls}>Bio</label>
+              <textarea className={inputCls} rows={3} value={bio} onChange={e => setBio(e.target.value)} placeholder="Short description shown on their profile…" />
+            </div>
+          </div>
+
+          {/* Contact */}
+          <div className={sectionCls}>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Contact</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="col-span-2">
+                <label className={labelCls}>Email</label>
+                <input className={inputCls} type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="used for dashboard login" />
+              </div>
+              <div>
+                <label className={labelCls}>WhatsApp</label>
+                <input className={inputCls} type="tel" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="9876543210" />
+              </div>
+              <div>
+                <label className={labelCls}>Phone (optional)</label>
+                <input className={inputCls} type="tel" value={phone} onChange={e => setPhone(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          {/* Location */}
+          <div className={sectionCls}>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Location</p>
+            <div className="space-y-3">
+              <div>
+                <label className={labelCls}>Address</label>
+                <input className={inputCls} value={address} onChange={e => setAddress(e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>Neighbourhood</label>
+                <input className={inputCls} value={neighbourhood} onChange={e => setNeighbourhood(e.target.value)} placeholder="e.g. Juhu" />
+              </div>
+            </div>
+          </div>
+
+          {/* Category */}
+          <div className={sectionCls}>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Category</p>
+            <div>
+              <label className={labelCls}>Primary Category</label>
+              <select className={inputCls} value={categorySlug} onChange={e => setCategorySlug(e.target.value)}>
+                {CATEGORY_OPTIONS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </div>
+            <div className="mt-3">
+              <label className={labelCls}>Additional Categories</label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {CATEGORY_OPTIONS.map(c => (
+                  <button key={c.value} type="button"
+                    onClick={() => toggleCategorySlug(c.value)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                      categorySlugs.includes(c.value)
+                        ? 'bg-teal-600 text-white border-teal-600'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+                    }`}>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Pricing */}
+          <div className={sectionCls}>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Pricing</p>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className={labelCls}>Min ₹</label>
+                <input className={inputCls} type="number" value={priceMin} onChange={e => setPriceMin(e.target.value)} placeholder="300" />
+              </div>
+              <div>
+                <label className={labelCls}>Max ₹</label>
+                <input className={inputCls} type="number" value={priceMax} onChange={e => setPriceMax(e.target.value)} placeholder="500" />
+              </div>
+              <div>
+                <label className={labelCls}>Per</label>
+                <select className={inputCls} value={priceUnit} onChange={e => setPriceUnit(e.target.value)}>
+                  {PRICE_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Schedule */}
+          <div className={sectionCls}>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Schedule</p>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className={labelCls}>From</label>
+                <input className={inputCls} type="time" value={hoursFrom} onChange={e => setHoursFrom(e.target.value)} />
+              </div>
+              <div>
+                <label className={labelCls}>To</label>
+                <input className={inputCls} type="time" value={hoursTo} onChange={e => setHoursTo(e.target.value)} />
+              </div>
+            </div>
+            <label className={labelCls}>Working Days</label>
+            <div className="flex gap-2 flex-wrap mt-1">
+              {DAYS.map(d => (
+                <button key={d} type="button" onClick={() => toggleDay(d)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                    workingDays.includes(d)
+                      ? 'bg-teal-600 text-white border-teal-600'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+                  }`}>
+                  {d}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-red-600 font-medium">⚠️ {error}</p>}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 py-4 border-t border-slate-100 flex gap-3 flex-shrink-0">
+          <button onClick={() => onClose()} className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors">
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            className="flex-1 py-3 rounded-xl bg-teal-600 text-white font-bold text-sm hover:bg-teal-700 transition-colors disabled:opacity-60">
+            {saving ? 'Saving…' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Provider card ────────────────────────────────────────────────
 function ProviderCard({
   p,
@@ -115,6 +370,7 @@ function ProviderCard({
   onVerifiedChange,
   onTierChange,
   onCoordsSaved,
+  onEdit,
 }: {
   p: ProviderWithPhotos
   filter: ProviderStatus
@@ -122,6 +378,7 @@ function ProviderCard({
   onVerifiedChange: (id: string, val: boolean) => void
   onTierChange: (id: string, tier: string) => void
   onCoordsSaved: (id: string, lat: number, lng: number) => void
+  onEdit: (p: ProviderWithPhotos) => void
 }) {
   const [showCoords, setShowCoords] = useState(false)
   const [lat, setLat] = useState(String(p.lat ?? ''))
@@ -279,6 +536,14 @@ function ProviderCard({
             >
               👁
             </a>
+
+            <button
+              onClick={() => onEdit(p)}
+              className="w-12 h-12 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-lg hover:bg-slate-200 transition-colors min-h-[44px] flex-shrink-0"
+              title="Edit provider"
+            >
+              ✏️
+            </button>
           </div>
 
           <button
@@ -672,6 +937,7 @@ export default function AdminPage() {
   } | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
   const [providerStats, setProviderStats] = useState<Record<string, { views30d: number; reportsThisWeek: number }>>({})
+  const [editingProvider, setEditingProvider] = useState<ProviderWithPhotos | null>(null)
 
   // Load counts on mount — all via admin API routes (service role, bypasses RLS)
   useEffect(() => {
@@ -809,6 +1075,13 @@ export default function AdminPage() {
     setProviders((prev) => prev.map((p) => p.id === id ? { ...p, lat, lng } : p))
   }
 
+  function handleEditClose(updated?: Partial<ProviderWithPhotos>) {
+    if (updated && editingProvider) {
+      setProviders((prev) => prev.map((p) => p.id === editingProvider.id ? { ...p, ...updated } : p))
+    }
+    setEditingProvider(null)
+  }
+
   async function updateReview(id: string, status: 'approved' | 'rejected') {
     await fetch(`/api/admin/reviews/${id}`, {
       method: 'PATCH',
@@ -834,6 +1107,10 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-lg mx-auto">
+      {editingProvider && (
+        <EditProviderModal provider={editingProvider} onClose={handleEditClose} />
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -917,6 +1194,7 @@ export default function AdminPage() {
                   onVerifiedChange={toggleVerified}
                   onTierChange={setTier}
                   onCoordsSaved={updateCoords}
+                  onEdit={setEditingProvider}
                 />
               ))}
             </div>
