@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { createClient } from '@/lib/supabase/client'
 import DogBodyMap, { TICK_ZONES, type TickZoneId } from '@/components/DogBodyMap'
 
 const GROOMING_SERVICE_LABELS: Record<string, string> = {
@@ -54,11 +56,32 @@ type Report = {
   recommendations: string | null
   provider_name: string
   is_verified: boolean
+  customer_id: string | null
 }
 
-export default function GroomingReportCard({ report }: { report: Report }) {
+const EASE = [0.25, 0.46, 0.45, 0.94] as const
+
+export default function GroomingReportCard({
+  report,
+  isClaimed,
+  isClaimedByMe,
+}: {
+  report: Report
+  isClaimed: boolean
+  isClaimedByMe: boolean
+}) {
   const [copied, setCopied] = useState(false)
   const [showBefore, setShowBefore] = useState(false)
+  const [claiming, setClaiming] = useState(false)
+  const [claimed, setClaimed] = useState(isClaimedByMe)
+
+  useEffect(() => {
+    fetch('/api/care-card-view', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: report.token, type: 'grooming' }),
+    }).catch(() => {})
+  }, [report.token])
   const tickZones = (report.tick_locations as TickZoneId[]).filter(Boolean)
 
   async function handleCopy() {
@@ -309,6 +332,62 @@ export default function GroomingReportCard({ report }: { report: Report }) {
           }>
           {copied ? '✓ Link copied!' : '🔗 Share this report'}
         </button>
+
+        {/* ── Save to account ── */}
+        <AnimatePresence>
+          {!claimed && !isClaimed && (
+            <motion.div
+              className="rounded-2xl px-4 py-3 flex items-center gap-3"
+              style={{ background: 'oklch(0.975 0.006 85)', border: '1px solid rgba(226,220,200,0.7)' }}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.35, ease: EASE }}
+            >
+              <span className="text-2xl">✂️</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-800">Save to your account</p>
+                <p className="text-xs text-slate-400 leading-snug">Keep all your dog&apos;s grooming history in one place</p>
+              </div>
+              <motion.button
+                onClick={async () => {
+                  setClaiming(true)
+                  const res = await fetch(`/api/grooming-reports/${report.token}/claim`, { method: 'POST' })
+                  if (res.status === 401) {
+                    const supabase = createClient()
+                    const redirectTo = `${window.location.origin}/auth/callback?next=/grooming-report/${report.token}?autoclaim=1`
+                    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
+                    return
+                  } else if (res.ok || res.status === 409) {
+                    setClaimed(true)
+                  }
+                  setClaiming(false)
+                }}
+                disabled={claiming}
+                className="flex-shrink-0 px-3 py-2 rounded-xl text-sm font-bold text-white disabled:opacity-60"
+                style={{ background: 'linear-gradient(160deg, oklch(0.52 0.17 196) 0%, oklch(0.44 0.16 196) 100%)' }}
+                whileTap={{ scale: 0.94 }}
+                transition={{ duration: 0.12 }}
+              >
+                {claiming ? '…' : 'Save'}
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {claimed && (
+            <motion.div
+              className="rounded-2xl px-4 py-3 flex items-center gap-2"
+              style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, ease: EASE }}
+            >
+              <span className="text-lg">✓</span>
+              <p className="text-sm font-semibold text-green-700">Saved to your PupStep account</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* ── Footer ── */}
         <div className="text-center pt-4 pb-8">

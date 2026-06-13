@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import GroomingReportCard from './GroomingReportCard'
 
 type Props = { params: Promise<{ token: string }> }
@@ -62,5 +63,11 @@ export default async function GroomingReportPage({ params }: Props) {
   const report = await fetchReport(token)
   if (!report) notFound()
 
-  return <GroomingReportCard report={report} />
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  const isClaimed = report.customer_id !== null
+  const isClaimedByMe = report.customer_id !== null && report.customer_id === user?.id
+
+  return <GroomingReportCard report={report} isClaimed={isClaimed} isClaimedByMe={isClaimedByMe} />
 }
