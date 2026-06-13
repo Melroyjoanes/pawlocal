@@ -434,13 +434,15 @@ export default function LiveWalkClient({
           end_location: '',
         }),
       })
-      const json = await res.json()
-      if (!res.ok) throw new Error(json.error ?? 'Failed to save report')
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.error ?? `Server error ${res.status}`)
+      if (!json.token) throw new Error('No token returned — contact support')
       setReportToken(json.token)
       setWalkState('done')
     } catch (err) {
-      console.error(err)
-      alert('Could not save report. Please try again.')
+      console.error('[save-report]', err)
+      const msg = err instanceof Error ? err.message : String(err)
+      alert(`Could not save report: ${msg}`)
     } finally {
       setSaving(false)
     }
