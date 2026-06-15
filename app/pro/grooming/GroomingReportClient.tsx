@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import DogBodyMap, { TICK_ZONES, type TickZoneId } from '@/components/DogBodyMap'
+import ClientSelector, { type ProviderClient } from '@/components/ClientSelector'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -286,7 +287,9 @@ export default function GroomingReportClient({ initialReports, providerId, provi
   const [reports, setReports] = useState<GroomingReport[]>(initialReports)
 
   // Form state
+  const [selectedClient, setSelectedClient] = useState<ProviderClient | null>(null)
   const [dogName, setDogName] = useState('')
+  const [autoWaLink, setAutoWaLink] = useState<string | null>(null)
   const [duration, setDuration] = useState(60)
   const [servicesDone, setServicesDone] = useState<string[]>([])
   // ticksFound is derived from the number of zones selected on the map
@@ -314,6 +317,7 @@ export default function GroomingReportClient({ initialReports, providerId, provi
   const supabase = createClient()
 
   function resetForm() {
+    setSelectedClient(null); setAutoWaLink(null)
     setDogName(''); setDuration(60); setServicesDone([])
     setTickLocations([]); setSkinCondition('normal'); setEarCondition('clean')
     setNailCondition('healthy'); setCoatCondition('shiny'); setBehavior('calm')
@@ -355,7 +359,8 @@ export default function GroomingReportClient({ initialReports, providerId, provi
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!dogName.trim()) return
+    const effectiveDogName = selectedClient?.pet_name || dogName.trim()
+    if (!effectiveDogName) return
     setSubmitting(true); setSubmitError(null)
 
     try {
@@ -363,7 +368,7 @@ export default function GroomingReportClient({ initialReports, providerId, provi
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          dog_name: dogName,
+          dog_name: effectiveDogName,
           grooming_date: new Date().toISOString(),
           duration_mins: duration,
           services_done: servicesDone,
@@ -378,14 +383,16 @@ export default function GroomingReportClient({ initialReports, providerId, provi
           after_photo_url: afterPhotoUrl,
           notes: notes.trim() || null,
           recommendations: recommendations.trim() || null,
+          client_id: selectedClient?.id ?? null,
         }),
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Failed to save')
+      if (json.whatsapp_link) setAutoWaLink(json.whatsapp_link)
 
       setReports(prev => [{
         id: json.id, token: json.token,
-        dog_name: dogName, grooming_date: new Date().toISOString(),
+        dog_name: effectiveDogName, grooming_date: new Date().toISOString(),
         duration_mins: duration, services_done: servicesDone,
         ticks_found: tickLocations.length, tick_locations: tickLocations,
         skin_condition: skinCondition, ear_condition: earCondition,
@@ -454,7 +461,7 @@ export default function GroomingReportClient({ initialReports, providerId, provi
                   {shareUrl(successToken)}
                 </div>
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent(`Here is ${dogName}'s grooming report! ✂️\n${shareUrl(successToken)}`)}`}
+                  href={autoWaLink ?? `https://wa.me/?text=${encodeURIComponent(`Here is ${selectedClient?.pet_name ?? dogName}'s grooming report! ✂️\n${shareUrl(successToken)}`)}`}
                   target="_blank" rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold mb-3 transition-all"
                   style={{ background: '#25D366', color: '#fff' }}>
@@ -482,14 +489,17 @@ export default function GroomingReportClient({ initialReports, providerId, provi
                 onSubmit={handleSubmit} className="rounded-2xl overflow-hidden" style={CLAY_CARD}>
                 <div className="p-5 space-y-6">
 
-                  {/* Dog name */}
+                  {/* Client selector */}
                   <div>
                     <label className="block text-xs font-semibold text-stone-500 mb-1.5">
-                      Dog&apos;s name <span className="text-red-400">*</span>
+                      Which dog? <span className="text-red-400">*</span>
                     </label>
-                    <input type="text" value={dogName} onChange={e => setDogName(e.target.value)}
-                      placeholder="e.g. Bruno" required
-                      className="w-full px-4 py-3 rounded-xl text-sm text-stone-900 placeholder:text-stone-300 border border-stone-200 focus:outline-none focus:border-teal-400 transition-colors bg-white" />
+                    <ClientSelector selected={selectedClient} onSelect={setSelectedClient} />
+                    {!selectedClient && (
+                      <input type="text" value={dogName} onChange={e => setDogName(e.target.value)}
+                        placeholder="Or type dog name manually"
+                        className="w-full mt-2 px-4 py-3 rounded-xl text-sm text-stone-900 placeholder:text-stone-300 border border-stone-200 focus:outline-none focus:border-teal-400 transition-colors bg-white" />
+                    )}
                   </div>
 
                   {/* Duration */}
@@ -662,7 +672,7 @@ export default function GroomingReportClient({ initialReports, providerId, provi
                   {submitError && <p className="text-xs text-red-500 text-center">{submitError}</p>}
                 </div>
 
-                <button type="submit" disabled={submitting || !dogName.trim()}
+                <button type="submit" disabled={submitting || (!selectedClient && !dogName.trim())}
                   className="flex items-center justify-center gap-2 w-full py-4 text-sm font-bold transition-all disabled:opacity-50"
                   style={TEAL_BTN}>
                   {submitting ? 'Saving…' : '✓ Save grooming report'}

@@ -35,10 +35,24 @@ export async function POST(req: NextRequest) {
     services_done, ticks_found, tick_locations,
     skin_condition, ear_condition, nail_condition, coat_condition,
     behavior, before_photo_url, after_photo_url, notes, recommendations,
+    client_id,
   } = body
 
   if (!dog_name?.trim()) {
     return NextResponse.json({ error: 'Dog name is required' }, { status: 400 })
+  }
+
+  // If client_id provided, get owner WhatsApp for auto-delivery link
+  let ownerWhatsapp: string | null = null
+  let ownerName: string | null = null
+  if (client_id) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: clientRow } = await (admin.from('provider_clients') as any)
+      .select('owner_whatsapp, owner_name')
+      .eq('id', client_id)
+      .eq('provider_id', provider.id)
+      .single()
+    if (clientRow) { ownerWhatsapp = clientRow.owner_whatsapp; ownerName = clientRow.owner_name }
   }
 
   const token = crypto.randomUUID().replace(/-/g, '')
@@ -48,6 +62,7 @@ export async function POST(req: NextRequest) {
     .insert({
       token,
       provider_id:     provider.id,
+      client_id:       client_id ?? null,
       dog_name:        dog_name.trim(),
       grooming_date:   grooming_date ?? new Date().toISOString(),
       duration_mins:   duration_mins ?? 60,
@@ -68,5 +83,17 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ id: data.id, token: data.token })
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
+  const reportUrl = `${siteUrl}/grooming-report/${data.token}`
+
+  let whatsapp_link: string | null = null
+  if (ownerWhatsapp) {
+    const providerFirst = provider.name.split(' ')[0]
+    const greeting = ownerName ? `Hi ${ownerName.split(' ')[0]}!` : 'Hi!'
+    const msg = encodeURIComponent(`${greeting} Here is ${dog_name.trim()}'s grooming report from ${providerFirst} ✂️\n${reportUrl}`)
+    whatsapp_link = `https://wa.me/${ownerWhatsapp}?text=${msg}`
+  }
+
+  return NextResponse.json({ id: data.id, token: data.token, report_url: reportUrl, whatsapp_link })
 }

@@ -332,21 +332,58 @@ function WalkReportMiniCard() {
         ))}
       </div>
 
+      {/* Mini route map */}
+      <div style={{ background: 'linear-gradient(160deg, #E0F7FA 0%, #E8F5E9 100%)', borderRadius: 16, padding: '10px 12px', border: '1.5px solid rgba(10,138,150,0.18)', marginBottom: 10, position: 'relative', overflow: 'hidden' }}>
+        <p style={{ fontSize: 9, fontWeight: 700, color: '#0A8A96', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>Walk route · Juhu Beach Road</p>
+        <svg viewBox="0 0 292 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: 80 }}>
+          {/* Map background streets — subtle grid */}
+          <line x1="0" y1="40" x2="292" y2="40" stroke="rgba(10,138,150,0.08)" strokeWidth="12" />
+          <line x1="60" y1="0" x2="60" y2="80" stroke="rgba(10,138,150,0.06)" strokeWidth="8" />
+          <line x1="160" y1="0" x2="160" y2="80" stroke="rgba(10,138,150,0.06)" strokeWidth="8" />
+          <line x1="240" y1="0" x2="240" y2="80" stroke="rgba(10,138,150,0.06)" strokeWidth="8" />
+          {/* Route path */}
+          <path
+            d="M 18 60 C 30 60, 38 48, 55 44 C 72 40, 80 28, 100 26 C 120 24, 130 38, 150 36 C 170 34, 180 20, 200 22 C 218 24, 226 42, 246 44 C 262 46, 272 40, 280 36"
+            stroke="#0A8A96"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeDasharray="6 3"
+            opacity="0.35"
+          />
+          <path
+            d="M 18 60 C 30 60, 38 48, 55 44 C 72 40, 80 28, 100 26 C 120 24, 130 38, 150 36 C 170 34, 180 20, 200 22 C 218 24, 226 42, 246 44 C 262 46, 272 40, 280 36"
+            stroke="#0A8A96"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {/* Start pin */}
+          <circle cx="18" cy="60" r="7" fill="#0A8A96" />
+          <text x="18" y="63.5" textAnchor="middle" fontSize="8" fill="white">🐕</text>
+          {/* Poop marker */}
+          <circle cx="148" cy="36" r="9" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.5" />
+          <text x="148" y="39.5" textAnchor="middle" fontSize="9">💩</text>
+          {/* Pee markers */}
+          <circle cx="100" cy="26" r="7" fill="#EFF6FF" stroke="#BAE6FD" strokeWidth="1.5" />
+          <text x="100" y="29.5" textAnchor="middle" fontSize="7">💧</text>
+          <circle cx="220" cy="22" r="7" fill="#EFF6FF" stroke="#BAE6FD" strokeWidth="1.5" />
+          <text x="220" y="25.5" textAnchor="middle" fontSize="7">💧</text>
+          {/* End pin */}
+          <circle cx="280" cy="36" r="7" fill="#F07030" />
+          <text x="280" y="39.5" textAnchor="middle" fontSize="7" fill="white">🏁</text>
+        </svg>
+        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+          <span style={{ fontSize: 9, color: '#0A8A96', fontWeight: 600 }}>🟢 Start: Kairo&apos;s home</span>
+          <span style={{ fontSize: 9, color: '#F07030', fontWeight: 600 }}>🔴 End: Juhu Beach Rd</span>
+        </div>
+      </div>
+
       {/* Testimonial */}
       <div style={{ background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)', borderRadius: 16, padding: '12px 14px', border: '1px solid rgba(253,230,138,0.8)' }}>
         <p style={{ fontSize: 13, fontWeight: 600, color: '#78350F', lineHeight: 1.4 }}>&ldquo;Love this so much, keep sending me reports everyday 🥰&rdquo;</p>
         <p style={{ fontSize: 11, color: '#92400E', marginTop: 4, opacity: 0.8 }}>— Kairo&apos;s mom</p>
       </div>
-
-      {/* WhatsApp floating pill */}
-      <motion.div
-        animate={{ y: [0, -5, 0] }}
-        transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
-        style={{ position: 'absolute', top: 16, right: -8, background: 'linear-gradient(135deg, #DCFCE7, #BBF7D0)', borderRadius: 100, padding: '6px 12px', boxShadow: '0 3px 0px rgba(5,150,105,0.18), 0 6px 16px rgba(187,247,208,0.5)', border: '1px solid rgba(187,247,208,0.7)', display: 'flex', alignItems: 'center', gap: 5 }}
-      >
-        <span style={{ fontSize: 13 }}>💬</span>
-        <span style={{ fontSize: 11, fontWeight: 700, color: '#064E3B', whiteSpace: 'nowrap' }}>Sent via WhatsApp</span>
-      </motion.div>
     </motion.div>
   )
 }
@@ -376,13 +413,13 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
 
         {/* Hero decorations — 2 spheres + bone + paw trail */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-          {/* Big amber sphere top-right — GPU layer via will-change */}
+          {/* Big teal sphere top-right — GPU layer via will-change */}
           <motion.div
             style={{ position: 'absolute', top: -60, right: -50, willChange: 'transform' }}
             animate={{ y: [0, -18, 0] }}
             transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <AmberSphere size={280} />
+            <TealSphere size={280} />
           </motion.div>
           {/* Teal sphere bottom-left */}
           <motion.div

@@ -41,17 +41,37 @@ export async function POST(req: NextRequest) {
   // Find provider by email
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: provider } = await (admin().from('providers') as any)
-    .select('id')
+    .select('id, name')
     .eq('email', user.email)
     .single()
 
   if (!provider) return NextResponse.json({ error: 'Provider not found' }, { status: 404 })
 
   const body = await req.json()
-  const { dog_name, duration_mins, poop_count, pee_count, notes, photo_url, walk_date, start_location, end_location, route_points, distance_meters, poop_events, pee_events } = body
+  const {
+    dog_name, duration_mins, poop_count, pee_count, notes, photo_url, walk_date,
+    start_location, end_location, route_points, distance_meters, poop_events, pee_events,
+    client_id, // new: linked client from provider_clients
+  } = body
 
   if (!dog_name || duration_mins == null) {
     return NextResponse.json({ error: 'Missing required fields: dog_name, duration_mins' }, { status: 400 })
+  }
+
+  // If client_id provided, verify it belongs to this provider and get owner WhatsApp
+  let ownerWhatsapp: string | null = null
+  let ownerName: string | null = null
+  if (client_id) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: clientRow } = await (admin().from('provider_clients') as any)
+      .select('id, owner_whatsapp, owner_name')
+      .eq('id', client_id)
+      .eq('provider_id', provider.id)
+      .single()
+    if (clientRow) {
+      ownerWhatsapp = clientRow.owner_whatsapp
+      ownerName = clientRow.owner_name
+    }
   }
 
   // Generate 32-char hex share token
@@ -61,6 +81,7 @@ export async function POST(req: NextRequest) {
   const { data, error } = await (admin().from('walk_reports') as any)
     .insert({
       provider_id: provider.id,
+      client_id: client_id ?? null,
       token,
       dog_name: dog_name.trim(),
       duration_mins: Number(duration_mins),
@@ -81,5 +102,19 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  return NextResponse.json({ ok: true, token: data.token, id: data.id })
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
+  const reportUrl = `${siteUrl}/walk-report/${data.token}`
+
+  // Build pre-composed WhatsApp link if we have the owner's number
+  let whatsapp_link: string | null = null
+  if (ownerWhatsapp) {
+    const providerFirst = provider.name.split(' ')[0]
+    const greeting = ownerName ? `Hi ${ownerName.split(' ')[0]}!` : 'Hi!'
+    const msg = encodeURIComponent(
+      `${greeting} Here is ${dog_name.trim()}'s walk report from ${providerFirst} 🐾\n${reportUrl}`
+    )
+    whatsapp_link = `https://wa.me/${ownerWhatsapp}?text=${msg}`
+  }
+
+  return NextResponse.json({ ok: true, token: data.token, id: data.id, report_url: reportUrl, whatsapp_link })
 }

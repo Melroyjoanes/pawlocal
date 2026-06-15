@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { AnimatePresence, motion, type Variants } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import ClientSelector, { type ProviderClient } from '@/components/ClientSelector'
 
 type WalkState = 'ready' | 'walking' | 'summary' | 'done'
 
@@ -171,11 +172,13 @@ export default function LiveWalkClient({
   const [poopEvents, setPoopEvents] = useState<GeoEvent[]>([])
   const [peeEvents, setPeeEvents] = useState<GeoEvent[]>([])
   const [photos, setPhotos] = useState<string[]>([])
+  const [selectedClient, setSelectedClient] = useState<ProviderClient | null>(null)
   const [dogName, setDogName] = useState('')
   const [notes, setNotes] = useState('')
   const [mood, setMood] = useState('')
   const [saving, setSaving] = useState(false)
   const [reportToken, setReportToken] = useState('')
+  const [autoWaLink, setAutoWaLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [gpsError, setGpsError] = useState<string | null>(null)
@@ -349,8 +352,9 @@ export default function LiveWalkClient({
   ]
 
   async function handleGenerateReport() {
-    if (!dogName.trim()) {
-      alert("Please enter the dog's name.")
+    const effectiveDogName = selectedClient?.pet_name || dogName.trim()
+    if (!effectiveDogName) {
+      alert("Please select a dog or enter a dog name.")
       return
     }
     setSaving(true)
@@ -361,7 +365,7 @@ export default function LiveWalkClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          dog_name: dogName.trim(),
+          dog_name: effectiveDogName,
           duration_mins: Math.floor(elapsed / 60),
           poop_count: poopEvents.length,
           pee_count: peeEvents.length,
@@ -373,12 +377,14 @@ export default function LiveWalkClient({
           pee_events: peeEvents,
           start_location: '',
           end_location: '',
+          client_id: selectedClient?.id ?? null,
         }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(json.error ?? `Server error ${res.status}`)
       if (!json.token) throw new Error('No token returned — contact support')
       setReportToken(json.token)
+      setAutoWaLink(json.whatsapp_link ?? null)
       setWalkState('done')
     } catch (err) {
       console.error('[save-report]', err)
@@ -403,10 +409,12 @@ export default function LiveWalkClient({
     setPoopEvents([])
     setPeeEvents([])
     setPhotos([])
+    setSelectedClient(null)
     setDogName('')
     setNotes('')
     setMood('')
     setReportToken('')
+    setAutoWaLink(null)
     setCopied(false)
     routePointsRef.current = []
   }
@@ -664,18 +672,22 @@ export default function LiveWalkClient({
 
             {/* Form */}
             <div className="flex flex-col gap-4 pb-8">
-              {/* Dog name */}
+              {/* Client selector */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Dog Name <span className="text-rose-500">*</span>
+                  Which dog? <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  value={dogName}
-                  onChange={(e) => setDogName(e.target.value)}
-                  placeholder="e.g. Bruno"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                />
+                <ClientSelector selected={selectedClient} onSelect={setSelectedClient} />
+                {/* Fallback manual entry if no client selected */}
+                {!selectedClient && (
+                  <input
+                    type="text"
+                    value={dogName}
+                    onChange={(e) => setDogName(e.target.value)}
+                    placeholder="Or type dog name manually"
+                    className="w-full mt-2 px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  />
+                )}
               </div>
 
               {/* Mood picker */}
@@ -753,7 +765,7 @@ export default function LiveWalkClient({
               {/* Generate report */}
               <button
                 onClick={handleGenerateReport}
-                disabled={saving || !dogName.trim()}
+                disabled={saving || (!selectedClient && !dogName.trim())}
                 className="w-full py-4 rounded-2xl text-white font-semibold text-lg shadow-md active:scale-95 transition-all mt-2 disabled:opacity-50 disabled:active:scale-100"
                 style={{ background: 'oklch(0.48 0.17 196)' }}
               >
@@ -842,9 +854,9 @@ export default function LiveWalkClient({
                 )}
               </button>
 
-              {/* WhatsApp */}
+              {/* WhatsApp — direct to owner if linked, else generic share */}
               <a
-                href={`https://wa.me/?text=${whatsappText}`}
+                href={autoWaLink ?? `https://wa.me/?text=${whatsappText}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full py-3.5 rounded-2xl font-semibold text-sm shadow-sm active:scale-95 transition-all flex items-center justify-center gap-2 text-white"
@@ -854,7 +866,7 @@ export default function LiveWalkClient({
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
                   <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.845L.057 23.428a.5.5 0 00.609.61l5.64-1.476A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.91 0-3.698-.5-5.244-1.373l-.375-.217-3.888 1.018 1.034-3.774-.237-.389A9.937 9.937 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
                 </svg>
-                Share on WhatsApp
+                {autoWaLink ? `Send to ${selectedClient?.owner_name?.split(' ')[0] ?? 'owner'} on WhatsApp` : 'Share on WhatsApp'}
               </a>
 
               {/* View report */}

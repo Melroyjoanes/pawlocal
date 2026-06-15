@@ -10,13 +10,40 @@ function resolveBase(request: NextRequest): string {
   return process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin
 }
 
+// Extract invite token if the next path is the provider link route
+function extractInviteToken(next: string): string | null {
+  const match = next.match(/^\/join-as-provider\/([^/]+)\/link/)
+  return match ? match[1] : null
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function logAnalyticsEvent(admin: any, params: {
+  event_type: string
+  user_id: string | null
+  user_email: string | null
+  user_name: string | null
+  is_new_user: boolean
+  invite_token: string | null
+  referrer_url: string | null
+  ip_address: string | null
+  user_agent: string | null
+  metadata?: Record<string, unknown>
+}) {
+  try {
+    await (admin.from('analytics_events') as any).insert({
+      ...params,
+      metadata: params.metadata ?? {},
+    })
+  } catch {
+    // never fail auth flow due to analytics
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const code   = searchParams.get('code')
-  const base   = resolveBase(request)
+  const code = searchParams.get('code')
+  const base = resolveBase(request)
 
-  // Reject anything that isn't a same-site path — prevents open-redirect attacks
-  // where `?next=@attacker.com` resolves to https://pupstep.in@attacker.com
   const rawNext = searchParams.get('next') ?? '/'
   const next = rawNext.startsWith('/') && !rawNext.includes('://') && !rawNext.startsWith('//') ? rawNext : '/'
 
@@ -43,55 +70,100 @@ export async function GET(request: NextRequest) {
   const { error } = await supabase.auth.exchangeCodeForSession(code)
   if (error) return NextResponse.redirect(`${base}/?auth_error=true`)
 
-  // Get the signed-in user
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.redirect(`${base}/?auth_error=true`)
 
-  if (user?.email) {
-    const admin = createAdminClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+  const admin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
-    // A provider may have multiple rows (different categories) — use limit+find
-    // so .single() doesn't throw when there are 2+ listings for the same email.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Determine if new user: created_at and last_sign_in_at within 10 seconds of each other
+  const createdAt = new Date(user.created_at).getTime()
+  const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : createdAt
+  const isNewUser = Math.abs(createdAt - lastSignIn) < 10_000
+
+  const inviteToken = extractInviteToken(next)
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    ?? request.headers.get('x-real-ip')
+    ?? null
+  const userAgent = request.headers.get('user-agent') ?? null
+  const referrer = request.headers.get('referer') ?? null
+
+  // Log analytics event (fire and forget — don't block auth redirect)
+  logAnalyticsEvent(admin, {
+    event_type: isNewUser ? 'user_signed_up' : 'user_signed_in',
+    user_id: user.id,
+    user_email: user.email ?? null,
+    user_name: user.user_metadata?.full_name ?? null,
+    is_new_user: isNewUser,
+    invite_token: inviteToken,
+    referrer_url: referrer,
+    ip_address: ip,
+    user_agent: userAgent,
+    metadata: { next, provider: 'google' },
+  })
+
+  if (user.email) {
+    // Check if they have a provider account (by email OR by user_id)
     const { data: providerRows } = await (admin.from('providers') as any)
-      .select('id, status')
-      .eq('email', user.email)
+      .select('id, status, user_id')
+      .or(`email.eq.${user.email},user_id.eq.${user.id}`)
       .limit(10)
 
-    // Prefer approved > pending > rejected
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const provider = (providerRows as any[])?.find((p) => p.status === 'approved')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ?? (providerRows as any[])?.find((p) => p.status === 'pending')
+    const provider = (providerRows as any[])?.find((p: any) => p.status === 'approved')
+      ?? (providerRows as any[])?.find((p: any) => p.status === 'pending')
       ?? providerRows?.[0]
       ?? null
 
     if (provider) {
+      // Link user_id to provider if not already linked (backfill)
+      if (!provider.user_id) {
+        await (admin.from('providers') as any)
+          .update({ user_id: user.id })
+          .eq('id', provider.id)
+      }
+
       if (provider.status === 'approved') {
-        // ✅ Approved provider — always go to dashboard regardless of where they came from
+        // Approved provider — always go to dashboard
+        // EXCEPTION: if they clicked a walker invite link, handle that first
+        if (next.startsWith('/join-as-provider/')) {
+          return NextResponse.redirect(`${base}${next}`)
+        }
         return NextResponse.redirect(`${base}/pro/dashboard`)
       }
       if (provider.status === 'pending') {
-        // ⏳ Applied but not approved yet
         return NextResponse.redirect(`${base}/pro?status=pending`)
       }
-      // rejected — fall through to customer redirect
+      // rejected — fall through to customer/owner routing
     } else if (next === '/pro/register') {
-      // 🆕 New provider registration via Google (from /join page GoogleJoinButton)
-      // Pre-fill name + email in the join form
       const name  = encodeURIComponent(user.user_metadata?.full_name ?? user.user_metadata?.name ?? '')
       const email = encodeURIComponent(user.email)
       return NextResponse.redirect(`${base}/join?from=google&name=${name}&email=${email}`)
     } else if (next.startsWith('/pro')) {
-      // ⚠️ User clicked Google on the /pro login page but has no provider account
-      // Could be a customer who accidentally landed on the pro login — send them back
-      // to /pro with a clear error rather than dumping them into the registration form
       return NextResponse.redirect(`${base}/pro?status=no_account`)
     }
   }
 
-  // Default: go wherever `next` says (customer flow)
+  // Going to a walker invite link — let that route handle linking
+  if (next.startsWith('/join-as-provider/')) {
+    return NextResponse.redirect(`${base}${next}`)
+  }
+
+  // NEW OWNER: redirect to onboarding if this is their first login
+  // and they're not being sent somewhere specific
+  if (isNewUser && next === '/') {
+    // Check if profile exists and onboarding not yet completed
+    const { data: profile } = await (admin.from('profiles') as any)
+      .select('onboarding_completed')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    const needsOnboarding = !profile?.onboarding_completed
+    if (needsOnboarding) {
+      return NextResponse.redirect(`${base}/onboarding`)
+    }
+  }
+
   return NextResponse.redirect(`${base}${next}`)
 }

@@ -682,6 +682,52 @@ export default function WalkReportCard({
           )}
         </AnimatePresence>
 
+        {/* ── Viral hook ──────────────────────────────────────────── */}
+        <motion.div
+          className="mt-3 rounded-2xl overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, oklch(0.94 0.06 196) 0%, oklch(0.90 0.08 196) 100%)', border: '1.5px solid oklch(0.82 0.10 196)' }}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.5, ease: EASE }}
+        >
+          <div className="p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">🐕</span>
+              <h3 className="font-display text-lg text-stone-900 leading-tight">
+                Get reports like this for your dog
+              </h3>
+            </div>
+            <p className="text-sm text-stone-600 mb-4 leading-relaxed">
+              Your walker sends a report after every walk. You see it instantly — GPS route, photos, everything.
+            </p>
+            <motion.button
+              onClick={async () => {
+                // Track the click
+                fetch('/api/track', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ event_type: 'viral_hook_tapped', report_token: report.token }),
+                }).catch(() => {})
+
+                const supabase = createClient()
+                const { data: { user } } = await supabase.auth.getUser()
+                if (user) {
+                  window.location.href = '/onboarding'
+                } else {
+                  const redirectTo = `${window.location.origin}/auth/callback?next=/onboarding`
+                  await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
+                }
+              }}
+              className="w-full py-3.5 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2"
+              style={{ background: 'oklch(0.48 0.17 196)', boxShadow: '0 3px 0 oklch(0.35 0.14 196)' }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ duration: 0.12 }}
+            >
+              Set up free →
+            </motion.button>
+          </div>
+        </motion.div>
+
         {/* ── Footer ─────────────────────────────────────────── */}
         <motion.div
           className="mt-6 flex flex-col items-center gap-2 text-center"
