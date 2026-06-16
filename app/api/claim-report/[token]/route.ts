@@ -6,17 +6,23 @@ function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
+function resolveBase(req: NextRequest): string {
+  const forwardedHost = req.headers.get('x-forwarded-host')
+  if (forwardedHost) return `https://${forwardedHost}`
+  if (process.env.NODE_ENV === 'development') return new URL(req.url).origin
+  return process.env.NEXT_PUBLIC_SITE_URL ?? new URL(req.url).origin
+}
 
 // GET /api/claim-report/[token]
 // Called after Google OAuth redirect — claims the walk report and links the
 // provider_clients record so all future reports from this walker auto-save.
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params
-  const reportUrl = `${siteUrl}/walk-report/${token}`
+  const base = resolveBase(req)
+  const reportUrl = `${base}/walk-report/${token}`
 
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -54,5 +60,5 @@ export async function GET(
       .is('owner_user_id', null)
   }
 
-  return NextResponse.redirect(`${reportUrl}?saved=1`)
+  return NextResponse.redirect(`${base}/walk-report/${token}?saved=1`)
 }

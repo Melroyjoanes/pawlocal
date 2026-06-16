@@ -126,8 +126,8 @@ export async function GET(request: NextRequest) {
 
       if (provider.status === 'approved') {
         // Approved provider — always go to dashboard
-        // EXCEPTION: if they clicked a walker invite link, handle that first
-        if (next.startsWith('/join-as-provider/')) {
+        // EXCEPTIONS: let specific deep-link flows through
+        if (next.startsWith('/join-as-provider/') || next.startsWith('/api/claim-report/')) {
           return NextResponse.redirect(`${base}${next}`)
         }
         return NextResponse.redirect(`${base}/pro/dashboard`)
