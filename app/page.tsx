@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
-import LandingPage from '@/components/LandingPage'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
+import LandingPage, { type FeaturedProvider } from '@/components/LandingPage'
 import ProviderAutoRedirect from '@/components/ProviderAutoRedirect'
 
 // Revalidate every 5 minutes — provider counts change rarely, no need to hit
@@ -8,9 +9,9 @@ import ProviderAutoRedirect from '@/components/ProviderAutoRedirect'
 export const revalidate = 300
 
 export const metadata: Metadata = {
-  title: "PupStep — Mumbai's Verified Pet People",
+  title: 'PupStep — Dog Walk Reports & Pet Services in Juhu, Mumbai',
   description:
-    "Mumbai's most trusted pet directory. Find verified walkers, vets, groomers and more near you. WhatsApp direct. Zero booking fees.",
+    'Your dog walker sends a photo care report after every walk — GPS route, poop count, photos. Find verified walkers, groomers and vets in Juhu, Mumbai. WhatsApp direct. ₹0 fees.',
 }
 
 export default async function HomePage({
@@ -49,6 +50,50 @@ export default async function HomePage({
 
   const totalProviders = Object.values(countMap).reduce((a, b) => a + b, 0)
 
+  // Featured providers — top 3 by report count (service role, bypasses RLS)
+  let featuredProviders: FeaturedProvider[] = []
+  try {
+    const admin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    const { data: reportRows } = await admin
+      .from('walk_reports')
+      .select('provider_id')
+      .not('provider_id', 'is', null)
+
+    if (reportRows) {
+      const countByProvider: Record<string, number> = {}
+      for (const row of reportRows) {
+        countByProvider[row.provider_id] = (countByProvider[row.provider_id] ?? 0) + 1
+      }
+      const topIds = Object.entries(countByProvider)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([id]) => id)
+
+      if (topIds.length > 0) {
+        const { data: provRows } = await admin
+          .from('providers')
+          .select('id, name, whatsapp, category_slug')
+          .in('id', topIds)
+          .eq('status', 'approved')
+
+        if (provRows) {
+          featuredProviders = provRows.map(p => ({
+            id: p.id,
+            name: p.name,
+            whatsapp: p.whatsapp ?? null,
+            category_slug: p.category_slug,
+            reportCount: countByProvider[p.id] ?? 0,
+          })).sort((a, b) => b.reportCount - a.reportCount).slice(0, 3)
+        }
+      }
+    }
+  } catch {
+    // non-blocking — featured strip is optional
+  }
+
   return (
     <>
       {/* WebSite schema — enables sitelinks + brand recognition in Google */}
@@ -59,7 +104,7 @@ export default async function HomePage({
             "@context": "https://schema.org",
             "@type": "WebSite",
             "name": "PupStep",
-            "alternateName": "PupStep — Mumbai's Verified Pet People",
+            "alternateName": "PupStep — Dog Walk Reports & Pet Services in Juhu Mumbai",
             "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}`,
             "potentialAction": {
               "@type": "SearchAction",
@@ -79,7 +124,7 @@ export default async function HomePage({
             "name": "PupStep",
             "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}`,
             "logo": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/api/og`,
-            "description": "Mumbai's most trusted hyperlocal pet services directory. Verified walkers, vets, groomers and more — WhatsApp direct, zero booking fees.",
+            "description": "Care reporting platform for pet parents in Juhu, Mumbai. Verified dog walkers send a photo care report after every walk — GPS route, photos, poop count. Find trusted walkers, groomers, vets.",
             "areaServed": { "@type": "City", "name": "Mumbai", "containedInPlace": { "@type": "Country", "name": "India" } },
             "foundingLocation": { "@type": "Place", "name": "Juhu, Mumbai, India" },
             "sameAs": []
@@ -94,7 +139,7 @@ export default async function HomePage({
             "@context": "https://schema.org",
             "@type": "LocalBusiness",
             "name": "PupStep",
-            "description": "Mumbai's verified pet people. Find trusted dog walkers, vets, groomers, trainers and pet stores near you.",
+            "description": "Dog walk reports and pet services in Juhu, Mumbai. Verified dog walkers send photo care reports after every walk. Find trusted walkers, groomers, vets in Juhu. WhatsApp direct. ₹0 fees.",
             "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}`,
             "image": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/api/og`,
             "telephone": "",
@@ -117,7 +162,39 @@ export default async function HomePage({
           })
         }}
       />
-      {/* FAQ schema — triggers rich result accordion in Google search */}
+      {/* HowTo schema — rich result for "how to find a dog walker" queries */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "HowTo",
+            "name": "How to find a verified dog walker in Juhu, Mumbai",
+            "description": "Find a trusted, verified dog walker in Juhu, Mumbai who sends a photo care report after every walk.",
+            "totalTime": "PT5M",
+            "estimatedCost": { "@type": "MonetaryAmount", "currency": "INR", "value": "0" },
+            "step": [
+              {
+                "@type": "HowToStep",
+                "name": "Browse verified walkers",
+                "text": "Visit the dog walking section on PupStep and browse verified walkers near Juhu. Every profile shows services, area covered, and the number of care reports sent.",
+                "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/dog-walking`
+              },
+              {
+                "@type": "HowToStep",
+                "name": "Contact on WhatsApp",
+                "text": "Tap the WhatsApp button on any profile to contact the walker directly. No booking fee, no middleman."
+              },
+              {
+                "@type": "HowToStep",
+                "name": "Receive care reports",
+                "text": "After every walk, your walker logs the session — GPS route, photos, poop count, duration. You receive a care report link. Save it to your PupStep account."
+              }
+            ]
+          })
+        }}
+      />
+      {/* Updated FAQ with care report questions */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -128,17 +205,22 @@ export default async function HomePage({
               {
                 "@type": "Question",
                 "name": "What is PupStep?",
-                "acceptedAnswer": { "@type": "Answer", "text": "PupStep is Mumbai's verified pet services directory. We list trusted dog walkers, vets, groomers, trainers and pet stores — all manually verified by our team. You contact providers directly on WhatsApp. Zero booking fees." }
+                "acceptedAnswer": { "@type": "Answer", "text": "PupStep is a care reporting platform and pet services directory for Juhu, Mumbai. Verified walkers and groomers send you a photo care report after every session. Zero booking fees." }
               },
               {
                 "@type": "Question",
-                "name": "How do I find a dog walker in Mumbai on PupStep?",
-                "acceptedAnswer": { "@type": "Answer", "text": `Visit ${process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : 'pupstep.in'}/dog-walking to browse verified dog walkers near you in Mumbai. Each walker has a detailed profile with reviews, GPS walk reports, and a direct WhatsApp button. No middleman, no booking fees.` }
+                "name": "What is a care report on PupStep?",
+                "acceptedAnswer": { "@type": "Answer", "text": "After every walk or grooming session, your provider logs the session on PupStep. You receive a care report with your dog's photo, GPS walk route, duration, poop count, and notes. Reports are saved to your account so you can track your dog's health history over time." }
+              },
+              {
+                "@type": "Question",
+                "name": "How do I find a dog walker in Juhu who sends walk reports?",
+                "acceptedAnswer": { "@type": "Answer", "text": `Visit ${process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : 'pupstep.in'}/dog-walking to browse verified dog walkers in Juhu who are registered on PupStep. Every walker on the platform can send walk reports after each session. Contact them directly on WhatsApp.` }
               },
               {
                 "@type": "Question",
                 "name": "Are pet service providers on PupStep verified?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Yes. Every provider on PupStep is manually reviewed by our team before getting a Verified badge. We check their identity, experience, and references. You can also read real reviews from other pet parents." }
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes. Every provider on PupStep is manually reviewed by our team before getting a Verified badge. We check their identity, experience, and references." }
               },
               {
                 "@type": "Question",
@@ -148,19 +230,14 @@ export default async function HomePage({
               {
                 "@type": "Question",
                 "name": "Which areas in Mumbai does PupStep cover?",
-                "acceptedAnswer": { "@type": "Answer", "text": "PupStep currently focuses on Juhu, Versova, Andheri West, and surrounding areas in Mumbai. We are expanding to more neighbourhoods. Post a request on Pet Broadcast and nearby providers will reply." }
-              },
-              {
-                "@type": "Question",
-                "name": "How do I find a vet near me in Mumbai?",
-                "acceptedAnswer": { "@type": "Answer", "text": `Visit ${process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : 'pupstep.in'}/vet to find trusted veterinary clinics near you in Mumbai. All vets are verified. You can see their location on a map, read reviews, and WhatsApp them directly.` }
+                "acceptedAnswer": { "@type": "Answer", "text": "PupStep currently focuses on Juhu, Versova, Andheri West, and Santacruz West in Mumbai. We are expanding to more neighbourhoods." }
               }
             ]
           })
         }}
       />
       <ProviderAutoRedirect />
-      <LandingPage countMap={countMap} totalProviders={totalProviders} neighbourhood={neighbourhood} />
+      <LandingPage countMap={countMap} totalProviders={totalProviders} neighbourhood={neighbourhood} featuredProviders={featuredProviders} />
     </>
   )
 }
