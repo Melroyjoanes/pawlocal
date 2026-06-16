@@ -962,6 +962,9 @@ export default function AdminPage() {
       profile_views: number
       neighbourhood: string
       created_at: string
+      reports_sent: number
+      reports_viewed: number
+      open_rate: number
     }[]
   } | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
