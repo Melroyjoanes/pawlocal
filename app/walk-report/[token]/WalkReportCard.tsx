@@ -250,6 +250,7 @@ export default function WalkReportCard({
   const [copied, setCopied] = useState(false)
   const [burst, setBurst] = useState(false)
   const [shareUrl, setShareUrl] = useState('')
+  const [justSaved, setJustSaved] = useState(false)
   const prefersReduced = useReducedMotion()
 
   // Track parent view on mount — both systems
@@ -271,6 +272,16 @@ export default function WalkReportCard({
   // Set share URL client-side only
   useEffect(() => {
     setShareUrl(window.location.href.split('?')[0])
+  }, [])
+
+  // Detect ?saved=1 after OAuth claim redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('saved') === '1') {
+      setJustSaved(true)
+      // Clean the URL without reloading
+      window.history.replaceState({}, '', window.location.pathname)
+    }
   }, [])
 
   // Trigger paw burst shortly after mount
@@ -626,14 +637,20 @@ export default function WalkReportCard({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: EASE }}
           >
-            <span className="text-xl">✓</span>
+            <span className="text-xl">{justSaved ? '🎉' : '✓'}</span>
             <div>
-              <p className="text-sm font-semibold text-green-800">Reports arrive automatically</p>
-              <p className="text-xs text-green-600 leading-snug">Every walk gets delivered to your PupStep account</p>
+              <p className="text-sm font-semibold text-green-800">
+                {justSaved ? 'Saved to your account!' : 'Reports arrive automatically'}
+              </p>
+              <p className="text-xs text-green-600 leading-snug">
+                {justSaved
+                  ? `Every walk report for ${report.dog_name} will be here — no action needed.`
+                  : 'Every walk gets delivered to your PupStep account'}
+              </p>
             </div>
           </motion.div>
         ) : (
-          /* Stranger: viral hook with referral attribution */
+          /* Stranger: save prompt */
           <motion.div
             className="mt-3 rounded-2xl overflow-hidden"
             style={{
@@ -645,14 +662,8 @@ export default function WalkReportCard({
             transition={{ duration: 0.4, delay: 0.5, ease: EASE }}
           >
             <div className="p-5">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">🐕</span>
-                <h3 className="font-display text-lg text-stone-900 leading-tight">
-                  Get reports like this for your dog
-                </h3>
-              </div>
-              <p className="text-sm text-stone-600 mb-4 leading-relaxed">
-                Your walker sends a report after every walk. You see it instantly — GPS, photos, everything. Free.
+              <p className="text-sm font-semibold text-stone-700 mb-3">
+                Save {report.dog_name}&apos;s reports to your account — every walk, automatically.
               </p>
               <motion.button
                 onClick={async () => {
@@ -663,14 +674,11 @@ export default function WalkReportCard({
                   }).catch(() => {})
                   const supabase = createClient()
                   const { data: { user } } = await supabase.auth.getUser()
-                  // Pass referral attribution through the OAuth flow
-                  const refParams = report.provider_id
-                    ? `&ref_report=${report.token}&ref_provider=${report.provider_id}`
-                    : ''
+                  const claimPath = `/api/claim-report/${report.token}`
                   if (user) {
-                    window.location.href = `/onboarding?ref_provider=${report.provider_id ?? ''}`
+                    window.location.href = claimPath
                   } else {
-                    const redirectTo = `${window.location.origin}/auth/callback?next=/onboarding${refParams}`
+                    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(claimPath)}`
                     await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
                   }
                 }}
@@ -679,7 +687,7 @@ export default function WalkReportCard({
                 whileTap={{ scale: 0.97 }}
                 transition={{ duration: 0.12 }}
               >
-                Set up free →
+                Save to my account →
               </motion.button>
             </div>
           </motion.div>
