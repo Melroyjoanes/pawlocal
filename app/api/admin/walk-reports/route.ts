@@ -69,10 +69,32 @@ export async function GET() {
     )
   }
 
-  // Attach customer info to each report
+  // Fetch report_viewed and viral_hook_tapped events for all tokens
+  const tokens = reports.map((r: any) => r.token as string)
+  const { data: events } = tokens.length > 0
+    ? await db.from('analytics_events')
+        .select('report_token, event_type')
+        .in('report_token', tokens)
+        .in('event_type', ['report_viewed', 'viral_hook_tapped'])
+    : { data: [] }
+
+  const viewCountMap: Record<string, number> = {}
+  const hookTappedSet = new Set<string>()
+  for (const ev of (events ?? [])) {
+    if (ev.event_type === 'report_viewed') {
+      viewCountMap[ev.report_token] = (viewCountMap[ev.report_token] ?? 0) + 1
+    }
+    if (ev.event_type === 'viral_hook_tapped') {
+      hookTappedSet.add(ev.report_token)
+    }
+  }
+
+  // Attach customer info and event data to each report
   const enriched = reports.map((r: any) => ({
     ...r,
     customer: r.customer_id ? (customerMap[r.customer_id] ?? null) : null,
+    view_count: viewCountMap[r.token] ?? 0,
+    hook_tapped: hookTappedSet.has(r.token),
   }))
 
   return NextResponse.json(enriched)

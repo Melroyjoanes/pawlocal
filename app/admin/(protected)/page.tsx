@@ -43,6 +43,8 @@ interface WalkReport {
     whatsapp: string
     category_slug: string
   } | null
+  view_count: number
+  hook_tapped: boolean
 }
 
 interface GroomingReport {
@@ -851,8 +853,10 @@ function BroadcastAdminCard({
 }
 
 // ── Walk report card (admin view) ────────────────────────────────
-function WalkReportAdminCard({ r, views30d }: { r: WalkReport; views30d?: number }) {
+function WalkReportAdminCard({ r }: { r: WalkReport }) {
   const siteUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in')
+  const opened = r.view_count > 0
+  const saved = !!r.customer_id
 
   return (
     <div className="bg-white border border-border rounded-2xl p-4">
@@ -869,12 +873,7 @@ function WalkReportAdminCard({ r, views30d }: { r: WalkReport; views30d?: number
             <div>
               <p className="font-semibold text-slate-900">{r.dog_name}</p>
               <p className="text-xs text-slate-500 mt-0.5">
-                by <span className="font-medium">{r.providers?.name ?? 'Unknown walker'}</span>
-                {views30d !== undefined && views30d > 0 && (
-                  <span className="ml-2 inline-flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600">
-                    👁 {views30d}
-                  </span>
-                )}
+                {new Date(r.walk_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
               </p>
             </div>
             <span className="text-[11px] text-slate-400 whitespace-nowrap">{timeAgo(r.created_at)}</span>
@@ -887,38 +886,28 @@ function WalkReportAdminCard({ r, views30d }: { r: WalkReport; views30d?: number
             <span>💧 {r.pee_count}</span>
           </div>
 
-          <div className="flex items-center gap-3 mt-2 flex-wrap">
-            {/* Claimed status */}
-            {r.customer_id ? (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                ✓ {r.customer?.name ?? r.customer?.email ?? 'Customer'} claimed
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-400">
-                Not claimed
-              </span>
-            )}
-
-            {/* Provider WhatsApp */}
-            {r.providers?.whatsapp && (
-              <a
-                href={`https://wa.me/91${r.providers.whatsapp.replace(/\D/g, '').slice(-10)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[10px] font-semibold text-[#25D366] hover:underline"
-              >
-                💬 {r.providers.name}
-              </a>
-            )}
+          {/* Funnel row */}
+          <div className="flex items-center gap-2 mt-2.5 flex-wrap">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700">
+              ✓ Generated
+            </span>
+            <span className="text-slate-200 text-xs">→</span>
+            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${opened ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-400'}`}>
+              👁 {opened ? `Opened ${r.view_count > 1 ? `×${r.view_count}` : ''}` : 'Not opened'}
+            </span>
+            <span className="text-slate-200 text-xs">→</span>
+            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${saved ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
+              {saved ? `💾 Saved · ${r.customer?.name ?? r.customer?.email ?? 'Customer'}` : '💾 Not saved'}
+            </span>
 
             {/* View report */}
             <a
               href={`${siteUrl}/walk-report/${r.token}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[10px] font-semibold text-[var(--pl-teal)] hover:underline"
+              className="ml-auto text-[10px] font-semibold text-[var(--pl-teal)] hover:underline"
             >
-              View report ↗
+              Open ↗
             </a>
           </div>
         </div>
@@ -1134,8 +1123,6 @@ export default function AdminPage() {
     expiredBroadcasts
 
   // Walk report grouping
-  const claimedReports = walkReports.filter((r) => r.customer_id)
-  const unclaimedReports = walkReports.filter((r) => !r.customer_id)
 
   return (
     <div className="max-w-lg mx-auto">
@@ -1297,56 +1284,93 @@ export default function AdminPage() {
       )}
 
       {/* ── WALK REPORTS TAB ─────────────────────────────────────── */}
-      {tab === 'reports' && (
-        <>
-          {/* Summary row */}
-          <div className="grid grid-cols-2 gap-3 mb-5">
-            <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4">
-              <p className="text-2xl font-bold text-teal-700">{walkReports.length}</p>
-              <p className="text-xs font-medium text-teal-600 mt-0.5">Total reports</p>
-            </div>
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
-              <p className="text-2xl font-bold text-emerald-700">{claimedReports.length}</p>
-              <p className="text-xs font-medium text-emerald-600 mt-0.5">Claimed by customers</p>
-            </div>
-          </div>
+      {tab === 'reports' && (() => {
+        // Group by provider
+        const byProvider: Record<string, { name: string; whatsapp: string | null; reports: WalkReport[] }> = {}
+        for (const r of walkReports) {
+          const pid = r.provider_id ?? '__unknown__'
+          if (!byProvider[pid]) {
+            byProvider[pid] = {
+              name: r.providers?.name ?? 'Unknown walker',
+              whatsapp: r.providers?.whatsapp ?? null,
+              reports: [],
+            }
+          }
+          byProvider[pid].reports.push(r)
+        }
 
-          {reportsLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => <div key={i} className="bg-white rounded-2xl border border-border p-4 animate-pulse h-24" />)}
+        const groups = Object.entries(byProvider)
+
+        return (
+          <>
+            {/* Summary row */}
+            <div className="grid grid-cols-3 gap-3 mb-5">
+              <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4">
+                <p className="text-2xl font-bold text-teal-700">{walkReports.length}</p>
+                <p className="text-xs font-medium text-teal-600 mt-0.5">Generated</p>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+                <p className="text-2xl font-bold text-blue-700">{walkReports.filter(r => r.view_count > 0).length}</p>
+                <p className="text-xs font-medium text-blue-600 mt-0.5">Opened</p>
+              </div>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+                <p className="text-2xl font-bold text-emerald-700">{walkReports.filter(r => r.customer_id).length}</p>
+                <p className="text-xs font-medium text-emerald-600 mt-0.5">Saved</p>
+              </div>
             </div>
-          ) : walkReports.length === 0 ? (
-            <div className="py-20 text-center">
-              <div className="text-4xl mb-3">🐕</div>
-              <p className="font-semibold text-slate-700">No walk reports yet</p>
-              <p className="text-sm text-slate-400 mt-1">Providers submit these after walks.</p>
-            </div>
-          ) : (
-            <>
-              {claimedReports.length > 0 && (
-                <div className="mb-5">
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
-                    Claimed ({claimedReports.length})
-                  </p>
-                  <div className="flex flex-col gap-3">
-                    {claimedReports.map((r) => <WalkReportAdminCard key={r.id} r={r} views30d={r.provider_id ? providerStats[r.provider_id]?.views30d : undefined} />)}
-                  </div>
-                </div>
-              )}
-              {unclaimedReports.length > 0 && (
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
-                    Not claimed ({unclaimedReports.length})
-                  </p>
-                  <div className="flex flex-col gap-3">
-                    {unclaimedReports.map((r) => <WalkReportAdminCard key={r.id} r={r} views30d={r.provider_id ? providerStats[r.provider_id]?.views30d : undefined} />)}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </>
-      )}
+
+            {reportsLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => <div key={i} className="bg-white rounded-2xl border border-border p-4 animate-pulse h-24" />)}
+              </div>
+            ) : walkReports.length === 0 ? (
+              <div className="py-20 text-center">
+                <div className="text-4xl mb-3">🐕</div>
+                <p className="font-semibold text-slate-700">No walk reports yet</p>
+                <p className="text-sm text-slate-400 mt-1">Providers submit these after walks.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-6">
+                {groups.map(([pid, group]) => {
+                  const opened = group.reports.filter(r => r.view_count > 0).length
+                  const saved = group.reports.filter(r => r.customer_id).length
+                  const total = group.reports.length
+                  return (
+                    <div key={pid}>
+                      {/* Provider header */}
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-slate-800">{group.name}</p>
+                          {group.whatsapp && (
+                            <a
+                              href={`https://wa.me/91${group.whatsapp.replace(/\D/g, '').slice(-10)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[11px] font-semibold text-[#25D366] hover:underline"
+                            >
+                              💬 WhatsApp
+                            </a>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                          <span className="text-teal-600 font-bold">{total}</span> sent
+                          <span className="text-slate-300 mx-0.5">·</span>
+                          <span className="text-blue-600 font-bold">{opened}</span> opened
+                          <span className="text-slate-300 mx-0.5">·</span>
+                          <span className="text-emerald-600 font-bold">{saved}</span> saved
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {group.reports.map((r) => <WalkReportAdminCard key={r.id} r={r} />)}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       {/* ── GROOMING REPORTS TAB ─────────────────────────────────── */}
       {tab === 'grooming' && (
