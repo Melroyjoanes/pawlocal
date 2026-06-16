@@ -233,6 +233,9 @@ export default function MobileDrawer() {
                         { href: '/broadcast', icon: '📣', label: 'Post a request' },
                         { href: '/map',       icon: '📍', label: 'Near me — map view' },
                         { href: '/search',    icon: '🔍', label: 'Search all services' },
+                        { href: '/blog',      icon: '📝', label: 'Blog' },
+                        { href: '/faq',       icon: '❓', label: 'FAQs' },
+                        { href: '/contact',   icon: '💬', label: 'Contact us' },
                       ].map(({ href, icon, label }) => (
                         <a
                           key={href}

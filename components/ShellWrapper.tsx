@@ -48,6 +48,9 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
                 { href: '/search', label: 'Find' },
                 { href: '/map', label: 'Near me' },
                 { href: '/broadcast', label: 'Post request' },
+                { href: '/blog', label: 'Blog' },
+                { href: '/faq', label: 'FAQs' },
+                { href: '/contact', label: 'Contact' },
               ].map(({ href, label }) => (
                 <a
                   key={href}
@@ -66,17 +69,98 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
 
       <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
 
-      <footer className="border-t border-border mt-16 py-8">
-        <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <Image src="/logo.webp" alt="PupStep" width={110} height={40} className="h-8 w-auto opacity-80" />
-            <span className="text-stone-400">· © {new Date().getFullYear()} · Juhu, Mumbai</span>
+      <footer style={{ background: '#0A2F35', marginTop: '4rem' }}>
+        {/* Top grid */}
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 pt-12 pb-8 grid grid-cols-2 sm:grid-cols-4 gap-8">
+          {/* Brand col */}
+          <div className="col-span-2 sm:col-span-1">
+            <Image src="/logo.webp" alt="PupStep" width={130} height={48} className="h-10 w-auto mb-3 brightness-0 invert opacity-90" />
+            <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              Mumbai&apos;s verified pet services directory. Juhu · Versova · Andheri West · Santacruz West.
+            </p>
           </div>
+
+          {/* Services */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>Services</p>
+            {[
+              { href: '/dog-walking', label: 'Dog walking' },
+              { href: '/grooming', label: 'Grooming' },
+              { href: '/vet', label: 'Vets' },
+              { href: '/dog-training', label: 'Dog training' },
+              { href: '/pet-store', label: 'Pet stores' },
+              { href: '/insurance', label: 'Pet insurance' },
+            ].map(({ href, label }) => (
+              <a key={href} href={href} className="block text-sm mb-2 transition-colors"
+                style={{ color: 'rgba(255,255,255,0.5)' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>
+                {label}
+              </a>
+            ))}
+          </div>
+
+          {/* Discover */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>Discover</p>
+            {[
+              { href: '/search', label: 'Find services' },
+              { href: '/map', label: 'Map view' },
+              { href: '/broadcast', label: 'Post a request' },
+              { href: '/join', label: 'List your business' },
+            ].map(({ href, label }) => (
+              <a key={href} href={href} className="block text-sm mb-2 transition-colors"
+                style={{ color: 'rgba(255,255,255,0.5)' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>
+                {label}
+              </a>
+            ))}
+          </div>
+
+          {/* Company */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>Company</p>
+            {[
+              { href: '/blog', label: 'Blog' },
+              { href: '/faq', label: 'FAQs' },
+              { href: '/contact', label: 'Contact us' },
+            ].map(({ href, label }) => (
+              <a key={href} href={href} className="block text-sm mb-2 transition-colors"
+                style={{ color: 'rgba(255,255,255,0.5)' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>
+                {label}
+              </a>
+            ))}
+            {/* WhatsApp CTA */}
+            <a href="https://wa.me/919999999999" target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 mt-3 text-xs font-bold px-3 py-1.5 rounded-full transition-opacity hover:opacity-80"
+              style={{ background: 'rgba(37,211,102,0.18)', color: '#4ADE80' }}>
+              💬 WhatsApp us
+            </a>
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+          <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
+            © {new Date().getFullYear()} PupStep · Juhu, Mumbai · Every listing manually verified.
+          </p>
           <div className="flex items-center gap-4">
-            <a href="/search" className="hover:text-foreground transition-colors">Find services</a>
-            <a href="/map" className="hover:text-foreground transition-colors">All on map</a>
-            <a href="/broadcast" className="hover:text-foreground transition-colors">Post a request</a>
-            <a href="/insurance" className="hover:text-foreground transition-colors">Pet insurance</a>
+            {[
+              { href: '/faq', label: 'FAQs' },
+              { href: '/contact', label: 'Contact' },
+              { href: '/join', label: 'For providers' },
+            ].map(({ href, label }) => (
+              <a key={href} href={href} className="text-xs transition-colors"
+                style={{ color: 'rgba(255,255,255,0.35)' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.8)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.35)')}>
+                {label}
+              </a>
+            ))}
           </div>
         </div>
       </footer>
