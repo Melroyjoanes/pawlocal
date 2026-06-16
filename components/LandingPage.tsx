@@ -388,20 +388,17 @@ function WalkReportMiniCard() {
   )
 }
 
-// ─── How it works steps ───────────────────────────────────────────────────────
-const HOW_STEPS = [
-  { emoji: '🔍', n: '01', title: 'Find a verified provider', desc: 'Browse verified walkers, groomers, vets and more near you. Every listing manually reviewed by our team.', ck: 'amber' as CKey },
-  { emoji: '🐾', n: '02', title: 'They log every session', desc: 'After each walk or groom, your provider logs the session — distance, photos, poop count, notes.', ck: 'mint' as CKey },
-  { emoji: '📋', n: '03', title: 'You get a care report', desc: 'A photo care report lands in your account. Save it, share it with your vet, see your dog\'s health history build over time.', ck: 'lavender' as CKey },
+// ─── Broadcast steps ──────────────────────────────────────────────────────────
+const STEPS = [
+  { emoji: '📣', title: 'Post your request', sub: '"Need a groomer this Sunday in Juhu, around ₹500"', ckey: 'amber' as CKey },
+  { emoji: '🔔', title: 'Verified providers see it', sub: '3 verified providers nearby are notified instantly', ckey: 'peach' as CKey },
+  { emoji: '💬', title: 'They WhatsApp you', sub: 'Pick the best fit. Direct contact, zero fees.', ckey: 'mint' as CKey },
 ]
 
-const SAMPLE_REPORT_PATH = '/walk-report/ff63f8d7cf983eb9940535a1a5408777'
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export type FeaturedProvider = { id: string; name: string; whatsapp: string | null; category_slug: string; reportCount: number }
-interface Props { countMap: Record<string, number>; totalProviders: number; neighbourhood?: string; featuredProviders?: FeaturedProvider[] }
+interface Props { countMap: Record<string, number>; totalProviders: number; neighbourhood?: string }
 
-export default function LandingPage({ countMap, totalProviders, neighbourhood = 'Juhu', featuredProviders = [] }: Props) {
+export default function LandingPage({ countMap, totalProviders, neighbourhood = 'Juhu' }: Props) {
   const pStat = useCountUp(totalProviders)
   const [step, setStep] = useState(0)
   useEffect(() => { const id = setInterval(() => setStep(s => (s + 1) % 3), 2400); return () => clearInterval(id) }, [])
@@ -411,64 +408,92 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
 
       {/* ═══════════ HERO ═══════════ */}
       <section style={{ ...BLEED, background: '#FFFBEB', position: 'relative', overflow: 'hidden' }} className="min-h-[100svh] flex flex-col justify-center">
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(10,138,150,0.04) 1px, transparent 1px)', backgroundSize: '28px 28px' }} aria-hidden />
+        {/* Dot grid */}
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(180,83,9,0.055) 1px, transparent 1px)', backgroundSize: '28px 28px' }} aria-hidden />
 
+        {/* Hero decorations — 2 spheres + bone + paw trail */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-          <motion.div style={{ position: 'absolute', top: -60, right: -50, willChange: 'transform' }} animate={{ y: [0, -18, 0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}>
+          {/* Big teal sphere top-right — GPU layer via will-change */}
+          <motion.div
+            style={{ position: 'absolute', top: -60, right: -50, willChange: 'transform' }}
+            animate={{ y: [0, -18, 0] }}
+            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+          >
             <TealSphere size={280} />
           </motion.div>
-          <motion.div style={{ position: 'absolute', bottom: -30, left: 60, willChange: 'transform' }} animate={{ y: [0, -12, 0] }} transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}>
-            <TealSphere size={140} />
+          {/* Teal sphere bottom-left */}
+          <motion.div
+            style={{ position: 'absolute', bottom: -30, left: 80, willChange: 'transform' }}
+            animate={{ y: [0, -12, 0] }}
+            transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
+          >
+            <TealSphere size={160} />
           </motion.div>
-          <motion.div style={{ position: 'absolute', top: '38%', left: '3%', willChange: 'transform' }} animate={{ y: [0, -10, 0], rotate: [-18, -14, -18] }} transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}>
-            <CuteBone size={64} color="#0A8A96" opacity={0.28} />
+
+          {/* Cute bone — mid left, floating & rotating gently */}
+          <motion.div
+            style={{ position: 'absolute', top: '32%', left: '4%', willChange: 'transform' }}
+            animate={{ y: [0, -10, 0], rotate: [-18, -14, -18] }}
+            transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+          >
+            <CuteBone size={72} color="#F59E0B" opacity={0.55} />
           </motion.div>
+
+          {/* Paw print trail — walking diagonally across the hero */}
           {[
-            { top: '15%', left: '8%',  size: 20, rotate: -15, delay: 0 },
-            { top: '24%', left: '16%', size: 16, rotate: -10, delay: 0.18 },
-            { top: '62%', right: '6%', size: 18, rotate:  20, delay: 0 },
-            { top: '72%', right: '13%',size: 14, rotate:  15, delay: 0.22 },
+            { top: '18%', left: '14%',  size: 22, rotate: -15, delay: 0 },
+            { top: '26%', left: '22%',  size: 18, rotate: -10, delay: 0.15 },
+            { top: '22%', left: '30%',  size: 20, rotate: -18, delay: 0.3 },
+            { top: '68%', right: '5%',  size: 20, rotate:  20, delay: 0 },
+            { top: '76%', right: '12%', size: 16, rotate:  15, delay: 0.2 },
+            { top: '60%', right: '8%',  size: 14, rotate:  25, delay: 0.4 },
           ].map(({ top, left, right, size, rotate, delay }, i) => (
-            <motion.div key={i} style={{ position: 'absolute', top, left, right, transform: `rotate(${rotate}deg)` }}
-              animate={{ opacity: [0.22, 0.42, 0.22] }} transition={{ duration: 3.2 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay }}>
-              <PawPrint size={size} color="#0A8A96" opacity={1} />
+            <motion.div
+              key={i}
+              style={{ position: 'absolute', top, left, right, transform: `rotate(${rotate}deg)` }}
+              animate={{ opacity: [0.28, 0.48, 0.28] }}
+              transition={{ duration: 3.2 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay }}
+            >
+              <PawPrint size={size} color="#F07030" opacity={1} />
             </motion.div>
           ))}
+
+          {/* Ambient warm bloom — removed filter:blur(100px), too GPU-expensive on mobile */}
         </div>
 
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8 py-16 lg:py-20 w-full">
-          <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-20">
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
 
             {/* Text column */}
             <div className="flex-1 text-center lg:text-left w-full">
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: EASE_EXP }}>
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase px-4 py-1.5 mb-6" style={{ ...cs('sky'), borderRadius: 100, color: C.sky.text }}>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase px-4 py-1.5 mb-6" style={{ ...cs('amber'), borderRadius: 100, color: C.amber.text }}>
                   🐾 {neighbourhood}, Mumbai
                 </span>
               </motion.div>
 
               <motion.h1 initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: EASE_EXP, delay: 0.08 }}
-                className="font-display text-slate-900 mb-5" style={{ fontSize: 'clamp(2.4rem, 6vw, 4.8rem)', lineHeight: 1.06, letterSpacing: '-0.02em' }}>
-                Your walker<br />shows their work.<br />
-                <span style={{ color: '#0A8A96' }}>Every time.</span>
+                className="font-display text-slate-900 mb-5" style={{ fontSize: 'clamp(2.6rem, 6.5vw, 5rem)', lineHeight: 1.04, letterSpacing: '-0.02em' }}>
+                Mumbai&apos;s verified<br />
+                <span style={{ color: '#F07030' }}>pet people.</span>
               </motion.h1>
 
               <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE_EXP, delay: 0.18 }}
                 className="text-lg sm:text-xl text-slate-500 mb-8 max-w-lg mx-auto lg:mx-0" style={{ lineHeight: 1.65 }}>
-                Photo care reports after every walk and groom. Trusted, verified providers in {neighbourhood}, Mumbai.
+                Trusted walkers, vets, groomers and more — right where you live. WhatsApp direct. Zero fees.
               </motion.p>
 
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: EASE_EXP, delay: 0.28 }}
-                className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start mb-7">
-                <ClayBtn href="/dog-walking" ckey="tealCTA" size="lg">Find a walker in {neighbourhood} →</ClayBtn>
-                <ClayBtn href={SAMPLE_REPORT_PATH} ckey="white" size="lg">See a care report →</ClayBtn>
+                className="flex flex-wrap gap-3 justify-center lg:justify-start mb-7">
+                <ClayBtn href="/dog-walking" size="lg">Browse services →</ClayBtn>
+                <ClayBtn href="/broadcast" ckey="white" size="lg">📣 Post a request</ClayBtn>
               </motion.div>
 
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.44 }}
                 className="flex flex-wrap gap-2 justify-center lg:justify-start">
                 {[
-                  { label: '📋 Report after every walk', ckey: 'mint' as CKey },
-                  { label: '💬 WhatsApp direct', ckey: 'sky' as CKey },
+                  { label: '✓ Manually verified', ckey: 'amber' as CKey },
+                  { label: '💬 WhatsApp direct', ckey: 'mint' as CKey },
                   { label: '₹0 booking fee', ckey: 'peach' as CKey },
                 ].map(({ label, ckey }) => (
                   <span key={label} className="text-xs font-semibold px-3.5 py-1.5" style={{ ...cs(ckey), borderRadius: 100, color: C[ckey].text as string }}>{label}</span>
@@ -476,205 +501,101 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
               </motion.div>
             </div>
 
-            {/* Right column — the walk report IS the product */}
+            {/* Right column */}
             <motion.div initial={{ opacity: 0, y: 36 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, ease: EASE_EXP, delay: 0.22 }}
-              className="flex-shrink-0 w-full flex justify-center lg:justify-end relative">
-              <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }} className="relative">
-                <WalkReportMiniCard />
-                {/* Floating "sent via WhatsApp" badge */}
-                <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
-                  style={{ position: 'absolute', top: -14, right: -8, background: 'linear-gradient(135deg, #25D366, #128C7E)', borderRadius: 100, padding: '7px 14px', boxShadow: '0 4px 0px rgba(14,100,55,0.30), 0 10px 24px rgba(37,211,102,0.32)', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-                  <span style={{ fontSize: 13 }}>💬</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>Sent via WhatsApp</span>
+              className="flex-shrink-0 w-full sm:w-auto flex flex-col items-center gap-8">
+              {/* Dog photo */}
+              <motion.div animate={{ y: [0, -12, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                className="relative" style={{ width: 'clamp(220px, 28vw, 360px)', height: 'clamp(220px, 28vw, 360px)' }}>
+                <div style={{ position: 'absolute', inset: -16, borderRadius: '50%', background: 'radial-gradient(ellipse, #FDE68A 0%, #FED7AA 45%, transparent 72%)', opacity: 0.55 }} aria-hidden />
+                <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: '7px solid #FEF3C7', boxShadow: '0 10px 0px rgba(180,83,9,0.18), 0 28px 64px rgba(253,230,138,0.5)' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={HERO_DOG} alt="Happy dog in Juhu" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 25%' }} />
+                </div>
+                <motion.div animate={{ scale: [1, 1.07, 1] }} transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                  style={{ position: 'absolute', bottom: '12%', left: '-8%', background: 'linear-gradient(160deg, #FFFFFF 0%, #FFFDF5 100%)', borderRadius: 14, padding: '8px 12px', boxShadow: '0 3px 0px rgba(180,83,9,0.1), 0 8px 24px rgba(0,0,0,0.1)', border: '1px solid #FDE68A', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 15 }}>✅</span>
+                  <div>
+                    <p style={{ fontSize: 10, fontWeight: 800, color: '#78350F', lineHeight: 1 }}>Verified</p>
+                    <p style={{ fontSize: 9, color: '#92400E', opacity: 0.7, lineHeight: 1.2 }}>providers only</p>
+                  </div>
                 </motion.div>
-                {/* Floating "saved to account" badge */}
-                <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
-                  style={{ position: 'absolute', bottom: -10, left: -8, background: 'linear-gradient(160deg, #FFF 0%, #FFFDF5 100%)', borderRadius: 100, padding: '7px 12px', boxShadow: '0 4px 0px rgba(10,138,150,0.12), 0 10px 20px rgba(0,0,0,0.08)', border: '1.5px solid rgba(10,138,150,0.18)', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-                  <span style={{ fontSize: 13 }}>💾</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#0A8A96' }}>Saved to your account</span>
+                <div style={{ position: 'absolute', bottom: '6%', right: '-4%', background: 'linear-gradient(135deg, #FF8C52, #F56B22)', borderRadius: '50%', width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 0px rgba(175,65,10,0.24), 0 10px 20px rgba(245,110,35,0.40)', border: '3px solid #FFFBEB', fontSize: 24 }} aria-hidden>🐾</div>
+                <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
+                  style={{ position: 'absolute', top: '10%', right: '-14%', background: 'linear-gradient(135deg, #DCFCE7, #BBF7D0)', borderRadius: 100, padding: '7px 14px', boxShadow: '0 3px 0px rgba(5,150,105,0.18), 0 8px 20px rgba(187,247,208,0.5)', border: '1px solid rgba(187,247,208,0.65)', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                  <span style={{ fontSize: 14 }}>💬</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#064E3B' }}>WhatsApp direct</span>
                 </motion.div>
               </motion.div>
+
+              {/* Card stack */}
+              <div className="relative w-full flex justify-center">
+                <div className="absolute inset-0 scale-110 rounded-3xl pointer-events-none" style={{ background: 'linear-gradient(135deg, #FDE68A, #FECDD3)', opacity: 0.18 }} aria-hidden />
+                <CardStack />
+              </div>
             </motion.div>
           </div>
         </div>
 
+        {/* Scroll cue */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2" aria-hidden>
           <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            className="w-6 h-9 rounded-full flex justify-center pt-2" style={{ border: '2px solid rgba(10,138,150,0.22)', background: 'rgba(10,138,150,0.07)' }}>
-            <div className="w-1 h-1.5 rounded-full" style={{ background: '#0A8A96' }} />
+            className="w-6 h-9 rounded-full flex justify-center pt-2" style={{ border: '2px solid rgba(180,83,9,0.22)', background: 'rgba(253,230,138,0.35)' }}>
+            <div className="w-1 h-1.5 rounded-full bg-amber-400" />
           </motion.div>
         </div>
       </section>
 
       {/* ═══════════ STATS ═══════════ */}
-      <section style={{ ...BLEED, background: 'linear-gradient(120deg, #F0FDFA 0%, #CCFBF1 55%, #F0FDFA 100%)', borderTop: '1.5px solid rgba(10,138,150,0.18)', borderBottom: '1.5px solid rgba(10,138,150,0.18)', position: 'relative', overflow: 'hidden' }} className="py-8 sm:py-10">
+      <section style={{ ...BLEED, background: 'linear-gradient(120deg, #FEF9ED 0%, #FEF3C7 55%, #FEF9ED 100%)', borderTop: '1.5px solid rgba(253,230,138,0.9)', borderBottom: '1.5px solid rgba(253,230,138,0.9)', position: 'relative', overflow: 'hidden' }} className="py-8 sm:py-10">
+        {/* Subtle amber glow */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden style={{ backgroundImage: 'radial-gradient(ellipse 60% 80% at 50% 50%, rgba(245,158,11,0.07) 0%, transparent 70%)' }} />
         <div className="relative max-w-5xl mx-auto px-5 sm:px-8">
           <div className="grid grid-cols-3 gap-2 sm:gap-8">
             {[
               {
                 icon: '🐾',
-                iconBg: '#0A8A96',
-                node: <><span ref={pStat.ref} className="font-display" style={{ fontSize: 'clamp(1.85rem, 5vw, 3rem)', color: '#065A67', lineHeight: 1, fontWeight: 700 }}>{pStat.val}</span><span className="font-display" style={{ fontSize: 'clamp(1.2rem, 3vw, 2rem)', color: '#0A8A96' }}>+</span></>,
+                iconBg: '#FF8C52',
+                node: <><span ref={pStat.ref} className="font-display" style={{ fontSize: 'clamp(1.85rem, 5vw, 3rem)', color: '#92400E', lineHeight: 1, fontWeight: 700 }}>{pStat.val}</span><span className="font-display" style={{ fontSize: 'clamp(1.2rem, 3vw, 2rem)', color: '#B45309' }}>+</span></>,
                 label: 'Verified providers',
                 sub: 'Manually reviewed',
               },
               {
-                icon: '📋',
+                icon: '💬',
                 iconBg: '#6EE7B7',
-                node: <span className="font-display" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.6rem)', color: '#065A67', lineHeight: 1, fontWeight: 700 }}>Every</span>,
-                label: 'Walk gets a report',
-                sub: 'Photo + stats + route',
+                node: <span className="font-display" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.6rem)', color: '#92400E', lineHeight: 1, fontWeight: 700 }}>Direct</span>,
+                label: 'WhatsApp contact',
+                sub: 'No middleman',
               },
               {
-                icon: '₹',
+                icon: '✓',
                 iconBg: '#C4B5FD',
-                node: <span className="font-display" style={{ fontSize: 'clamp(1.85rem, 5vw, 3rem)', color: '#065A67', lineHeight: 1, fontWeight: 700 }}>₹0</span>,
+                node: <span className="font-display" style={{ fontSize: 'clamp(1.85rem, 5vw, 3rem)', color: '#92400E', lineHeight: 1, fontWeight: 700 }}>₹0</span>,
                 label: 'Booking fees',
                 sub: 'Free, always',
               },
             ].map(({ icon, iconBg, node, label, sub }) => (
               <div key={label} className="flex flex-col items-center text-center">
-                <div style={{ width: 38, height: 38, borderRadius: '50%', background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, boxShadow: '0 3px 8px rgba(10,138,150,0.2)', border: '2px solid rgba(255,255,255,0.9)', marginBottom: 10 }}>{icon}</div>
+                <div style={{ width: 38, height: 38, borderRadius: '50%', background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, boxShadow: '0 3px 8px rgba(120,53,15,0.14)', border: '2px solid rgba(255,255,255,0.85)', marginBottom: 10 }}>{icon}</div>
                 <div className="flex items-end justify-center gap-0.5 mb-1.5">{node}</div>
-                <p className="font-semibold" style={{ fontSize: 'clamp(0.65rem, 1.8vw, 0.875rem)', color: '#065A67', lineHeight: 1.3 }}>{label}</p>
-                <p className="hidden sm:block" style={{ fontSize: '0.7rem', color: '#0A8A96', opacity: 0.65, marginTop: 2 }}>{sub}</p>
+                <p className="font-semibold" style={{ fontSize: 'clamp(0.65rem, 1.8vw, 0.875rem)', color: '#78350F', lineHeight: 1.3 }}>{label}</p>
+                <p className="hidden sm:block" style={{ fontSize: '0.7rem', color: '#B45309', opacity: 0.65, marginTop: 2 }}>{sub}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
-
-      {/* ═══════════ HOW IT WORKS ═══════════ */}
-      <section style={{ ...BLEED, background: C.pageBg }} className="py-14 sm:py-20">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE_EXP }} className="text-center mb-12">
-            <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#0A8A96' }}>Three steps. That&apos;s it.</p>
-            <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)' }}>How PupStep works</h2>
-          </motion.div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-            {HOW_STEPS.map(({ emoji, n, title, desc, ck }, i) => (
-              <motion.div key={n} initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.42, ease: EASE_EXP, delay: i * 0.1 }}>
-                <ClayCard ckey={ck} className="p-7 sm:p-8 h-full">
-                  <div className="flex items-center gap-3 mb-5">
-                    <span className="text-3xl drop-shadow-sm">{emoji}</span>
-                    <span className="text-xs font-bold tracking-widest uppercase" style={{ color: (C[ck].text as string) + '88' }}>Step {n}</span>
-                  </div>
-                  <h3 className="font-bold mb-3 leading-tight" style={{ fontSize: '1.1rem', color: C[ck].text as string }}>{title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: (C[ck].text as string) + 'BB' }}>{desc}</p>
-                </ClayCard>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ THE CARE REPORT MOMENT ═══════════ */}
-      <section style={{ ...BLEED, background: 'linear-gradient(135deg, #0A2F35 0%, #0D3D45 50%, #0A2F35 100%)', position: 'relative', overflow: 'hidden' }} className="py-14 sm:py-20">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-          <motion.div style={{ position: 'absolute', top: -40, right: -30, opacity: 0.1 }} animate={{ y: [0, -15, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}>
-            <AmberSphere size={300} />
-          </motion.div>
-          <motion.div style={{ position: 'absolute', bottom: -50, left: -40, opacity: 0.08 }} animate={{ y: [0, -10, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}>
-            <TealSphere size={200} />
-          </motion.div>
-        </div>
-        <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
-          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-            <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: EASE_EXP }} className="flex-1 text-center lg:text-left">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 mb-6 uppercase tracking-wider" style={{ ...cs('amber'), borderRadius: 100, color: C.amber.text }}>
-                📋 Care reports — only on PupStep
-              </span>
-              <h2 className="font-display text-white leading-tight mb-5" style={{ fontSize: 'clamp(1.9rem, 4.5vw, 3.4rem)', lineHeight: 1.1 }}>
-                After every walk,<br /><span style={{ color: '#17C8CC' }}>you get this.</span>
-              </h2>
-              <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-md mx-auto lg:mx-0" style={{ lineHeight: 1.7 }}>
-                GPS route, photo of your dog, poop count, duration. Every session logged, every report saved to your account. Your vet will thank you.
-              </p>
-              <div className="flex flex-col gap-3 mb-8 items-center lg:items-start">
-                {[
-                  { icon: '📍', text: 'GPS walk route — see exactly where they went' },
-                  { icon: '📸', text: 'A photo of your dog, every single walk' },
-                  { icon: '💩', text: 'Poop and pee log — your vet will actually use this' },
-                  { icon: '📂', text: 'All reports saved — health history over time' },
-                ].map(({ icon, text }) => (
-                  <div key={text} className="flex items-center gap-3">
-                    <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(23,200,204,0.12)', border: '1px solid rgba(23,200,204,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>{icon}</span>
-                    <span className="text-sm text-stone-300 font-medium">{text}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
-                <ClayBtn href="/dog-walking" ckey="tealCTA" size="lg">Find a walker →</ClayBtn>
-                <ClayBtn href={SAMPLE_REPORT_PATH} ckey="white" size="md">See a real report ↗</ClayBtn>
-              </div>
-            </motion.div>
-            <div className="flex-shrink-0 w-full max-w-sm flex justify-center lg:justify-end">
-              <WalkReportMiniCard />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ PROVIDER TRUST STRIP ═══════════ */}
-      {featuredProviders.length > 0 && (
-        <section style={{ ...BLEED, background: 'white' }} className="py-12 sm:py-16">
-          <div className="max-w-7xl mx-auto px-5 sm:px-8">
-            <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE_EXP }} className="mb-10 text-center">
-              <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#0A8A96' }}>The people behind the reports</p>
-              <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)' }}>Meet your {neighbourhood} providers</h2>
-            </motion.div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {featuredProviders.map(({ id, name, whatsapp, category_slug, reportCount }, i) => {
-                const ck = (catClay[category_slug] ?? 'white') as CKey
-                const catIcon = CATEGORIES.find(c => c.slug === category_slug)?.icon ?? '🐾'
-                const catName = CATEGORIES.find(c => c.slug === category_slug)?.name ?? category_slug
-                return (
-                  <motion.div key={id} initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.42, ease: EASE_EXP, delay: i * 0.1 }}>
-                    <ClayCard ckey={ck} className="p-5 sm:p-6">
-                      <div className="flex items-start justify-between gap-3 mb-4">
-                        <div className="flex items-center gap-3">
-                          <div style={{ width: 48, height: 48, borderRadius: 16, background: (C[ck].bg as string), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0, border: '1.5px solid rgba(255,255,255,0.8)' }}>{catIcon}</div>
-                          <div>
-                            <p className="font-bold text-sm leading-tight" style={{ color: C[ck].text as string }}>{name}</p>
-                            <p className="text-xs mt-0.5" style={{ color: (C[ck].text as string) + '80' }}>{catName} · {neighbourhood}</p>
-                          </div>
-                        </div>
-                        <span className="flex-shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(10,138,150,0.12)', color: '#0A8A96' }}>✓ Verified</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <span style={{ fontSize: 13 }}>📋</span>
-                          <span className="text-xs font-semibold" style={{ color: (C[ck].text as string) + 'CC' }}>
-                            <strong style={{ color: C[ck].text as string }}>{reportCount}</strong> care reports sent
-                          </span>
-                        </div>
-                        {whatsapp && (
-                          <a href={`https://wa.me/91${whatsapp.replace(/\D/g, '').slice(-10)}`} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-[11px] font-bold px-3 py-1.5 rounded-full"
-                            style={{ background: 'rgba(37,211,102,0.12)', color: '#15803d' }}>
-                            💬 WhatsApp
-                          </a>
-                        )}
-                      </div>
-                    </ClayCard>
-                  </motion.div>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* ═══════════ CATEGORIES ═══════════ */}
-      <section style={{ ...BLEED, background: C.pageBg }} className="py-12 sm:py-16">
+      <section style={{ ...BLEED, background: 'white' }} className="py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE_EXP }} className="mb-10">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#0A8A96' }}>Find the right care</p>
+                <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#F07030' }}>Every service, one tap away</p>
                 <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12 }}>What does your pet need?</h2>
               </div>
-              <p className="text-sm text-slate-400 max-w-xs sm:text-right">Verified providers near {neighbourhood}</p>
+              <p className="text-sm text-slate-400 max-w-xs sm:text-right">All verified providers near {neighbourhood}</p>
             </div>
           </motion.div>
 
@@ -693,10 +614,11 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
                   style={{ width: 'clamp(155px, 44vw, 268px)' } as React.CSSProperties}>
                   <Link href={`/${cat.slug}`} className="block group h-full">
                     <motion.div whileHover={{ y: -6, scale: 1.01 }} whileTap={{ y: 2, scale: 0.99 }} transition={{ type: 'spring', stiffness: 380, damping: 26 }}
-                      className="flex flex-col h-full" style={{ borderRadius: 22, overflow: 'hidden', boxShadow: t.shadow, border: t.border }}>
+                      className="flex flex-col h-full"
+                      style={{ borderRadius: 22, overflow: 'hidden', boxShadow: t.shadow, border: t.border }}>
                       <div style={{ height: 'clamp(120px, 22vw, 200px)', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photo} alt={`${cat.name} in ${neighbourhood}, Mumbai`} loading="lazy"
+                        <img src={photo} alt={`${cat.name} in Mumbai`} loading="lazy"
                           style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: photoPos, transition: 'transform 0.5s ease', display: 'block' }}
                           className="group-hover:scale-105" />
                         <div style={{ position: 'absolute', inset: 0, background: t.bg, opacity: 0.16, mixBlendMode: 'multiply', pointerEvents: 'none' }} aria-hidden />
@@ -732,19 +654,127 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
         </div>
       </section>
 
-      {/* ═══════════ WHY PUPSTEP ═══════════ */}
-      <section style={{ ...BLEED, background: 'white' }} className="py-12 sm:py-16">
+      {/* ═══════════ WALK REPORT STRIP ═══════════ */}
+      <section style={{ ...BLEED, background: 'linear-gradient(135deg, #0A2F35 0%, #0D3D45 50%, #0A2F35 100%)', position: 'relative', overflow: 'hidden' }} className="py-14 sm:py-20">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+          <motion.div style={{ position: 'absolute', top: -40, right: -30, opacity: 0.1 }} animate={{ y: [0, -15, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}>
+            <AmberSphere size={300} />
+          </motion.div>
+          <motion.div style={{ position: 'absolute', bottom: -50, left: -40, opacity: 0.08 }} animate={{ y: [0, -10, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}>
+            <TealSphere size={200} />
+          </motion.div>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+            <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: EASE_EXP }} className="flex-1 text-center lg:text-left">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 mb-6 uppercase tracking-wider" style={{ ...cs('amber'), borderRadius: 100, color: C.amber.text }}>
+                ✨ Walk Reports — only on PupStep
+              </span>
+              <h2 className="font-display text-white leading-tight mb-5" style={{ fontSize: 'clamp(1.9rem, 4.5vw, 3.4rem)', lineHeight: 1.1 }}>
+                Every walk,<br /><span style={{ color: '#FF8C52' }}>beautifully reported.</span>
+              </h2>
+              <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-md mx-auto lg:mx-0" style={{ lineHeight: 1.7 }}>
+                Your walker sends a daily report with photos, GPS route, and stats — straight to WhatsApp. No app needed.
+              </p>
+              <div className="flex flex-col gap-3 mb-8 items-center lg:items-start">
+                {[
+                  { icon: '📍', text: 'Live GPS route — see every step of the walk' },
+                  { icon: '📸', text: 'Photo of your dog, every single walk' },
+                  { icon: '💩', text: 'Potty stats so your vet is never guessing' },
+                ].map(({ icon, text }) => (
+                  <div key={text} className="flex items-center gap-3">
+                    <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(253,230,138,0.12)', border: '1px solid rgba(253,230,138,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>{icon}</span>
+                    <span className="text-sm text-stone-300 font-medium">{text}</span>
+                  </div>
+                ))}
+              </div>
+              <ClayBtn href="/dog-walking" ckey="amberCTA" size="lg">Find a walker →</ClayBtn>
+            </motion.div>
+
+            <div className="flex-shrink-0 w-full max-w-sm flex justify-center lg:justify-end">
+              <WalkReportMiniCard />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ HOW IT WORKS ═══════════ */}
+      <section style={{ ...BLEED, background: C.pageBg }} className="py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE_EXP }} className="text-center mb-10">
-            <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#0A8A96' }}>Why pet parents choose us</p>
+            <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#F07030' }}>Three steps. That&apos;s all.</p>
+            <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)' }}>How PupStep works</h2>
+          </motion.div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+            {[
+              { emoji: '🔍', n: '01', title: 'Browse', desc: 'Find services by category. Every listing is manually reviewed by our team — if they\'re listed, we\'d trust them with our own dog.', ck: 'amber' as CKey },
+              { emoji: '💬', n: '02', title: 'Contact', desc: 'WhatsApp the provider directly. No platform in the middle, no booking fee, no app to download. Your number, their number, done.', ck: 'lavender' as CKey },
+              { emoji: '🐾', n: '03', title: 'Done', desc: 'Your pet gets the care they need. Save favourite providers and contact them again — no starting from scratch every time.', ck: 'mint' as CKey },
+            ].map(({ emoji, n, title, desc, ck }, i) => (
+              <motion.div key={n} initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.42, ease: EASE_EXP, delay: i * 0.1 }}>
+                <ClayCard ckey={ck} className="p-7 sm:p-8 h-full">
+                  <span className="text-3xl drop-shadow-sm block mb-5">{emoji}</span>
+                  <p className="text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: (C[ck].text as string) + 'AA' }}>Step {n}</p>
+                  <h3 className="font-bold mb-3 leading-tight" style={{ fontSize: '1.15rem', color: C[ck].text as string }}>{title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: (C[ck].text as string) + 'BB' }}>{desc}</p>
+                </ClayCard>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ PET BROADCAST ═══════════ */}
+      <section style={{ ...BLEED, background: 'linear-gradient(135deg, #0D3528 0%, #1A5C42 50%, #0D3528 100%)', position: 'relative', overflow: 'hidden' }} className="py-12 sm:py-16">
+        <div className="absolute inset-0 pointer-events-none" aria-hidden>
+          <div style={{ position: 'absolute', top: -80, right: -60, width: 420, height: 420, borderRadius: '50%', background: '#F07030', opacity: 0.06 }} />
+          <div style={{ position: 'absolute', bottom: -40, left: -40, width: 320, height: 320, borderRadius: '50%', background: '#6EE7B7', opacity: 0.04 }} />
+        </div>
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
+          <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
+            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.55, ease: EASE_EXP }} className="flex-1 text-center lg:text-left">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 mb-6 uppercase tracking-wider" style={{ ...cs('amber'), borderRadius: 100, color: C.amber.text }}>
+                🆕 Pet Broadcast — only on PupStep
+              </span>
+              <h2 className="font-display text-white leading-tight mb-4" style={{ fontSize: 'clamp(1.9rem, 4.5vw, 3.4rem)' }}>
+                Can&apos;t find what you need?<br /><span style={{ color: '#FF8C52' }}>Just post it.</span>
+              </h2>
+              <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-md mx-auto lg:mx-0" style={{ lineHeight: 1.7 }}>
+                Post your request once. Verified providers nearby see it and reply on WhatsApp directly. Free.
+              </p>
+              <ClayBtn href="/broadcast" size="lg">📣 Post a Request — Free</ClayBtn>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.55, ease: EASE_EXP, delay: 0.1 }}
+              className="flex-shrink-0 w-full max-w-sm space-y-3">
+              {STEPS.map((s, i) => (
+                <motion.div key={i} animate={{ scale: step === i ? 1.03 : 1, opacity: step === i ? 1 : 0.42 }} transition={{ duration: 0.3, ease: EASE }}
+                  className="flex items-start gap-4 p-4" style={{ ...cs(s.ckey), borderRadius: 20, outline: step === i ? '2px solid rgba(255,255,255,0.18)' : 'none' }}>
+                  <span className="text-2xl drop-shadow-sm flex-shrink-0">{s.emoji}</span>
+                  <div>
+                    <p className="font-bold text-sm" style={{ color: C[s.ckey].text as string }}>{s.title}</p>
+                    <p className="text-xs mt-0.5" style={{ color: (C[s.ckey].text as string) + '99' }}>{s.sub}</p>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ WHY PUPSTEP ═══════════ */}
+      <section style={{ ...BLEED, background: C.pageBg }} className="py-12 sm:py-16">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE_EXP }} className="text-center mb-10">
+            <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#F07030' }}>Why pet parents choose us</p>
             <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)' }}>What makes PupStep different</h2>
           </motion.div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {[
-              { emoji: '📋', title: 'Care reports', desc: 'Every walk and groom is logged. GPS route, photo, poop count — every time, automatically.', ck: 'mint' as CKey },
               { emoji: '🔒', title: 'Manually verified', desc: 'Every provider reviewed by our team. If they\'re listed, we\'d trust them with our own dog.', ck: 'amber' as CKey },
-              { emoji: '💬', title: 'WhatsApp native', desc: 'Mumbai runs on WhatsApp. We use it — no extra apps, no platform in the middle.', ck: 'sky' as CKey },
-              { emoji: '₹0', title: 'Zero fees, always', desc: 'Contact providers directly. No booking fee, no commission. The provider keeps 100%.', ck: 'lavender' as CKey },
+              { emoji: '💬', title: 'WhatsApp native', desc: 'Mumbai runs on WhatsApp. We use it — no extra apps, no platform in the middle.', ck: 'peach' as CKey },
+              { emoji: '₹0', title: 'Zero fees, always', desc: 'The provider keeps 100%. Which means they\'re here because they want to be.', ck: 'mint' as CKey },
+              { emoji: '📍', title: 'Hyperlocal-first', desc: 'Built for your neighbourhood. Depth before breadth — so every listing is one we\'d trust with our own dog.', ck: 'lavender' as CKey },
             ].map(({ emoji, title, desc, ck }, i) => (
               <motion.div key={title} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.38, ease: EASE_EXP, delay: i * 0.07 }}>
                 <ClayCard ckey={ck} className="p-5 sm:p-6 h-full">
@@ -758,36 +788,8 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
         </div>
       </section>
 
-      {/* ═══════════ FOR PROVIDERS ═══════════ */}
-      <section style={{ ...BLEED, background: 'linear-gradient(135deg, #0D3528 0%, #1A5C42 50%, #0D3528 100%)', position: 'relative', overflow: 'hidden' }} className="py-12 sm:py-14">
-        <div className="absolute inset-0 pointer-events-none" aria-hidden>
-          <div style={{ position: 'absolute', top: -80, right: -60, width: 360, height: 360, borderRadius: '50%', background: '#17C8CC', opacity: 0.05 }} />
-          <div style={{ position: 'absolute', bottom: -40, left: -40, width: 280, height: 280, borderRadius: '50%', background: '#6EE7B7', opacity: 0.06 }} />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
-          <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
-            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.55, ease: EASE_EXP }} className="flex-1 text-center lg:text-left">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 mb-5 uppercase tracking-wider" style={{ ...cs('mint'), borderRadius: 100, color: C.mint.text }}>
-                🦮 For dog walkers and groomers
-              </span>
-              <h2 className="font-display text-white leading-tight mb-4" style={{ fontSize: 'clamp(1.8rem, 4.5vw, 3rem)' }}>
-                Are you a walker or<br />groomer in {neighbourhood}?
-              </h2>
-              <p className="text-stone-400 text-base mb-6 max-w-md mx-auto lg:mx-0" style={{ lineHeight: 1.7 }}>
-                Get listed free. Send care reports to your clients after every session. Build trust, get more clients.
-              </p>
-            </motion.div>
-            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.55, ease: EASE_EXP, delay: 0.1 }}
-              className="flex-shrink-0 flex flex-col sm:flex-row gap-3">
-              <ClayBtn href="/join" ckey="tealCTA" size="lg">Get listed free →</ClayBtn>
-              <ClayBtn href="/broadcast" ckey="white" size="lg">📣 Browse requests</ClayBtn>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
       {/* ═══════════ MAP TEASER ═══════════ */}
-      <section style={{ ...BLEED, background: C.pageBg }} className="py-8">
+      <section style={{ ...BLEED, background: 'white' }} className="py-8">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <ClayCard ckey="white" href="/map" className="p-5 sm:p-8 flex items-center justify-between gap-6">
             <div className="flex items-center gap-4 sm:gap-5">
@@ -795,7 +797,7 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
                 className="text-3xl sm:text-4xl drop-shadow-sm flex-shrink-0" aria-hidden>🗺</motion.span>
               <div>
                 <p className="font-bold text-slate-800 text-sm sm:text-base">See everything on one map</p>
-                <p className="text-xs sm:text-sm text-slate-400 mt-0.5">All vets, groomers, stores and walkers near {neighbourhood}</p>
+                <p className="text-xs sm:text-sm text-slate-400 mt-0.5">All vets, groomers, stores and walkers near you</p>
               </div>
             </div>
             <span className="text-sm font-bold text-slate-300 hidden sm:block flex-shrink-0">Open map →</span>
@@ -803,63 +805,29 @@ export default function LandingPage({ countMap, totalProviders, neighbourhood = 
         </div>
       </section>
 
-      {/* ═══════════ SEO FOOTER LINKS ═══════════ */}
-      <section style={{ ...BLEED, background: 'white', borderTop: '1px solid rgba(10,138,150,0.12)' }} className="py-10 pb-28 lg:pb-10">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Dog Walking</p>
-              {['Juhu', 'Versova', 'Andheri West', 'Santacruz West'].map(a => (
-                <Link key={a} href={`/dog-walking?area=${a}`} className="block text-xs text-slate-500 hover:text-teal-700 mb-1.5 font-medium">
-                  Dog walkers in {a}
-                </Link>
-              ))}
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Grooming</p>
-              {['Juhu', 'Versova', 'Andheri West', 'Bandra West'].map(a => (
-                <Link key={a} href={`/grooming?area=${a}`} className="block text-xs text-slate-500 hover:text-teal-700 mb-1.5 font-medium">
-                  Pet groomers in {a}
-                </Link>
-              ))}
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Vets</p>
-              {['Juhu', 'Andheri West', 'Santacruz West', 'Versova'].map(a => (
-                <Link key={a} href={`/vet?area=${a}`} className="block text-xs text-slate-500 hover:text-teal-700 mb-1.5 font-medium">
-                  Vets in {a}
-                </Link>
-              ))}
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">More services</p>
-              <Link href="/dog-training" className="block text-xs text-slate-500 hover:text-teal-700 mb-1.5 font-medium">Dog training in Juhu</Link>
-              <Link href="/pet-store" className="block text-xs text-slate-500 hover:text-teal-700 mb-1.5 font-medium">Pet stores in Juhu</Link>
-              <Link href="/insurance" className="block text-xs text-slate-500 hover:text-teal-700 mb-1.5 font-medium">Pet insurance Mumbai</Link>
-              <Link href="/map" className="block text-xs text-slate-500 hover:text-teal-700 mb-1.5 font-medium">Pet services map Mumbai</Link>
-            </div>
-          </div>
-          <div className="border-t border-slate-100 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-            <p className="text-xs text-slate-400">
-              PupStep — verified pet services in Juhu, Versova, Andheri West, Santacruz West and Mumbai.
-            </p>
-            <p className="text-xs text-slate-300">Every listing manually reviewed by our team.</p>
-          </div>
+      {/* ═══════════ FOOTER NOTE ═══════════ */}
+      <section style={{ ...BLEED, background: 'white', borderTop: '1px solid #FDE68A' }} className="py-5 pb-28 lg:pb-5">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-center gap-3 text-center sm:text-left">
+          <span className="text-xl">🐾</span>
+          <p className="text-xs sm:text-sm text-slate-400">
+            Mumbai&apos;s most trusted hyperlocal pet services directory.
+            Every listing manually verified by our team.
+          </p>
         </div>
       </section>
 
       {/* ═══════════ MOBILE STICKY BAR ═══════════ */}
       <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.55, ease: EASE_EXP, delay: 1.8 }}
         className="lg:hidden fixed bottom-0 inset-x-0 z-50"
-        style={{ background: 'rgba(255,251,235,0.98)', borderTop: '1px solid rgba(10,138,150,0.18)', paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
+        style={{ background: 'rgba(255,251,235,0.98)', borderTop: '1px solid #FDE68A', paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
         <div className="flex gap-3 px-4 pt-3 pb-3">
           <Link href="/dog-walking" className="flex-1 flex items-center justify-center py-3.5 rounded-2xl text-sm font-bold"
-            style={{ background: 'linear-gradient(160deg, #17C8CC 0%, #0A8A96 100%)', boxShadow: '0 4px 0px rgba(5,80,90,0.30), 0 8px 20px rgba(12,180,188,0.35)', color: '#F0FDFA' }}>
-            Find a walker →
+            style={{ background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)', boxShadow: '0 4px 0px rgba(175,65,10,0.30), 0 8px 20px rgba(245,107,34,0.35)', color: '#451A03' }}>
+            Browse Services
           </Link>
-          <Link href={SAMPLE_REPORT_PATH} className="flex-1 flex items-center justify-center py-3.5 rounded-2xl text-sm font-bold"
-            style={{ background: 'linear-gradient(160deg, #CCFBF1 0%, #99F6E4 100%)', boxShadow: '0 4px 0px rgba(10,138,150,0.14)', color: '#065A67' }}>
-            📋 See a report
+          <Link href="/broadcast" className="flex-1 flex items-center justify-center py-3.5 rounded-2xl text-sm font-bold"
+            style={{ background: 'linear-gradient(160deg, #FFEDD5 0%, #FED7AA 100%)', boxShadow: '0 4px 0px rgba(194,65,12,0.14)', color: '#7C2D12' }}>
+            📣 Post Request
           </Link>
         </div>
       </motion.div>
