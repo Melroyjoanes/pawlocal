@@ -8,6 +8,8 @@ type WalkReport = {
   id: string
   token: string
   customer_id: string | null
+  client_id: string | null
+  provider_id: string | null
   dog_name: string
   walk_date: string
   duration_mins: number
@@ -52,6 +54,8 @@ async function getReport(token: string): Promise<WalkReport | null> {
     id: data.id,
     token: data.token,
     customer_id: data.customer_id ?? null,
+    client_id: data.client_id ?? null,
+    provider_id: data.provider_id ?? null,
     dog_name: data.dog_name,
     walk_date: data.walk_date,
     duration_mins: data.duration_mins,
@@ -152,8 +156,30 @@ export default async function WalkReportPage({
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const isClaimed = report.customer_id !== null
-  const isClaimedByMe = report.customer_id !== null && report.customer_id === user?.id
+  const isClaimedByMe = !!user && report.customer_id === user.id
 
-  return <WalkReportCard report={report} isClaimed={isClaimed} isClaimedByMe={isClaimedByMe} />
+  // Check new system: is user the linked owner via provider_clients?
+  let isLinkedOwner = false
+  if (user && report.client_id) {
+    const adminCheck = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: link } = await (adminCheck.from('provider_clients') as any)
+      .select('id')
+      .eq('id', report.client_id)
+      .eq('owner_user_id', user.id)
+      .maybeSingle()
+    isLinkedOwner = !!link
+  }
+
+  const isOwner = isLinkedOwner || isClaimedByMe
+
+  return (
+    <WalkReportCard
+      report={report}
+      isOwner={isOwner}
+    />
+  )
 }

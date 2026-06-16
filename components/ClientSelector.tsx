@@ -7,7 +7,7 @@ export interface ProviderClient {
   id: string
   pet_name: string
   owner_name: string | null
-  owner_whatsapp: string
+  owner_whatsapp: string | null
   linked_at: string | null
 }
 
@@ -136,7 +136,11 @@ export default function ClientSelector({ selected, onSelect }: Props) {
                     <span className="text-lg">🐕</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-stone-900">{c.pet_name}</p>
-                      {c.owner_name && <p className="text-xs text-stone-400 truncate">{c.owner_name} · {c.owner_whatsapp}</p>}
+                      {(c.owner_name || c.owner_whatsapp) && (
+                        <p className="text-xs text-stone-400 truncate">
+                          {[c.owner_name, c.owner_whatsapp].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
                     </div>
                     {c.linked_at && (
                       <span className="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0"

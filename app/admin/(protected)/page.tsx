@@ -965,7 +965,7 @@ export default function AdminPage() {
     }[]
   } | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
-  const [providerStats, setProviderStats] = useState<Record<string, { views30d: number; reportsThisWeek: number }>>({})
+  const [providerStats, setProviderStats] = useState<Record<string, { views30d: number; reportsThisWeek: number; reportsSent30d: number }>>({})
   const [editingProvider, setEditingProvider] = useState<ProviderWithPhotos | null>(null)
 
   // Load counts on mount — all via admin API routes (service role, bypasses RLS)
@@ -1471,6 +1471,14 @@ export default function AdminPage() {
                           <p className="text-xs text-slate-400 mt-0.5">{p.neighbourhood} · joined {timeAgo(p.created_at)}</p>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0 text-right">
+                          <div>
+                            <p className="text-lg font-bold text-teal-600">{p.reports_sent ?? 0}</p>
+                            <p className="text-[10px] text-slate-400">sent</p>
+                          </div>
+                          <div>
+                            <p className="text-lg font-bold text-purple-600">{p.reports_viewed ?? 0}</p>
+                            <p className="text-[10px] text-slate-400">viewed</p>
+                          </div>
                           <div>
                             <p className="text-lg font-bold text-emerald-600">{p.whatsapp_clicks}</p>
                             <p className="text-[10px] text-slate-400">WA clicks</p>

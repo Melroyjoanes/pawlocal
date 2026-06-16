@@ -26,8 +26,9 @@ export async function GET() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (admin().from('provider_clients') as any)
-    .select('id, pet_name, owner_name, owner_whatsapp, owner_user_id, linked_at, invite_token, created_at')
+    .select('id, pet_name, owner_name, owner_whatsapp, owner_user_id, linked_at, invite_token, invite_status, created_at')
     .eq('provider_id', provider.id)
+    .neq('invite_status', 'revoked')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -21,7 +21,10 @@ export async function GET() {
 
   const db = adminDb()
 
-  const [approvedRes, pendingRes, rejectedRes, broadcastRes, providersRes, analyticsRes, walkReportsRes, claimedRes] = await Promise.all([
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+
+  const [approvedRes, pendingRes, rejectedRes, broadcastRes, providersRes, analyticsRes, walkReportsRes, claimedRes, walkReportsByProviderRes, careCardViewRes] = await Promise.all([
     db.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
     db.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     db.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'rejected'),
@@ -30,6 +33,8 @@ export async function GET() {
     db.from('provider_analytics').select('provider_id, event_type'),
     db.from('walk_reports').select('id', { count: 'exact', head: true }),
     db.from('walk_reports').select('id', { count: 'exact', head: true }).not('customer_id', 'is', null),
+    db.from('walk_reports').select('provider_id').gte('created_at', thirtyDaysAgo.toISOString()),
+    db.from('provider_analytics').select('provider_id').eq('event_type', 'care_card_view').gte('created_at', thirtyDaysAgo.toISOString()),
   ])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,8 +42,20 @@ export async function GET() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const providerList: any[] = providersRes.data ?? []
 
+  // Build per-provider report counts
+  const reportsSentMap: Record<string, number> = {}
+  for (const r of (walkReportsByProviderRes.data ?? [])) {
+    reportsSentMap[r.provider_id] = (reportsSentMap[r.provider_id] ?? 0) + 1
+  }
+  const reportsViewedMap: Record<string, number> = {}
+  for (const v of (careCardViewRes.data ?? [])) {
+    reportsViewedMap[v.provider_id] = (reportsViewedMap[v.provider_id] ?? 0) + 1
+  }
+
   const providerStats = providerList.map((p) => {
     const events = analytics.filter((a) => a.provider_id === p.id)
+    const sent = reportsSentMap[p.id] ?? 0
+    const viewed = reportsViewedMap[p.id] ?? 0
     return {
       id: p.id,
       name: p.name,
@@ -47,6 +64,9 @@ export async function GET() {
       created_at: p.created_at,
       whatsapp_clicks: events.filter((a) => a.event_type === 'whatsapp_click').length,
       profile_views: events.filter((a) => a.event_type === 'view').length,
+      reports_sent: sent,
+      reports_viewed: viewed,
+      open_rate: sent > 0 ? Math.round((viewed / sent) * 100) : 0,
     }
   }).sort((a, b) => b.whatsapp_clicks - a.whatsapp_clicks)
 

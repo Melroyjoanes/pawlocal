@@ -35,28 +35,33 @@ export async function GET() {
     if (new Date(ev.created_at) >= thirtyDaysAgo) statsMap[ev.provider_id].views30d++
   }
 
-  // Fetch report counts per provider (last 7 days = streak)
+  // Fetch report counts per provider (last 7 days = streak, last 30 days = sent)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: walkReports } = await (adminDb().from('walk_reports') as any)
     .select('provider_id, created_at')
-    .gte('created_at', sevenDaysAgo.toISOString())
+    .gte('created_at', thirtyDaysAgo.toISOString())
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: groomReports } = await (adminDb().from('grooming_reports') as any)
     .select('provider_id, created_at')
-    .gte('created_at', sevenDaysAgo.toISOString())
+    .gte('created_at', thirtyDaysAgo.toISOString())
 
   const streakMap: Record<string, number> = {}
+  const sentMap: Record<string, number> = {}
   for (const r of [...(walkReports ?? []), ...(groomReports ?? [])]) {
-    streakMap[r.provider_id] = (streakMap[r.provider_id] ?? 0) + 1
+    sentMap[r.provider_id] = (sentMap[r.provider_id] ?? 0) + 1
+    if (new Date(r.created_at) >= sevenDaysAgo) {
+      streakMap[r.provider_id] = (streakMap[r.provider_id] ?? 0) + 1
+    }
   }
 
   // Merge into final stats per provider
-  const allProviderIds = new Set([...Object.keys(statsMap), ...Object.keys(streakMap)])
-  const result: Record<string, { views30d: number; reportsThisWeek: number }> = {}
+  const allProviderIds = new Set([...Object.keys(statsMap), ...Object.keys(streakMap), ...Object.keys(sentMap)])
+  const result: Record<string, { views30d: number; reportsThisWeek: number; reportsSent30d: number }> = {}
   for (const id of allProviderIds) {
     result[id] = {
       views30d: statsMap[id]?.views30d ?? 0,
       reportsThisWeek: streakMap[id] ?? 0,
+      reportsSent30d: sentMap[id] ?? 0,
     }
   }
 

@@ -10,6 +10,8 @@ type WalkReport = {
   id: string
   token: string
   customer_id?: string | null
+  client_id?: string | null
+  provider_id?: string | null
   dog_name: string
   walk_date: string
   duration_mins: number
@@ -240,26 +242,29 @@ const CLAY_CARD = {
 
 export default function WalkReportCard({
   report,
-  isClaimed,
-  isClaimedByMe,
+  isOwner,
 }: {
   report: WalkReport
-  isClaimed: boolean
-  isClaimedByMe: boolean
+  isOwner: boolean
 }) {
-  const [claiming, setClaiming] = useState(false)
-  const [claimed, setClaimed] = useState(isClaimedByMe)
   const [copied, setCopied] = useState(false)
   const [burst, setBurst] = useState(false)
   const [shareUrl, setShareUrl] = useState('')
   const prefersReduced = useReducedMotion()
 
-  // Track parent view on mount
+  // Track parent view on mount — both systems
   useEffect(() => {
+    // Old: fires push notification to provider
     fetch('/api/care-card-view', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: report.token, type: 'walk' }),
+    }).catch(() => {})
+    // New: funnel analytics
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ event_type: 'report_viewed', report_token: report.token }),
     }).catch(() => {})
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -274,16 +279,6 @@ export default function WalkReportCard({
     const t = setTimeout(() => setBurst(true), 180)
     return () => clearTimeout(t)
   }, [prefersReduced])
-
-  // Auto-claim after Google OAuth redirect
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('autoclaim') !== '1' || claimed || isClaimed) return
-    setClaiming(true)
-    fetch(`/api/walk-reports/${report.token}/claim`, { method: 'POST' })
-      .then((res) => { if (res.ok || res.status === 409) setClaimed(true) })
-      .finally(() => setClaiming(false))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleCopy() {
     navigator.clipboard.writeText(shareUrl).then(() => {
@@ -621,128 +616,83 @@ export default function WalkReportCard({
           </div>
         </motion.div>
 
-        {/* ── Save to account ─────────────────────────────────── */}
-        <AnimatePresence>
-          {!claimed && !isClaimed && (
-            <motion.div
-              className="mt-3 rounded-2xl px-4 py-3 flex items-center gap-3"
-              style={{ background: 'oklch(0.975 0.006 85)', border: '1px solid rgba(226,220,200,0.7)' }}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.35, ease: EASE }}
-            >
-              <span className="text-2xl">🐾</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-800">Save to your account</p>
-                <p className="text-xs text-slate-400 leading-snug">Keep all your dog&apos;s walk history in one place</p>
+        {/* ── Owner confirmation OR viral hook (never both) ──── */}
+        {isOwner ? (
+          /* Owner: show a reassuring confirmation strip */
+          <motion.div
+            className="mt-3 rounded-2xl px-4 py-3 flex items-center gap-3"
+            style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: EASE }}
+          >
+            <span className="text-xl">✓</span>
+            <div>
+              <p className="text-sm font-semibold text-green-800">Reports arrive automatically</p>
+              <p className="text-xs text-green-600 leading-snug">Every walk gets delivered to your PupStep account</p>
+            </div>
+          </motion.div>
+        ) : (
+          /* Stranger: viral hook with referral attribution */
+          <motion.div
+            className="mt-3 rounded-2xl overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, oklch(0.94 0.06 196) 0%, oklch(0.90 0.08 196) 100%)',
+              border: '1.5px solid oklch(0.82 0.10 196)',
+            }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.5, ease: EASE }}
+          >
+            <div className="p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">🐕</span>
+                <h3 className="font-display text-lg text-stone-900 leading-tight">
+                  Get reports like this for your dog
+                </h3>
               </div>
+              <p className="text-sm text-stone-600 mb-4 leading-relaxed">
+                Your walker sends a report after every walk. You see it instantly — GPS, photos, everything. Free.
+              </p>
               <motion.button
                 onClick={async () => {
-                  setClaiming(true)
-                  const res = await fetch(`/api/walk-reports/${report.token}/claim`, { method: 'POST' })
-                  if (res.status === 401) {
-                    const supabase = createClient()
-                    const redirectTo = `${window.location.origin}/auth/callback?next=/walk-report/${report.token}?autoclaim=1`
-                    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
-                    return
-                  } else if (res.status === 403) {
-                    setClaiming(false)
-                  } else if (res.ok || res.status === 409) {
-                    setClaimed(true)
-                    setClaiming(false)
+                  fetch('/api/track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ event_type: 'viral_hook_tapped', report_token: report.token }),
+                  }).catch(() => {})
+                  const supabase = createClient()
+                  const { data: { user } } = await supabase.auth.getUser()
+                  // Pass referral attribution through the OAuth flow
+                  const refParams = report.provider_id
+                    ? `&ref_report=${report.token}&ref_provider=${report.provider_id}`
+                    : ''
+                  if (user) {
+                    window.location.href = `/onboarding?ref_provider=${report.provider_id ?? ''}`
                   } else {
-                    setClaiming(false)
+                    const redirectTo = `${window.location.origin}/auth/callback?next=/onboarding${refParams}`
+                    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
                   }
                 }}
-                disabled={claiming}
-                className="flex-shrink-0 px-3 py-2 rounded-xl text-sm font-bold text-white disabled:opacity-60"
-                style={{ background: 'linear-gradient(160deg, oklch(0.52 0.17 196) 0%, oklch(0.44 0.16 196) 100%)' }}
-                whileTap={{ scale: 0.94 }}
+                className="w-full py-3.5 rounded-xl font-bold text-white text-sm"
+                style={{ background: 'oklch(0.48 0.17 196)', boxShadow: '0 3px 0 oklch(0.35 0.14 196)' }}
+                whileTap={{ scale: 0.97 }}
                 transition={{ duration: 0.12 }}
               >
-                {claiming ? '…' : 'Save'}
+                Set up free →
               </motion.button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {claimed && (
-            <motion.div
-              className="mt-3 rounded-2xl px-4 py-3 flex items-center gap-2"
-              style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, ease: EASE }}
-            >
-              <span className="text-lg">✓</span>
-              <p className="text-sm font-semibold text-green-700">Saved to your PupStep account</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* ── Viral hook ──────────────────────────────────────────── */}
-        <motion.div
-          className="mt-3 rounded-2xl overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, oklch(0.94 0.06 196) 0%, oklch(0.90 0.08 196) 100%)', border: '1.5px solid oklch(0.82 0.10 196)' }}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.5, ease: EASE }}
-        >
-          <div className="p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">🐕</span>
-              <h3 className="font-display text-lg text-stone-900 leading-tight">
-                Get reports like this for your dog
-              </h3>
             </div>
-            <p className="text-sm text-stone-600 mb-4 leading-relaxed">
-              Your walker sends a report after every walk. You see it instantly — GPS route, photos, everything.
-            </p>
-            <motion.button
-              onClick={async () => {
-                // Track the click
-                fetch('/api/track', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ event_type: 'viral_hook_tapped', report_token: report.token }),
-                }).catch(() => {})
-
-                const supabase = createClient()
-                const { data: { user } } = await supabase.auth.getUser()
-                if (user) {
-                  window.location.href = '/onboarding'
-                } else {
-                  const redirectTo = `${window.location.origin}/auth/callback?next=/onboarding`
-                  await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
-                }
-              }}
-              className="w-full py-3.5 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2"
-              style={{ background: 'oklch(0.48 0.17 196)', boxShadow: '0 3px 0 oklch(0.35 0.14 196)' }}
-              whileTap={{ scale: 0.97 }}
-              transition={{ duration: 0.12 }}
-            >
-              Set up free →
-            </motion.button>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
 
         {/* ── Footer ─────────────────────────────────────────── */}
         <motion.div
-          className="mt-6 flex flex-col items-center gap-2 text-center"
+          className="mt-6 pb-2 text-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.45, ease: EASE }}
         >
           <p className="text-xs text-stone-400">Shared via PupStep · Juhu, Mumbai</p>
-          <Link
-            href="/search"
-            className="text-sm font-semibold transition-colors"
-            style={{ color: 'oklch(0.48 0.17 196)' }}
-          >
-            Find a pet care provider →
-          </Link>
         </motion.div>
 
       </div>
