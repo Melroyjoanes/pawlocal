@@ -69,7 +69,7 @@ export default async function MyReportsPage() {
     <MyReportsClient
       walkReports={allWalk}
       groomingReports={allGroom}
-      isSubscribed={isSubscribed}
+      isSubscribed={true} // free for all during launch — lock enabled when billing goes live
       subscriptionPlan={sub?.plan ?? null}
       userName={user.user_metadata?.full_name ?? user.email ?? ''}
     />
