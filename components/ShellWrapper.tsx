@@ -74,7 +74,9 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
         <div className="max-w-7xl mx-auto px-5 sm:px-8 pt-12 pb-8 grid grid-cols-2 sm:grid-cols-4 gap-8">
           {/* Brand col */}
           <div className="col-span-2 sm:col-span-1">
-            <Image src="/logo.webp" alt="PupStep" width={130} height={48} className="h-10 w-auto mb-3 brightness-0 invert opacity-90" />
+            <div className="inline-flex mb-3 rounded-xl px-2 py-1" style={{ background: 'rgba(255,255,255,0.12)' }}>
+              <Image src="/logo.webp" alt="PupStep" width={130} height={48} className="h-10 w-auto" />
+            </div>
             <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
               Mumbai&apos;s verified pet services directory. Juhu · Versova · Andheri West · Santacruz West.
             </p>
@@ -134,7 +136,7 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
               </a>
             ))}
             {/* WhatsApp CTA */}
-            <a href="https://wa.me/919999999999" target="_blank" rel="noopener noreferrer"
+            <a href="https://wa.me/919892620677" target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 mt-3 text-xs font-bold px-3 py-1.5 rounded-full transition-opacity hover:opacity-80"
               style={{ background: 'rgba(37,211,102,0.18)', color: '#4ADE80' }}>
               💬 WhatsApp us

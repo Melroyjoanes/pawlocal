@@ -21,16 +21,16 @@ const INFO_CARDS = [
     title: 'WhatsApp',
     desc: 'Fastest way to reach us. We reply within a few hours.',
     action: 'Chat on WhatsApp',
-    href: 'https://wa.me/919999999999?text=Hi%20PupStep%2C%20I%20have%20a%20question',
+    href: 'https://wa.me/919892620677?text=Hi%20PupStep%2C%20I%20have%20a%20question',
     color: '#F0FDF4',
     textColor: '#064E3B',
   },
   {
     icon: '📧',
     title: 'Email',
-    desc: 'hello@pupstep.in — we reply within 24 hours.',
+    desc: 'melroy@verfolia.com — we reply within 24 hours.',
     action: 'Send an email',
-    href: 'mailto:hello@pupstep.in',
+    href: 'mailto:melroy@verfolia.com',
     color: '#FEF3C7',
     textColor: '#78350F',
   },
@@ -236,9 +236,9 @@ export default function ContactPage() {
 
                   <p className="text-xs text-center text-slate-400">
                     Or WhatsApp us directly at{' '}
-                    <a href="https://wa.me/919999999999" target="_blank" rel="noopener noreferrer"
+                    <a href="https://wa.me/919892620677" target="_blank" rel="noopener noreferrer"
                       className="font-semibold underline underline-offset-1" style={{ color: '#16a34a' }}>
-                      +91 99999 99999
+                      +91 98926 20677
                     </a>
                   </p>
                 </form>

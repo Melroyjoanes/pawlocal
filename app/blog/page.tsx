@@ -12,6 +12,7 @@ const POSTS = [
     categoryColor: '#FEF3C7',
     categoryText: '#78350F',
     emoji: '🦮',
+    image: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=900&q=80',
     title: 'How to choose the right dog walker in Mumbai',
     excerpt: 'Not all dog walkers are equal. Here\'s what to look for — experience, route safety, care reports, and red flags to avoid when hiring in Juhu and Andheri.',
     readTime: '5 min read',
@@ -24,6 +25,7 @@ const POSTS = [
     categoryColor: '#F0FDF4',
     categoryText: '#064E3B',
     emoji: '📋',
+    image: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&w=900&q=80',
     title: 'What is a care report and why your vet will love it',
     excerpt: 'A care report captures every walk — GPS route, photo, poop count, mood. Learn how pet parents in Juhu are using reports to catch health issues early.',
     readTime: '4 min read',
@@ -36,6 +38,7 @@ const POSTS = [
     categoryColor: '#F5F3FF',
     categoryText: '#4C1D95',
     emoji: '✂️',
+    image: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?auto=format&fit=crop&w=900&q=80',
     title: 'The complete dog grooming guide for Mumbai pet parents',
     excerpt: 'Mumbai\'s humidity is tough on coats. How often should you groom? What services matter most? We asked verified groomers in Juhu for their honest advice.',
     readTime: '6 min read',
@@ -48,6 +51,7 @@ const POSTS = [
     categoryColor: '#FFF1F2',
     categoryText: '#9F1239',
     emoji: '❤️',
+    image: 'https://images.unsplash.com/photo-1450778869180-366b5a8ae4cf?auto=format&fit=crop&w=900&q=80',
     title: 'Inside Juhu\'s growing pet community',
     excerpt: 'From beach morning walks to weekend playdates at Carter Road — how Mumbai\'s western suburb became one of India\'s most pet-friendly neighbourhoods.',
     readTime: '7 min read',
@@ -60,6 +64,7 @@ const POSTS = [
     categoryColor: '#E0F2FE',
     categoryText: '#0C4A6E',
     emoji: '🏥',
+    image: 'https://images.unsplash.com/photo-1628009368231-7bb7cfcb0def?auto=format&fit=crop&w=900&q=80',
     title: '10 things to bring to every vet visit in Mumbai',
     excerpt: 'Vaccination records, food logs, walk history — vets in Mumbai say most pet parents come underprepared. Here\'s a simple checklist to make every visit count.',
     readTime: '4 min read',
@@ -72,6 +77,7 @@ const POSTS = [
     categoryColor: '#FEFCE8',
     categoryText: '#713F12',
     emoji: '🛡️',
+    image: 'https://images.unsplash.com/photo-1561037404-61cd46aa615b?auto=format&fit=crop&w=900&q=80',
     title: 'Is pet insurance worth it in India? An honest breakdown',
     excerpt: 'Vet bills in Mumbai can hit ₹50,000+ for emergencies. We break down the top pet insurance options in India — what\'s covered, what\'s not, and what to watch out for.',
     readTime: '8 min read',
@@ -116,11 +122,14 @@ export default function BlogPage() {
           <Link href={`/blog/${featured.slug}`} className="group block">
             <div className="rounded-2xl overflow-hidden border transition-shadow hover:shadow-lg"
               style={{ border: '1.5px solid rgba(0,0,0,0.07)', background: '#fff' }}>
-              {/* Coloured banner */}
-              <div className="flex items-center justify-center py-14 sm:py-20 text-6xl sm:text-7xl"
-                style={{ background: 'linear-gradient(135deg, #FEF9C3, #FDE68A)' }}>
-                {featured.emoji}
-              </div>
+              {/* Cover image */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={featured.image}
+                alt={featured.title}
+                className="w-full object-cover"
+                style={{ height: '260px' }}
+              />
               <div className="p-6 sm:p-8">
                 <div className="flex items-center gap-3 mb-4 flex-wrap">
                   <span className="text-xs font-bold px-3 py-1 rounded-full"
@@ -157,10 +166,13 @@ export default function BlogPage() {
               <Link href={`/blog/${post.slug}`} className="group block h-full">
                 <div className="rounded-2xl overflow-hidden border h-full flex flex-col transition-shadow hover:shadow-md"
                   style={{ border: '1.5px solid rgba(0,0,0,0.07)', background: '#fff' }}>
-                  <div className="flex items-center justify-center py-10 text-5xl"
-                    style={{ background: `linear-gradient(135deg, ${post.categoryColor}, ${post.categoryColor}CC)` }}>
-                    {post.emoji}
-                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={post.image}
+                    alt={post.title}
+                    className="w-full object-cover"
+                    style={{ height: '180px' }}
+                  />
                   <div className="p-5 flex flex-col flex-1">
                     <div className="flex items-center gap-2 mb-3 flex-wrap">
                       <span className="text-xs font-bold px-2.5 py-0.5 rounded-full"

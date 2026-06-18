@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${resendKey}` },
         body: JSON.stringify({
           from: 'PupStep Contact <contact@pupstep.in>',
-          to: ['hello@pupstep.in'],
+          to: ['melroy@verfolia.com'],
           reply_to: email,
           subject: `[PupStep contact] ${topic || 'General enquiry'} — ${name}`,
           text: `Name: ${name}\nEmail: ${email}\nTopic: ${topic || '—'}\n\n${message}`,
