@@ -52,6 +52,8 @@ type Report = {
   behavior: string
   before_photo_url: string | null
   after_photo_url: string | null
+  before_photo_urls?: string[] | null
+  after_photo_urls?: string[] | null
   notes: string | null
   recommendations: string | null
   provider_name: string
@@ -72,8 +74,23 @@ export default function GroomingReportCard({
 }) {
   const [copied, setCopied] = useState(false)
   const [showBefore, setShowBefore] = useState(false)
+  const [activeBeforeIdx, setActiveBeforeIdx] = useState(0)
+  const [activeAfterIdx, setActiveAfterIdx] = useState(0)
   const [claiming, setClaiming] = useState(false)
   const [claimed, setClaimed] = useState(isClaimedByMe)
+
+  // Normalise arrays — fall back to single-URL columns for old reports
+  const beforeUrls: string[] = (report.before_photo_urls && report.before_photo_urls.length > 0)
+    ? report.before_photo_urls
+    : report.before_photo_url ? [report.before_photo_url] : []
+  const afterUrls: string[] = (report.after_photo_urls && report.after_photo_urls.length > 0)
+    ? report.after_photo_urls
+    : report.after_photo_url ? [report.after_photo_url] : []
+
+  const hasPhotos = beforeUrls.length > 0 || afterUrls.length > 0
+  const activePhoto = showBefore
+    ? beforeUrls[activeBeforeIdx] ?? null
+    : afterUrls[activeAfterIdx] ?? null
 
   useEffect(() => {
     fetch('/api/care-card-view', {
@@ -109,43 +126,69 @@ export default function GroomingReportCard({
   return (
     <div className="min-h-dvh pb-12" style={{ background: 'oklch(0.975 0.006 85)' }}>
 
-      {/* ── Before/After Hero ── */}
-      {(report.before_photo_url || report.after_photo_url) && (
-        <div className="relative bg-stone-900">
-          {report.after_photo_url ? (
-            <img
-              src={showBefore && report.before_photo_url ? report.before_photo_url : report.after_photo_url}
-              alt={showBefore ? `${report.dog_name} before grooming` : `${report.dog_name} after grooming`}
-              className="w-full object-cover"
-              style={{ maxHeight: 360 }}
-            />
-          ) : report.before_photo_url && (
-            <img src={report.before_photo_url} alt={`${report.dog_name} before grooming`}
-              className="w-full object-cover" style={{ maxHeight: 360 }} />
-          )}
-
-          {/* Toggle */}
-          {report.before_photo_url && report.after_photo_url && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex rounded-full overflow-hidden"
-              style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)' }}>
-              <button onClick={() => setShowBefore(true)}
-                className="px-4 py-1.5 text-xs font-bold transition-all"
-                style={showBefore ? { background: 'white', color: '#1C1917' } : { color: 'rgba(255,255,255,0.7)' }}>
-                Before
-              </button>
-              <button onClick={() => setShowBefore(false)}
-                className="px-4 py-1.5 text-xs font-bold transition-all"
-                style={!showBefore ? { background: 'white', color: '#1C1917' } : { color: 'rgba(255,255,255,0.7)' }}>
-                After
-              </button>
+      {/* ── Before/After Photo Gallery ── */}
+      {hasPhotos && (
+        <div className="bg-stone-900">
+          {/* Main photo */}
+          {activePhoto && (
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={activePhoto}
+                alt={showBefore ? `${report.dog_name} before grooming` : `${report.dog_name} after grooming`}
+                className="w-full object-cover"
+                style={{ maxHeight: 380 }}
+              />
+              {/* Before/After toggle */}
+              {beforeUrls.length > 0 && afterUrls.length > 0 && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex rounded-full overflow-hidden"
+                  style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(8px)' }}>
+                  <button onClick={() => { setShowBefore(true); setActiveBeforeIdx(0) }}
+                    className="px-4 py-1.5 text-xs font-bold transition-all"
+                    style={showBefore ? { background: 'white', color: '#1C1917' } : { color: 'rgba(255,255,255,0.7)' }}>
+                    Before
+                  </button>
+                  <button onClick={() => { setShowBefore(false); setActiveAfterIdx(0) }}
+                    className="px-4 py-1.5 text-xs font-bold transition-all"
+                    style={!showBefore ? { background: 'white', color: '#1C1917' } : { color: 'rgba(255,255,255,0.7)' }}>
+                    After
+                  </button>
+                </div>
+              )}
+              {/* Badge */}
+              {!showBefore && afterUrls.length > 0 && (
+                <div className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold"
+                  style={{ background: 'oklch(0.48 0.17 196)', color: 'white' }}>
+                  ✨ Fresh groomed!
+                </div>
+              )}
             </div>
           )}
 
-          {/* Overlay badge */}
-          {!showBefore && report.after_photo_url && (
-            <div className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-bold"
-              style={{ background: 'oklch(0.48 0.17 196)', color: 'white' }}>
-              ✨ Fresh groomed!
+          {/* Thumbnail strip — shown when there are multiple photos in the active set */}
+          {(() => {
+            const thumbUrls = showBefore ? beforeUrls : afterUrls
+            const activeIdx = showBefore ? activeBeforeIdx : activeAfterIdx
+            const setIdx = showBefore ? setActiveBeforeIdx : setActiveAfterIdx
+            if (thumbUrls.length <= 1) return null
+            return (
+              <div className="flex gap-2 px-3 py-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+                {thumbUrls.map((src, i) => (
+                  <button key={i} type="button" onClick={() => setIdx(i)}
+                    className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden transition-all"
+                    style={{ outline: i === activeIdx ? '2px solid white' : 'none', opacity: i === activeIdx ? 1 : 0.55 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={src} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )
+          })()}
+
+          {/* When only one set has photos, still show before-only or after-only state */}
+          {!activePhoto && (
+            <div className="h-32 flex items-center justify-center text-stone-500 text-sm">
+              {showBefore ? 'No before photos' : 'No after photos'}
             </div>
           )}
         </div>

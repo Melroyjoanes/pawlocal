@@ -34,9 +34,19 @@ export async function POST(req: NextRequest) {
     dog_name, grooming_date, duration_mins,
     services_done, ticks_found, tick_locations,
     skin_condition, ear_condition, nail_condition, coat_condition,
-    behavior, before_photo_url, after_photo_url, notes, recommendations,
+    behavior, before_photo_url, after_photo_url,
+    before_photo_urls, after_photo_urls,
+    notes, recommendations,
     client_id,
   } = body
+
+  // Merge single + array fields — array is authoritative, single is first element
+  const allBeforeUrls: string[] = Array.isArray(before_photo_urls) && before_photo_urls.length > 0
+    ? before_photo_urls
+    : before_photo_url ? [before_photo_url] : []
+  const allAfterUrls: string[] = Array.isArray(after_photo_urls) && after_photo_urls.length > 0
+    ? after_photo_urls
+    : after_photo_url ? [after_photo_url] : []
 
   if (!dog_name?.trim()) {
     return NextResponse.json({ error: 'Dog name is required' }, { status: 400 })
@@ -74,8 +84,10 @@ export async function POST(req: NextRequest) {
       nail_condition:  nail_condition ?? 'healthy',
       coat_condition:  coat_condition ?? 'shiny',
       behavior:        behavior ?? 'calm',
-      before_photo_url: before_photo_url ?? null,
-      after_photo_url:  after_photo_url ?? null,
+      before_photo_url:  allBeforeUrls[0] ?? null,
+      after_photo_url:   allAfterUrls[0] ?? null,
+      before_photo_urls: allBeforeUrls,
+      after_photo_urls:  allAfterUrls,
       notes:           notes?.trim() ?? null,
       recommendations: recommendations?.trim() ?? null,
     })

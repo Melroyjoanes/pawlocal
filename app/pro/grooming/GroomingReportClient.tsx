@@ -66,6 +66,8 @@ type GroomingReport = {
   behavior: string
   before_photo_url: string | null
   after_photo_url: string | null
+  before_photo_urls: string[]
+  after_photo_urls: string[]
   notes: string | null
   recommendations: string | null
   created_at: string
@@ -191,14 +193,17 @@ function ReportCard({ report, onDelete }: { report: GroomingReport; onDelete: (i
       className="rounded-2xl overflow-hidden" style={CLAY_CARD}>
 
       <div className="flex gap-3 p-4">
-        {/* After photo */}
-        {report.after_photo_url ? (
-          <img src={report.after_photo_url} alt={report.dog_name}
-            className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
-        ) : (
-          <div className="w-16 h-16 rounded-xl flex-shrink-0 flex items-center justify-center text-2xl"
-            style={{ background: 'oklch(0.48 0.17 196 / 0.08)' }}>✂️</div>
-        )}
+        {/* After photo (first of array, fallback to single) */}
+        {(() => {
+          const firstAfter = (report.after_photo_urls?.length > 0 ? report.after_photo_urls[0] : null) ?? report.after_photo_url
+          return firstAfter ? (
+            <img src={firstAfter} alt={report.dog_name}
+              className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+          ) : (
+            <div className="w-16 h-16 rounded-xl flex-shrink-0 flex items-center justify-center text-2xl"
+              style={{ background: 'oklch(0.48 0.17 196 / 0.08)' }}>✂️</div>
+          )
+        })()}
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
@@ -299,10 +304,10 @@ export default function GroomingReportClient({ initialReports, providerId, provi
   const [nailCondition, setNailCondition] = useState('healthy')
   const [coatCondition, setCoatCondition] = useState('shiny')
   const [behavior, setBehavior] = useState('calm')
-  const [beforePhotoUrl, setBeforePhotoUrl] = useState<string | null>(null)
-  const [afterPhotoUrl, setAfterPhotoUrl] = useState<string | null>(null)
-  const [beforePreview, setBeforePreview] = useState<string | null>(null)
-  const [afterPreview, setAfterPreview] = useState<string | null>(null)
+  const [beforePhotoUrls, setBeforePhotoUrls] = useState<string[]>([])
+  const [afterPhotoUrls, setAfterPhotoUrls] = useState<string[]>([])
+  const [beforePreviews, setBeforePreviews] = useState<string[]>([])
+  const [afterPreviews, setAfterPreviews] = useState<string[]>([])
   const [uploadingBefore, setUploadingBefore] = useState(false)
   const [uploadingAfter, setUploadingAfter] = useState(false)
   const [notes, setNotes] = useState('')
@@ -314,6 +319,7 @@ export default function GroomingReportClient({ initialReports, providerId, provi
 
   const beforeInputRef = useRef<HTMLInputElement>(null)
   const afterInputRef = useRef<HTMLInputElement>(null)
+  const MAX_PHOTOS = 5
   const supabase = createClient()
 
   function resetForm() {
@@ -321,8 +327,8 @@ export default function GroomingReportClient({ initialReports, providerId, provi
     setDogName(''); setDuration(60); setServicesDone([])
     setTickLocations([]); setSkinCondition('normal'); setEarCondition('clean')
     setNailCondition('healthy'); setCoatCondition('shiny'); setBehavior('calm')
-    setBeforePhotoUrl(null); setAfterPhotoUrl(null)
-    setBeforePreview(null); setAfterPreview(null)
+    setBeforePhotoUrls([]); setAfterPhotoUrls([])
+    setBeforePreviews([]); setAfterPreviews([])
     setNotes(''); setRecommendations('')
     setSuccessToken(null); setSuccessCopied(false); setSubmitError(null)
   }
@@ -335,25 +341,41 @@ export default function GroomingReportClient({ initialReports, providerId, provi
 
   async function uploadPhoto(
     file: File,
-    setPreview: (url: string) => void,
-    setUrl: (url: string | null) => void,
-    setUploading: (b: boolean) => void,
-    prefix: string,
+    prefix: 'before' | 'after',
   ) {
-    setPreview(URL.createObjectURL(file))
-    setUploading(true)
+    const blobUrl = URL.createObjectURL(file)
+    if (prefix === 'before') {
+      setBeforePreviews(prev => [...prev, blobUrl])
+    } else {
+      setAfterPreviews(prev => [...prev, blobUrl])
+    }
+
+    if (prefix === 'before') setUploadingBefore(true)
+    else setUploadingAfter(true)
+
     try {
-      const path = `${providerId}/${prefix}-${Date.now()}.jpg`
+      const ext = file.name.split('.').pop() ?? 'jpg'
+      const path = `grooming-photos/${providerId}/${prefix}-${Date.now()}.${ext}`
       const { error } = await supabase.storage
-        .from('walk-report-photos')
+        .from('provider-photos')
         .upload(path, file, { upsert: true, contentType: file.type })
       if (error) throw error
-      const { data } = supabase.storage.from('walk-report-photos').getPublicUrl(path)
-      setUrl(data.publicUrl)
+      const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
+      if (prefix === 'before') {
+        setBeforePhotoUrls(prev => [...prev, data.publicUrl])
+      } else {
+        setAfterPhotoUrls(prev => [...prev, data.publicUrl])
+      }
     } catch {
-      setUrl(null)
+      // remove the preview if upload failed
+      if (prefix === 'before') {
+        setBeforePreviews(prev => prev.filter(u => u !== blobUrl))
+      } else {
+        setAfterPreviews(prev => prev.filter(u => u !== blobUrl))
+      }
     } finally {
-      setUploading(false)
+      if (prefix === 'before') setUploadingBefore(false)
+      else setUploadingAfter(false)
     }
   }
 
@@ -379,8 +401,10 @@ export default function GroomingReportClient({ initialReports, providerId, provi
           nail_condition: nailCondition,
           coat_condition: coatCondition,
           behavior,
-          before_photo_url: beforePhotoUrl,
-          after_photo_url: afterPhotoUrl,
+          before_photo_urls: beforePhotoUrls,
+          after_photo_urls: afterPhotoUrls,
+          before_photo_url: beforePhotoUrls[0] ?? null,
+          after_photo_url: afterPhotoUrls[0] ?? null,
           notes: notes.trim() || null,
           recommendations: recommendations.trim() || null,
           client_id: selectedClient?.id ?? null,
@@ -397,8 +421,12 @@ export default function GroomingReportClient({ initialReports, providerId, provi
         ticks_found: tickLocations.length, tick_locations: tickLocations,
         skin_condition: skinCondition, ear_condition: earCondition,
         nail_condition: nailCondition, coat_condition: coatCondition,
-        behavior, before_photo_url: beforePhotoUrl,
-        after_photo_url: afterPhotoUrl, notes: notes.trim() || null,
+        behavior,
+        before_photo_url: beforePhotoUrls[0] ?? null,
+        after_photo_url: afterPhotoUrls[0] ?? null,
+        before_photo_urls: beforePhotoUrls,
+        after_photo_urls: afterPhotoUrls,
+        notes: notes.trim() || null,
         recommendations: recommendations.trim() || null,
         created_at: new Date().toISOString(),
       }, ...prev])
@@ -595,56 +623,76 @@ export default function GroomingReportClient({ initialReports, providerId, provi
                   {/* Behavior */}
                   <ConditionPicker label="Behaviour" subLabel="व्यवहार" options={BEHAVIOR_OPTIONS} value={behavior} onChange={setBehavior} />
 
-                  {/* Before photo */}
+                  {/* Before photos */}
                   <div>
                     <label className="block text-xs font-semibold text-stone-500 mb-2">
-                      Before Photo <span className="text-stone-300 font-normal">(optional)</span>
+                      Before Photos <span className="text-stone-300 font-normal">(optional · up to {MAX_PHOTOS})</span>
                     </label>
                     <input ref={beforeInputRef} type="file" accept="image/*" capture="environment"
-                      onChange={e => { const f = e.target.files?.[0]; if (f) uploadPhoto(f, setBeforePreview, setBeforePhotoUrl, setUploadingBefore, 'before') }}
+                      onChange={e => { const f = e.target.files?.[0]; if (f) { uploadPhoto(f, 'before'); if (beforeInputRef.current) beforeInputRef.current.value = '' } }}
                       className="hidden" />
-                    {beforePreview ? (
-                      <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-                        <img src={beforePreview} alt="Before" className="w-full h-full object-cover" />
-                        {uploadingBefore && (
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                            <span className="text-white text-sm font-semibold">Uploading…</span>
+                    {beforePreviews.length > 0 && (
+                      <div className="flex gap-2 flex-wrap mb-2">
+                        {beforePreviews.map((src, i) => (
+                          <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                            <img src={src} alt={`Before ${i + 1}`} className="w-full h-full object-cover" />
+                            {uploadingBefore && i === beforePreviews.length - 1 && (
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                <span className="text-white text-xs font-semibold">↑</span>
+                              </div>
+                            )}
+                            <button type="button"
+                              onClick={() => {
+                                setBeforePreviews(prev => prev.filter((_, j) => j !== i))
+                                setBeforePhotoUrls(prev => prev.filter((_, j) => j !== i))
+                              }}
+                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center">✕</button>
                           </div>
-                        )}
-                        <button type="button" onClick={() => { setBeforePreview(null); setBeforePhotoUrl(null); if (beforeInputRef.current) beforeInputRef.current.value = '' }}
-                          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-white text-sm flex items-center justify-center">✕</button>
+                        ))}
                       </div>
-                    ) : (
+                    )}
+                    {beforePreviews.length < MAX_PHOTOS && (
                       <button type="button" onClick={() => beforeInputRef.current?.click()}
-                        className="w-full py-4 rounded-xl border-2 border-dashed border-stone-200 flex items-center justify-center gap-2 text-stone-400 text-sm font-medium hover:border-teal-300 hover:text-teal-600 transition-colors">
-                        <span className="text-xl">📸</span> Before photo
+                        className="w-full py-3 rounded-xl border-2 border-dashed border-stone-200 flex items-center justify-center gap-2 text-stone-400 text-sm font-medium hover:border-teal-300 hover:text-teal-600 transition-colors">
+                        <span className="text-lg">📸</span>
+                        {beforePreviews.length === 0 ? 'Add before photo' : '+ Add another before photo'}
                       </button>
                     )}
                   </div>
 
-                  {/* After photo */}
+                  {/* After photos */}
                   <div>
                     <label className="block text-xs font-semibold text-stone-500 mb-2">
-                      After Photo <span className="text-stone-300 font-normal">(the wow moment!)</span>
+                      After Photos <span className="text-stone-300 font-normal">(the wow moment! · up to {MAX_PHOTOS})</span>
                     </label>
                     <input ref={afterInputRef} type="file" accept="image/*" capture="environment"
-                      onChange={e => { const f = e.target.files?.[0]; if (f) uploadPhoto(f, setAfterPreview, setAfterPhotoUrl, setUploadingAfter, 'after') }}
+                      onChange={e => { const f = e.target.files?.[0]; if (f) { uploadPhoto(f, 'after'); if (afterInputRef.current) afterInputRef.current.value = '' } }}
                       className="hidden" />
-                    {afterPreview ? (
-                      <div className="relative w-full aspect-video rounded-xl overflow-hidden">
-                        <img src={afterPreview} alt="After" className="w-full h-full object-cover" />
-                        {uploadingAfter && (
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                            <span className="text-white text-sm font-semibold">Uploading…</span>
+                    {afterPreviews.length > 0 && (
+                      <div className="flex gap-2 flex-wrap mb-2">
+                        {afterPreviews.map((src, i) => (
+                          <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
+                            <img src={src} alt={`After ${i + 1}`} className="w-full h-full object-cover" />
+                            {uploadingAfter && i === afterPreviews.length - 1 && (
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                <span className="text-white text-xs font-semibold">↑</span>
+                              </div>
+                            )}
+                            <button type="button"
+                              onClick={() => {
+                                setAfterPreviews(prev => prev.filter((_, j) => j !== i))
+                                setAfterPhotoUrls(prev => prev.filter((_, j) => j !== i))
+                              }}
+                              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-[10px] flex items-center justify-center">✕</button>
                           </div>
-                        )}
-                        <button type="button" onClick={() => { setAfterPreview(null); setAfterPhotoUrl(null); if (afterInputRef.current) afterInputRef.current.value = '' }}
-                          className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 text-white text-sm flex items-center justify-center">✕</button>
+                        ))}
                       </div>
-                    ) : (
+                    )}
+                    {afterPreviews.length < MAX_PHOTOS && (
                       <button type="button" onClick={() => afterInputRef.current?.click()}
-                        className="w-full py-4 rounded-xl border-2 border-dashed border-amber-200 flex items-center justify-center gap-2 text-amber-500 text-sm font-medium hover:border-amber-400 transition-colors">
-                        <span className="text-xl">✨</span> After photo — share the transformation!
+                        className="w-full py-3 rounded-xl border-2 border-dashed border-amber-200 flex items-center justify-center gap-2 text-amber-500 text-sm font-medium hover:border-amber-400 transition-colors">
+                        <span className="text-lg">✨</span>
+                        {afterPreviews.length === 0 ? 'Add after photo — share the transformation!' : '+ Add another after photo'}
                       </button>
                     )}
                   </div>
