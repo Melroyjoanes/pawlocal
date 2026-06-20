@@ -447,7 +447,7 @@ function WalkReportCard() {
             <p className="font-bold text-base text-slate-900 leading-tight" style={{ fontFamily: 'var(--font-fredoka,sans-serif)' }}>
               Bruno&apos;s Walk
             </p>
-            <p className="text-xs" style={{ color: '#92400E' }}>logged by your watchman</p>
+            <p className="text-xs" style={{ color: '#92400E' }}>logged by Bruno's walker</p>
           </div>
         </div>
         <div style={{ background: 'linear-gradient(135deg,#0A8A96,#087585)', borderRadius: 100, padding: '4px 10px', fontSize: 10, fontWeight: 700, color: '#F0FDFA', display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -485,7 +485,7 @@ function WalkReportCard() {
 
       {/* Quote */}
       <div style={{ background: 'linear-gradient(135deg,#FEF3C7,#FDE68A)', borderRadius: 15, padding: '9px 12px', border: '1px solid rgba(253,230,138,0.8)' }}>
-        <p style={{ fontSize: 12, fontWeight: 600, color: '#78350F', lineHeight: 1.45 }}>&ldquo;Now I actually know if my watchman walks Bruno or not.&rdquo;</p>
+        <p style={{ fontSize: 12, fontWeight: 600, color: '#78350F', lineHeight: 1.45 }}>&ldquo;Now I actually know Bruno gets walked every single day.&rdquo;</p>
         <p style={{ fontSize: 10.5, color: '#92400E', marginTop: 2, opacity: 0.8 }}>— Bruno&apos;s mom, Juhu</p>
       </div>
 
@@ -594,7 +594,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
                 transition={{ duration: 0.45, ease: EASE_EXP, delay: 0.16 }}
                 className="text-lg sm:text-xl text-slate-500 mb-8 max-w-lg mx-auto lg:mx-0"
                 style={{ lineHeight: 1.65 }}>
-                Share PupStep with your watchman, domestic staff, or hired walker. After every walk, they log it in 60 seconds — GPS, photos, poop count. A care report lands in your WhatsApp.
+                Share PupStep with whoever walks your dog. After every walk, they log it in 60 seconds — GPS, photos, poop count. A care report lands in your WhatsApp.
               </motion.p>
 
               <motion.div
@@ -674,7 +674,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
                   <p className="text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: '#F07030' }}>Step 01</p>
                   <h3 className="font-bold text-xl sm:text-2xl text-slate-900 mb-2 font-display">Share the app with your walker</h3>
                   <p className="text-slate-500 text-base max-w-lg leading-relaxed">
-                    Send your watchman, domestic staff, or hired walker a PupStep link. They&apos;re set up and linked to your dog in under 2 minutes. No app store needed.
+                    Send your dog walker a PupStep link. They scan the QR, enter the 4-digit code, and they&apos;re linked to your dog in under 2 minutes. No app download needed.
                   </p>
                 </div>
               </div>
@@ -755,7 +755,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
                 See exactly<br /><span style={{ color: '#FF8C52' }}>where they went.</span>
               </h2>
               <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-md mx-auto lg:mx-0" style={{ lineHeight: 1.7 }}>
-                Every walk is GPS tracked. You see the exact route your watchman took Bruno on — right in the care report.
+                Every walk is GPS tracked. You see the exact route your dog walker took — right in the care report.
               </p>
               {[
                 { Icon: Navigation,    text: 'Full GPS route, saved to your account' },
@@ -884,7 +884,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
                       </div>
                       <p className="font-bold text-sm text-white leading-snug mb-1">Daily Care Reports</p>
                       <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                        Your watchman logs every walk. You see it all.
+                        Your walker logs every walk. You see it all.
                       </p>
                     </div>
                     <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
@@ -937,7 +937,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <FadeUp className="text-center mb-9">
             <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)' }}>Pet parents love it</h2>
-            <p className="text-slate-400 text-sm mt-2">Real families using PupStep with their staff in {neighbourhood}</p>
+            <p className="text-slate-400 text-sm mt-2">Real pet parents using PupStep in {neighbourhood}</p>
           </FadeUp>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 items-start">
@@ -946,7 +946,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
               <div className="p-7 sm:p-8 flex flex-col" style={{ borderRadius: 28, ...cs('white') }}>
                 <div className="mb-3" style={{ fontSize: 60, lineHeight: 0.8, color: '#F07030', opacity: 0.16, fontFamily: 'Georgia,serif', fontWeight: 900 }}>&ldquo;</div>
                 <p className="text-base sm:text-lg font-medium text-slate-700 flex-1 leading-relaxed mb-5">
-                  Finally know my watchman actually walks Bruno every morning. The GPS map shows exactly which streets they took.
+                  Finally know Bruno is actually getting walked every morning. The GPS map shows exactly which streets they took.
                 </p>
                 <div className="flex mb-3">{Array(5).fill(0).map((_,j) => <Star key={j} size={13} fill="#F59E0B" color="#F59E0B" />)}</div>
                 <div className="flex items-center gap-3 pt-3.5" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
@@ -996,7 +996,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
                 <div className="text-5xl mb-4" style={{ filter: 'drop-shadow(0 4px 12px rgba(8,145,178,0.22))' }}>🐕‍🦺</div>
                 <div className="flex mb-3">{Array(5).fill(0).map((_,j) => <Star key={j} size={12} fill="#075985" color="#075985" />)}</div>
                 <p className="text-sm font-medium text-sky-900 leading-relaxed mb-4" style={{ opacity: 0.87 }}>
-                  &ldquo;Our maid walks Simba daily. Now I trust it&apos;s happening. The photo every day is proof enough for me.&rdquo;
+                  &ldquo;Simba&apos;s walker logs every walk now. The photo every day is proof enough for me.&rdquo;
                 </p>
                 <p className="font-bold text-xs text-sky-900">Simba&apos;s family</p>
                 <p className="text-xs text-sky-700 mt-0.5 opacity-65">Andheri West</p>

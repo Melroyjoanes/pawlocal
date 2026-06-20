@@ -12,7 +12,7 @@ export async function POST(
 ) {
   const { token } = await params
   const body = await req.json()
-  const { walker_name, walker_phone, walker_role } = body
+  const { walker_name, walker_phone, walker_role, otp } = body
 
   if (!walker_name?.trim()) {
     return NextResponse.json({ error: 'walker_name is required' }, { status: 400 })
@@ -22,7 +22,7 @@ export async function POST(
 
   // Check current status
   const { data: connection, error: fetchError } = await (db.from('walker_connections') as any)
-    .select('id, status')
+    .select('id, status, otp')
     .eq('token', token)
     .single()
 
@@ -32,6 +32,11 @@ export async function POST(
 
   if (connection.status === 'active') {
     return NextResponse.json({ error: 'Already claimed' }, { status: 409 })
+  }
+
+  // Verify OTP if one exists on the connection
+  if (connection.otp && otp?.toString() !== connection.otp) {
+    return NextResponse.json({ error: 'Incorrect code. Please ask the owner to show you their code again.' }, { status: 401 })
   }
 
   const { error: updateError } = await (db.from('walker_connections') as any)

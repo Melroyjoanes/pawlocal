@@ -11,6 +11,7 @@ interface Props {
   walkerName: string | null
   walkerPhone: string | null
   status: string
+  otp: string | null
 }
 
 export default function QRDisplayClient({
@@ -20,6 +21,7 @@ export default function QRDisplayClient({
   walkerName: initialWalkerName,
   walkerPhone: initialWalkerPhone,
   status: initialStatus,
+  otp,
 }: Props) {
   const [connectUrl, setConnectUrl] = useState('')
   const [walkerName, setWalkerName] = useState(initialWalkerName)
@@ -221,6 +223,77 @@ export default function QRDisplayClient({
                 }}
               />
               Waiting for walker to scan...
+            </div>
+          )}
+
+          {/* OTP display — shown only when pending */}
+          {!isActive && otp && (
+            <div
+              style={{
+                backgroundColor: '#0A2F35',
+                borderRadius: '16px',
+                padding: '20px 24px',
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '12px',
+              }}
+            >
+              <p
+                style={{
+                  color: '#9ECDD4',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  margin: 0,
+                  fontFamily: 'var(--font-nunito), sans-serif',
+                }}
+              >
+                Your walker&apos;s entry code
+              </p>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '10px',
+                  justifyContent: 'center',
+                }}
+              >
+                {otp.split('').map((digit, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      width: '56px',
+                      height: '64px',
+                      backgroundColor: '#ffffff',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '36px',
+                      fontWeight: 800,
+                      color: '#0A2F35',
+                      fontFamily: 'var(--font-fredoka), sans-serif',
+                      letterSpacing: '0',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
+                    }}
+                  >
+                    {digit}
+                  </div>
+                ))}
+              </div>
+              <p
+                style={{
+                  color: '#9ECDD4',
+                  fontSize: '12px',
+                  margin: 0,
+                  textAlign: 'center',
+                  fontFamily: 'var(--font-nunito), sans-serif',
+                }}
+              >
+                Tell this to your walker when they scan
+              </p>
             </div>
           )}
 

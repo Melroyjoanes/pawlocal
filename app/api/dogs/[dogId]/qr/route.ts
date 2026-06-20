@@ -34,7 +34,7 @@ export async function GET(
   // Get existing connection or create one
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let { data: connection } = await (db.from('walker_connections') as any)
-    .select('id, token, walker_name, walker_phone, status')
+    .select('id, token, walker_name, walker_phone, status, otp')
     .eq('dog_id', dogId)
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false })
@@ -51,8 +51,9 @@ export async function GET(
         owner_id: user.id,
         token,
         status: 'pending',
+        otp: generateOTP(),
       })
-      .select('id, token, walker_name, walker_phone, status')
+      .select('id, token, walker_name, walker_phone, status, otp')
       .single()
 
     if (createError) {
@@ -66,6 +67,7 @@ export async function GET(
     walker_name: connection.walker_name ?? null,
     walker_phone: connection.walker_phone ?? null,
     status: connection.status,
+    otp: connection.otp ?? null,
   })
 }
 
@@ -76,4 +78,8 @@ function generateToken(): string {
     result += chars.charAt(Math.floor(Math.random() * chars.length))
   }
   return result
+}
+
+function generateOTP(): string {
+  return String(Math.floor(1000 + Math.random() * 9000))
 }

@@ -14,9 +14,9 @@ interface ConnectClientProps {
 }
 
 const ROLE_OPTIONS = [
-  { value: 'watchman', label: '🏠 Watchman' },
-  { value: 'house_help', label: '🏡 House help' },
-  { value: 'hired_walker', label: '🚶 Hired walker' },
+  { value: 'dog_walker', label: '🐕 Dog Walker' },
+  { value: 'family_friend', label: '👨‍👩‍👧 Family / Friend' },
+  { value: 'professional', label: '💼 Professional Walker' },
   { value: 'other', label: '👤 Other' },
 ]
 
@@ -28,6 +28,7 @@ export default function ConnectClient({
   ownerFirstName,
 }: ConnectClientProps) {
   const router = useRouter()
+  const [otp, setOtp] = useState('')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [role, setRole] = useState('')
@@ -36,6 +37,10 @@ export default function ConnectClient({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!otp || otp.length !== 4) {
+      setError('Please enter the 4-digit code.')
+      return
+    }
     if (!name.trim()) {
       setError('Please enter your name.')
       return
@@ -51,6 +56,7 @@ export default function ConnectClient({
           walker_name: name.trim(),
           walker_phone: phone.trim() || null,
           walker_role: role || null,
+          otp,
         }),
       })
 
@@ -109,8 +115,8 @@ export default function ConnectClient({
         </h1>
         <p className="text-slate-600 text-base text-center mt-2 leading-relaxed px-4"
           style={{ fontFamily: 'var(--font-nunito)' }}>
-          Hi! <strong>{ownerFirstName}</strong> wants you to log{' '}
-          <strong>{dogName}</strong>&apos;s walks
+          <strong>{ownerFirstName}</strong> shared this code with you to track{' '}
+          <strong>{dogName}</strong>&apos;s walks 🐾
         </p>
       </div>
 
@@ -133,6 +139,25 @@ export default function ConnectClient({
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex-1 px-5 space-y-4">
+        <div>
+          <label className="block text-sm font-bold text-[#0A2F35] mb-1.5"
+            style={{ fontFamily: 'var(--font-nunito)' }}>
+            Enter the 4-digit code shown by the owner *
+          </label>
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={4}
+            pattern="[0-9]{4}"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            placeholder="e.g. 8022"
+            required
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-3xl text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#FF8C52] min-h-[64px] text-center tracking-widest"
+            style={{ fontFamily: 'var(--font-fredoka)' }}
+          />
+        </div>
+
         <div>
           <label className="block text-sm font-bold text-[#0A2F35] mb-1.5"
             style={{ fontFamily: 'var(--font-nunito)' }}>
