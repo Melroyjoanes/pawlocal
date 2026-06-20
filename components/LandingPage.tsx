@@ -44,13 +44,22 @@ const CAT_PHOTO: Record<string, string> = {
   'grooming':    img('photo-1611173622933-91942d394b04'),
   'vet':         img('photo-1588950538967-ca7f8599c669'),
   'dog-training':img('photo-1640652663796-764e4eb5bc59'),
+  'pet-store':   img('photo-1601758228041-f3b2795255f1'),
 }
 const CAT_POS: Record<string, string> = {
   'dog-walking': 'center 20%',
   'grooming':    'center 40%',
   'vet':         'center 30%',
   'dog-training':'center 30%',
+  'pet-store':   'center 50%',
 }
+
+// Hero dog photo strip
+const HERO_DOG_PHOTOS = [
+  { id: 'photo-1552053831-71594a27632d', alt: 'Golden retriever', rotate: -5 },
+  { id: 'photo-1587300003388-59208cc962cb', alt: 'Puppy portrait',   rotate: 3  },
+  { id: 'photo-1548681528-6a5c45dbe30',  alt: 'Dog on a walk',     rotate: -2 },
+]
 
 // ─── Clay color system ────────────────────────────────────────────────────────
 const C = {
@@ -149,6 +158,36 @@ function Bone({ size = 64, color = '#F59E0B', opacity = 0.55 }: {
       <circle cx="14" cy="10" r="4" fill="rgba(255,255,255,0.45)" />
       <circle cx="86" cy="10" r="4" fill="rgba(255,255,255,0.45)" />
     </svg>
+  )
+}
+
+// ─── Hero dog photo strip ─────────────────────────────────────────────────────
+function DogPhotoStrip({ rm }: { rm: boolean }) {
+  return (
+    <div className="flex gap-2.5 justify-center lg:justify-end mb-4">
+      {HERO_DOG_PHOTOS.map((p, i) => (
+        <motion.div
+          key={p.id}
+          initial={rm ? {} : { opacity: 0, y: 18, rotate: 0 }}
+          animate={{ opacity: 1, y: 0, rotate: p.rotate }}
+          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1], delay: 0.2 + i * 0.08 }}
+          style={{
+            width: 84, height: 104, borderRadius: 14, overflow: 'hidden', flexShrink: 0,
+            boxShadow: '0 4px 0 rgba(0,0,0,0.10), 0 14px 28px rgba(10,47,53,0.14), inset 0 1.5px 0 rgba(255,255,255,0.85)',
+            border: '3px solid rgba(255,255,255,0.95)',
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`https://images.unsplash.com/${p.id}?w=200&h=250&fit=crop&auto=format&q=80`}
+            alt={p.alt}
+            loading="eager"
+            decoding="async"
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+        </motion.div>
+      ))}
+    </div>
   )
 }
 
@@ -515,7 +554,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
   }, [rm])
 
   // Only show dog-walking + grooming from directory
-  const DISPLAY_CATS = CATEGORIES.filter(c => ['dog-walking', 'grooming'].includes(c.slug))
+  const DISPLAY_CATS = CATEGORIES.filter(c => ['dog-walking', 'grooming', 'vet', 'dog-training'].includes(c.slug))
 
   const STEPS = [
     { Icon: Megaphone, title: 'Post your request', sub: '"Need a groomer this Sunday in Juhu, ₹500 budget"', ckey: 'amber' as CKey },
@@ -631,9 +670,12 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
               </motion.div>
             </div>
 
-            {/* Walk report card */}
-            <div className="flex-shrink-0 w-full max-w-sm flex justify-center lg:justify-end">
-              <WalkReportCard />
+            {/* Dog photos + Walk report card */}
+            <div className="flex-shrink-0 w-full max-w-sm flex flex-col">
+              <DogPhotoStrip rm={rm} />
+              <div className="flex justify-center lg:justify-end">
+                <WalkReportCard />
+              </div>
             </div>
           </div>
         </div>
@@ -819,17 +861,17 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
             </div>
           </FadeUp>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {/* Directory cards — dog walking + grooming */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+            {/* Directory cards — 4 photo categories */}
             {DISPLAY_CATS.map((cat, i) => {
               const ck      = (CAT_CLAY[cat.slug] ?? 'white') as CKey
               const photo   = CAT_PHOTO[cat.slug]
               const pos     = CAT_POS[cat.slug] ?? 'center 30%'
               const count   = countMap[cat.slug]
               const t       = C[ck] as { bg: string; shadow: string; border: string; text: string }
-              const heights = ['clamp(175px,28vw,255px)', 'clamp(155px,24vw,215px)']
+              const heights = ['clamp(185px,26vw,260px)', 'clamp(165px,22vw,230px)', 'clamp(175px,24vw,245px)', 'clamp(155px,20vw,215px)']
               return (
-                <FadeUp key={cat.slug} delay={i * 0.06}>
+                <FadeUp key={cat.slug} delay={i * 0.06} className="lg:col-span-2 md:col-span-1">
                   <Link href={`/${cat.slug}`} className="block group">
                     <motion.div
                       whileHover={rm ? {} : { y: -5, scale: 1.01 }}
@@ -869,7 +911,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
             })}
 
             {/* Feature card 1 — Care Reports (QR walker system) */}
-            <FadeUp delay={0.12}>
+            <FadeUp delay={0.12} className="lg:col-span-3 md:col-span-1">
               <Link href="/setup" className="block group">
                 <motion.div
                   whileHover={rm ? {} : { y: -5, scale: 1.01 }}
@@ -897,7 +939,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
             </FadeUp>
 
             {/* Feature card 2 — Post a broadcast request */}
-            <FadeUp delay={0.18}>
+            <FadeUp delay={0.18} className="lg:col-span-3 md:col-span-2">
               <Link href="/broadcast" className="block group">
                 <motion.div
                   whileHover={rm ? {} : { y: -5, scale: 1.01 }}
@@ -1198,7 +1240,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
         className="lg:hidden fixed bottom-0 inset-x-0 z-50"
         style={{ background: 'rgba(255,251,235,0.97)', borderTop: '1px solid #FDE68A', paddingBottom: 'env(safe-area-inset-bottom,12px)' }}>
         <div className="flex gap-3 px-4 pt-3 pb-3">
-          <Link href="/join"
+          <Link href="/setup"
             className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold"
             style={{ background: 'linear-gradient(155deg,#FF8C52 0%,#F56B22 100%)', boxShadow: '0 4px 0 rgba(175,65,10,0.30),0 8px 20px rgba(245,107,34,0.32)', color: '#451A03' }}>
             Set up my dog

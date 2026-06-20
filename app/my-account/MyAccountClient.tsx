@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import TrialBanner from '@/components/TrialBanner'
@@ -9,20 +9,6 @@ interface Broadcast {
   id: string; service_slug: string; pet_description: string
   area: string; date_needed: string; budget: string | null
   status: string; created_at: string
-}
-interface Review {
-  id: string; provider_id: string; rating: number
-  comment: string | null; created_at: string
-  providers?: { name: string }
-}
-interface SavedProvider {
-  id: string; name: string; category_slug: string; whatsapp: string
-}
-interface BookingRequest {
-  id: string; provider_id: string; service_slug: string
-  pet_name: string; pet_type: string; date_needed: string
-  time_needed: string; notes: string | null; status: string
-  created_at: string; providers?: { name: string; category_slug: string }
 }
 interface ClaimedReport {
   id: string
@@ -65,12 +51,19 @@ interface WalkLog {
   created_at: string
   dogs?: { name: string }
 }
+interface Dog {
+  id: string; name: string; breed: string | null; photo_url: string | null; health_notes: string | null
+}
+interface WalkerConnection {
+  id: string; dog_id: string; walker_name: string; walker_phone: string | null; walker_role: string | null; status: string; claimed_at: string | null; dogs?: { name: string }
+}
 interface Props {
-  broadcasts: Broadcast[]; reviews: Review[]
-  savedProviders: SavedProvider[]; bookingRequests: BookingRequest[]
+  broadcasts: Broadcast[]
   claimedReports: ClaimedReport[]
   claimedGroomingReports: ClaimedGroomingReport[]
   walkLogs: WalkLog[]
+  dogs: Dog[]
+  walkerConnections: WalkerConnection[]
   userDisplay: string; userAvatar?: string | null; userId: string
   subStatus: {
     status: 'trial' | 'active' | 'expired' | 'no_trial'
@@ -83,10 +76,6 @@ const SERVICE_LABELS: Record<string, string> = {
   'dog-walking': '🦮 Dog Walking', 'grooming': '✂️ Grooming',
   'vet': '🏥 Vet', 'pet-store': '🏪 Pet Store',
   'dog-training': '🎓 Dog Training', 'insurance': '🛡️ Insurance',
-}
-const CAT_ICONS: Record<string, string> = {
-  'dog-walking': '🦮', 'grooming': '✂️', 'vet': '🏥',
-  'pet-store': '🏪', 'dog-training': '🎓', 'insurance': '🛡️',
 }
 const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   active:    { bg: '#F0FDF4', color: '#15803D' },
@@ -115,11 +104,11 @@ const CONDITION_STYLE: Record<string, { bg: string; color: string }> = {
   infected:  { bg: '#FFF1F2', color: '#BE123C' },
 }
 
-type Tab = 'broadcasts' | 'saved' | 'reviews' | 'bookings' | 'grooming'
+type Tab = 'broadcasts' | 'dogs' | 'team' | 'bookings' | 'grooming'
 const TABS: { id: Tab; label: string; emoji: string }[] = [
   { id: 'broadcasts', label: 'Broadcasts', emoji: '📣' },
-  { id: 'saved',      label: 'Saved',      emoji: '❤️' },
-  { id: 'reviews',    label: 'Reviews',    emoji: '⭐' },
+  { id: 'dogs',       label: 'My Dogs',    emoji: '🐕' },
+  { id: 'team',       label: 'My Team',    emoji: '👥' },
   { id: 'bookings',   label: 'Walk Reports', emoji: '🐕' },
   { id: 'grooming',   label: 'Grooming',   emoji: '✂️' },
 ]
@@ -150,13 +139,13 @@ function EmptyState({ emoji, title, sub, cta, ctaHref }: {
 }
 
 export default function MyAccountClient({
-  broadcasts: initialBroadcasts, reviews, savedProviders: initialSaved, bookingRequests,
+  broadcasts: initialBroadcasts,
   claimedReports, claimedGroomingReports, walkLogs,
+  dogs, walkerConnections,
   userDisplay, userAvatar, subStatus,
 }: Props) {
   const [tab, setTab] = useState<Tab>('broadcasts')
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>(initialBroadcasts)
-  const [savedProviders, setSavedProviders] = useState<SavedProvider[]>(initialSaved)
   const [displayName, setDisplayName] = useState(userDisplay)
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(userDisplay)
@@ -165,35 +154,6 @@ export default function MyAccountClient({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetch('/api/customer/saved')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setSavedProviders(data)
-          localStorage.setItem('pawlocal_saved', JSON.stringify(data))
-        } else {
-          try {
-            const local = JSON.parse(localStorage.getItem('pawlocal_saved') ?? '[]')
-            if (Array.isArray(local)) setSavedProviders(local)
-          } catch { /**/ }
-        }
-      })
-      .catch(() => {
-        try {
-          const local = JSON.parse(localStorage.getItem('pawlocal_saved') ?? '[]')
-          if (Array.isArray(local)) setSavedProviders(local)
-        } catch { /**/ }
-      })
-  }, [])
-
-  function removeSaved(id: string) {
-    const updated = savedProviders.filter(p => p.id !== id)
-    setSavedProviders(updated)
-    localStorage.setItem('pawlocal_saved', JSON.stringify(updated))
-    fetch(`/api/customer/saved/${id}`, { method: 'DELETE' }).catch(() => {})
-  }
 
   async function handleSaveName() {
     if (!nameInput.trim() || nameInput.trim() === displayName) { setEditingName(false); return }
@@ -245,8 +205,8 @@ export default function MyAccountClient({
   const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'
   const counts: Record<Tab, number> = {
     broadcasts: broadcasts.length,
-    saved: savedProviders.length,
-    reviews: reviews.length,
+    dogs: dogs.length,
+    team: walkerConnections.filter(w => w.status === 'active').length,
     bookings: claimedReports.length + walkLogs.length,
     grooming: claimedGroomingReports.length,
   }
@@ -460,80 +420,67 @@ export default function MyAccountClient({
             </div>
           )}
 
-          {/* SAVED */}
-          {tab === 'saved' && (
-            <div className="flex flex-col gap-3">
-              {savedProviders.length === 0 ? (
-                <EmptyState emoji="❤️" title="No saved providers"
-                  sub="Tap ❤️ on any provider profile to save them here for quick access."
-                  cta="Browse providers" ctaHref="/" />
-              ) : (
-                savedProviders.map(p => (
-                  <div key={p.id} className="rounded-2xl p-4 flex items-center gap-3"
-                    style={{
-                      background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
-                      boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 6px 20px rgba(15,45,50,0.07)',
-                      border: '1px solid rgba(226,220,200,0.7)',
-                    }}
-                  >
-                    <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl flex-shrink-0"
-                      style={{ background: '#FFFBEB', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.06)' }}>
-                      {CAT_ICONS[p.category_slug] ?? '🐾'}
+          {/* MY DOGS */}
+          {tab === 'dogs' && (
+            dogs.length === 0
+              ? <EmptyState emoji="🐕" title="No dogs set up yet" sub="Add your dog to start tracking walks and grooming." cta="Set up my dog" ctaHref="/setup" />
+              : <div className="space-y-3">
+                  {dogs.map(dog => (
+                    <div key={dog.id} className="rounded-2xl p-4 flex items-center gap-4"
+                      style={{ background: 'linear-gradient(160deg,#ffffff 0%,#fffdf7 100%)', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), 0 4px 16px rgba(15,45,50,0.07)', border: '1px solid rgba(226,220,200,0.7)' }}>
+                      <div className="w-14 h-14 rounded-2xl flex-shrink-0 overflow-hidden"
+                        style={{ background: '#FF8C52' }}>
+                        {dog.photo_url
+                          ? <img src={dog.photo_url} alt={dog.name} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
+                          : <div className="w-full h-full flex items-center justify-center text-2xl">🐕</div>}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-slate-900 text-base">{dog.name}</p>
+                        {dog.breed && <p className="text-xs text-slate-500 mt-0.5">{dog.breed}</p>}
+                        {dog.health_notes && (
+                          <p className="text-xs text-amber-700 mt-1 bg-amber-50 px-2 py-1 rounded-lg">⚠️ {dog.health_notes}</p>
+                        )}
+                      </div>
+                      <a href="/setup" className="text-xs font-bold text-teal-600 flex-shrink-0">Edit →</a>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-slate-900 text-sm truncate">{p.name}</p>
-                      <p className="text-xs text-slate-400 mt-0.5 capitalize">{p.category_slug.replace(/-/g, ' ')}</p>
-                    </div>
-                    <a href={`/provider/${p.id}`}
-                      className="text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors flex-shrink-0"
-                      style={{ color: 'var(--pl-teal)', background: 'oklch(0.48 0.17 196 / 0.08)' }}>
-                      View
-                    </a>
-                    <button onClick={() => removeSaved(p.id)}
-                      className="text-slate-300 hover:text-red-400 transition-colors flex-shrink-0 text-sm"
-                      title="Remove">✕</button>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))}
+                  <a href="/setup"
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm font-bold mt-2"
+                    style={{ background: 'linear-gradient(160deg,#FF8C52 0%,#F56B22 100%)', color: '#451A03', boxShadow: '0 4px 0 rgba(175,65,10,0.28)' }}>
+                    + Add another dog
+                  </a>
+                </div>
           )}
 
-          {/* REVIEWS */}
-          {tab === 'reviews' && (
-            <div className="flex flex-col gap-3">
-              {reviews.length === 0 ? (
-                <EmptyState emoji="⭐" title="No reviews yet"
-                  sub="After visiting a provider, leave a review to help the Juhu pet community." />
-              ) : (
-                reviews.map(r => (
-                  <div key={r.id} className="rounded-2xl p-4"
-                    style={{
-                      background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
-                      boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 6px 20px rgba(15,45,50,0.07)',
-                      border: '1px solid rgba(226,220,200,0.7)',
-                    }}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <a href={`/provider/${r.provider_id}`}
-                          className="text-sm font-semibold text-slate-900 hover:text-[var(--pl-teal)] transition-colors">
-                          {r.providers?.name ?? 'Provider'}
-                        </a>
-                        <div className="flex gap-0.5 mt-1">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <span key={i} className="text-sm" style={{ color: i < r.rating ? 'oklch(0.68 0.18 44)' : '#E2E8F0' }}>★</span>
-                          ))}
+          {/* MY TEAM */}
+          {tab === 'team' && (
+            walkerConnections.length === 0
+              ? <EmptyState emoji="👥" title="No walkers connected yet" sub="Share your dog's QR code with whoever walks your dog." cta="Set up my dog" ctaHref="/setup" />
+              : <div className="space-y-3">
+                  {walkerConnections.map(wc => (
+                    <div key={wc.id} className="rounded-2xl p-4"
+                      style={{ background: 'linear-gradient(160deg,#ffffff 0%,#fffdf7 100%)', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), 0 4px 16px rgba(15,45,50,0.07)', border: '1px solid rgba(226,220,200,0.7)' }}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                          style={{ background: wc.status === 'active' ? '#D1FAE5' : '#F1F5F9' }}>
+                          {wc.status === 'active' ? '✅' : '⏳'}
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-slate-900 text-sm">{wc.walker_name}</p>
+                          <p className="text-xs text-slate-500">{wc.walker_role?.replace('_', ' ') ?? 'Walker'} · {wc.dogs?.name ?? ''}</p>
+                        </div>
+                        {wc.walker_phone && (
+                          <a href={`https://wa.me/91${wc.walker_phone.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer"
+                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white"
+                            style={{ background: '#25D366' }}>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                            WhatsApp
+                          </a>
+                        )}
                       </div>
-                      <p className="text-xs text-slate-400">
-                        {new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                      </p>
                     </div>
-                    {r.comment && <p className="text-sm text-slate-600 leading-relaxed">{r.comment}</p>}
-                  </div>
-                ))
-              )}
-            </div>
+                  ))}
+                </div>
           )}
 
           {/* GROOMING REPORTS */}

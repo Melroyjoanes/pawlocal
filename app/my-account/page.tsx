@@ -10,13 +10,6 @@ function admin() {
   )
 }
 
-interface SavedProvider {
-  id: string
-  name: string
-  category_slug: string
-  whatsapp: string
-}
-
 export default async function MyAccountPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -56,39 +49,9 @@ export default async function MyAccountPage() {
     broadcasts = data ?? []
   }
 
-  // Fetch reviews
-  let reviews: {
-    id: string; provider_id: string; rating: number; comment: string | null;
-    created_at: string; providers?: { name: string };
-  }[] = []
-
-  if (normalizedPhone.length >= 10) {
-    const { data } = await supabase
-      .from('reviews')
-      .select('id, provider_id, rating, comment, created_at, providers(name)')
-      .ilike('reviewer_phone', `%${normalizedPhone}%`)
-      .eq('status', 'approved')
-      .order('created_at', { ascending: false })
-    // Cast because Supabase returns nested as array for joined tables
-    reviews = (data ?? []) as unknown as typeof reviews
-  }
-
-  // Fetch booking requests
-  const { data: bookingRequestsRaw } = await supabase
-    .from('booking_requests')
-    .select('*, providers(name, category_slug)')
-    .eq('customer_id', user.id)
-    .order('created_at', { ascending: false })
-
-  const bookingRequests: {
-    id: string; provider_id: string; service_slug: string; pet_name: string;
-    pet_type: string; date_needed: string; time_needed: string; notes: string | null;
-    status: string; created_at: string; providers?: { name: string; category_slug: string };
-  }[] = (bookingRequestsRaw ?? []) as unknown as typeof bookingRequests
-
-  // Fetch claimed walk reports, grooming reports, informal walk logs, subscription, and profile in parallel
+  // Fetch claimed walk reports, grooming reports, informal walk logs, subscription, profile, dogs, and walker connections in parallel
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [{ data: claimedReports }, { data: claimedGroomingReports }, { data: walkLogsRaw }, { data: subData }, { data: profileData }] = await Promise.all([
+  const [{ data: claimedReports }, { data: claimedGroomingReports }, { data: walkLogsRaw }, { data: subData }, { data: profileData }, { data: dogsRaw }, { data: walkerConnectionsRaw }] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin().from('walk_reports') as any)
       .select('id, token, dog_name, walk_date, duration_mins, poop_count, pee_count, distance_meters, photo_url, providers(name, is_verified)')
@@ -119,6 +82,15 @@ export default async function MyAccountPage() {
       .select('trial_started_at')
       .eq('id', user.id)
       .maybeSingle(),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin().from('dogs') as any)
+      .select('id, name, breed, photo_url, health_notes')
+      .eq('owner_id', user.id),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (admin().from('walker_connections') as any)
+      .select('id, dog_id, walker_name, walker_phone, walker_role, status, claimed_at, dogs(name)')
+      .eq('owner_id', user.id)
+      .order('created_at', { ascending: false }),
   ])
 
   const trialStartedAt = (profileData as any)?.trial_started_at ?? null
@@ -140,10 +112,6 @@ export default async function MyAccountPage() {
     }
   }
 
-  // Saved providers come from localStorage — server can't read it, so pass empty array
-  // MyAccountClient will hydrate from localStorage on mount
-  const savedProviders: SavedProvider[] = []
-
   const userMeta = user.user_metadata ?? {}
   const userDisplay =
     userMeta.full_name ??
@@ -155,13 +123,14 @@ export default async function MyAccountPage() {
   return (
     <MyAccountClient
       broadcasts={broadcasts}
-      reviews={reviews}
-      savedProviders={savedProviders}
-      bookingRequests={bookingRequests}
       claimedReports={claimedReports ?? []}
       claimedGroomingReports={claimedGroomingReports ?? []}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       walkLogs={(walkLogsRaw ?? []) as any}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dogs={(dogsRaw ?? []) as any}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      walkerConnections={(walkerConnectionsRaw ?? []) as any}
       userDisplay={userDisplay}
       userAvatar={userAvatar}
       userId={user.id}

@@ -12,7 +12,6 @@ const CATEGORIES = [
   { slug: 'vet',          icon: '🏥', name: 'Vet / Doctor', bg: 'linear-gradient(135deg,#FFF1F2,#FECDD3)', fg: '#9F1239' },
   { slug: 'pet-store',    icon: '🐾', name: 'Pet Store',    bg: 'linear-gradient(135deg,#F0FDF4,#BBF7D0)', fg: '#064E3B' },
   { slug: 'dog-training', icon: '🎯', name: 'Dog Training', bg: 'linear-gradient(135deg,#E0F2FE,#BAE6FD)', fg: '#0C4A6E' },
-  { slug: 'insurance',    icon: '🛡️',  name: 'Insurance',   bg: 'linear-gradient(135deg,#FEFCE8,#FEF08A)', fg: '#713F12' },
 ]
 
 // expo-out — smooth deceleration, never bouncy
@@ -231,8 +230,6 @@ export default function MobileDrawer() {
                     <nav>
                       {[
                         { href: '/broadcast', icon: '📣', label: 'Post a request' },
-                        { href: '/map',       icon: '📍', label: 'Near me — map view' },
-                        { href: '/search',    icon: '🔍', label: 'Search all services' },
                         { href: '/blog',      icon: '📝', label: 'Blog' },
                         { href: '/faq',       icon: '❓', label: 'FAQs' },
                         { href: '/contact',   icon: '💬', label: 'Contact us' },
