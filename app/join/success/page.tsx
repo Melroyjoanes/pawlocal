@@ -8,25 +8,25 @@ const TIMELINE = [
   {
     icon: '✓',
     label: 'Application submitted',
-    description: 'Your listing is in our review queue. Your Google account is already linked.',
+    description: 'Your listing is in our review queue. We review every submission manually.',
     done: true,
   },
   {
     icon: '○',
-    label: 'Under review',
+    label: 'We review your profile',
     description: 'Our team reviews every listing manually — usually within 24 hours.',
     done: false,
   },
   {
     icon: '○',
-    label: 'You get a WhatsApp',
-    description: "We'll WhatsApp you personally once your profile is approved — usually within a few hours.",
+    label: 'You get a sign-in link',
+    description: "Once approved, we'll email you a secure sign-in link — no password needed.",
     done: false,
   },
   {
     icon: '○',
     label: 'Access your dashboard',
-    description: `Visit ${process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : 'pupstep.in'}/pro — sign in with Google and you'll land on your dashboard.`,
+    description: `Click the link in your email and you'll land directly on your provider dashboard at pupstep.in/pro.`,
     done: false,
   },
 ]
