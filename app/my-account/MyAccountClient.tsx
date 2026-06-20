@@ -49,11 +49,27 @@ interface ClaimedGroomingReport {
   after_photo_url: string | null
   providers?: { name: string; is_verified: boolean }
 }
+interface WalkLog {
+  id: string
+  dog_id: string
+  walker_name: string | null
+  started_at: string
+  duration_mins: number | null
+  distance_km: number | null
+  poop_count: number
+  pee_count: number
+  mood: string | null
+  photo_url: string | null
+  notes: string | null
+  created_at: string
+  dogs?: { name: string }
+}
 interface Props {
   broadcasts: Broadcast[]; reviews: Review[]
   savedProviders: SavedProvider[]; bookingRequests: BookingRequest[]
   claimedReports: ClaimedReport[]
   claimedGroomingReports: ClaimedGroomingReport[]
+  walkLogs: WalkLog[]
   userDisplay: string; userAvatar?: string | null; userId: string
 }
 
@@ -129,7 +145,7 @@ function EmptyState({ emoji, title, sub, cta, ctaHref }: {
 
 export default function MyAccountClient({
   broadcasts: initialBroadcasts, reviews, savedProviders: initialSaved, bookingRequests,
-  claimedReports, claimedGroomingReports,
+  claimedReports, claimedGroomingReports, walkLogs,
   userDisplay, userAvatar,
 }: Props) {
   const [tab, setTab] = useState<Tab>('broadcasts')
@@ -201,7 +217,7 @@ export default function MyAccountClient({
     broadcasts: broadcasts.length,
     saved: savedProviders.length,
     reviews: reviews.length,
-    bookings: claimedReports.length,
+    bookings: claimedReports.length + walkLogs.length,
     grooming: claimedGroomingReports.length,
   }
 
@@ -575,25 +591,30 @@ export default function MyAccountClient({
           {/* WALK REPORTS */}
           {tab === 'bookings' && (
             <div className="flex flex-col gap-4">
-              {claimedReports.length === 0 ? (
+              {claimedReports.length === 0 && walkLogs.length === 0 ? (
                 <EmptyState
                   emoji="🐕"
                   title="No walk reports yet"
-                  sub="When your dog walker shares a walk report, save it here to keep track of all walks."
+                  sub="When your dog walker shares a walk report, it will appear here. Set up your QR code at /setup to start tracking walks."
                 />
               ) : (() => {
-                // ── Stats computed from all reports ──
+                // ── Stats from pro reports (last 30 days) ──
                 const last30 = claimedReports.filter(r =>
                   new Date(r.walk_date) >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
                 )
-                const totalPoops = last30.reduce((s, r) => s + r.poop_count, 0)
-                const totalPees  = last30.reduce((s, r) => s + r.pee_count, 0)
-                const totalMins  = last30.reduce((s, r) => s + r.duration_mins, 0)
+                const wlLast30 = walkLogs.filter(r =>
+                  new Date(r.created_at) >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                )
+                const totalPoops = last30.reduce((s, r) => s + r.poop_count, 0) + wlLast30.reduce((s, r) => s + r.poop_count, 0)
+                const totalPees  = last30.reduce((s, r) => s + r.pee_count, 0)  + wlLast30.reduce((s, r) => s + r.pee_count, 0)
+                const totalMins  = last30.reduce((s, r) => s + r.duration_mins, 0) + wlLast30.reduce((s, r) => s + (r.duration_mins ?? 0), 0)
                 const totalKm    = last30.reduce((s, r) => s + (r.distance_meters ?? 0), 0) / 1000
-                const dogName    = claimedReports[0]?.dog_name ?? 'your dog'
-                const walkerName = claimedReports[0]?.providers?.name ?? 'your walker'
+                                 + wlLast30.reduce((s, r) => s + (r.distance_km ?? 0), 0)
+                const totalWalks = last30.length + wlLast30.length
+                const dogName    = claimedReports[0]?.dog_name ?? walkLogs[0]?.dogs?.name ?? 'your dog'
+                const walkerName = claimedReports[0]?.providers?.name ?? walkLogs[0]?.walker_name ?? 'your walker'
 
-                // Poop streak — consecutive walks with at least 1 poop
+                // Poop streak from pro reports
                 let streak = 0
                 for (const r of claimedReports) {
                   if (r.poop_count > 0) streak++
@@ -612,7 +633,7 @@ export default function MyAccountClient({
                       </p>
                       <div className="grid grid-cols-4 gap-2 text-center">
                         {[
-                          { icon: '🐾', value: last30.length, label: 'Walks' },
+                          { icon: '🐾', value: totalWalks, label: 'Walks' },
                           { icon: '⏱', value: `${totalMins}m`, label: 'Total time' },
                           { icon: '💩', value: totalPoops, label: 'Poops' },
                           { icon: '💧', value: totalPees,  label: 'Pees' },
@@ -645,60 +666,106 @@ export default function MyAccountClient({
                       <div className="px-4 py-4 bg-slate-50 text-xs text-slate-600 leading-relaxed space-y-1 font-mono">
                         <p>Dog: {dogName}</p>
                         <p>Walker: {walkerName}</p>
-                        <p>Period: last 30 days ({last30.length} walks)</p>
-                        <p>Avg walk duration: {last30.length ? Math.round(totalMins / last30.length) : 0} mins</p>
-                        <p>Avg distance: {last30.length ? (totalKm / last30.length).toFixed(2) : 0} km/walk</p>
-                        <p>Total poops: {totalPoops} ({last30.length ? (totalPoops / last30.length).toFixed(1) : 0}/walk avg)</p>
-                        <p>Total pees: {totalPees} ({last30.length ? (totalPees / last30.length).toFixed(1) : 0}/walk avg)</p>
+                        <p>Period: last 30 days ({totalWalks} walks)</p>
+                        <p>Avg walk duration: {totalWalks ? Math.round(totalMins / totalWalks) : 0} mins</p>
+                        <p>Avg distance: {totalWalks ? (totalKm / totalWalks).toFixed(2) : 0} km/walk</p>
+                        <p>Total poops: {totalPoops} ({totalWalks ? (totalPoops / totalWalks).toFixed(1) : 0}/walk avg)</p>
+                        <p>Total pees: {totalPees} ({totalWalks ? (totalPees / totalWalks).toFixed(1) : 0}/walk avg)</p>
                         <p className="pt-1 text-slate-400">Generated by PupStep · {new Date().toLocaleDateString('en-IN')}</p>
                       </div>
                     </details>
 
-                    {/* ── Walk history feed ── */}
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-0.5">Walk history</p>
-                    {claimedReports.map(r => (
-                      <a
-                        key={r.id}
-                        href={`/walk-report/${r.token}`}
-                        className="rounded-2xl overflow-hidden flex gap-3 items-center p-3 transition-transform active:scale-[0.99]"
-                        style={{
-                          background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
-                          boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 4px 12px rgba(15,45,50,0.06)',
-                          border: '1px solid rgba(226,220,200,0.7)',
-                        }}
-                      >
-                        {/* Photo or emoji */}
-                        <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-stone-100 flex items-center justify-center text-2xl">
-                          {r.photo_url
-                            ? <img src={r.photo_url} alt={r.dog_name} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
-                            : '🐕'}
-                        </div>
+                    {/* ── Pro walk reports ── */}
+                    {claimedReports.length > 0 && (
+                      <>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-0.5">Walk reports (verified providers)</p>
+                        {claimedReports.map(r => (
+                          <a
+                            key={r.id}
+                            href={`/walk-report/${r.token}`}
+                            className="rounded-2xl overflow-hidden flex gap-3 items-center p-3 transition-transform active:scale-[0.99]"
+                            style={{
+                              background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
+                              boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 4px 12px rgba(15,45,50,0.06)',
+                              border: '1px solid rgba(226,220,200,0.7)',
+                            }}
+                          >
+                            <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-stone-100 flex items-center justify-center text-2xl">
+                              {r.photo_url
+                                ? <img src={r.photo_url} alt={r.dog_name} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
+                                : '🐕'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-1 mb-0.5">
+                                <p className="font-semibold text-slate-900 text-sm truncate">{r.dog_name}</p>
+                                <span className="text-[10px] text-slate-400 flex-shrink-0">
+                                  {new Date(r.walk_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                </span>
+                              </div>
+                              {r.providers && (
+                                <p className="text-[10px] text-slate-400 mb-1">by {r.providers.name}{r.providers.is_verified ? ' ✓' : ''}</p>
+                              )}
+                              <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                <span>⏱ {r.duration_mins}m</span>
+                                {r.distance_meters && r.distance_meters > 0 && (
+                                  <span>📏 {r.distance_meters >= 1000 ? `${(r.distance_meters / 1000).toFixed(1)}km` : `${Math.round(r.distance_meters)}m`}</span>
+                                )}
+                                {r.poop_count > 0 && <span>💩 {r.poop_count}</span>}
+                                {r.pee_count > 0 && <span>💧 {r.pee_count}</span>}
+                              </div>
+                            </div>
+                            <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                            </svg>
+                          </a>
+                        ))}
+                      </>
+                    )}
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-1 mb-0.5">
-                            <p className="font-semibold text-slate-900 text-sm truncate">{r.dog_name}</p>
-                            <span className="text-[10px] text-slate-400 flex-shrink-0">
-                              {new Date(r.walk_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                            </span>
+                    {/* ── Informal walker logs ── */}
+                    {walkLogs.length > 0 && (
+                      <>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-0.5">Walk logs (informal walkers)</p>
+                        {walkLogs.map(r => (
+                          <div
+                            key={r.id}
+                            className="rounded-2xl overflow-hidden flex gap-3 items-center p-3"
+                            style={{
+                              background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
+                              boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 4px 12px rgba(15,45,50,0.06)',
+                              border: '1px solid rgba(226,220,200,0.7)',
+                            }}
+                          >
+                            <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-amber-50 flex items-center justify-center text-2xl">
+                              {r.photo_url
+                                ? <img src={r.photo_url} alt={r.dogs?.name ?? 'dog'} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
+                                : '🐕'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-1 mb-0.5">
+                                <p className="font-semibold text-slate-900 text-sm truncate">{r.dogs?.name ?? 'Dog'}</p>
+                                <span className="text-[10px] text-slate-400 flex-shrink-0">
+                                  {new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                </span>
+                              </div>
+                              {r.walker_name && (
+                                <p className="text-[10px] text-slate-400 mb-1">by {r.walker_name}</p>
+                              )}
+                              <div className="flex items-center gap-2 flex-wrap text-[10px] text-slate-500">
+                                {r.duration_mins && <span>⏱ {r.duration_mins}m</span>}
+                                {r.distance_km && r.distance_km > 0 && <span>📏 {r.distance_km.toFixed(1)}km</span>}
+                                {r.poop_count > 0 && <span>💩 {r.poop_count}</span>}
+                                {r.pee_count > 0 && <span>💧 {r.pee_count}</span>}
+                                {r.mood && <span className="capitalize">😊 {r.mood}</span>}
+                              </div>
+                              {r.notes && (
+                                <p className="text-[10px] text-slate-400 mt-1 truncate">{r.notes}</p>
+                              )}
+                            </div>
                           </div>
-                          {r.providers && (
-                            <p className="text-[10px] text-slate-400 mb-1">by {r.providers.name}{r.providers.is_verified ? ' ✓' : ''}</p>
-                          )}
-                          <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                            <span>⏱ {r.duration_mins}m</span>
-                            {r.distance_meters && r.distance_meters > 0 && (
-                              <span>📏 {r.distance_meters >= 1000 ? `${(r.distance_meters / 1000).toFixed(1)}km` : `${Math.round(r.distance_meters)}m`}</span>
-                            )}
-                            {r.poop_count > 0 && <span>💩 {r.poop_count}</span>}
-                            {r.pee_count > 0 && <span>💧 {r.pee_count}</span>}
-                          </div>
-                        </div>
-
-                        <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
-                      </a>
-                    ))}
+                        ))}
+                      </>
+                    )}
                   </>
                 )
               })()}

@@ -28,7 +28,7 @@ interface GpsPoint {
   ts: string
 }
 
-type WalkPhase = 'idle' | 'walking' | 'logging'
+type WalkPhase = 'idle' | 'walking' | 'logging' | 'success'
 
 const MOOD_OPTIONS = [
   { value: 'great', label: '😄 Great' },
@@ -93,8 +93,30 @@ export default function WalkerClient({
   const [peeCount, setPeeCount] = useState(0)
   const [mood, setMood] = useState('')
   const [notes, setNotes] = useState('')
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+
+  async function handlePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const ext = file.name.split('.').pop() ?? 'jpg'
+      const path = `walk-photos/${token}/${Date.now()}.${ext}`
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+      const { error } = await supabase.storage.from('provider-photos').upload(path, file)
+      if (!error) {
+        const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
+        setPhotoUrl(data.publicUrl)
+      }
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const fetchLogs = useCallback(async () => {
     setLogsLoading(true)
@@ -189,6 +211,7 @@ export default function WalkerClient({
           duration_mins: durationMins,
           distance_km: distanceKm > 0 ? +distanceKm.toFixed(2) : null,
           gps_route: gpsRoute.length > 0 ? gpsRoute : null,
+          photo_url: photoUrl ?? null,
           poop_count: poopCount,
           pee_count: peeCount,
           mood: mood || null,
@@ -205,17 +228,16 @@ export default function WalkerClient({
         return
       }
 
-      // Reset everything
+      // Reset walk state, go to success screen
       setPoopCount(0)
       setPeeCount(0)
       setMood('')
       setNotes('')
+      setPhotoUrl(null)
       setElapsed(0)
       setDistanceKm(0)
       setGpsRoute([])
-      setPhase('idle')
-      setToast(`Walk logged! ✅ ${ownerFirstName} has been notified.`)
-      setTimeout(() => setToast(null), 4000)
+      setPhase('success')
       fetchLogs()
     } catch {
       setSubmitError('Network error. Please try again.')
@@ -466,6 +488,42 @@ export default function WalkerClient({
                 </div>
               </div>
 
+              {/* Photo */}
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">
+                  Photo of {dogName} 📸
+                </label>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handlePhotoCapture}
+                />
+                {photoUrl ? (
+                  <div className="relative w-full rounded-xl overflow-hidden" style={{ maxHeight: 200 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photoUrl} alt="Walk photo" className="w-full object-cover rounded-xl" style={{ maxHeight: 200 }} />
+                    <button
+                      type="button"
+                      onClick={() => setPhotoUrl(null)}
+                      className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black bg-opacity-50 text-white text-sm flex items-center justify-center"
+                    >✕</button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={uploading}
+                    className="w-full border-2 border-dashed border-slate-200 rounded-xl py-4 flex flex-col items-center gap-1 text-slate-400 hover:border-[#FF8C52] hover:text-[#FF8C52] transition-colors disabled:opacity-60"
+                  >
+                    <span className="text-2xl">{uploading ? '⏳' : '📷'}</span>
+                    <span className="text-xs font-semibold">{uploading ? 'Uploading…' : 'Tap to take a photo'}</span>
+                  </button>
+                )}
+              </div>
+
               {/* Notes */}
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">
@@ -490,6 +548,49 @@ export default function WalkerClient({
                 {submitting ? 'Sending report…' : `Send report to ${ownerFirstName} ✓`}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ─── SUCCESS PHASE ─── */}
+      {phase === 'success' && (
+        <div className="px-5 flex flex-col items-center text-center pt-8 pb-24">
+          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-5">
+            <span className="text-4xl">✅</span>
+          </div>
+          <h2 className="text-3xl font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
+            Report sent!
+          </h2>
+          <p className="text-sm text-slate-500 mb-8 leading-relaxed px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
+            {ownerFirstName} has been notified of today&apos;s walk 🐾
+          </p>
+          <div className="w-full max-w-sm space-y-3">
+            {(() => {
+              const dashUrl = typeof window !== 'undefined'
+                ? `${window.location.origin}/walker/${token}`
+                : `https://pupstep.in/walker/${token}`
+              const waText = encodeURIComponent(
+                `Your PupStep walk log for ${dogName} 🐾\nReturn here anytime to log walks:\n${dashUrl}`
+              )
+              return (
+                <a
+                  href={`https://wa.me/?text=${waText}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-white text-base"
+                  style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)' }}
+                >
+                  📲 Send yourself this link on WhatsApp
+                </a>
+              )
+            })()}
+            <button
+              onClick={() => setPhase('idle')}
+              className="w-full py-4 rounded-2xl font-bold text-lg text-white"
+              style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)' }}
+            >
+              Log another walk →
+            </button>
           </div>
         </div>
       )}

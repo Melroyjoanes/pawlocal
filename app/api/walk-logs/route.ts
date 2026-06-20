@@ -39,6 +39,8 @@ export async function POST(req: NextRequest) {
     distance_km,
     started_at,
     ended_at,
+    gps_route,
+    photo_url,
   } = body
 
   if (!connection_token) {
@@ -75,6 +77,8 @@ export async function POST(req: NextRequest) {
       distance_km: distance_km ?? null,
       started_at: started_at ?? new Date().toISOString(),
       ended_at: ended_at ?? null,
+      gps_route: gps_route ?? null,
+      photo_url: photo_url ?? null,
     })
     .select('id')
     .single()

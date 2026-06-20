@@ -86,9 +86,9 @@ export default async function MyAccountPage() {
     status: string; created_at: string; providers?: { name: string; category_slug: string };
   }[] = (bookingRequestsRaw ?? []) as unknown as typeof bookingRequests
 
-  // Fetch claimed walk reports + grooming reports in parallel
+  // Fetch claimed walk reports, grooming reports, and informal walk logs in parallel
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [{ data: claimedReports }, { data: claimedGroomingReports }] = await Promise.all([
+  const [{ data: claimedReports }, { data: claimedGroomingReports }, { data: walkLogsRaw }] = await Promise.all([
     (admin().from('walk_reports') as any)
       .select('id, token, dog_name, walk_date, duration_mins, poop_count, pee_count, distance_meters, photo_url, providers(name, is_verified)')
       .eq('customer_id', user.id)
@@ -99,6 +99,11 @@ export default async function MyAccountPage() {
       .eq('customer_id', user.id)
       .order('grooming_date', { ascending: false })
       .limit(20),
+    (admin().from('walk_logs') as any)
+      .select('id, dog_id, walker_name, started_at, duration_mins, distance_km, poop_count, pee_count, mood, photo_url, notes, created_at, dogs(name)')
+      .eq('owner_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(40),
   ])
 
   // Saved providers come from localStorage — server can't read it, so pass empty array
@@ -121,6 +126,7 @@ export default async function MyAccountPage() {
       bookingRequests={bookingRequests}
       claimedReports={claimedReports ?? []}
       claimedGroomingReports={claimedGroomingReports ?? []}
+      walkLogs={(walkLogsRaw ?? []) as any}
       userDisplay={userDisplay}
       userAvatar={userAvatar}
       userId={user.id}

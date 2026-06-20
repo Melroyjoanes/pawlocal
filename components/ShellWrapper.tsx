@@ -13,7 +13,9 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
     pathname.startsWith('/pro') ||
     pathname.startsWith('/admin') ||
     pathname.startsWith('/track') ||
-    pathname.startsWith('/walk-report')
+    pathname.startsWith('/walk-report') ||
+    pathname.startsWith('/connect') ||
+    pathname.startsWith('/walker')
 
   if (isIsolated) return <>{children}</>
 

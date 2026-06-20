@@ -34,6 +34,7 @@ export default function ConnectClient({
   const [role, setRole] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [connected, setConnected] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -43,6 +44,11 @@ export default function ConnectClient({
     }
     if (!name.trim()) {
       setError('Please enter your name.')
+      return
+    }
+    const digitsOnly = phone.replace(/\D/g, '')
+    if (digitsOnly.length !== 10) {
+      setError('Please enter a valid 10-digit phone number.')
       return
     }
     setLoading(true)
@@ -72,11 +78,53 @@ export default function ConnectClient({
         return
       }
 
-      router.push(`/walker/${token}`)
+      setConnected(true)
     } catch {
       setError('Network error. Please check your connection and try again.')
       setLoading(false)
     }
+  }
+
+  const walkerDashUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/walker/${token}`
+    : `https://pupstep.in/walker/${token}`
+
+  if (connected) {
+    const waLink = `https://wa.me/91${phone}?text=${encodeURIComponent(`Hi! Your PupStep walk log for ${dogName} is ready 🐾\n\nBookmark this link to log every walk:\n${walkerDashUrl}`)}`
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ background: '#FFFBEB' }}>
+        <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-5">
+          <span className="text-4xl">✅</span>
+        </div>
+        <h1 className="text-3xl font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
+          You're connected, {name}!
+        </h1>
+        <p className="text-slate-500 text-sm mb-8 leading-relaxed px-2" style={{ fontFamily: 'var(--font-nunito)' }}>
+          You can now log walks for <strong>{dogName}</strong>. Save your walk log link so you can return anytime.
+        </p>
+        <div className="w-full max-w-sm space-y-3">
+          <a
+            href={waLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-white text-base"
+            style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)' }}
+          >
+            📲 Send my walk log link on WhatsApp
+          </a>
+          <button
+            onClick={() => router.push(`/walker/${token}`)}
+            className="w-full py-4 rounded-2xl font-bold text-lg text-white"
+            style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)' }}
+          >
+            Start Walking →
+          </button>
+          <p className="text-xs text-slate-400 pt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
+            💡 Send yourself the WhatsApp link first — then you can return without scanning the QR again
+          </p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -201,16 +249,22 @@ export default function ConnectClient({
         <div>
           <label className="block text-sm font-bold text-[#0A2F35] mb-1.5"
             style={{ fontFamily: 'var(--font-nunito)' }}>
-            Your phone number
+            Your phone number *
           </label>
           <input
             type="tel"
+            required
+            inputMode="numeric"
+            maxLength={10}
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="9876543210"
+            onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+            placeholder="10-digit number"
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF8C52] min-h-[52px]"
             style={{ fontFamily: 'var(--font-nunito)' }}
           />
+          <p className="text-xs text-slate-400 mt-1 ml-1" style={{ fontFamily: 'var(--font-nunito)' }}>
+            We'll send your walk log link here
+          </p>
         </div>
 
         <div>

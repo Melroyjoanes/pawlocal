@@ -125,9 +125,9 @@ export async function GET(request: NextRequest) {
       }
 
       if (provider.status === 'approved') {
-        // Approved provider — always go to dashboard
-        // EXCEPTIONS: let specific deep-link flows through
-        if (next.startsWith('/join-as-provider/') || next.startsWith('/api/claim-report/')) {
+        // Let any non-pro destination through (e.g. /setup, /my-account)
+        const goToDashboard = next === '/' || next.startsWith('/pro')
+        if (!goToDashboard) {
           return NextResponse.redirect(`${base}${next}`)
         }
         return NextResponse.redirect(`${base}/pro/dashboard`)
