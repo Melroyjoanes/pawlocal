@@ -91,6 +91,30 @@ export default function ConnectClient({
         </span>
       </div>
 
+      {/* Step progress indicator */}
+      <div className="flex items-center justify-center mb-5" style={{ fontFamily: 'var(--font-nunito)' }}>
+        <div className="flex items-center gap-0" style={{ maxWidth: 200 }}>
+          {/* Step 1 — active */}
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white"
+            style={{ background: '#FF8C52', whiteSpace: 'nowrap' }}
+          >
+            <span className="w-4 h-4 rounded-full bg-white flex items-center justify-center text-[10px] font-bold" style={{ color: '#FF8C52' }}>1</span>
+            Enter code
+          </div>
+          {/* Connector line */}
+          <div className="h-0.5 w-6 flex-shrink-0" style={{ background: '#D1D5DB' }} />
+          {/* Step 2 — upcoming */}
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2"
+            style={{ border: '2px solid #D1D5DB', color: '#9CA3AF', whiteSpace: 'nowrap', background: 'transparent' }}
+          >
+            <span className="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-400">2</span>
+            Start walking
+          </div>
+        </div>
+      </div>
+
       {/* Dog avatar section */}
       <div className="flex flex-col items-center px-6 pb-6">
         <div
@@ -218,6 +242,12 @@ export default function ConnectClient({
             <p className="text-sm text-red-700 font-medium">{error}</p>
           </div>
         )}
+
+        {/* What happens next note */}
+        <p className="text-center text-xs text-amber-500 font-semibold px-4"
+          style={{ fontFamily: 'var(--font-nunito)' }}>
+          After connecting, you&apos;ll get a personal walk log page to track every walk →
+        </p>
 
         <div className="pb-8 pt-2">
           <button

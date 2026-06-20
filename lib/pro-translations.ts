@@ -10,6 +10,7 @@ export const translations = {
     nav_fitness: 'Fitness',
     nav_reports: 'Reports',
     nav_care_cards: 'Care Cards',
+    nav_clients: 'My Clients',
     // Profile edit
     edit_profile: 'Edit Profile',
     save_changes: 'Save Changes',
@@ -63,6 +64,7 @@ export const translations = {
     nav_fitness: 'फिटनेस',
     nav_reports: 'रिपोर्ट्स',
     nav_care_cards: 'केयर कार्ड्स',
+    nav_clients: 'मेरे क्लाइंट्स',
     // Profile edit
     edit_profile: 'प्रोफ़ाइल संपादित करें',
     save_changes: 'बदलाव सहेजें',
@@ -116,6 +118,7 @@ export const translations = {
     nav_fitness: 'फिटनेस',
     nav_reports: 'अहवाल',
     nav_care_cards: 'केअर कार्ड्स',
+    nav_clients: 'माझे क्लायंट',
     // Profile edit
     edit_profile: 'प्रोफाइल संपादित करा',
     save_changes: 'बदल जतन करा',

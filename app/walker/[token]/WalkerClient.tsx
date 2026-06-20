@@ -292,6 +292,54 @@ export default function WalkerClient({
             🐾 Start Walk
           </button>
           <p className="text-center text-xs text-slate-400">GPS tracking starts automatically when you begin</p>
+
+          {/* First-time guide card — only shown before any walks are logged */}
+          {logs.length === 0 && !logsLoading && (
+            <div
+              className="rounded-2xl px-5 py-5 mt-2"
+              style={{ background: '#FFF3E0' }}
+            >
+              <p
+                className="font-bold text-[#0A2F35] text-base mb-4"
+                style={{ fontFamily: 'var(--font-fredoka)' }}
+              >
+                How to log a walk 👇
+              </p>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-2xl">🟠</span>
+                  <p className="text-xs font-bold text-[#0A2F35]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    Tap Start Walk
+                  </p>
+                  <p className="text-[10px] text-slate-500 leading-snug">
+                    When you leave home
+                  </p>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-2xl">📍</span>
+                  <p className="text-xs font-bold text-[#0A2F35]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    Walk as normal
+                  </p>
+                  <p className="text-[10px] text-slate-500 leading-snug">
+                    GPS tracks your route automatically
+                  </p>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-2xl">✅</span>
+                  <p className="text-xs font-bold text-[#0A2F35]" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    Tap End Walk
+                  </p>
+                  <p className="text-[10px] text-slate-500 leading-snug">
+                    Fill in a quick 60-sec report
+                  </p>
+                </div>
+              </div>
+              <p className="text-center text-[11px] text-amber-600 font-semibold mt-4"
+                style={{ fontFamily: 'var(--font-nunito)' }}>
+                The owner gets a report on WhatsApp automatically
+              </p>
+            </div>
+          )}
         </div>
       )}
 

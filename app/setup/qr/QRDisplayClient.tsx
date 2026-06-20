@@ -24,16 +24,21 @@ export default function QRDisplayClient({
   otp,
 }: Props) {
   const [connectUrl, setConnectUrl] = useState('')
+  const [shareUrl, setShareUrl] = useState('')
   const [walkerName, setWalkerName] = useState(initialWalkerName)
   const [walkerPhone, setWalkerPhone] = useState(initialWalkerPhone)
   const [status, setStatus] = useState(initialStatus)
   const [justConnected, setJustConnected] = useState(false)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Build connect URL using window.location.origin (client-side only)
+  // Build connect URL and WhatsApp share URL using window.location.origin (client-side only)
   useEffect(() => {
-    setConnectUrl(window.location.origin + '/connect/' + token)
-  }, [token])
+    const origin = window.location.origin
+    const url = origin + '/connect/' + token
+    setConnectUrl(url)
+    const msg = `Hi! I use PupStep to track ${dogName}'s walks. Scan this QR code and enter code: ${otp ?? ''} 🐾\n${url}`
+    setShareUrl('https://wa.me/?text=' + encodeURIComponent(msg))
+  }, [token, dogName, otp])
 
   // Poll for walker connection status every 5 seconds
   useEffect(() => {
@@ -314,6 +319,89 @@ export default function QRDisplayClient({
             </div>
           )}
         </div>
+
+        {/* How to share with your walker — shown only when pending */}
+        {!isActive && (
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Divider */}
+            <div style={{ borderTop: '1px solid #E5E7EB', width: '100%' }} />
+
+            {/* Section heading */}
+            <p
+              style={{
+                fontFamily: 'var(--font-fredoka), sans-serif',
+                fontSize: '17px',
+                fontWeight: 700,
+                color: '#0A2F35',
+                margin: 0,
+                textAlign: 'center',
+              }}
+            >
+              How to share with your walker
+            </p>
+
+            {/* Teal info card */}
+            <div
+              style={{
+                backgroundColor: '#F0FDFA',
+                border: '1px solid #99F6E4',
+                borderRadius: '14px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+              }}
+            >
+              <p style={{ fontSize: '14px', color: '#0D9488', fontWeight: 600, margin: 0 }}>
+                Show your walker this screen and say:
+              </p>
+
+              {/* Amber quote box */}
+              <div
+                style={{
+                  backgroundColor: '#FFFBEB',
+                  border: '1px solid #FDE68A',
+                  borderRadius: '10px',
+                  padding: '12px 14px',
+                  fontSize: '14px',
+                  color: '#0A2F35',
+                  lineHeight: 1.6,
+                }}
+              >
+                &ldquo;Scan this QR code with your camera, then type{' '}
+                {otp ? (
+                  <strong style={{ color: '#F59E0B' }}>{otp}</strong>
+                ) : (
+                  <strong style={{ color: '#F59E0B' }}>your code</strong>
+                )}{' '}
+                when it asks for a code&rdquo;
+              </div>
+            </div>
+
+            {/* WhatsApp share button */}
+            <a
+              href={shareUrl || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'center',
+                backgroundColor: '#25D366',
+                color: '#ffffff',
+                textDecoration: 'none',
+                borderRadius: '16px',
+                padding: '14px 24px',
+                fontSize: '15px',
+                fontWeight: 700,
+                fontFamily: 'var(--font-fredoka), sans-serif',
+                boxSizing: 'border-box',
+              }}
+            >
+              📲 Share via WhatsApp
+            </a>
+          </div>
+        )}
 
         {/* Navigation links */}
         <div
