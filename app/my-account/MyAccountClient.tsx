@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
+import TrialBanner from '@/components/TrialBanner'
 
 interface Broadcast {
   id: string; service_slug: string; pet_description: string
@@ -71,6 +72,11 @@ interface Props {
   claimedGroomingReports: ClaimedGroomingReport[]
   walkLogs: WalkLog[]
   userDisplay: string; userAvatar?: string | null; userId: string
+  subStatus: {
+    status: 'trial' | 'active' | 'expired' | 'no_trial'
+    trial_days_remaining: number | null
+    expires_at: string | null
+  } | null
 }
 
 const SERVICE_LABELS: Record<string, string> = {
@@ -146,7 +152,7 @@ function EmptyState({ emoji, title, sub, cta, ctaHref }: {
 export default function MyAccountClient({
   broadcasts: initialBroadcasts, reviews, savedProviders: initialSaved, bookingRequests,
   claimedReports, claimedGroomingReports, walkLogs,
-  userDisplay, userAvatar,
+  userDisplay, userAvatar, subStatus,
 }: Props) {
   const [tab, setTab] = useState<Tab>('broadcasts')
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>(initialBroadcasts)
@@ -156,6 +162,9 @@ export default function MyAccountClient({
   const [nameInput, setNameInput] = useState(userDisplay)
   const [savingName, setSavingName] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/customer/saved')
@@ -210,6 +219,27 @@ export default function MyAccountClient({
     const supabase = createClient()
     await supabase.auth.signOut()
     window.location.href = '/'
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      const res = await fetch('/api/account/delete', { method: 'DELETE' })
+      if (!res.ok) {
+        const data = await res.json()
+        setDeleteError(data.error ?? 'Something went wrong. Please try again.')
+        setDeleting(false)
+        return
+      }
+      // Sign out client-side then redirect
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      window.location.href = '/?deleted=1'
+    } catch {
+      setDeleteError('Network error. Please try again.')
+      setDeleting(false)
+    }
   }
 
   const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'
@@ -290,11 +320,26 @@ export default function MyAccountClient({
             </div>
           </div>
 
-          {/* Sign out */}
-          <button onClick={handleSignOut} disabled={signingOut}
-            className="flex-shrink-0 text-xs text-slate-400 hover:text-red-400 transition-colors disabled:opacity-50 flex flex-col items-center gap-0.5">
-            <span className="text-base">→</span>
-            <span>{signingOut ? '…' : 'Out'}</span>
+        </div>
+
+        {/* Sign out + Delete account row */}
+        <div className="flex items-center gap-2 mt-4 pt-4" style={{ borderTop: '1px solid rgba(226,220,200,0.6)' }}>
+          <button
+            onClick={handleSignOut}
+            disabled={signingOut}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+            style={{ background: '#F1F5F9', color: '#475569' }}
+          >
+            <span>→</span>
+            <span>{signingOut ? 'Signing out…' : 'Sign out'}</span>
+          </button>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ml-auto"
+            style={{ background: '#FFF1F2', color: '#BE123C' }}
+          >
+            <span>🗑</span>
+            <span>Delete account</span>
           </button>
         </div>
       </div>
@@ -528,60 +573,72 @@ export default function MyAccountClient({
                   {/* Report history feed */}
                   <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-0.5">Grooming history</p>
                   {claimedGroomingReports.map(r => (
-                    <a
-                      key={r.id}
-                      href={`/grooming-report/${r.token}`}
-                      className="rounded-2xl overflow-hidden flex gap-3 items-center p-3 transition-transform active:scale-[0.99]"
-                      style={{
-                        background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
-                        boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 4px 12px rgba(15,45,50,0.06)',
-                        border: '1px solid rgba(226,220,200,0.7)',
-                      }}
-                    >
-                      {/* Before/after photo or emoji */}
-                      <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-purple-50 flex items-center justify-center text-2xl">
-                        {r.after_photo_url
-                          ? <img src={r.after_photo_url} alt={r.dog_name} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
-                          : r.before_photo_url
-                          ? <img src={r.before_photo_url} alt={r.dog_name} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
-                          : '✂️'}
-                      </div>
+                    <div key={r.id} className="relative">
+                      <div className={subStatus?.status === 'expired' ? 'blur-sm pointer-events-none select-none' : ''}>
+                        <a
+                          href={`/grooming-report/${r.token}`}
+                          className="rounded-2xl overflow-hidden flex gap-3 items-center p-3 transition-transform active:scale-[0.99]"
+                          style={{
+                            background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
+                            boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 4px 12px rgba(15,45,50,0.06)',
+                            border: '1px solid rgba(226,220,200,0.7)',
+                          }}
+                        >
+                          {/* Before/after photo or emoji */}
+                          <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-purple-50 flex items-center justify-center text-2xl">
+                            {r.after_photo_url
+                              ? <img src={r.after_photo_url} alt={r.dog_name} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
+                              : r.before_photo_url
+                              ? <img src={r.before_photo_url} alt={r.dog_name} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
+                              : '✂️'}
+                          </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-1 mb-0.5">
-                          <p className="font-semibold text-slate-900 text-sm truncate">{r.dog_name}</p>
-                          <span className="text-[10px] text-slate-400 flex-shrink-0">
-                            {new Date(r.grooming_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                          </span>
-                        </div>
-                        {r.providers && (
-                          <p className="text-[10px] text-slate-400 mb-1">by {r.providers.name}{r.providers.is_verified ? ' ✓' : ''}</p>
-                        )}
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] text-slate-500">⏱ {r.duration_mins}m</span>
-                          {r.ticks_found > 0 && (
-                            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: '#FFF1F2', color: '#BE123C' }}>
-                              🪲 {r.ticks_found} tick{r.ticks_found > 1 ? 's' : ''}
-                            </span>
-                          )}
-                          {r.coat_condition && (
-                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full capitalize"
-                              style={CONDITION_STYLE[r.coat_condition] ?? { bg: '#F8FAFC', color: '#64748B' }}>
-                              coat: {r.coat_condition}
-                            </span>
-                          )}
-                        </div>
-                        {r.services_done?.length > 0 && (
-                          <p className="text-[10px] text-slate-400 mt-1 truncate">
-                            {r.services_done.map(s => SERVICE_NAMES[s] ?? s).join(' · ')}
-                          </p>
-                        )}
-                      </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-1 mb-0.5">
+                              <p className="font-semibold text-slate-900 text-sm truncate">{r.dog_name}</p>
+                              <span className="text-[10px] text-slate-400 flex-shrink-0">
+                                {new Date(r.grooming_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                              </span>
+                            </div>
+                            {r.providers && (
+                              <p className="text-[10px] text-slate-400 mb-1">by {r.providers.name}{r.providers.is_verified ? ' ✓' : ''}</p>
+                            )}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[10px] text-slate-500">⏱ {r.duration_mins}m</span>
+                              {r.ticks_found > 0 && (
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: '#FFF1F2', color: '#BE123C' }}>
+                                  🪲 {r.ticks_found} tick{r.ticks_found > 1 ? 's' : ''}
+                                </span>
+                              )}
+                              {r.coat_condition && (
+                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full capitalize"
+                                  style={CONDITION_STYLE[r.coat_condition] ?? { bg: '#F8FAFC', color: '#64748B' }}>
+                                  coat: {r.coat_condition}
+                                </span>
+                              )}
+                            </div>
+                            {r.services_done?.length > 0 && (
+                              <p className="text-[10px] text-slate-400 mt-1 truncate">
+                                {r.services_done.map(s => SERVICE_NAMES[s] ?? s).join(' · ')}
+                              </p>
+                            )}
+                          </div>
 
-                      <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                      </svg>
-                    </a>
+                          <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                          </svg>
+                        </a>
+                      </div>
+                      {subStatus?.status === 'expired' && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 rounded-2xl">
+                          <span className="text-2xl mb-1">🔒</span>
+                          <p className="text-white text-sm font-semibold mb-2">Subscribe to view</p>
+                          <a href="/upgrade" className="bg-[#FF8C52] text-white text-xs font-bold px-4 py-2 rounded-full">
+                            Upgrade ₹249/mo
+                          </a>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </>
               )}
@@ -591,6 +648,13 @@ export default function MyAccountClient({
           {/* WALK REPORTS */}
           {tab === 'bookings' && (
             <div className="flex flex-col gap-4">
+              {subStatus && (
+                <TrialBanner
+                  status={subStatus.status}
+                  trialDaysRemaining={subStatus.trial_days_remaining}
+                  expiresAt={subStatus.expires_at}
+                />
+              )}
               {claimedReports.length === 0 && walkLogs.length === 0 ? (
                 <EmptyState
                   emoji="🐕"
@@ -680,44 +744,56 @@ export default function MyAccountClient({
                       <>
                         <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-0.5">Walk reports (verified providers)</p>
                         {claimedReports.map(r => (
-                          <a
-                            key={r.id}
-                            href={`/walk-report/${r.token}`}
-                            className="rounded-2xl overflow-hidden flex gap-3 items-center p-3 transition-transform active:scale-[0.99]"
-                            style={{
-                              background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
-                              boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 4px 12px rgba(15,45,50,0.06)',
-                              border: '1px solid rgba(226,220,200,0.7)',
-                            }}
-                          >
-                            <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-stone-100 flex items-center justify-center text-2xl">
-                              {r.photo_url
-                                ? <img src={r.photo_url} alt={r.dog_name} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
-                                : '🐕'}
+                          <div key={r.id} className="relative">
+                            <div className={subStatus?.status === 'expired' ? 'blur-sm pointer-events-none select-none' : ''}>
+                              <a
+                                href={`/walk-report/${r.token}`}
+                                className="rounded-2xl overflow-hidden flex gap-3 items-center p-3 transition-transform active:scale-[0.99]"
+                                style={{
+                                  background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
+                                  boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 4px 12px rgba(15,45,50,0.06)',
+                                  border: '1px solid rgba(226,220,200,0.7)',
+                                }}
+                              >
+                                <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-stone-100 flex items-center justify-center text-2xl">
+                                  {r.photo_url
+                                    ? <img src={r.photo_url} alt={r.dog_name} className="w-full h-full object-cover" /> // eslint-disable-line @next/next/no-img-element
+                                    : '🐕'}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-1 mb-0.5">
+                                    <p className="font-semibold text-slate-900 text-sm truncate">{r.dog_name}</p>
+                                    <span className="text-[10px] text-slate-400 flex-shrink-0">
+                                      {new Date(r.walk_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                    </span>
+                                  </div>
+                                  {r.providers && (
+                                    <p className="text-[10px] text-slate-400 mb-1">by {r.providers.name}{r.providers.is_verified ? ' ✓' : ''}</p>
+                                  )}
+                                  <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                                    <span>⏱ {r.duration_mins}m</span>
+                                    {r.distance_meters && r.distance_meters > 0 && (
+                                      <span>📏 {r.distance_meters >= 1000 ? `${(r.distance_meters / 1000).toFixed(1)}km` : `${Math.round(r.distance_meters)}m`}</span>
+                                    )}
+                                    {r.poop_count > 0 && <span>💩 {r.poop_count}</span>}
+                                    {r.pee_count > 0 && <span>💧 {r.pee_count}</span>}
+                                  </div>
+                                </div>
+                                <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                </svg>
+                              </a>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-1 mb-0.5">
-                                <p className="font-semibold text-slate-900 text-sm truncate">{r.dog_name}</p>
-                                <span className="text-[10px] text-slate-400 flex-shrink-0">
-                                  {new Date(r.walk_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                                </span>
+                            {subStatus?.status === 'expired' && (
+                              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 rounded-2xl">
+                                <span className="text-2xl mb-1">🔒</span>
+                                <p className="text-white text-sm font-semibold mb-2">Subscribe to view</p>
+                                <a href="/upgrade" className="bg-[#FF8C52] text-white text-xs font-bold px-4 py-2 rounded-full">
+                                  Upgrade ₹249/mo
+                                </a>
                               </div>
-                              {r.providers && (
-                                <p className="text-[10px] text-slate-400 mb-1">by {r.providers.name}{r.providers.is_verified ? ' ✓' : ''}</p>
-                              )}
-                              <div className="flex items-center gap-2 text-[10px] text-slate-500">
-                                <span>⏱ {r.duration_mins}m</span>
-                                {r.distance_meters && r.distance_meters > 0 && (
-                                  <span>📏 {r.distance_meters >= 1000 ? `${(r.distance_meters / 1000).toFixed(1)}km` : `${Math.round(r.distance_meters)}m`}</span>
-                                )}
-                                {r.poop_count > 0 && <span>💩 {r.poop_count}</span>}
-                                {r.pee_count > 0 && <span>💧 {r.pee_count}</span>}
-                              </div>
-                            </div>
-                            <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                            </svg>
-                          </a>
+                            )}
+                          </div>
                         ))}
                       </>
                     )}
@@ -799,6 +875,72 @@ export default function MyAccountClient({
           📣 Post a broadcast
         </a>
       </div>
+
+      {/* ── Delete account confirmation modal ── */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+            style={{ background: 'rgba(10,47,53,0.5)', backdropFilter: 'blur(4px)' }}
+            onClick={e => { if (e.target === e.currentTarget && !deleting) setShowDeleteConfirm(false) }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 32, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.97 }}
+              transition={{ type: 'spring', duration: 0.35, bounce: 0 }}
+              className="w-full max-w-sm rounded-3xl p-6"
+              style={{
+                background: '#FFFBEB',
+                boxShadow: '0 24px 60px rgba(10,47,53,0.2), inset 0 1.5px 0 rgba(255,255,255,0.9)',
+              }}
+            >
+              <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mb-4">
+                <span className="text-2xl">🗑️</span>
+              </div>
+              <h2 className="text-lg font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                Delete your account?
+              </h2>
+              <p className="text-sm text-slate-500 mb-5 leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
+                This will permanently delete your account, all your broadcasts, reviews, saved providers, and walk reports. This cannot be undone.
+              </p>
+
+              {deleteError && (
+                <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-3 py-2.5">
+                  <p className="text-sm text-red-700">{deleteError}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setShowDeleteConfirm(false); setDeleteError(null) }}
+                  disabled={deleting}
+                  className="flex-1 py-3 rounded-2xl font-bold text-sm disabled:opacity-50"
+                  style={{ background: '#F1F5F9', color: '#475569', fontFamily: 'var(--font-fredoka)' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleting}
+                  className="flex-1 py-3 rounded-2xl font-bold text-sm disabled:opacity-60"
+                  style={{
+                    background: 'linear-gradient(160deg, #F43F5E 0%, #BE123C 100%)',
+                    color: '#fff',
+                    fontFamily: 'var(--font-fredoka)',
+                    boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.2), inset 0 -3px 0 rgba(0,0,0,0.15)',
+                  }}
+                >
+                  {deleting ? 'Deleting…' : 'Yes, delete'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   )

@@ -8,7 +8,7 @@ function admin() {
 }
 
 const PLAN_DAYS: Record<string, number> = { monthly: 30, annual: 365 }
-const PLAN_PAISE: Record<string, number> = { monthly: 14900, annual: 99900 }
+const PLAN_PAISE: Record<string, number> = { monthly: 24900, annual: 199900 }
 
 export async function POST(req: NextRequest) {
   const supabase = await createServerClient()
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         razorpay_order_id,
         razorpay_payment_id,
         razorpay_signature,
-        amount_paise: PLAN_PAISE[plan] ?? 14900,
+        amount_paise: PLAN_PAISE[plan] ?? 24900,
         expires_at: expiresAt,
       },
       { onConflict: 'user_id', ignoreDuplicates: false }

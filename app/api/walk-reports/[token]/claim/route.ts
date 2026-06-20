@@ -45,5 +45,22 @@ export async function POST(
     .eq('id', report.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: profile } = await (admin().from('profiles') as any)
+      .select('trial_started_at')
+      .eq('id', user.id)
+      .single()
+    if (profile && profile.trial_started_at === null) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (admin().from('profiles') as any)
+        .update({ trial_started_at: new Date().toISOString() })
+        .eq('id', user.id)
+    }
+  } catch (trialErr) {
+    console.error('Failed to start trial:', trialErr)
+  }
+
   return NextResponse.json({ ok: true })
 }

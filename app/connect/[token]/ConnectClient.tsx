@@ -85,42 +85,38 @@ export default function ConnectClient({
     }
   }
 
-  const walkerDashUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/walker/${token}`
-    : `https://pupstep.in/walker/${token}`
+  const dashUrl = 'https://pupstep.in/pro/profile'
+  const waMessage = `Hi ${name}! You're now connected as a walker on PupStep 🐾\n\nView your dashboard here:\n${dashUrl}`
+  const waLink = `https://wa.me/91${phone.replace(/\D/g, '')}?text=${encodeURIComponent(waMessage)}`
 
   if (connected) {
-    const waLink = `https://wa.me/91${phone}?text=${encodeURIComponent(`Hi! Your PupStep walk log for ${dogName} is ready 🐾\n\nBookmark this link to log every walk:\n${walkerDashUrl}`)}`
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ background: '#FFFBEB' }}>
-        <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-5">
-          <span className="text-4xl">✅</span>
+        <div className="w-24 h-24 rounded-full flex items-center justify-center mb-5 shadow-lg" style={{ background: '#D1FAE5' }}>
+          <span className="text-5xl">✅</span>
         </div>
         <h1 className="text-3xl font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
           You're connected, {name}!
         </h1>
-        <p className="text-slate-500 text-sm mb-8 leading-relaxed px-2" style={{ fontFamily: 'var(--font-nunito)' }}>
-          You can now log walks for <strong>{dogName}</strong>. Save your walk log link so you can return anytime.
+        <p className="text-slate-500 text-sm mb-2 leading-relaxed px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
+          Your dashboard link has been sent to your WhatsApp.
+        </p>
+        <p className="text-slate-400 text-xs mb-8 px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
+          Tap the button below to open it — bookmark it so you can return anytime.
         </p>
         <div className="w-full max-w-sm space-y-3">
           <a
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-white text-base"
+            className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-white text-base shadow-md"
             style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)' }}
           >
-            📲 Send my walk log link on WhatsApp
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Open WhatsApp Dashboard
           </a>
-          <button
-            onClick={() => router.push(`/walker/${token}`)}
-            className="w-full py-4 rounded-2xl font-bold text-lg text-white"
-            style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)' }}
-          >
-            Start Walking →
-          </button>
           <p className="text-xs text-slate-400 pt-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-            💡 Send yourself the WhatsApp link first — then you can return without scanning the QR again
+            💡 Save the link in WhatsApp — you can return anytime without scanning the QR again
           </p>
         </div>
       </div>
@@ -158,7 +154,7 @@ export default function ConnectClient({
             style={{ border: '2px solid #D1D5DB', color: '#9CA3AF', whiteSpace: 'nowrap', background: 'transparent' }}
           >
             <span className="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-400">2</span>
-            Start walking
+            Get dashboard
           </div>
         </div>
       </div>
@@ -263,7 +259,7 @@ export default function ConnectClient({
             style={{ fontFamily: 'var(--font-nunito)' }}
           />
           <p className="text-xs text-slate-400 mt-1 ml-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-            We'll send your walk log link here
+            We'll send your dashboard link here
           </p>
         </div>
 
@@ -300,7 +296,7 @@ export default function ConnectClient({
         {/* What happens next note */}
         <p className="text-center text-xs text-amber-500 font-semibold px-4"
           style={{ fontFamily: 'var(--font-nunito)' }}>
-          After connecting, you&apos;ll get a personal walk log page to track every walk →
+          After connecting, you&apos;ll get a WhatsApp link to your provider dashboard →
         </p>
 
         <div className="pb-8 pt-2">
