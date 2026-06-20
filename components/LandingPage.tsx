@@ -1,102 +1,111 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { motion, useMotionValue, useSpring, useInView } from 'framer-motion'
+import {
+  motion, useMotionValue, useSpring, useInView,
+} from 'framer-motion'
+import {
+  MapPin, Search, ClipboardList, ShieldCheck, MessageCircle,
+  IndianRupee, Check, Timer, Ruler, Megaphone, Bell, Star,
+  Droplets, Sparkles, ArrowRight, Users, Navigation,
+  PawPrint as LucidePaw,
+} from 'lucide-react'
 import { CATEGORIES } from '@/lib/categories'
 
-// ─── Ease tokens ──────────────────────────────────────────────────────────────
-const EASE     = [0.25, 0.46, 0.45, 0.94] as const
-const EASE_EXP = [0.16, 1, 0.3, 1] as const
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const EASE_EXP  = [0.16, 1, 0.3, 1] as const
+const SPRING    = { type: 'spring', duration: 0.45, bounce: 0 } as const
 
-// ─── Images ───────────────────────────────────────────────────────────────────
-const U  = (id: string) => `https://images.unsplash.com/${id}?w=640&h=460&fit=crop&auto=format&q=82`
-const UH = (id: string) => `https://images.unsplash.com/${id}?w=720&h=720&fit=crop&crop=faces,center&auto=format&q=88`
-
-const CATEGORY_PHOTOS: Record<string, string> = {
-  'dog-walking': U('photo-1648304887391-a6c2cf2228e4'),
-  'grooming':    U('photo-1611173622933-91942d394b04'),
-  'vet':         U('photo-1588950538967-ca7f8599c669'),
-  'pet-store':   U('photo-1733451629195-a253141eb37c'),
-  'dog-training':U('photo-1640652663796-764e4eb5bc59'),
-  'insurance':   U('photo-1760448946826-105667819499'),
+// ─── Hooks ────────────────────────────────────────────────────────────────────
+function useHasHover() {
+  const [v, setV] = useState(false)
+  useEffect(() => setV(window.matchMedia('(hover:hover) and (pointer:fine)').matches), [])
+  return v
 }
-const CATEGORY_PHOTO_POS: Record<string, string> = {
+function useReducedMotion() {
+  const [v, setV] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion:reduce)')
+    setV(mq.matches)
+    const h = (e: MediaQueryListEvent) => setV(e.matches)
+    mq.addEventListener('change', h)
+    return () => mq.removeEventListener('change', h)
+  }, [])
+  return v
+}
+
+// ─── Unsplash image helper (lazy, webp, sized) ───────────────────────────────
+const img = (id: string, w = 640, h = 460) =>
+  `https://images.unsplash.com/${id}?w=${w}&h=${h}&fit=crop&auto=format&q=80`
+
+const CAT_PHOTO: Record<string, string> = {
+  'dog-walking': img('photo-1648304887391-a6c2cf2228e4'),
+  'grooming':    img('photo-1611173622933-91942d394b04'),
+  'vet':         img('photo-1588950538967-ca7f8599c669'),
+  'dog-training':img('photo-1640652663796-764e4eb5bc59'),
+}
+const CAT_POS: Record<string, string> = {
   'dog-walking': 'center 20%',
   'grooming':    'center 40%',
   'vet':         'center 30%',
-  'pet-store':   'center 50%',
   'dog-training':'center 30%',
-  'insurance':   'center 25%',
 }
-const HERO_DOG = UH('photo-1587300003388-59208cc962cb')
 
-// ─── Color tokens ─────────────────────────────────────────────────────────────
+// ─── Clay color system ────────────────────────────────────────────────────────
 const C = {
   pageBg: '#FFFBEB',
   white: {
-    bg: 'linear-gradient(160deg, #FFFFFF 0%, #FFFDF5 100%)',
-    shadow: '0 4px 0px rgba(0,0,0,0.06), 0 10px 32px rgba(0,0,0,0.05), inset 0 1.5px 0 rgba(255,255,255,1)',
+    bg: 'linear-gradient(155deg,#FFFFFF 0%,#FFFDF6 100%)',
+    shadow: '0 4px 0 rgba(0,0,0,0.06),0 12px 36px rgba(0,0,0,0.05),inset 0 1.5px 0 rgba(255,255,255,1)',
     border: '1px solid rgba(226,232,240,0.7)', text: '#0F172A',
   },
   amber: {
-    bg: 'linear-gradient(160deg, #FEF3C7 0%, #FDE68A 100%)',
-    shadow: '0 4px 0px rgba(180,83,9,0.18), 0 10px 32px rgba(253,230,138,0.55), inset 0 1.5px 0 rgba(255,255,255,0.95)',
+    bg: 'linear-gradient(155deg,#FEF3C7 0%,#FDE68A 100%)',
+    shadow: '0 4px 0 rgba(180,83,9,0.18),0 12px 36px rgba(253,230,138,0.55),inset 0 1.5px 0 rgba(255,255,255,0.95)',
     border: '1px solid rgba(253,230,138,0.7)', text: '#78350F',
   },
   peach: {
-    bg: 'linear-gradient(160deg, #FFEDD5 0%, #FED7AA 100%)',
-    shadow: '0 4px 0px rgba(194,65,12,0.14), 0 10px 32px rgba(254,215,170,0.5), inset 0 1.5px 0 rgba(255,255,255,0.9)',
+    bg: 'linear-gradient(155deg,#FFEDD5 0%,#FED7AA 100%)',
+    shadow: '0 4px 0 rgba(194,65,12,0.14),0 12px 36px rgba(254,215,170,0.5),inset 0 1.5px 0 rgba(255,255,255,0.9)',
     border: '1px solid rgba(254,215,170,0.6)', text: '#7C2D12',
   },
-  lavender: {
-    bg: 'linear-gradient(160deg, #F5F3FF 0%, #E9D5FF 100%)',
-    shadow: '0 4px 0px rgba(109,40,217,0.12), 0 10px 32px rgba(233,213,255,0.5), inset 0 1.5px 0 rgba(255,255,255,0.9)',
-    border: '1px solid rgba(233,213,255,0.55)', text: '#4C1D95',
-  },
   mint: {
-    bg: 'linear-gradient(160deg, #F0FDF4 0%, #BBF7D0 100%)',
-    shadow: '0 4px 0px rgba(5,150,105,0.12), 0 10px 32px rgba(187,247,208,0.5), inset 0 1.5px 0 rgba(255,255,255,0.9)',
+    bg: 'linear-gradient(155deg,#F0FDF4 0%,#BBF7D0 100%)',
+    shadow: '0 4px 0 rgba(5,150,105,0.12),0 12px 36px rgba(187,247,208,0.5),inset 0 1.5px 0 rgba(255,255,255,0.9)',
     border: '1px solid rgba(187,247,208,0.55)', text: '#064E3B',
   },
-  lemon: {
-    bg: 'linear-gradient(160deg, #FEFCE8 0%, #FEF9C3 100%)',
-    shadow: '0 4px 0px rgba(161,98,7,0.1), 0 10px 32px rgba(254,249,195,0.5), inset 0 1.5px 0 rgba(255,255,255,0.9)',
-    border: '1px solid rgba(254,249,195,0.55)', text: '#713F12',
-  },
-  rose: {
-    bg: 'linear-gradient(160deg, #FFF1F2 0%, #FECDD3 100%)',
-    shadow: '0 4px 0px rgba(159,18,57,0.12), 0 10px 32px rgba(254,205,211,0.5), inset 0 1.5px 0 rgba(255,255,255,0.9)',
-    border: '1px solid rgba(254,205,211,0.55)', text: '#9F1239',
-  },
   sky: {
-    bg: 'linear-gradient(160deg, #E0F2FE 0%, #BAE6FD 100%)',
-    shadow: '0 4px 0px rgba(8,145,178,0.15), 0 10px 32px rgba(186,230,253,0.45), inset 0 1.5px 0 rgba(255,255,255,0.9)',
+    bg: 'linear-gradient(155deg,#E0F2FE 0%,#BAE6FD 100%)',
+    shadow: '0 4px 0 rgba(8,145,178,0.15),0 12px 36px rgba(186,230,253,0.45),inset 0 1.5px 0 rgba(255,255,255,0.9)',
     border: '1px solid rgba(186,230,253,0.55)', text: '#0C4A6E',
   },
+  lavender: {
+    bg: 'linear-gradient(155deg,#F5F3FF 0%,#E9D5FF 100%)',
+    shadow: '0 4px 0 rgba(109,40,217,0.12),0 12px 36px rgba(233,213,255,0.5),inset 0 1.5px 0 rgba(255,255,255,0.9)',
+    border: '1px solid rgba(233,213,255,0.55)', text: '#4C1D95',
+  },
+  teal: {
+    bg: 'linear-gradient(155deg,#0A2F35 0%,#0D3D45 100%)',
+    shadow: '0 6px 0 rgba(5,40,48,0.42),0 20px 60px rgba(10,47,53,0.38),inset 0 1.5px 0 rgba(255,255,255,0.07)',
+    border: '1px solid rgba(255,255,255,0.07)', text: '#F0FDFA',
+  },
   amberCTA: {
-    // Logo "Step" orange — replaces amber-gold
-    bg: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
-    shadow: '0 4px 0px rgba(175,65,10,0.30), 0 10px 24px rgba(245,107,34,0.42), inset 0 1.5px 0 rgba(255,255,255,0.38)',
+    bg: 'linear-gradient(155deg,#FF8C52 0%,#F56B22 100%)',
+    shadow: '0 4px 0 rgba(175,65,10,0.30),0 10px 24px rgba(245,107,34,0.42),inset 0 1.5px 0 rgba(255,255,255,0.38)',
     border: '1px solid rgba(255,255,255,0.18)', text: '#451A03',
   },
   tealCTA: {
-    // Logo map-pin teal — brighter, more cyan
-    bg: 'linear-gradient(160deg, #17C8CC 0%, #0A8A96 100%)',
-    shadow: '0 4px 0px rgba(5,80,90,0.42), 0 10px 24px rgba(12,180,188,0.38), inset 0 1.5px 0 rgba(255,255,255,0.20)',
+    bg: 'linear-gradient(155deg,#17C8CC 0%,#0A8A96 100%)',
+    shadow: '0 4px 0 rgba(5,80,90,0.42),0 10px 24px rgba(12,180,188,0.38),inset 0 1.5px 0 rgba(255,255,255,0.20)',
     border: '1px solid rgba(255,255,255,0.12)', text: '#F0FDFA',
   },
 } as const
+type CKey = keyof typeof C
 
-type CKey = Exclude<keyof typeof C, 'pageBg'>
-
-const catClay: Record<string, CKey> = {
-  'dog-walking': 'amber',
-  'grooming':    'lavender',
-  'vet':         'rose',
-  'pet-store':   'mint',
-  'dog-training':'sky',
-  'insurance':   'lemon',
+function cs(k: CKey) {
+  const t = C[k] as { bg: string; shadow: string; border: string }
+  return { background: t.bg, boxShadow: t.shadow, border: t.border }
 }
 
 const BLEED: React.CSSProperties = {
@@ -105,77 +114,20 @@ const BLEED: React.CSSProperties = {
   marginRight: 'calc(50% - 50vw)',
 }
 
-function cs(key: CKey): React.CSSProperties {
-  const t = C[key] as { bg: string; shadow: string; border: string; text: string }
-  return { background: t.bg, boxShadow: t.shadow, border: t.border }
+const CAT_CLAY: Record<string, CKey> = {
+  'dog-walking': 'amber',
+  'grooming':    'lavender',
+  'vet':         'mint',
+  'dog-training':'sky',
 }
 
-function useCountUp(target: number, duration = 1.8) {
-  const [val, setVal] = useState(0)
-  const ref = useRef<HTMLSpanElement>(null)
-  const inView = useInView(ref, { once: true, margin: '-40px' })
-  useEffect(() => {
-    if (!inView || target === 0) return
-    const t0 = Date.now()
-    const id = setInterval(() => {
-      const p = Math.min((Date.now() - t0) / (duration * 1000), 1)
-      setVal(Math.round((1 - (1 - p) ** 3) * target))
-      if (p >= 1) clearInterval(id)
-    }, 16)
-    return () => clearInterval(id)
-  }, [inView, target, duration])
-  return { val, ref }
-}
-
-// ─── 3D Clay Sphere ───────────────────────────────────────────────────────────
-function Sphere({ size, gradient, glow, specW, specH, specTop, specLeft, style = {} }: {
-  size: number; gradient: string; glow: string
-  specW: string; specH: string; specTop: string; specLeft: string
-  style?: React.CSSProperties
+// ─── Decorative: PawPrint SVG ─────────────────────────────────────────────────
+function Paw({ size = 28, color = '#F07030', opacity = 0.35 }: {
+  size?: number; color?: string; opacity?: number
 }) {
   return (
-    <div style={{ width: size, height: size, borderRadius: '50%', background: gradient, boxShadow: glow, overflow: 'hidden', position: 'relative', flexShrink: 0, ...style }}>
-      <div style={{ position: 'absolute', top: specTop, left: specLeft, width: specW, height: specH, borderRadius: '50%', background: 'rgba(255,255,255,0.42)', pointerEvents: 'none' }} />
-    </div>
-  )
-}
-
-const AmberSphere = ({ size = 220, style = {} }: { size?: number; style?: React.CSSProperties }) => (
-  <Sphere size={size} gradient="radial-gradient(circle at 32% 30%, #FFE8D6, #FFB380 44%, #F07030 72%, #E05818)" glow={`0 ${Math.round(size * 0.13)}px ${Math.round(size * 0.33)}px rgba(180,83,9,0.22)`} specW="38%" specH="27%" specTop="17%" specLeft="22%" style={style} />
-)
-const TealSphere = ({ size = 120, style = {} }: { size?: number; style?: React.CSSProperties }) => (
-  <Sphere size={size} gradient="radial-gradient(circle at 30% 28%, #B2F5F8, #17C8CC 52%, #0A8A96)" glow={`0 ${Math.round(size * 0.12)}px ${Math.round(size * 0.28)}px rgba(10,138,150,0.30)`} specW="40%" specH="28%" specTop="16%" specLeft="20%" style={style} />
-)
-const LavenderSphere = ({ size = 80, style = {} }: { size?: number; style?: React.CSSProperties }) => (
-  <Sphere size={size} gradient="radial-gradient(circle at 30% 28%, #EDE9FE, #C4B5FD 50%, #7C3AED)" glow={`0 ${Math.round(size * 0.12)}px ${Math.round(size * 0.28)}px rgba(124,58,237,0.22)`} specW="42%" specH="28%" specTop="16%" specLeft="20%" style={style} />
-)
-
-// ─── Cute bone SVG ─────────────────────────────────────────────────────────────
-function CuteBone({ size = 64, color = '#F59E0B', opacity = 0.55 }: { size?: number; color?: string; opacity?: number }) {
-  return (
-    <svg width={size} height={size * 0.46} viewBox="0 0 100 46" fill="none" style={{ opacity, filter: `drop-shadow(0 4px 10px ${color}55)` }} aria-hidden>
-      {/* Left knob-pair */}
-      <circle cx="14" cy="12" r="11" fill={color} />
-      <circle cx="14" cy="34" r="11" fill={color} />
-      {/* Right knob-pair */}
-      <circle cx="86" cy="12" r="11" fill={color} />
-      <circle cx="86" cy="34" r="11" fill={color} />
-      {/* Shaft */}
-      <rect x="14" y="16" width="72" height="14" rx="7" fill={color} />
-      {/* Specular shine */}
-      <circle cx="14" cy="10" r="4" fill="rgba(255,255,255,0.45)" />
-      <circle cx="86" cy="10" r="4" fill="rgba(255,255,255,0.45)" />
-    </svg>
-  )
-}
-
-// ─── Single paw print SVG ─────────────────────────────────────────────────────
-function PawPrint({ size = 28, color = '#F07030', opacity = 0.35 }: { size?: number; color?: string; opacity?: number }) {
-  return (
     <svg width={size} height={size} viewBox="0 0 40 40" fill={color} style={{ opacity }} aria-hidden>
-      {/* Main pad */}
       <ellipse cx="20" cy="28" rx="9" ry="7.5" />
-      {/* Toe pads */}
       <ellipse cx="10" cy="19" rx="4.5" ry="5.5" />
       <ellipse cx="20" cy="15" rx="4.5" ry="5.5" />
       <ellipse cx="30" cy="19" rx="4.5" ry="5.5" />
@@ -183,45 +135,264 @@ function PawPrint({ size = 28, color = '#F07030', opacity = 0.35 }: { size?: num
   )
 }
 
-// Detect mouse/desktop once on mount — skip 3D tilt on touch devices
-function useHasHover() {
-  const [hasHover, setHasHover] = useState(false)
-  useEffect(() => {
-    setHasHover(window.matchMedia('(hover: hover) and (pointer: fine)').matches)
-  }, [])
-  return hasHover
+function Bone({ size = 64, color = '#F59E0B', opacity = 0.55 }: {
+  size?: number; color?: string; opacity?: number
+}) {
+  return (
+    <svg width={size} height={size * 0.46} viewBox="0 0 100 46" fill="none"
+      style={{ opacity }} aria-hidden>
+      <circle cx="14" cy="12" r="11" fill={color} />
+      <circle cx="14" cy="34" r="11" fill={color} />
+      <circle cx="86" cy="12" r="11" fill={color} />
+      <circle cx="86" cy="34" r="11" fill={color} />
+      <rect x="14" y="16" width="72" height="14" rx="7" fill={color} />
+      <circle cx="14" cy="10" r="4" fill="rgba(255,255,255,0.45)" />
+      <circle cx="86" cy="10" r="4" fill="rgba(255,255,255,0.45)" />
+    </svg>
+  )
 }
 
-// ─── ClayCard ─────────────────────────────────────────────────────────────────
-function ClayCard({ ckey = 'white', children, className = '', style = {}, href }: {
-  ckey?: CKey; children: React.ReactNode; className?: string; style?: React.CSSProperties; href?: string
+// ─── Teal sphere ──────────────────────────────────────────────────────────────
+function TealSphere({ size = 120, style = {} }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%',
+      background: 'radial-gradient(circle at 30% 28%,#B2F5F8,#17C8CC 52%,#0A8A96)',
+      boxShadow: `0 ${Math.round(size * 0.12)}px ${Math.round(size * 0.28)}px rgba(10,138,150,0.30)`,
+      overflow: 'hidden', position: 'relative', flexShrink: 0, ...style,
+    }}>
+      <div style={{ position: 'absolute', top: '16%', left: '20%', width: '40%', height: '28%', borderRadius: '50%', background: 'rgba(255,255,255,0.42)' }} />
+    </div>
+  )
+}
+
+// ─── Custom paw cursor with footstep trail (desktop only) ────────────────────
+const PAW_BROWN = '#78350F'
+interface TrailStep { id: number; x: number; y: number; rot: number; side: number }
+
+function PawCursor() {
+  const hasHover  = useHasHover()
+  const reduced   = useReducedMotion()
+  const x         = useMotionValue(-120)
+  const y         = useMotionValue(-120)
+  const springX   = useSpring(x, { stiffness: 180, damping: 22 })
+  const springY   = useSpring(y, { stiffness: 180, damping: 22 })
+  const [on, setOn]       = useState(false)
+  const [trail, setTrail] = useState<TrailStep[]>([])
+  const lastPos = useRef({ x: -999, y: -999 })
+  const idRef   = useRef(0)
+  const sideRef = useRef(0)
+
+  useEffect(() => {
+    if (!hasHover) return
+    const el = document.createElement('style')
+    el.id = '__paw'
+    el.textContent = '*{cursor:none!important}'
+    document.head.appendChild(el)
+    return () => document.getElementById('__paw')?.remove()
+  }, [hasHover])
+
+  useEffect(() => {
+    if (!hasHover || reduced) return
+    const mv = (e: MouseEvent) => {
+      const cx = e.clientX - 16
+      const cy = e.clientY - 16
+      x.set(cx); y.set(cy); setOn(true)
+
+      const dx = cx - lastPos.current.x
+      const dy = cy - lastPos.current.y
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      if (dist > 56) {
+        lastPos.current = { x: cx, y: cy }
+        const side = sideRef.current % 2 === 0 ? -1 : 1
+        sideRef.current++
+        const angle = Math.atan2(dy, dx) * (180 / Math.PI)
+        const step: TrailStep = {
+          id: ++idRef.current,
+          x: cx + side * 10,
+          y: cy + 4,
+          rot: angle - 90 + side * 18,
+          side,
+        }
+        setTrail(t => [...t.slice(-8), step])
+        // auto-remove after 900ms
+        setTimeout(() => setTrail(t => t.filter(s => s.id !== step.id)), 900)
+      }
+    }
+    const ml = () => setOn(false)
+    window.addEventListener('mousemove', mv, { passive: true })
+    document.addEventListener('mouseleave', ml)
+    return () => { window.removeEventListener('mousemove', mv); document.removeEventListener('mouseleave', ml) }
+  }, [hasHover, reduced, x, y])
+
+  if (!hasHover || reduced) return null
+
+  return (
+    <>
+      {/* Footstep trail */}
+      {trail.map((step, i) => (
+        <motion.div
+          key={step.id}
+          className="pointer-events-none fixed top-0 left-0 z-[9998]"
+          initial={{ opacity: 0.65, scale: 0.85 }}
+          animate={{ opacity: 0, scale: 0.6 }}
+          transition={{ duration: 0.85, ease: 'easeOut' }}
+          style={{
+            x: step.x, y: step.y,
+            rotate: step.rot,
+            filter: `drop-shadow(0 2px 6px rgba(120,53,15,${0.55 - i * 0.04}))`,
+          }}
+        >
+          <Paw size={20} color={PAW_BROWN} opacity={1} />
+        </motion.div>
+      ))}
+      {/* Main cursor paw */}
+      <motion.div
+        className="pointer-events-none fixed top-0 left-0 z-[9999]"
+        style={{
+          x: springX, y: springY,
+          opacity: on ? 1 : 0,
+          filter: 'drop-shadow(0 3px 10px rgba(120,53,15,0.65)) drop-shadow(0 0 18px rgba(120,53,15,0.25))',
+        }}
+      >
+        <Paw size={32} color={PAW_BROWN} opacity={1} />
+      </motion.div>
+    </>
+  )
+}
+
+// ─── Walking dog GPS map ──────────────────────────────────────────────────────
+// Route waypoints in SVG viewBox "0 0 294 100"
+const ROUTE: Array<[number, number]> = [
+  [14,74],[36,66],[58,56],[80,46],[104,38],[126,34],
+  [150,38],[174,30],[198,26],[222,32],[246,40],[272,46],[280,48],
+]
+const ROUTE_PATH = ROUTE.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x} ${y}`).join(' ')
+
+function WalkingDogMap({ dark = false }: { dark?: boolean }) {
+  const reduced = useReducedMotion()
+  const dogX = useMotionValue(ROUTE[0][0] - 10)
+  const dogY = useMotionValue(ROUTE[0][1] - 10)
+  const sDX  = useSpring(dogX, { stiffness: 40, damping: 10 })
+  const sDY  = useSpring(dogY, { stiffness: 40, damping: 10 })
+  const [dir, setDir] = useState<1 | -1>(1)
+  const idx  = useRef(0)
+
+  const tick = useCallback(() => {
+    idx.current += dir
+    if (idx.current >= ROUTE.length - 1) setDir(-1)
+    if (idx.current <= 0) setDir(1)
+    dogX.set(ROUTE[idx.current][0] - 10)
+    dogY.set(ROUTE[idx.current][1] - 10)
+  }, [dir, dogX, dogY])
+
+  useEffect(() => {
+    if (reduced) return
+    const id = setInterval(tick, 620)
+    return () => clearInterval(id)
+  }, [reduced, tick])
+
+  const bg        = dark ? 'rgba(255,255,255,0.03)' : '#E6F7F8'
+  const border    = dark ? '1px solid rgba(255,255,255,0.09)' : '1.5px solid rgba(10,138,150,0.18)'
+  const routeClr  = dark ? 'rgba(23,200,204,0.85)' : '#0A8A96'
+  const grid      = dark ? 'rgba(255,255,255,0.05)' : 'rgba(10,138,150,0.07)'
+
+  return (
+    <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', background: bg, border }}>
+      <svg viewBox="0 0 294 100" xmlns="http://www.w3.org/2000/svg"
+        style={{ width: '100%', height: 100, display: 'block' }} aria-hidden>
+        {/* grid */}
+        <line x1="0" y1="50" x2="294" y2="50" stroke={grid} strokeWidth="10" />
+        {[75, 150, 225].map(x => (
+          <line key={x} x1={x} y1="0" x2={x} y2="100" stroke={grid} strokeWidth="8" />
+        ))}
+        {/* ghost dashed */}
+        <path d={ROUTE_PATH} stroke={routeClr} strokeWidth="2" strokeDasharray="5 3" opacity="0.25" strokeLinecap="round" fill="none" />
+        {/* solid route */}
+        <path d={ROUTE_PATH} stroke={routeClr} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        {/* start dot */}
+        <circle cx={ROUTE[0][0]} cy={ROUTE[0][1]} r="5.5" fill={routeClr} />
+        {/* events */}
+        <circle cx="150" cy="38" r="8.5" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.5" />
+        <text x="150" y="41.5" textAnchor="middle" fontSize="9">💩</text>
+        <circle cx="108" cy="38" r="7" fill="#EFF6FF" stroke="#BAE6FD" strokeWidth="1.5" />
+        <text x="108" y="41.5" textAnchor="middle" fontSize="8">💧</text>
+        {/* end flag */}
+        <circle cx={ROUTE[ROUTE.length-1][0]} cy={ROUTE[ROUTE.length-1][1]} r="5.5" fill="#F07030" />
+      </svg>
+
+      {/* Dog emoji walks along route */}
+      {!reduced && (
+        <motion.span
+          aria-hidden
+          style={{
+            position: 'absolute', top: 0, left: 0,
+            x: sDX, y: sDY,
+            fontSize: 18, lineHeight: 1,
+            filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.22))',
+            pointerEvents: 'none',
+            scaleX: dir, // flips 🐕 when reversing
+            transformOrigin: 'center',
+          }}
+        >
+          🐕
+        </motion.span>
+      )}
+    </div>
+  )
+}
+
+// ─── Fade-up scroll reveal ────────────────────────────────────────────────────
+function FadeUp({ children, delay = 0, className = '' }: {
+  children: React.ReactNode; delay?: number; className?: string
 }) {
-  const ref = useRef<HTMLDivElement>(null)
-  const hasHover = useHasHover()
-  const rx = useMotionValue(0); const ry = useMotionValue(0)
-  const srx = useSpring(rx, { stiffness: 300, damping: 30 })
-  const sry = useSpring(ry, { stiffness: 300, damping: 30 })
-  function onMove(e: React.MouseEvent) {
-    if (!hasHover || !ref.current) return
+  const ref    = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-48px' })
+  const rm     = useReducedMotion()
+  return (
+    <motion.div ref={ref} className={className}
+      initial={rm ? {} : { opacity: 0, y: 10, filter: 'blur(4px)' }}
+      animate={inView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
+      transition={{ ...SPRING, delay }}>
+      {children}
+    </motion.div>
+  )
+}
+
+// ─── Clay card with 3-D tilt (mouse only) ────────────────────────────────────
+function ClayCard({ ckey = 'white' as CKey, children, className = '', style = {}, href, radius = 24 }: {
+  ckey?: CKey; children: React.ReactNode; className?: string
+  style?: React.CSSProperties; href?: string; radius?: number
+}) {
+  const ref     = useRef<HTMLDivElement>(null)
+  const hasH    = useHasHover()
+  const rm      = useReducedMotion()
+  const rx      = useMotionValue(0)
+  const ry      = useMotionValue(0)
+  const srx     = useSpring(rx, { stiffness: 280, damping: 28 })
+  const sry     = useSpring(ry, { stiffness: 280, damping: 28 })
+
+  const onMove = (e: React.MouseEvent) => {
+    if (!hasH || rm || !ref.current) return
     const r = ref.current.getBoundingClientRect()
-    rx.set(((e.clientY - r.top) / r.height - 0.5) * -8)
-    ry.set(((e.clientX - r.left) / r.width - 0.5) * 8)
+    rx.set(((e.clientY - r.top) / r.height - 0.5) * -6)
+    ry.set(((e.clientX - r.left) / r.width - 0.5) * 6)
   }
+  const onLeave = () => { rx.set(0); ry.set(0) }
+
   const inner = (
     <motion.div
       ref={ref}
       onMouseMove={onMove}
-      onMouseLeave={hasHover ? () => { rx.set(0); ry.set(0) } : undefined}
-      whileHover={{ y: -4, scale: 1.01 }}
-      whileTap={{ y: 1, scale: 0.99 }}
-      transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+      onMouseLeave={onLeave}
+      whileHover={rm ? {} : { y: -4, scale: 1.01 }}
+      whileTap={rm ? {} : { y: 1, scale: 0.99 }}
+      transition={SPRING}
       style={{
-        // Only enable 3D tilt context on mouse devices — it costs a composite layer on mobile
-        ...(hasHover ? { rotateX: srx, rotateY: sry, transformStyle: 'preserve-3d' as const } : {}),
-        borderRadius: 24,
+        ...(hasH && !rm ? { rotateX: srx, rotateY: sry, transformStyle: 'preserve-3d' as const } : {}),
+        borderRadius: radius,
         willChange: 'transform',
-        ...cs(ckey),
-        ...style,
+        ...cs(ckey), ...style,
       }}
       className={`overflow-hidden ${className}`}
     >
@@ -231,607 +402,814 @@ function ClayCard({ ckey = 'white', children, className = '', style = {}, href }
   return href ? <Link href={href} className="block">{inner}</Link> : inner
 }
 
-// ─── ClayBtn ──────────────────────────────────────────────────────────────────
-function ClayBtn({ href, children, ckey = 'amberCTA', className = '', size = 'md' }: {
-  href: string; children: React.ReactNode; ckey?: CKey; className?: string; size?: 'sm' | 'md' | 'lg'
+// ─── CTA button ───────────────────────────────────────────────────────────────
+function Btn({ href, children, ckey = 'amberCTA' as CKey, size = 'md', className = '' }: {
+  href: string; children: React.ReactNode; ckey?: CKey; size?: 'sm' | 'md' | 'lg'; className?: string
 }) {
-  const t = C[ckey] as { bg: string; shadow: string; border: string; text: string }
+  const t  = C[ckey] as { bg: string; shadow: string; border: string; text: string }
+  const rm = useReducedMotion()
   const pad = size === 'lg' ? 'px-8 py-4 text-base' : size === 'sm' ? 'px-4 py-2.5 text-xs' : 'px-6 py-3.5 text-sm'
   return (
-    <motion.div whileHover={{ y: -3, scale: 1.03 }} whileTap={{ y: 4, scale: 0.98 }} transition={{ type: 'spring', stiffness: 420, damping: 22 }} className="inline-block">
-      <Link href={href} className={`inline-flex items-center gap-2 rounded-full font-bold ${pad} ${className}`} style={{ background: t.bg, boxShadow: t.shadow, border: t.border, color: t.text }}>
+    <motion.div whileHover={rm ? {} : { y: -3, scale: 1.03 }} whileTap={rm ? {} : { y: 3, scale: 0.98 }}
+      transition={SPRING} className="inline-block">
+      <Link href={href}
+        className={`inline-flex items-center gap-2 rounded-full font-bold ${pad} ${className}`}
+        style={{ background: t.bg, boxShadow: t.shadow, border: t.border, color: t.text }}>
         {children}
       </Link>
     </motion.div>
   )
 }
 
-// ─── Provider mini-cards ──────────────────────────────────────────────────────
-function ProviderMiniCard({ emoji, name, area, rating, badge, badgeColor, z, rotate, y, float }: {
-  emoji: string; name: string; area: string; rating: string; badge: string
-  badgeColor: string; z: number; rotate: number; y: number; float?: boolean
-}) {
-  return (
-    <motion.div className="absolute inset-x-0 px-4 py-3.5"
-      style={{ zIndex: z, borderRadius: 20, ...cs('white'), transform: `rotate(${rotate}deg) translateY(${y}px)` }}
-      animate={float ? { y: [y, y - 10, y] } : undefined}
-      transition={float ? { duration: 3.5, repeat: Infinity, ease: 'easeInOut' } : undefined}
-    >
-      <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-2xl flex items-center justify-center text-xl flex-shrink-0" style={{ background: '#FFFBEB', boxShadow: '0 2px 6px rgba(180,83,9,0.12)' }}>{emoji}</div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm text-slate-800 truncate leading-tight">{name}</p>
-          <p className="text-xs text-slate-400 mt-0.5">{area}</p>
-        </div>
-        <span className="flex-shrink-0 text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: badgeColor + '18', color: badgeColor }}>{badge}</span>
-      </div>
-      <div className="flex items-center gap-1 mt-2.5">
-        {'★★★★★'.split('').map((s, i) => <span key={i} className="text-amber-400 text-xs">{s}</span>)}
-        <span className="text-[10px] text-slate-400 ml-1">{rating}</span>
-        <span className="ml-auto text-[10px] font-semibold text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded-full">✓ Verified</span>
-      </div>
-    </motion.div>
-  )
-}
-
-function CardStack() {
-  return (
-    <div className="relative h-44 w-[300px] mx-auto">
-      <ProviderMiniCard emoji="✂️" name="Bella's Grooming Studio" area="Versova · 0.8 km" rating="4.9 (38)" badge="Grooming" badgeColor="#7C3AED" z={1} rotate={-7} y={-28} />
-      <ProviderMiniCard emoji="🦮" name="Rahul's Dog Walks" area="Andheri W · 0.4 km" rating="5.0 (22)" badge="Walking" badgeColor="#F07030" z={2} rotate={-2} y={-10} />
-      <ProviderMiniCard emoji="🐕" name="Sohail's Dog Walks" area="Juhu · 0.6 km" rating="4.8 (54)" badge="Walking" badgeColor="#F07030" z={3} rotate={0} y={0} float />
-    </div>
-  )
-}
-
-// ─── Walk Report mini-card ────────────────────────────────────────────────────
-function WalkReportMiniCard() {
+// ─── Walk report card (hero right) ───────────────────────────────────────────
+function WalkReportCard() {
+  const rm = useReducedMotion()
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24, rotate: -1 }}
-      whileInView={{ opacity: 1, y: 0, rotate: 0 }}
-      viewport={{ once: true }}
+      initial={rm ? {} : { opacity: 0, y: 24, rotate: -1 }}
+      animate={{ opacity: 1, y: 0, rotate: 0 }}
       transition={{ duration: 0.65, ease: EASE_EXP, delay: 0.2 }}
       style={{
-        borderRadius: 28,
-        background: 'linear-gradient(160deg, #FFFDF5 0%, #FFF8E1 100%)',
-        boxShadow: '0 8px 0px rgba(120,53,15,0.14), 0 20px 56px rgba(0,0,0,0.18), inset 0 1.5px 0 rgba(255,255,255,0.95)',
+        borderRadius: 28, width: '100%', maxWidth: 360,
+        background: 'linear-gradient(155deg,#FFFDF5 0%,#FFF8E1 100%)',
+        boxShadow: '0 8px 0 rgba(120,53,15,0.14),0 28px 72px rgba(0,0,0,0.18),inset 0 1.5px 0 rgba(255,255,255,0.95)',
         border: '1.5px solid rgba(253,230,138,0.7)',
-        padding: '24px',
-        width: '100%',
-        maxWidth: 340,
-        position: 'relative' as const,
-        overflow: 'hidden',
+        padding: 20,
       }}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
-          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg, #FF8C52, #F56B22)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 8px rgba(175,65,10,0.28)', fontSize: 22 }}>🐕</div>
+          <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'linear-gradient(135deg,#FF8C52,#F56B22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, boxShadow: '0 3px 8px rgba(175,65,10,0.28)' }}>
+            🐕
+          </div>
           <div>
-            <p style={{ fontSize: 17, fontWeight: 700, color: '#1C0A00', lineHeight: 1.1, fontFamily: 'var(--font-fredoka, sans-serif)' }}>Kairo&apos;s Walk</p>
-            <p style={{ fontSize: 12, color: '#92400E', marginTop: 2 }}>with Shahrukh</p>
+            <p className="font-bold text-base text-slate-900 leading-tight" style={{ fontFamily: 'var(--font-fredoka,sans-serif)' }}>
+              Bruno&apos;s Walk
+            </p>
+            <p className="text-xs" style={{ color: '#92400E' }}>logged by your watchman</p>
           </div>
         </div>
-        <div style={{ background: 'linear-gradient(135deg, #0A8A96, #087585)', borderRadius: 100, padding: '4px 12px', fontSize: 11, fontWeight: 700, color: '#F0FDFA' }}>✓ Verified</div>
+        <div style={{ background: 'linear-gradient(135deg,#0A8A96,#087585)', borderRadius: 100, padding: '4px 10px', fontSize: 10, fontWeight: 700, color: '#F0FDFA', display: 'flex', alignItems: 'center', gap: 3 }}>
+          <Check size={9} strokeWidth={3} /> GPS verified
+        </div>
       </div>
 
       {/* Stats row */}
       <div className="grid grid-cols-4 gap-2 mb-4">
-        {[
-          { emoji: '⏱', val: '45', sub: 'mins', bg: '#BBF7D0', fg: '#065F46' },
-          { emoji: '📏', val: '2.3', sub: 'km', bg: '#BAE6FD', fg: '#075985' },
-          { emoji: '💩', val: '1', sub: 'poop', bg: '#FED7AA', fg: '#9A3412' },
-          { emoji: '💧', val: '2', sub: 'pees', bg: '#BAE6FD', fg: '#075985' },
-        ].map(({ emoji, val, sub, bg, fg }) => (
-          <div key={sub} style={{ background: bg, borderRadius: 14, padding: '8px 6px', textAlign: 'center', border: '1.5px solid rgba(255,255,255,0.9)' }}>
-            <div style={{ fontSize: 16 }}>{emoji}</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: fg, lineHeight: 1.1 }}>{val}</div>
-            <div style={{ fontSize: 9, color: fg + '99', fontWeight: 600 }}>{sub}</div>
+        {([
+          { icon: <Timer size={12} strokeWidth={2} />, v: '32', s: 'MINS', bg: '#BBF7D0', fg: '#065F46' },
+          { icon: <Ruler size={12} strokeWidth={2} />, v: '2.1', s: 'KM',   bg: '#BAE6FD', fg: '#075985' },
+          { icon: <span style={{ fontSize: 12 }}>💩</span>, v: '1', s: 'POOP', bg: '#FED7AA', fg: '#9A3412' },
+          { icon: <Droplets size={12} strokeWidth={2} />, v: '2', s: 'PEES',  bg: '#BAE6FD', fg: '#075985' },
+        ] as const).map(({ icon, v, s, bg, fg }) => (
+          <div key={s} style={{ background: bg, borderRadius: 13, padding: '7px 4px', textAlign: 'center', border: '1.5px solid rgba(255,255,255,0.9)' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 2, color: fg }}>{icon}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: fg, lineHeight: 1.1 }}>{v}</div>
+            <div style={{ fontSize: 7.5, color: `${fg}99`, fontWeight: 700, letterSpacing: '0.05em' }}>{s}</div>
           </div>
         ))}
       </div>
 
-      {/* Mini route map */}
-      <div style={{ background: 'linear-gradient(160deg, #E0F7FA 0%, #E8F5E9 100%)', borderRadius: 16, padding: '10px 12px', border: '1.5px solid rgba(10,138,150,0.18)', marginBottom: 10, position: 'relative', overflow: 'hidden' }}>
-        <p style={{ fontSize: 9, fontWeight: 700, color: '#0A8A96', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>Walk route · Juhu Beach Road</p>
-        <svg viewBox="0 0 292 80" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: 80 }}>
-          {/* Map background streets — subtle grid */}
-          <line x1="0" y1="40" x2="292" y2="40" stroke="rgba(10,138,150,0.08)" strokeWidth="12" />
-          <line x1="60" y1="0" x2="60" y2="80" stroke="rgba(10,138,150,0.06)" strokeWidth="8" />
-          <line x1="160" y1="0" x2="160" y2="80" stroke="rgba(10,138,150,0.06)" strokeWidth="8" />
-          <line x1="240" y1="0" x2="240" y2="80" stroke="rgba(10,138,150,0.06)" strokeWidth="8" />
-          {/* Route path */}
-          <path
-            d="M 18 60 C 30 60, 38 48, 55 44 C 72 40, 80 28, 100 26 C 120 24, 130 38, 150 36 C 170 34, 180 20, 200 22 C 218 24, 226 42, 246 44 C 262 46, 272 40, 280 36"
-            stroke="#0A8A96"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeDasharray="6 3"
-            opacity="0.35"
-          />
-          <path
-            d="M 18 60 C 30 60, 38 48, 55 44 C 72 40, 80 28, 100 26 C 120 24, 130 38, 150 36 C 170 34, 180 20, 200 22 C 218 24, 226 42, 246 44 C 262 46, 272 40, 280 36"
-            stroke="#0A8A96"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* Start pin */}
-          <circle cx="18" cy="60" r="7" fill="#0A8A96" />
-          <text x="18" y="63.5" textAnchor="middle" fontSize="8" fill="white">🐕</text>
-          {/* Poop marker */}
-          <circle cx="148" cy="36" r="9" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.5" />
-          <text x="148" y="39.5" textAnchor="middle" fontSize="9">💩</text>
-          {/* Pee markers */}
-          <circle cx="100" cy="26" r="7" fill="#EFF6FF" stroke="#BAE6FD" strokeWidth="1.5" />
-          <text x="100" y="29.5" textAnchor="middle" fontSize="7">💧</text>
-          <circle cx="220" cy="22" r="7" fill="#EFF6FF" stroke="#BAE6FD" strokeWidth="1.5" />
-          <text x="220" y="25.5" textAnchor="middle" fontSize="7">💧</text>
-          {/* End pin */}
-          <circle cx="280" cy="36" r="7" fill="#F07030" />
-          <text x="280" y="39.5" textAnchor="middle" fontSize="7" fill="white">🏁</text>
-        </svg>
-        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-          <span style={{ fontSize: 9, color: '#0A8A96', fontWeight: 600 }}>🟢 Start: Kairo&apos;s home</span>
-          <span style={{ fontSize: 9, color: '#F07030', fontWeight: 600 }}>🔴 End: Juhu Beach Rd</span>
+      {/* Animated GPS map */}
+      <div className="mb-3">
+        <p style={{ fontSize: 9, fontWeight: 700, color: '#0A8A96', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 5 }}>
+          Route · Juhu Beach Road
+        </p>
+        <WalkingDogMap />
+        <div className="flex justify-between mt-1.5 px-0.5">
+          <span style={{ fontSize: 9, color: '#0A8A96', fontWeight: 600 }}>Start: Home</span>
+          <span style={{ fontSize: 9, color: '#F07030', fontWeight: 600 }}>End: Beach Rd</span>
         </div>
       </div>
 
-      {/* Testimonial */}
-      <div style={{ background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)', borderRadius: 16, padding: '12px 14px', border: '1px solid rgba(253,230,138,0.8)' }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: '#78350F', lineHeight: 1.4 }}>&ldquo;Love this so much, keep sending me reports everyday 🥰&rdquo;</p>
-        <p style={{ fontSize: 11, color: '#92400E', marginTop: 4, opacity: 0.8 }}>— Kairo&apos;s mom</p>
+      {/* Quote */}
+      <div style={{ background: 'linear-gradient(135deg,#FEF3C7,#FDE68A)', borderRadius: 15, padding: '9px 12px', border: '1px solid rgba(253,230,138,0.8)' }}>
+        <p style={{ fontSize: 12, fontWeight: 600, color: '#78350F', lineHeight: 1.45 }}>&ldquo;Now I actually know if my watchman walks Bruno or not.&rdquo;</p>
+        <p style={{ fontSize: 10.5, color: '#92400E', marginTop: 2, opacity: 0.8 }}>— Bruno&apos;s mom, Juhu</p>
+      </div>
+
+      <div className="flex items-center justify-end gap-1.5 mt-2.5">
+        <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#25D366' }} />
+        <span style={{ fontSize: 9.5, fontWeight: 700, color: '#064E3B' }}>Sent to WhatsApp</span>
       </div>
     </motion.div>
   )
 }
 
-// ─── Broadcast steps ──────────────────────────────────────────────────────────
-const STEPS = [
-  { emoji: '📣', title: 'Post your request', sub: '"Need a groomer this Sunday in Juhu, around ₹500"', ckey: 'amber' as CKey },
-  { emoji: '🔔', title: 'Verified providers see it', sub: '3 verified providers nearby are notified instantly', ckey: 'peach' as CKey },
-  { emoji: '💬', title: 'They WhatsApp you', sub: 'Pick the best fit. Direct contact, zero fees.', ckey: 'mint' as CKey },
-]
+// ─── Main component ───────────────────────────────────────────────────────────
+interface Props {
+  countMap: Record<string, number>
+  totalProviders: number
+  neighbourhood?: string
+}
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
-interface Props { countMap: Record<string, number>; totalProviders: number; neighbourhood?: string }
-
-export default function LandingPage({ countMap, totalProviders, neighbourhood = 'Juhu' }: Props) {
-  const pStat = useCountUp(totalProviders)
+export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props) {
+  const rm        = useReducedMotion()
   const [step, setStep] = useState(0)
-  useEffect(() => { const id = setInterval(() => setStep(s => (s + 1) % 3), 2400); return () => clearInterval(id) }, [])
+
+  useEffect(() => {
+    if (rm) return
+    const id = setInterval(() => setStep(s => (s + 1) % 3), 2400)
+    return () => clearInterval(id)
+  }, [rm])
+
+  // Only show dog-walking + grooming from directory
+  const DISPLAY_CATS = CATEGORIES.filter(c => ['dog-walking', 'grooming'].includes(c.slug))
+
+  const STEPS = [
+    { Icon: Megaphone, title: 'Post your request', sub: '"Need a groomer this Sunday in Juhu, ₹500 budget"', ckey: 'amber' as CKey },
+    { Icon: Bell,      title: 'Verified providers see it', sub: '3 nearby providers notified instantly',          ckey: 'peach' as CKey },
+    { Icon: MessageCircle, title: 'They WhatsApp you', sub: 'Pick the best fit. Zero fees.',                    ckey: 'mint'  as CKey },
+  ]
 
   return (
     <div style={{ background: C.pageBg }} className="-mt-8">
+      <PawCursor />
 
-      {/* ═══════════ HERO ═══════════ */}
-      <section style={{ ...BLEED, background: '#FFFBEB', position: 'relative', overflow: 'hidden' }} className="min-h-[100svh] flex flex-col justify-center">
-        {/* Dot grid */}
-        <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(180,83,9,0.055) 1px, transparent 1px)', backgroundSize: '28px 28px' }} aria-hidden />
-
-        {/* Hero decorations — 2 spheres + bone + paw trail */}
+      {/* ══ HERO ══════════════════════════════════════════════════════════════ */}
+      <section style={{ ...BLEED, background: '#FFFBEB', position: 'relative', overflow: 'hidden' }}
+        className="min-h-[100svh] flex flex-col justify-center">
+        {/* Dot grid bg */}
+        <div className="absolute inset-0 pointer-events-none" aria-hidden
+          style={{ backgroundImage: 'radial-gradient(circle,rgba(180,83,9,0.045) 1px,transparent 1px)', backgroundSize: '28px 28px' }} />
+        {/* Spheres */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-          {/* Big teal sphere top-right — GPU layer via will-change */}
-          <motion.div
-            style={{ position: 'absolute', top: -60, right: -50, willChange: 'transform' }}
-            animate={{ y: [0, -18, 0] }}
-            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-          >
-            <TealSphere size={280} />
+          <motion.div style={{ position: 'absolute', top: -70, right: -55 }}
+            animate={rm ? {} : { y: [0, -18, 0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}>
+            <TealSphere size={300} />
           </motion.div>
-          {/* Teal sphere bottom-left */}
-          <motion.div
-            style={{ position: 'absolute', bottom: -30, left: 80, willChange: 'transform' }}
-            animate={{ y: [0, -12, 0] }}
-            transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
-          >
+          <motion.div style={{ position: 'absolute', bottom: -30, left: 80 }}
+            animate={rm ? {} : { y: [0, -12, 0] }} transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}>
             <TealSphere size={160} />
           </motion.div>
-
-          {/* Cute bone — mid left, floating & rotating gently */}
-          <motion.div
-            style={{ position: 'absolute', top: '32%', left: '4%', willChange: 'transform' }}
-            animate={{ y: [0, -10, 0], rotate: [-18, -14, -18] }}
-            transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-          >
-            <CuteBone size={72} color="#F59E0B" opacity={0.55} />
+          <motion.div style={{ position: 'absolute', top: '34%', left: '5%' }}
+            animate={rm ? {} : { y: [0, -10, 0], rotate: [-18, -14, -18] }}
+            transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}>
+            <Bone size={72} color="#F59E0B" opacity={0.5} />
           </motion.div>
-
-          {/* Paw print trail — walking diagonally across the hero */}
-          {[
-            { top: '18%', left: '14%',  size: 22, rotate: -15, delay: 0 },
-            { top: '26%', left: '22%',  size: 18, rotate: -10, delay: 0.15 },
-            { top: '22%', left: '30%',  size: 20, rotate: -18, delay: 0.3 },
-            { top: '68%', right: '5%',  size: 20, rotate:  20, delay: 0 },
-            { top: '76%', right: '12%', size: 16, rotate:  15, delay: 0.2 },
-            { top: '60%', right: '8%',  size: 14, rotate:  25, delay: 0.4 },
-          ].map(({ top, left, right, size, rotate, delay }, i) => (
-            <motion.div
-              key={i}
-              style={{ position: 'absolute', top, left, right, transform: `rotate(${rotate}deg)` }}
-              animate={{ opacity: [0.28, 0.48, 0.28] }}
-              transition={{ duration: 3.2 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay }}
-            >
-              <PawPrint size={size} color="#F07030" opacity={1} />
+          {/* Floating paw prints */}
+          {([
+            { top: '19%', left: '14%' as string | undefined, right: undefined as string | undefined, size: 22, rotate: -15, d: 0 },
+            { top: '27%', left: '22%', right: undefined, size: 17, rotate: -10, d: 0.15 },
+            { top: '23%', left: '30%', right: undefined, size: 20, rotate: -18, d: 0.3 },
+            { top: '68%', left: undefined, right: '6%', size: 20, rotate: 20,  d: 0 },
+            { top: '76%', left: undefined, right: '13%', size: 16, rotate: 15, d: 0.2 },
+          ]).map(({ top, left, right, size, rotate, d }, i) => (
+            <motion.div key={i} style={{ position: 'absolute', top, left, right, transform: `rotate(${rotate}deg)` }}
+              animate={rm ? {} : { opacity: [0.28, 0.5, 0.28] }}
+              transition={{ duration: 3.2 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay: d }}>
+              <Paw size={size} color="#F07030" opacity={1} />
             </motion.div>
           ))}
-
-          {/* Ambient warm bloom — removed filter:blur(100px), too GPU-expensive on mobile */}
         </div>
 
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8 py-16 lg:py-20 w-full">
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-
-            {/* Text column */}
+            {/* Text */}
             <div className="flex-1 text-center lg:text-left w-full">
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: EASE_EXP }}>
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase px-4 py-1.5 mb-6" style={{ ...cs('amber'), borderRadius: 100, color: C.amber.text }}>
-                  🐾 {neighbourhood}, Mumbai
+              <motion.div
+                initial={rm ? {} : { opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.42, ease: EASE_EXP }}>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase px-4 py-1.5 mb-6"
+                  style={{ ...cs('amber'), borderRadius: 100, color: C.amber.text }}>
+                  <MapPin size={11} strokeWidth={2.5} /> {neighbourhood}, Mumbai · For pet parents
                 </span>
               </motion.div>
 
-              <motion.h1 initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: EASE_EXP, delay: 0.08 }}
-                className="font-display text-slate-900 mb-5" style={{ fontSize: 'clamp(2.6rem, 6.5vw, 5rem)', lineHeight: 1.04, letterSpacing: '-0.02em' }}>
-                Mumbai&apos;s verified<br />
-                <span style={{ color: '#F07030' }}>pet people.</span>
+              <motion.h1
+                initial={rm ? {} : { opacity: 0, y: 26 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, ease: EASE_EXP, delay: 0.07 }}
+                className="font-display text-slate-900 mb-5"
+                style={{ fontSize: 'clamp(2.4rem,6vw,4.8rem)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+                Your dog gets walked.<br />
+                <span style={{ color: '#F07030' }}>Now prove it.</span>
               </motion.h1>
 
-              <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE_EXP, delay: 0.18 }}
-                className="text-lg sm:text-xl text-slate-500 mb-8 max-w-lg mx-auto lg:mx-0" style={{ lineHeight: 1.65 }}>
-                Trusted walkers, vets, groomers and more — right where you live. WhatsApp direct. Zero fees.
+              <motion.p
+                initial={rm ? {} : { opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, ease: EASE_EXP, delay: 0.16 }}
+                className="text-lg sm:text-xl text-slate-500 mb-8 max-w-lg mx-auto lg:mx-0"
+                style={{ lineHeight: 1.65 }}>
+                Share PupStep with your watchman, domestic staff, or hired walker. After every walk, they log it in 60 seconds — GPS, photos, poop count. A care report lands in your WhatsApp.
               </motion.p>
 
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: EASE_EXP, delay: 0.28 }}
-                className="flex flex-wrap gap-3 justify-center lg:justify-start mb-7">
-                <ClayBtn href="/dog-walking" size="lg">Browse services →</ClayBtn>
-                <ClayBtn href="/broadcast" ckey="white" size="lg">📣 Post a request</ClayBtn>
+              <motion.div
+                initial={rm ? {} : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: EASE_EXP, delay: 0.24 }}
+                className="flex flex-wrap gap-3 justify-center lg:justify-start mb-6">
+                <Btn href="/setup" size="lg">Set up your dog <ArrowRight size={15} /></Btn>
+                <motion.div whileHover={rm ? {} : { y: -3, scale: 1.03 }} whileTap={rm ? {} : { y: 3, scale: 0.98 }}
+                  transition={SPRING} className="inline-block">
+                  <Link href="/dog-walking"
+                    className="inline-flex items-center gap-2 rounded-full font-bold px-6 py-3.5 text-sm"
+                    style={{ background: 'transparent', border: '2px solid rgba(180,83,9,0.22)', color: '#78350F' }}>
+                    Find a verified walker <Navigation size={13} />
+                  </Link>
+                </motion.div>
               </motion.div>
 
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.44 }}
+              <motion.div
+                initial={rm ? {} : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.38 }}
                 className="flex flex-wrap gap-2 justify-center lg:justify-start">
-                {[
-                  { label: '✓ Manually verified', ckey: 'amber' as CKey },
-                  { label: '💬 WhatsApp direct', ckey: 'mint' as CKey },
-                  { label: '₹0 booking fee', ckey: 'peach' as CKey },
-                ].map(({ label, ckey }) => (
-                  <span key={label} className="text-xs font-semibold px-3.5 py-1.5" style={{ ...cs(ckey), borderRadius: 100, color: C[ckey].text as string }}>{label}</span>
+                {([
+                  { Icon: Check,      label: 'Setup in 2 minutes', ckey: 'white' as CKey },
+                  { Icon: Navigation, label: 'Every walk GPS tracked', ckey: 'amber' as CKey },
+                  { Icon: IndianRupee, label: 'Zero fees forever', ckey: 'mint' as CKey },
+                ] as const).map(({ Icon, label, ckey }) => (
+                  <div key={label} className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2"
+                    style={{ ...cs(ckey), borderRadius: 100, color: (C[ckey] as { text: string }).text }}>
+                    <Icon size={11} strokeWidth={2.5} /> {label}
+                  </div>
                 ))}
               </motion.div>
             </div>
 
-            {/* Right column */}
-            <motion.div initial={{ opacity: 0, y: 36 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.75, ease: EASE_EXP, delay: 0.22 }}
-              className="flex-shrink-0 w-full sm:w-auto flex flex-col items-center gap-8">
-              {/* Dog photo */}
-              <motion.div animate={{ y: [0, -12, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                className="relative" style={{ width: 'clamp(220px, 28vw, 360px)', height: 'clamp(220px, 28vw, 360px)' }}>
-                <div style={{ position: 'absolute', inset: -16, borderRadius: '50%', background: 'radial-gradient(ellipse, #FDE68A 0%, #FED7AA 45%, transparent 72%)', opacity: 0.55 }} aria-hidden />
-                <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: '50%', overflow: 'hidden', border: '7px solid #FEF3C7', boxShadow: '0 10px 0px rgba(180,83,9,0.18), 0 28px 64px rgba(253,230,138,0.5)' }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={HERO_DOG} alt="Happy dog in Juhu" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 25%' }} />
-                </div>
-                <motion.div animate={{ scale: [1, 1.07, 1] }} transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                  style={{ position: 'absolute', bottom: '12%', left: '-8%', background: 'linear-gradient(160deg, #FFFFFF 0%, #FFFDF5 100%)', borderRadius: 14, padding: '8px 12px', boxShadow: '0 3px 0px rgba(180,83,9,0.1), 0 8px 24px rgba(0,0,0,0.1)', border: '1px solid #FDE68A', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 15 }}>✅</span>
-                  <div>
-                    <p style={{ fontSize: 10, fontWeight: 800, color: '#78350F', lineHeight: 1 }}>Verified</p>
-                    <p style={{ fontSize: 9, color: '#92400E', opacity: 0.7, lineHeight: 1.2 }}>providers only</p>
-                  </div>
-                </motion.div>
-                <div style={{ position: 'absolute', bottom: '6%', right: '-4%', background: 'linear-gradient(135deg, #FF8C52, #F56B22)', borderRadius: '50%', width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 0px rgba(175,65,10,0.24), 0 10px 20px rgba(245,110,35,0.40)', border: '3px solid #FFFBEB', fontSize: 24 }} aria-hidden>🐾</div>
-                <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-                  style={{ position: 'absolute', top: '10%', right: '-14%', background: 'linear-gradient(135deg, #DCFCE7, #BBF7D0)', borderRadius: 100, padding: '7px 14px', boxShadow: '0 3px 0px rgba(5,150,105,0.18), 0 8px 20px rgba(187,247,208,0.5)', border: '1px solid rgba(187,247,208,0.65)', display: 'flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-                  <span style={{ fontSize: 14 }}>💬</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#064E3B' }}>WhatsApp direct</span>
-                </motion.div>
-              </motion.div>
-
-              {/* Card stack */}
-              <div className="relative w-full flex justify-center">
-                <div className="absolute inset-0 scale-110 rounded-3xl pointer-events-none" style={{ background: 'linear-gradient(135deg, #FDE68A, #FECDD3)', opacity: 0.18 }} aria-hidden />
-                <CardStack />
-              </div>
-            </motion.div>
+            {/* Walk report card */}
+            <div className="flex-shrink-0 w-full max-w-sm flex justify-center lg:justify-end">
+              <WalkReportCard />
+            </div>
           </div>
         </div>
 
-        {/* Scroll cue */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2" aria-hidden>
-          <motion.div animate={{ y: [0, 6, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            className="w-6 h-9 rounded-full flex justify-center pt-2" style={{ border: '2px solid rgba(180,83,9,0.22)', background: 'rgba(253,230,138,0.35)' }}>
-            <div className="w-1 h-1.5 rounded-full bg-amber-400" />
+        {/* Scroll indicator */}
+        <div className="absolute bottom-7 left-1/2 -translate-x-1/2" aria-hidden>
+          <motion.div animate={rm ? {} : { y: [0, 6, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-6 h-9 rounded-full flex justify-center pt-2"
+            style={{ border: '2px solid rgba(180,83,9,0.2)', background: 'rgba(253,230,138,0.32)' }}>
+            <div className="w-1 h-2 rounded-full bg-amber-400" />
           </motion.div>
         </div>
       </section>
 
-      {/* ═══════════ STATS ═══════════ */}
-      <section style={{ ...BLEED, background: 'linear-gradient(120deg, #FEF9ED 0%, #FEF3C7 55%, #FEF9ED 100%)', borderTop: '1.5px solid rgba(253,230,138,0.9)', borderBottom: '1.5px solid rgba(253,230,138,0.9)', position: 'relative', overflow: 'hidden' }} className="py-8 sm:py-10">
-        {/* Subtle amber glow */}
-        <div className="absolute inset-0 pointer-events-none" aria-hidden style={{ backgroundImage: 'radial-gradient(ellipse 60% 80% at 50% 50%, rgba(245,158,11,0.07) 0%, transparent 70%)' }} />
-        <div className="relative max-w-5xl mx-auto px-5 sm:px-8">
-          <div className="grid grid-cols-3 gap-2 sm:gap-8">
-            {[
-              {
-                icon: '🐾',
-                iconBg: '#FF8C52',
-                node: <><span ref={pStat.ref} className="font-display" style={{ fontSize: 'clamp(1.85rem, 5vw, 3rem)', color: '#92400E', lineHeight: 1, fontWeight: 700 }}>{pStat.val}</span><span className="font-display" style={{ fontSize: 'clamp(1.2rem, 3vw, 2rem)', color: '#B45309' }}>+</span></>,
-                label: 'Verified providers',
-                sub: 'Manually reviewed',
-              },
-              {
-                icon: '💬',
-                iconBg: '#6EE7B7',
-                node: <span className="font-display" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.6rem)', color: '#92400E', lineHeight: 1, fontWeight: 700 }}>Direct</span>,
-                label: 'WhatsApp contact',
-                sub: 'No middleman',
-              },
-              {
-                icon: '✓',
-                iconBg: '#C4B5FD',
-                node: <span className="font-display" style={{ fontSize: 'clamp(1.85rem, 5vw, 3rem)', color: '#92400E', lineHeight: 1, fontWeight: 700 }}>₹0</span>,
-                label: 'Booking fees',
-                sub: 'Free, always',
-              },
-            ].map(({ icon, iconBg, node, label, sub }) => (
-              <div key={label} className="flex flex-col items-center text-center">
-                <div style={{ width: 38, height: 38, borderRadius: '50%', background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, boxShadow: '0 3px 8px rgba(120,53,15,0.14)', border: '2px solid rgba(255,255,255,0.85)', marginBottom: 10 }}>{icon}</div>
-                <div className="flex items-end justify-center gap-0.5 mb-1.5">{node}</div>
-                <p className="font-semibold" style={{ fontSize: 'clamp(0.65rem, 1.8vw, 0.875rem)', color: '#78350F', lineHeight: 1.3 }}>{label}</p>
-                <p className="hidden sm:block" style={{ fontSize: '0.7rem', color: '#B45309', opacity: 0.65, marginTop: 2 }}>{sub}</p>
+      {/* ══ HOW IT WORKS — zigzag editorial (no identical cards) ═══════════════ */}
+      <section style={{ ...BLEED, background: 'linear-gradient(120deg,#FEF9ED 0%,#FEF3C7 55%,#FEF9ED 100%)', borderTop: '1.5px solid rgba(253,230,138,0.9)', borderBottom: '1.5px solid rgba(253,230,138,0.9)' }}
+        className="py-14 sm:py-20">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+          <FadeUp className="text-center mb-12">
+            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#F07030' }}>3 steps, 60 seconds</p>
+            <h2 className="font-display text-slate-900 mb-3" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)' }}>How PupStep works</h2>
+            <p className="text-slate-500 text-base max-w-xs mx-auto">Give it to whoever walks your dog. They log. You know.</p>
+          </FadeUp>
+
+          <div className="flex flex-col gap-5 sm:gap-6">
+            {/* Step 01 — white, icon left, large watermark */}
+            <FadeUp delay={0.04}>
+              <div className="relative flex flex-col sm:flex-row items-center gap-6 sm:gap-10 p-7 sm:p-10 overflow-hidden"
+                style={{ borderRadius: 28, ...cs('white') }}>
+                <div className="absolute -left-3 -top-3 font-display font-black select-none pointer-events-none"
+                  style={{ fontSize: 'clamp(70px,14vw,140px)', color: '#0F172A', opacity: 0.03, lineHeight: 1 }}>01</div>
+                <div className="flex-shrink-0 relative z-10 flex flex-col items-center gap-3 sm:gap-4">
+                  <div style={{ width: 68, height: 68, borderRadius: 20, background: 'linear-gradient(135deg,#FEF3C7,#FDE68A)', boxShadow: '0 4px 16px rgba(180,83,9,0.15)', border: '2px solid rgba(253,230,138,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Search size={30} style={{ color: '#78350F' }} strokeWidth={1.8} />
+                  </div>
+                </div>
+                <div className="relative z-10 text-center sm:text-left flex-1">
+                  <p className="text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: '#F07030' }}>Step 01</p>
+                  <h3 className="font-bold text-xl sm:text-2xl text-slate-900 mb-2 font-display">Share the app with your walker</h3>
+                  <p className="text-slate-500 text-base max-w-lg leading-relaxed">
+                    Send your watchman, domestic staff, or hired walker a PupStep link. They&apos;re set up and linked to your dog in under 2 minutes. No app store needed.
+                  </p>
+                </div>
               </div>
-            ))}
+            </FadeUp>
+
+            {/* Step 02 — amber, icon RIGHT (reversed), tags inside */}
+            <FadeUp delay={0.08}>
+              <div className="relative flex flex-col sm:flex-row-reverse items-center gap-6 sm:gap-10 p-7 sm:p-10 overflow-hidden"
+                style={{ borderRadius: 28, ...cs('amber') }}>
+                <div className="absolute -right-3 -top-3 font-display font-black select-none pointer-events-none"
+                  style={{ fontSize: 'clamp(70px,14vw,140px)', color: '#78350F', opacity: 0.04, lineHeight: 1 }}>02</div>
+                <div className="flex-shrink-0 relative z-10">
+                  <div style={{ width: 68, height: 68, borderRadius: 20, background: 'rgba(255,255,255,0.55)', boxShadow: '0 4px 16px rgba(180,83,9,0.12)', border: '1.5px solid rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ClipboardList size={30} style={{ color: '#78350F' }} strokeWidth={1.8} />
+                  </div>
+                </div>
+                <div className="flex-1 relative z-10 text-center sm:text-left">
+                  <p className="text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: '#92400E', opacity: 0.75 }}>Step 02</p>
+                  <h3 className="font-bold text-xl sm:text-2xl text-amber-950 mb-2 font-display">They log every walk in 60 sec</h3>
+                  <p className="text-amber-900 text-base max-w-lg leading-relaxed mb-4" style={{ opacity: 0.8 }}>
+                    After the walk, your walker taps a few things. All GPS verified. No faking it.
+                  </p>
+                  <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+                    {['📍 GPS route', '📸 Photo', '💩 Count', '😊 Mood'].map(t => (
+                      <span key={t} style={{ background: 'rgba(255,255,255,0.55)', borderRadius: 100, padding: '4px 11px', fontSize: 11.5, fontWeight: 600, color: '#78350F', border: '1px solid rgba(255,255,255,0.8)' }}>{t}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </FadeUp>
+
+            {/* Step 03 — dark teal, icon left, WhatsApp bubble */}
+            <FadeUp delay={0.12}>
+              <div className="relative flex flex-col sm:flex-row items-center gap-6 sm:gap-10 p-7 sm:p-10 overflow-hidden"
+                style={{ borderRadius: 28, ...cs('teal') }}>
+                <div className="absolute -left-3 -top-3 font-display font-black select-none pointer-events-none"
+                  style={{ fontSize: 'clamp(70px,14vw,140px)', color: 'white', opacity: 0.03, lineHeight: 1 }}>03</div>
+                <div className="flex-shrink-0 relative z-10 flex flex-col items-center gap-3">
+                  <div style={{ width: 68, height: 68, borderRadius: 20, background: 'rgba(255,255,255,0.09)', border: '1.5px solid rgba(255,255,255,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <MessageCircle size={30} style={{ color: '#17C8CC' }} strokeWidth={1.8} />
+                  </div>
+                  {/* WhatsApp bubble */}
+                  <div style={{ background: '#25D366', borderRadius: '11px 11px 3px 11px', padding: '6px 10px', maxWidth: 130 }}>
+                    <p style={{ fontSize: 10, color: 'white', fontWeight: 700, lineHeight: 1.4 }}>Bruno&apos;s Walk Report</p>
+                    <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.8)', marginTop: 1 }}>2.1km · 32 mins · 1💩</p>
+                  </div>
+                </div>
+                <div className="flex-1 relative z-10 text-center sm:text-left">
+                  <p className="text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: '#17C8CC', opacity: 0.85 }}>Step 03</p>
+                  <h3 className="font-bold text-xl sm:text-2xl text-white mb-2 font-display">Report lands in your WhatsApp</h3>
+                  <p className="text-stone-400 text-base max-w-lg leading-relaxed">
+                    GPS map, stats, photos — straight to your WhatsApp the moment the walk ends. Saved forever to Bruno&apos;s health history.
+                  </p>
+                </div>
+              </div>
+            </FadeUp>
           </div>
         </div>
       </section>
 
-      {/* ═══════════ CATEGORIES ═══════════ */}
+      {/* ══ GPS SECTION (dark teal, walking dog) ═══════════════════════════════ */}
+      <section style={{ ...BLEED, background: 'linear-gradient(135deg,#0A2F35 0%,#0D3D45 50%,#0A2F35 100%)', position: 'relative', overflow: 'hidden' }}
+        className="py-14 sm:py-20">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+          <motion.div style={{ position: 'absolute', top: -40, right: -30, opacity: 0.07 }}
+            animate={rm ? {} : { y: [0,-15,0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}>
+            <TealSphere size={300} />
+          </motion.div>
+        </div>
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
+            <FadeUp className="flex-1 text-center lg:text-left">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 mb-6 uppercase tracking-wider"
+                style={{ ...cs('amber'), borderRadius: 100, color: C.amber.text }}>
+                <Sparkles size={11} /> GPS Tracking
+              </span>
+              <h2 className="font-display text-white leading-tight mb-5" style={{ fontSize: 'clamp(1.9rem,4.5vw,3.4rem)', lineHeight: 1.1 }}>
+                See exactly<br /><span style={{ color: '#FF8C52' }}>where they went.</span>
+              </h2>
+              <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-md mx-auto lg:mx-0" style={{ lineHeight: 1.7 }}>
+                Every walk is GPS tracked. You see the exact route your watchman took Bruno on — right in the care report.
+              </p>
+              {[
+                { Icon: Navigation,    text: 'Full GPS route, saved to your account' },
+                { Icon: Timer,         text: 'Duration, distance, pace — all tracked' },
+                { Icon: ClipboardList, text: 'Health history your vet will actually use' },
+              ].map(({ Icon, text }) => (
+                <div key={text} className="flex items-center gap-3 mb-3 justify-center lg:justify-start">
+                  <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(253,230,138,0.1)', border: '1px solid rgba(253,230,138,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon size={14} style={{ color: '#FDE68A' }} strokeWidth={1.8} />
+                  </span>
+                  <span className="text-sm text-stone-300 font-medium">{text}</span>
+                </div>
+              ))}
+              <div className="mt-7">
+                <Btn href="/setup" ckey="amberCTA" size="lg">Set up my dog <ArrowRight size={15} /></Btn>
+              </div>
+            </FadeUp>
+
+            {/* GPS card with animated dog */}
+            <FadeUp delay={0.14} className="flex-shrink-0 w-full max-w-sm flex justify-center lg:justify-end">
+              <div style={{ borderRadius: 28, background: 'linear-gradient(155deg,#0D3D45 0%,#0A2F35 100%)', boxShadow: '0 8px 0 rgba(5,40,48,0.5),0 24px 64px rgba(0,0,0,0.32),inset 0 1.5px 0 rgba(255,255,255,0.07)', border: '1.5px solid rgba(255,255,255,0.1)', padding: 20, width: '100%', maxWidth: 340 }}>
+                <p style={{ fontSize: 9.5, fontWeight: 700, color: '#17C8CC', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>
+                  Live walk · Juhu Beach Road
+                </p>
+                <WalkingDogMap dark />
+                <div className="flex items-center justify-between mt-3 px-0.5">
+                  {[
+                    { Icon: Timer,      v: '32 mins', fg: '#BBF7D0' },
+                    { Icon: Ruler,      v: '2.1 km',  fg: '#BAE6FD' },
+                    { Icon: Navigation, v: 'GPS on',  fg: '#FDE68A' },
+                  ].map(({ Icon, v, fg }) => (
+                    <div key={v} className="flex items-center gap-1">
+                      <Icon size={10} style={{ color: fg }} />
+                      <span style={{ fontSize: 10, color: fg, fontWeight: 600 }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Live pulse */}
+                <div className="flex items-center gap-2 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+                  <motion.div
+                    animate={rm ? {} : { opacity: [1, 0.3, 1], scale: [1, 1.25, 1] }}
+                    transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                    style={{ width: 7, height: 7, borderRadius: '50%', background: '#25D366', flexShrink: 0 }} />
+                  <span style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.45)', fontWeight: 600 }}>Bruno is out right now · 18 mins in</span>
+                </div>
+              </div>
+            </FadeUp>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ CATEGORIES — bento with varied heights ══════════════════════════════ */}
       <section style={{ ...BLEED, background: 'white' }} className="py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE_EXP }} className="mb-10">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+          <FadeUp className="mb-9">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#F07030' }}>Every service, one tap away</p>
-                <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', lineHeight: 1.12 }}>What does your pet need?</h2>
+                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#F07030' }}>What does your pup need?</p>
+                <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.7rem,4vw,2.6rem)', lineHeight: 1.12 }}>Find the right care near {neighbourhood}</h2>
               </div>
-              <p className="text-sm text-slate-400 max-w-xs sm:text-right">All verified providers near {neighbourhood}</p>
             </div>
-          </motion.div>
+          </FadeUp>
 
-          <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 overflow-x-auto pb-3 sm:pb-0 -mx-5 sm:mx-0 px-5 sm:px-0"
-            style={{ scrollbarWidth: 'none', scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-            {CATEGORIES.map((cat, i) => {
-              const ck = catClay[cat.slug] ?? 'white'
-              const photo = CATEGORY_PHOTOS[cat.slug]
-              const photoPos = CATEGORY_PHOTO_POS[cat.slug] ?? 'center 30%'
-              const count = countMap[cat.slug]
-              const t = C[ck] as { bg: string; shadow: string; border: string; text: string }
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {/* Directory cards — dog walking + grooming */}
+            {DISPLAY_CATS.map((cat, i) => {
+              const ck      = (CAT_CLAY[cat.slug] ?? 'white') as CKey
+              const photo   = CAT_PHOTO[cat.slug]
+              const pos     = CAT_POS[cat.slug] ?? 'center 30%'
+              const count   = countMap[cat.slug]
+              const t       = C[ck] as { bg: string; shadow: string; border: string; text: string }
+              const heights = ['clamp(175px,28vw,255px)', 'clamp(155px,24vw,215px)']
               return (
-                <motion.div key={cat.slug} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                  transition={{ duration: 0.42, ease: EASE_EXP, delay: i * 0.06 }}
-                  className="snap-start shrink-0 sm:shrink sm:w-full sm:h-full"
-                  style={{ width: 'clamp(155px, 44vw, 268px)' } as React.CSSProperties}>
-                  <Link href={`/${cat.slug}`} className="block group h-full">
-                    <motion.div whileHover={{ y: -6, scale: 1.01 }} whileTap={{ y: 2, scale: 0.99 }} transition={{ type: 'spring', stiffness: 380, damping: 26 }}
-                      className="flex flex-col h-full"
-                      style={{ borderRadius: 22, overflow: 'hidden', boxShadow: t.shadow, border: t.border }}>
-                      <div style={{ height: 'clamp(120px, 22vw, 200px)', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                <FadeUp key={cat.slug} delay={i * 0.06}>
+                  <Link href={`/${cat.slug}`} className="block group">
+                    <motion.div
+                      whileHover={rm ? {} : { y: -5, scale: 1.01 }}
+                      whileTap={rm ? {} : { y: 2, scale: 0.99 }}
+                      transition={SPRING}
+                      style={{ borderRadius: 20, overflow: 'hidden', boxShadow: t.shadow, border: t.border, height: heights[i] ?? heights[0] }}
+                      className="flex flex-col">
+                      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photo} alt={`${cat.name} in Mumbai`} loading="lazy"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: photoPos, transition: 'transform 0.5s ease', display: 'block' }}
+                        <img src={photo} alt={`${cat.name} in ${neighbourhood}`} loading="lazy" decoding="async"
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: pos, transition: 'transform 0.5s ease', display: 'block' }}
                           className="group-hover:scale-105" />
-                        <div style={{ position: 'absolute', inset: 0, background: t.bg, opacity: 0.16, mixBlendMode: 'multiply', pointerEvents: 'none' }} aria-hidden />
-                        <div style={{ position: 'absolute', top: 12, right: 12, background: 'rgba(255,255,255,0.96)', borderRadius: 100, padding: '4px 11px', fontSize: 11, fontWeight: 700, color: count ? t.text : '#94A3B8', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-                          {count ? `${count} nearby` : 'Coming soon'}
-                        </div>
-                      </div>
-                      <div style={{ background: t.bg, padding: '14px 18px 18px', flex: 1 }}>
-                        <div className="flex items-center justify-between gap-2 h-full">
-                          <div className="flex items-center gap-2.5">
-                            <span className="text-2xl leading-none">{cat.icon}</span>
-                            <div>
-                              <p className="font-bold text-sm leading-tight" style={{ color: t.text }}>{cat.name}</p>
-                              <p className="text-xs mt-0.5" style={{ color: t.text + '80' }}>{count ? `${count} verified providers` : 'Coming soon'}</p>
-                            </div>
+                        <div style={{ position: 'absolute', inset: 0, background: t.bg, opacity: 0.12, mixBlendMode: 'multiply', pointerEvents: 'none' }} aria-hidden />
+                        {count ? (
+                          <div style={{ position: 'absolute', top: 9, right: 9, background: 'rgba(255,255,255,0.95)', borderRadius: 100, padding: '3px 9px', fontSize: 10, fontWeight: 700, color: t.text, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
+                            {count} nearby
                           </div>
-                          <motion.span className="flex-shrink-0 text-base font-bold" style={{ color: t.text }}
-                            animate={{ x: [0, 3, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}>→</motion.span>
+                        ) : null}
+                      </div>
+                      <div style={{ background: t.bg, padding: '11px 14px 14px' }}>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg leading-none">{cat.icon}</span>
+                            <p className="font-bold text-sm leading-tight" style={{ color: t.text }}>{cat.name}</p>
+                          </div>
+                          <motion.span className="font-bold text-base flex-shrink-0" style={{ color: t.text }}
+                            animate={rm ? {} : { x: [0, 3, 0] }}
+                            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}>
+                            →
+                          </motion.span>
                         </div>
                       </div>
                     </motion.div>
                   </Link>
-                </motion.div>
+                </FadeUp>
               )
             })}
-          </div>
 
-          <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, ease: EASE_EXP, delay: 0.28 }}
-            className="mt-10 flex items-center justify-center gap-4 flex-wrap">
-            <p className="text-sm text-slate-400">Can&apos;t find what you need?</p>
-            <ClayBtn href="/broadcast" ckey="amber">📣 Post a request →</ClayBtn>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ═══════════ WALK REPORT STRIP ═══════════ */}
-      <section style={{ ...BLEED, background: 'linear-gradient(135deg, #0A2F35 0%, #0D3D45 50%, #0A2F35 100%)', position: 'relative', overflow: 'hidden' }} className="py-14 sm:py-20">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-          <motion.div style={{ position: 'absolute', top: -40, right: -30, opacity: 0.1 }} animate={{ y: [0, -15, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}>
-            <AmberSphere size={300} />
-          </motion.div>
-          <motion.div style={{ position: 'absolute', bottom: -50, left: -40, opacity: 0.08 }} animate={{ y: [0, -10, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}>
-            <TealSphere size={200} />
-          </motion.div>
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
-          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-            <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, ease: EASE_EXP }} className="flex-1 text-center lg:text-left">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 mb-6 uppercase tracking-wider" style={{ ...cs('amber'), borderRadius: 100, color: C.amber.text }}>
-                ✨ Walk Reports — only on PupStep
-              </span>
-              <h2 className="font-display text-white leading-tight mb-5" style={{ fontSize: 'clamp(1.9rem, 4.5vw, 3.4rem)', lineHeight: 1.1 }}>
-                Every walk,<br /><span style={{ color: '#FF8C52' }}>beautifully reported.</span>
-              </h2>
-              <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-md mx-auto lg:mx-0" style={{ lineHeight: 1.7 }}>
-                Your walker sends a daily report with photos, GPS route, and stats — straight to WhatsApp. No app needed.
-              </p>
-              <div className="flex flex-col gap-3 mb-8 items-center lg:items-start">
-                {[
-                  { icon: '📍', text: 'Live GPS route — see every step of the walk' },
-                  { icon: '📸', text: 'Photo of your dog, every single walk' },
-                  { icon: '💩', text: 'Potty stats so your vet is never guessing' },
-                ].map(({ icon, text }) => (
-                  <div key={text} className="flex items-center gap-3">
-                    <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(253,230,138,0.12)', border: '1px solid rgba(253,230,138,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>{icon}</span>
-                    <span className="text-sm text-stone-300 font-medium">{text}</span>
+            {/* Feature card 1 — Care Reports (QR walker system) */}
+            <FadeUp delay={0.12}>
+              <Link href="/setup" className="block group">
+                <motion.div
+                  whileHover={rm ? {} : { y: -5, scale: 1.01 }}
+                  whileTap={rm ? {} : { y: 2, scale: 0.99 }}
+                  transition={SPRING}
+                  className="flex flex-col justify-between"
+                  style={{ borderRadius: 20, overflow: 'hidden', height: 'clamp(195px,30vw,275px)', ...cs('teal') }}>
+                  <div className="p-5 flex flex-col justify-between h-full">
+                    <div>
+                      <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(23,200,204,0.12)', border: '1.5px solid rgba(23,200,204,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                        <ClipboardList size={20} style={{ color: '#17C8CC' }} strokeWidth={1.6} />
+                      </div>
+                      <p className="font-bold text-sm text-white leading-snug mb-1">Daily Care Reports</p>
+                      <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                        Your watchman logs every walk. You see it all.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                      <span className="text-xs font-bold" style={{ color: '#17C8CC' }}>Set up free →</span>
+                      <span style={{ fontSize: 20 }}>📋</span>
+                    </div>
                   </div>
-                ))}
-              </div>
-              <ClayBtn href="/dog-walking" ckey="amberCTA" size="lg">Find a walker →</ClayBtn>
-            </motion.div>
+                </motion.div>
+              </Link>
+            </FadeUp>
 
-            <div className="flex-shrink-0 w-full max-w-sm flex justify-center lg:justify-end">
-              <WalkReportMiniCard />
-            </div>
+            {/* Feature card 2 — Post a broadcast request */}
+            <FadeUp delay={0.18}>
+              <Link href="/broadcast" className="block group">
+                <motion.div
+                  whileHover={rm ? {} : { y: -5, scale: 1.01 }}
+                  whileTap={rm ? {} : { y: 2, scale: 0.99 }}
+                  transition={SPRING}
+                  className="flex flex-col justify-between"
+                  style={{ borderRadius: 20, overflow: 'hidden', height: 'clamp(165px,26vw,235px)', ...cs('peach') }}>
+                  <div className="p-5 flex flex-col justify-between h-full">
+                    <div>
+                      <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(255,255,255,0.5)', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                        <Megaphone size={20} style={{ color: '#7C2D12' }} strokeWidth={1.6} />
+                      </div>
+                      <p className="font-bold text-sm leading-snug mb-1" style={{ color: '#7C2D12' }}>Post a Request</p>
+                      <p className="text-xs leading-relaxed" style={{ color: 'rgba(124,45,18,0.65)' }}>
+                        Need a groomer this Sunday? Tell the neighbourhood.
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.4)' }}>
+                      <span className="text-xs font-bold" style={{ color: '#C2410C' }}>Post now →</span>
+                      <span style={{ fontSize: 20 }}>📢</span>
+                    </div>
+                  </div>
+                </motion.div>
+              </Link>
+            </FadeUp>
           </div>
+
+          <FadeUp delay={0.26} className="mt-9 flex items-center justify-center gap-3 flex-wrap">
+            <p className="text-sm text-slate-400">Can&apos;t find what you need?</p>
+            <Btn href="/broadcast" ckey="amber"><Megaphone size={13} /> Post a request</Btn>
+          </FadeUp>
         </div>
       </section>
 
-      {/* ═══════════ HOW IT WORKS ═══════════ */}
+      {/* ══ TESTIMONIALS — 3 genuinely different cards ══════════════════════════ */}
       <section style={{ ...BLEED, background: C.pageBg }} className="py-12 sm:py-16">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE_EXP }} className="text-center mb-10">
-            <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#F07030' }}>Three steps. That&apos;s all.</p>
-            <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)' }}>How PupStep works</h2>
-          </motion.div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
-            {[
-              { emoji: '🔍', n: '01', title: 'Browse', desc: 'Find services by category. Every listing is manually reviewed by our team — if they\'re listed, we\'d trust them with our own dog.', ck: 'amber' as CKey },
-              { emoji: '💬', n: '02', title: 'Contact', desc: 'WhatsApp the provider directly. No platform in the middle, no booking fee, no app to download. Your number, their number, done.', ck: 'lavender' as CKey },
-              { emoji: '🐾', n: '03', title: 'Done', desc: 'Your pet gets the care they need. Save favourite providers and contact them again — no starting from scratch every time.', ck: 'mint' as CKey },
-            ].map(({ emoji, n, title, desc, ck }, i) => (
-              <motion.div key={n} initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.42, ease: EASE_EXP, delay: i * 0.1 }}>
-                <ClayCard ckey={ck} className="p-7 sm:p-8 h-full">
-                  <span className="text-3xl drop-shadow-sm block mb-5">{emoji}</span>
-                  <p className="text-xs font-bold uppercase tracking-widest mb-1.5" style={{ color: (C[ck].text as string) + 'AA' }}>Step {n}</p>
-                  <h3 className="font-bold mb-3 leading-tight" style={{ fontSize: '1.15rem', color: C[ck].text as string }}>{title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: (C[ck].text as string) + 'BB' }}>{desc}</p>
-                </ClayCard>
-              </motion.div>
-            ))}
+          <FadeUp className="text-center mb-9">
+            <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)' }}>Pet parents love it</h2>
+            <p className="text-slate-400 text-sm mt-2">Real families using PupStep with their staff in {neighbourhood}</p>
+          </FadeUp>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5 items-start">
+            {/* Card 1 — large portrait, huge quote mark, prominent */}
+            <FadeUp delay={0}>
+              <div className="p-7 sm:p-8 flex flex-col" style={{ borderRadius: 28, ...cs('white') }}>
+                <div className="mb-3" style={{ fontSize: 60, lineHeight: 0.8, color: '#F07030', opacity: 0.16, fontFamily: 'Georgia,serif', fontWeight: 900 }}>&ldquo;</div>
+                <p className="text-base sm:text-lg font-medium text-slate-700 flex-1 leading-relaxed mb-5">
+                  Finally know my watchman actually walks Bruno every morning. The GPS map shows exactly which streets they took.
+                </p>
+                <div className="flex mb-3">{Array(5).fill(0).map((_,j) => <Star key={j} size={13} fill="#F59E0B" color="#F59E0B" />)}</div>
+                <div className="flex items-center gap-3 pt-3.5" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, boxShadow: '0 2px 6px rgba(180,83,9,0.12)' }}>🐕</div>
+                  <div>
+                    <p className="font-bold text-sm text-slate-800">Bruno&apos;s mom</p>
+                    <p className="text-xs text-slate-400">Juhu, Mumbai</p>
+                  </div>
+                </div>
+              </div>
+            </FadeUp>
+
+            {/* Cards 2a + 2b — stacked compact, different colors */}
+            <FadeUp delay={0.07} className="flex flex-col gap-4">
+              {/* 2a amber */}
+              <div className="p-5" style={{ borderRadius: 22, ...cs('amber') }}>
+                <div className="flex mb-2">{Array(5).fill(0).map((_,j) => <Star key={j} size={11} fill="#92400E" color="#92400E" />)}</div>
+                <p className="text-sm font-medium text-amber-900 leading-relaxed mb-4" style={{ opacity: 0.88 }}>
+                  &ldquo;GPS tracking is incredible. And zero booking fees! Can&apos;t believe this is actually free.&rdquo;
+                </p>
+                <div className="flex items-center gap-2">
+                  <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🐶</div>
+                  <div>
+                    <p className="font-bold text-xs text-amber-950">Kairo&apos;s dad</p>
+                    <p className="text-xs text-amber-700 opacity-70">Versova, Mumbai</p>
+                  </div>
+                </div>
+              </div>
+              {/* 2b mint */}
+              <div className="p-5" style={{ borderRadius: 22, ...cs('mint') }}>
+                <p className="text-sm font-medium text-emerald-800 leading-relaxed mb-3" style={{ opacity: 0.9 }}>
+                  &ldquo;My vet asked me to keep sending the poop logs. The health history feature is a game-changer.&rdquo;
+                </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-xs text-emerald-900">Bella&apos;s mom</p>
+                    <p className="text-xs text-emerald-700 opacity-65">Santacruz West</p>
+                  </div>
+                  <div className="flex">{Array(5).fill(0).map((_,j) => <Star key={j} size={10} fill="#065F46" color="#065F46" />)}</div>
+                </div>
+              </div>
+            </FadeUp>
+
+            {/* Card 3 — sky, centered, big dog emoji, different energy */}
+            <FadeUp delay={0.13}>
+              <div className="p-6 flex flex-col items-center text-center" style={{ borderRadius: 28, ...cs('sky') }}>
+                <div className="text-5xl mb-4" style={{ filter: 'drop-shadow(0 4px 12px rgba(8,145,178,0.22))' }}>🐕‍🦺</div>
+                <div className="flex mb-3">{Array(5).fill(0).map((_,j) => <Star key={j} size={12} fill="#075985" color="#075985" />)}</div>
+                <p className="text-sm font-medium text-sky-900 leading-relaxed mb-4" style={{ opacity: 0.87 }}>
+                  &ldquo;Our maid walks Simba daily. Now I trust it&apos;s happening. The photo every day is proof enough for me.&rdquo;
+                </p>
+                <p className="font-bold text-xs text-sky-900">Simba&apos;s family</p>
+                <p className="text-xs text-sky-700 mt-0.5 opacity-65">Andheri West</p>
+              </div>
+            </FadeUp>
           </div>
         </div>
       </section>
 
-      {/* ═══════════ PET BROADCAST ═══════════ */}
-      <section style={{ ...BLEED, background: 'linear-gradient(135deg, #0D3528 0%, #1A5C42 50%, #0D3528 100%)', position: 'relative', overflow: 'hidden' }} className="py-12 sm:py-16">
+      {/* ══ WHY PUPSTEP — asymmetric bento, NOT identical cards ═════════════════ */}
+      <section style={{ ...BLEED, background: 'white' }} className="py-12 sm:py-16">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8">
+          <FadeUp className="text-center mb-9">
+            <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#F07030' }}>Why pet parents choose us</p>
+            <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)' }}>What makes PupStep different</h2>
+          </FadeUp>
+
+          {/* Bento: 3+2 / 2+3 rows — never identical */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+            {/* Featured — dark teal, 3 cols, tall */}
+            <FadeUp className="lg:col-span-3">
+              <div className="p-7 sm:p-9 flex flex-col justify-between min-h-[240px]"
+                style={{ borderRadius: 28, ...cs('teal') }}>
+                <div>
+                  <div style={{ width: 52, height: 52, borderRadius: 16, background: 'rgba(23,200,204,0.12)', border: '1.5px solid rgba(23,200,204,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+                    <ClipboardList size={24} style={{ color: '#17C8CC' }} strokeWidth={1.6} />
+                  </div>
+                  <h3 className="font-display text-white text-2xl sm:text-3xl mb-3">Care reports after every walk</h3>
+                  <p className="text-stone-400 text-base leading-relaxed max-w-sm">
+                    GPS map, time, distance, poop and pee count, a photo, mood — all in one WhatsApp message. Your vet will want to see this.
+                  </p>
+                </div>
+                <div className="mt-6">
+                  <Btn href="/setup" ckey="tealCTA">Get started free <ArrowRight size={14} /></Btn>
+                </div>
+              </div>
+            </FadeUp>
+
+            {/* Verified — amber, 2 cols */}
+            <FadeUp delay={0.06} className="lg:col-span-2">
+              <div className="p-6 flex flex-col justify-between min-h-[200px]" style={{ borderRadius: 28, ...cs('amber') }}>
+                <div style={{ width: 48, height: 48, borderRadius: 15, background: 'rgba(255,255,255,0.55)', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+                  <ShieldCheck size={21} style={{ color: '#78350F' }} strokeWidth={1.8} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-amber-950 text-lg mb-2">Manually verified</h3>
+                  <p className="text-amber-900 text-sm leading-relaxed opacity-80">Every provider listing reviewed by our team. If they&apos;re listed, we&apos;d trust them with our own dog.</p>
+                </div>
+              </div>
+            </FadeUp>
+
+            {/* WhatsApp — mint, 2 cols */}
+            <FadeUp delay={0.08} className="lg:col-span-2">
+              <div className="p-6 flex flex-col justify-between min-h-[200px]" style={{ borderRadius: 28, ...cs('mint') }}>
+                <div style={{ width: 48, height: 48, borderRadius: 15, background: 'rgba(255,255,255,0.55)', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
+                  <MessageCircle size={21} style={{ color: '#064E3B' }} strokeWidth={1.8} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-emerald-950 text-lg mb-2">WhatsApp native</h3>
+                  <p className="text-emerald-900 text-sm leading-relaxed opacity-80">Mumbai runs on WhatsApp. Care reports land there directly. No extra app to check.</p>
+                </div>
+              </div>
+            </FadeUp>
+
+            {/* Zero fees — lavender, 3 cols, wide horizontal */}
+            <FadeUp delay={0.1} className="lg:col-span-3">
+              <div className="p-6 sm:p-7 flex items-center gap-6" style={{ borderRadius: 28, ...cs('lavender') }}>
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: 'rgba(255,255,255,0.55)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <IndianRupee size={24} style={{ color: '#4C1D95' }} strokeWidth={1.8} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-violet-950 text-lg mb-1.5">Zero fees, always</h3>
+                  <p className="text-violet-900 text-sm leading-relaxed opacity-80 max-w-sm">No subscription, no booking fee, no commission. PupStep is free forever for pet parents.</p>
+                </div>
+              </div>
+            </FadeUp>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ BROADCAST ═══════════════════════════════════════════════════════════ */}
+      <section style={{ ...BLEED, background: 'linear-gradient(135deg,#0D3528 0%,#1A5C42 50%,#0D3528 100%)', position: 'relative', overflow: 'hidden' }}
+        className="py-12 sm:py-16">
         <div className="absolute inset-0 pointer-events-none" aria-hidden>
-          <div style={{ position: 'absolute', top: -80, right: -60, width: 420, height: 420, borderRadius: '50%', background: '#F07030', opacity: 0.06 }} />
-          <div style={{ position: 'absolute', bottom: -40, left: -40, width: 320, height: 320, borderRadius: '50%', background: '#6EE7B7', opacity: 0.04 }} />
+          <div style={{ position: 'absolute', top: -80, right: -60, width: 420, height: 420, borderRadius: '50%', background: '#F07030', opacity: 0.055 }} />
         </div>
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
           <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
-            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.55, ease: EASE_EXP }} className="flex-1 text-center lg:text-left">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 mb-6 uppercase tracking-wider" style={{ ...cs('amber'), borderRadius: 100, color: C.amber.text }}>
-                🆕 Pet Broadcast — only on PupStep
+            <FadeUp className="flex-1 text-center lg:text-left">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 mb-6 uppercase tracking-wider"
+                style={{ ...cs('amber'), borderRadius: 100, color: C.amber.text }}>
+                <Sparkles size={11} /> Pet Broadcast · bonus feature
               </span>
-              <h2 className="font-display text-white leading-tight mb-4" style={{ fontSize: 'clamp(1.9rem, 4.5vw, 3.4rem)' }}>
-                Can&apos;t find what you need?<br /><span style={{ color: '#FF8C52' }}>Just post it.</span>
+              <h2 className="font-display text-white leading-tight mb-4" style={{ fontSize: 'clamp(1.9rem,4.5vw,3.4rem)' }}>
+                Need a new walker or groomer?<br /><span style={{ color: '#FF8C52' }}>Just post it.</span>
               </h2>
-              <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-md mx-auto lg:mx-0" style={{ lineHeight: 1.7 }}>
-                Post your request once. Verified providers nearby see it and reply on WhatsApp directly. Free.
+              <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-md mx-auto lg:mx-0 leading-relaxed">
+                Post your request once. Verified providers nearby reply directly on WhatsApp. No middleman, no fees.
               </p>
-              <ClayBtn href="/broadcast" size="lg">📣 Post a Request — Free</ClayBtn>
-            </motion.div>
-            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.55, ease: EASE_EXP, delay: 0.1 }}
-              className="flex-shrink-0 w-full max-w-sm space-y-3">
+              <Btn href="/broadcast" size="lg"><Megaphone size={15} /> Post a Request — Free</Btn>
+            </FadeUp>
+
+            {/* Animated step cards */}
+            <div className="flex-shrink-0 w-full max-w-sm space-y-3">
               {STEPS.map((s, i) => (
-                <motion.div key={i} animate={{ scale: step === i ? 1.03 : 1, opacity: step === i ? 1 : 0.42 }} transition={{ duration: 0.3, ease: EASE }}
-                  className="flex items-start gap-4 p-4" style={{ ...cs(s.ckey), borderRadius: 20, outline: step === i ? '2px solid rgba(255,255,255,0.18)' : 'none' }}>
-                  <span className="text-2xl drop-shadow-sm flex-shrink-0">{s.emoji}</span>
+                <motion.div key={i}
+                  animate={rm ? {} : { scale: step === i ? 1.03 : 1, opacity: step === i ? 1 : 0.42 }}
+                  transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  style={{ ...cs(s.ckey), outline: !rm && step === i ? '2px solid rgba(255,255,255,0.16)' : 'none' }}
+                  className="flex items-start gap-4 p-4 rounded-[20px]"
+                >
+                  <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <s.Icon size={17} style={{ color: (C[s.ckey] as { text: string }).text }} strokeWidth={1.8} />
+                  </div>
                   <div>
-                    <p className="font-bold text-sm" style={{ color: C[s.ckey].text as string }}>{s.title}</p>
-                    <p className="text-xs mt-0.5" style={{ color: (C[s.ckey].text as string) + '99' }}>{s.sub}</p>
+                    <p className="font-bold text-sm" style={{ color: (C[s.ckey] as { text: string }).text }}>{s.title}</p>
+                    <p className="text-xs mt-0.5 opacity-70" style={{ color: (C[s.ckey] as { text: string }).text }}>{s.sub}</p>
                   </div>
                 </motion.div>
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══ PROVIDER CTA ════════════════════════════════════════════════════════ */}
+      <section style={{ ...BLEED, background: 'linear-gradient(135deg,#0A2F35 0%,#0D3D45 100%)', position: 'relative', overflow: 'hidden' }}
+        className="py-14 sm:py-20">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
+          <motion.div style={{ position: 'absolute', top: -60, left: -60, opacity: 0.07 }}
+            animate={rm ? {} : { y: [0,-12,0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}>
+            <TealSphere size={240} />
+          </motion.div>
+        </div>
+        <FadeUp className="relative max-w-3xl mx-auto px-5 sm:px-8 text-center">
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 mb-6 uppercase tracking-wider"
+            style={{ ...cs('amber'), borderRadius: 100, color: C.amber.text }}>
+            <Users size={11} /> For walkers and groomers
+          </span>
+          <h2 className="font-display text-white leading-tight mb-5" style={{ fontSize: 'clamp(1.9rem,4.5vw,3.4rem)' }}>
+            Are you a walker or groomer<br /><span style={{ color: '#FF8C52' }}>in {neighbourhood}?</span>
+          </h2>
+          <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-lg mx-auto leading-relaxed">
+            Get listed free. Send care reports after every session. Build trust with clients, get more work — no fees, ever.
+          </p>
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Btn href="/join" ckey="amberCTA" size="lg">Get listed free <ArrowRight size={15} /></Btn>
+            <motion.div whileHover={rm ? {} : { y: -3, scale: 1.03 }} whileTap={rm ? {} : { y: 3, scale: 0.98 }}
+              transition={SPRING} className="inline-block">
+              <Link href="/broadcast"
+                className="inline-flex items-center gap-2 rounded-full font-bold px-8 py-4 text-base"
+                style={{ background: 'rgba(255,255,255,0.08)', border: '2px solid rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.82)' }}>
+                <Megaphone size={15} /> Browse requests
+              </Link>
             </motion.div>
           </div>
-        </div>
+        </FadeUp>
       </section>
 
-      {/* ═══════════ WHY PUPSTEP ═══════════ */}
-      <section style={{ ...BLEED, background: C.pageBg }} className="py-12 sm:py-16">
+      {/* ══ MAP TEASER ═══════════════════════════════════════════════════════════ */}
+      <section style={{ ...BLEED, background: 'white' }} className="py-5">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <motion.div initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE_EXP }} className="text-center mb-10">
-            <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#F07030' }}>Why pet parents choose us</p>
-            <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.8rem)' }}>What makes PupStep different</h2>
-          </motion.div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {[
-              { emoji: '🔒', title: 'Manually verified', desc: 'Every provider reviewed by our team. If they\'re listed, we\'d trust them with our own dog.', ck: 'amber' as CKey },
-              { emoji: '💬', title: 'WhatsApp native', desc: 'Mumbai runs on WhatsApp. We use it — no extra apps, no platform in the middle.', ck: 'peach' as CKey },
-              { emoji: '₹0', title: 'Zero fees, always', desc: 'The provider keeps 100%. Which means they\'re here because they want to be.', ck: 'mint' as CKey },
-              { emoji: '📍', title: 'Hyperlocal-first', desc: 'Built for your neighbourhood. Depth before breadth — so every listing is one we\'d trust with our own dog.', ck: 'lavender' as CKey },
-            ].map(({ emoji, title, desc, ck }, i) => (
-              <motion.div key={title} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.38, ease: EASE_EXP, delay: i * 0.07 }}>
-                <ClayCard ckey={ck} className="p-5 sm:p-6 h-full">
-                  <span className="text-2xl sm:text-3xl drop-shadow-sm block mb-3">{emoji}</span>
-                  <p className="font-bold text-sm mb-2 leading-tight" style={{ color: C[ck].text as string }}>{title}</p>
-                  <p className="text-xs leading-relaxed" style={{ color: (C[ck].text as string) + 'AA' }}>{desc}</p>
-                </ClayCard>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════ MAP TEASER ═══════════ */}
-      <section style={{ ...BLEED, background: 'white' }} className="py-8">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <ClayCard ckey="white" href="/map" className="p-5 sm:p-8 flex items-center justify-between gap-6">
-            <div className="flex items-center gap-4 sm:gap-5">
-              <motion.span animate={{ rotate: [0, 8, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                className="text-3xl sm:text-4xl drop-shadow-sm flex-shrink-0" aria-hidden>🗺</motion.span>
-              <div>
-                <p className="font-bold text-slate-800 text-sm sm:text-base">See everything on one map</p>
-                <p className="text-xs sm:text-sm text-slate-400 mt-0.5">All vets, groomers, stores and walkers near you</p>
+          <ClayCard ckey="white" href="/map" className="p-5 sm:p-7">
+            <div className="flex items-center justify-between gap-5">
+              <div className="flex items-center gap-4">
+                <motion.div animate={rm ? {} : { rotate: [0, 8, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{ width: 46, height: 46, borderRadius: 14, background: '#E0F2FE', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Navigation size={20} style={{ color: '#075985' }} strokeWidth={1.8} />
+                </motion.div>
+                <div>
+                  <p className="font-bold text-slate-800 text-sm sm:text-base">See everything on one map</p>
+                  <p className="text-xs sm:text-sm text-slate-400 mt-0.5">All vets, groomers, and walkers near you</p>
+                </div>
               </div>
+              <span className="text-sm font-bold text-slate-300 hidden sm:flex items-center gap-1 flex-shrink-0">
+                Open map <ArrowRight size={13} />
+              </span>
             </div>
-            <span className="text-sm font-bold text-slate-300 hidden sm:block flex-shrink-0">Open map →</span>
           </ClayCard>
         </div>
       </section>
 
-      {/* ═══════════ FOOTER NOTE ═══════════ */}
-      <section style={{ ...BLEED, background: 'white', borderTop: '1px solid #FDE68A' }} className="py-5 pb-28 lg:pb-5">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-center gap-3 text-center sm:text-left">
-          <span className="text-xl">🐾</span>
+      {/* ══ FOOTER TRUST LINE ════════════════════════════════════════════════════ */}
+      <section style={{ ...BLEED, background: 'white', borderTop: '1px solid #FDE68A' }}
+        className="py-5 pb-28 lg:pb-5">
+        <div className="max-w-7xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
+          <LucidePaw size={16} style={{ color: '#F07030', opacity: 0.45 }} />
           <p className="text-xs sm:text-sm text-slate-400">
-            Mumbai&apos;s most trusted hyperlocal pet services directory.
-            Every listing manually verified by our team.
+            Mumbai&apos;s most trusted hyperlocal pet services directory. Every listing manually verified by our team.
           </p>
         </div>
       </section>
 
-      {/* ═══════════ MOBILE STICKY BAR ═══════════ */}
-      <motion.div initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.55, ease: EASE_EXP, delay: 1.8 }}
+      {/* ══ MOBILE STICKY BAR ════════════════════════════════════════════════════ */}
+      <motion.div
+        initial={rm ? {} : { y: 80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: EASE_EXP, delay: 1.6 }}
         className="lg:hidden fixed bottom-0 inset-x-0 z-50"
-        style={{ background: 'rgba(255,251,235,0.98)', borderTop: '1px solid #FDE68A', paddingBottom: 'env(safe-area-inset-bottom, 12px)' }}>
+        style={{ background: 'rgba(255,251,235,0.97)', borderTop: '1px solid #FDE68A', paddingBottom: 'env(safe-area-inset-bottom,12px)' }}>
         <div className="flex gap-3 px-4 pt-3 pb-3">
-          <Link href="/dog-walking" className="flex-1 flex items-center justify-center py-3.5 rounded-2xl text-sm font-bold"
-            style={{ background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)', boxShadow: '0 4px 0px rgba(175,65,10,0.30), 0 8px 20px rgba(245,107,34,0.35)', color: '#451A03' }}>
-            Browse Services
+          <Link href="/join"
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold"
+            style={{ background: 'linear-gradient(155deg,#FF8C52 0%,#F56B22 100%)', boxShadow: '0 4px 0 rgba(175,65,10,0.30),0 8px 20px rgba(245,107,34,0.32)', color: '#451A03' }}>
+            Set up my dog
           </Link>
-          <Link href="/broadcast" className="flex-1 flex items-center justify-center py-3.5 rounded-2xl text-sm font-bold"
-            style={{ background: 'linear-gradient(160deg, #FFEDD5 0%, #FED7AA 100%)', boxShadow: '0 4px 0px rgba(194,65,12,0.14)', color: '#7C2D12' }}>
-            📣 Post Request
+          <Link href="/broadcast"
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold"
+            style={{ background: 'linear-gradient(155deg,#FFEDD5 0%,#FED7AA 100%)', boxShadow: '0 4px 0 rgba(194,65,12,0.12)', color: '#7C2D12' }}>
+            <Megaphone size={14} /> Post Request
           </Link>
         </div>
       </motion.div>
-
     </div>
   )
 }

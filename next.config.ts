@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Optimize barrel imports — avoids Turbopack chunk-loading issues with large icon libs
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
+
   // Compress responses (gzip/brotli)
   compress: true,
 
@@ -30,17 +35,15 @@ const nextConfig: NextConfig = {
   // /_next/static/ chunks are already immutable-cached by Vercel automatically.
   // Public folder images/fonts use :path* wildcard.
   async headers() {
+    const isProd = process.env.NODE_ENV === 'production'
     return [
-      {
-        // Next.js compiled chunks — already immutable on Vercel, explicit here for self-hosting
+      // Only set immutable cache on static chunks in production.
+      // In dev, Turbopack regenerates chunks with new content — immutable headers
+      // cause browsers to serve stale chunks and break HMR.
+      ...(isProd ? [{
         source: '/_next/static/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      }] : []),
       {
         // Public images (logo, icons, etc.)
         source: '/:path*.webp',

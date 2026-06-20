@@ -202,6 +202,53 @@ export type ProviderContactInsert = {
   prompt_sent_at?: string | null
 }
 
+export type Dog = {
+  id: string
+  owner_id: string
+  name: string
+  breed: string | null
+  dob: string | null
+  photo_url: string | null
+  health_notes: string | null
+  created_at: string
+}
+
+export type WalkerConnection = {
+  id: string
+  token: string
+  dog_id: string
+  owner_id: string
+  walker_name: string | null
+  walker_phone: string | null
+  walker_role: string | null
+  status: 'pending' | 'active' | 'revoked'
+  qr_generated_at: string
+  claimed_at: string | null
+  created_at: string
+}
+
+export type WalkLog = {
+  id: string
+  connection_id: string
+  dog_id: string
+  owner_id: string
+  walker_name: string | null
+  started_at: string
+  ended_at: string | null
+  duration_mins: number | null
+  distance_km: number | null
+  gps_route: unknown | null
+  poop_count: number
+  pee_count: number
+  mood: string | null
+  photo_url: string | null
+  notes: string | null
+  report_sent_at: string | null
+  created_at: string
+}
+
+export type WalkLogWithDog = WalkLog & { dog_name: string }
+
 export type Database = {
   public: {
     Tables: {

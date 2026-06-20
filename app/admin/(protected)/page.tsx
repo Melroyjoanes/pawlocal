@@ -6,7 +6,36 @@ import { getCategoryBySlug } from '@/lib/categories'
 import { Stars } from '@/components/StarRating'
 
 type ProviderStatus = 'pending' | 'approved' | 'rejected'
-type AdminTab = 'providers' | 'broadcasts' | 'reports' | 'grooming' | 'reviews' | 'stats'
+type AdminTab = 'providers' | 'broadcasts' | 'reports' | 'grooming' | 'reviews' | 'stats' | 'care'
+
+// ── Care System interfaces ────────────────────────────────────────
+interface CareStats {
+  total_dogs: number
+  total_connections: number
+  active_connections: number
+  pending_connections: number
+  total_walk_logs: number
+}
+interface CareConnection {
+  id: string
+  dog_name: string
+  walker_name: string | null
+  walker_phone: string | null
+  walker_role: string | null
+  status: string
+  claimed_at: string | null
+  created_at: string
+}
+interface CareWalkLog {
+  id: string
+  dog_name: string
+  walker_name: string | null
+  duration_mins: number | null
+  poop_count: number
+  pee_count: number
+  mood: string | null
+  created_at: string
+}
 
 interface Broadcast {
   id: string
@@ -959,6 +988,10 @@ export default function AdminPage() {
   const [statsLoading, setStatsLoading] = useState(false)
   const [providerStats, setProviderStats] = useState<Record<string, { views30d: number; reportsThisWeek: number; reportsSent30d: number }>>({})
   const [editingProvider, setEditingProvider] = useState<ProviderWithPhotos | null>(null)
+  const [careStats, setCareStats] = useState<CareStats | null>(null)
+  const [careConnections, setCareConnections] = useState<CareConnection[]>([])
+  const [careWalkLogs, setCareWalkLogs] = useState<CareWalkLog[]>([])
+  const [careLoading, setCareLoading] = useState(false)
 
   // Load counts on mount — all via admin API routes (service role, bypasses RLS)
   useEffect(() => {
@@ -1057,12 +1090,27 @@ export default function AdminPage() {
     setStatsLoading(false)
   }
 
+  async function loadCare() {
+    setCareLoading(true)
+    try {
+      const res = await fetch('/api/admin/care-system')
+      const data = await res.json().catch(() => null)
+      if (!data || data.error) return
+      setCareStats(data.stats ?? null)
+      setCareConnections(Array.isArray(data.connections) ? data.connections : [])
+      setCareWalkLogs(Array.isArray(data.walk_logs) ? data.walk_logs : [])
+    } finally {
+      setCareLoading(false)
+    }
+  }
+
   useEffect(() => { loadProviders(filter) }, [filter])
   useEffect(() => { if (tab === 'reviews') loadReviews() }, [tab])
   useEffect(() => { if (tab === 'broadcasts') loadBroadcasts() }, [tab])
   useEffect(() => { if (tab === 'reports') loadWalkReports() }, [tab])
   useEffect(() => { if (tab === 'grooming') loadGroomingReports() }, [tab])
   useEffect(() => { if (tab === 'stats') loadStats() }, [tab])
+  useEffect(() => { if (tab === 'care') loadCare() }, [tab])
 
   async function updateStatus(id: string, status: 'approved' | 'rejected') {
     await fetch(`/api/admin/providers/${id}`, {
@@ -1150,6 +1198,7 @@ export default function AdminPage() {
           { key: 'grooming', label: '✂️ Grooming', badge: groomingCount, badgeColor: 'bg-purple-500' },
           { key: 'reviews', label: '⭐ Reviews', badge: 0, badgeColor: '' },
           { key: 'stats', label: '📊 Stats', badge: 0, badgeColor: '' },
+          { key: 'care', label: '🐾 Care', badge: 0, badgeColor: '' },
         ] as { key: AdminTab; label: string; badge: number; badgeColor: string }[]).map(({ key, label, badge, badgeColor }) => (
           <button
             key={key}
@@ -1536,6 +1585,120 @@ export default function AdminPage() {
                   )
                 })}
               </div>
+            </div>
+          </div>
+        )
+      )}
+
+      {/* ── CARE SYSTEM TAB ──────────────────────────────────────── */}
+      {tab === 'care' && (
+        careLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl border border-border p-4 animate-pulse h-16" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Stats cards */}
+            {careStats && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-teal-50 border border-teal-200 rounded-2xl p-4">
+                  <p className="text-2xl font-bold text-teal-700">{careStats.total_dogs}</p>
+                  <p className="text-xs font-medium text-teal-600 mt-0.5">Total Dogs</p>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+                  <p className="text-2xl font-bold text-blue-700">{careStats.total_connections}</p>
+                  <p className="text-xs font-medium text-blue-600 mt-0.5">Total Connections</p>
+                </div>
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+                  <p className="text-2xl font-bold text-emerald-700">{careStats.active_connections}</p>
+                  <p className="text-xs font-medium text-emerald-600 mt-0.5">Active</p>
+                </div>
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                  <p className="text-2xl font-bold text-amber-700">{careStats.pending_connections}</p>
+                  <p className="text-xs font-medium text-amber-600 mt-0.5">Pending</p>
+                </div>
+                <div className="col-span-2 bg-purple-50 border border-purple-200 rounded-2xl p-4">
+                  <p className="text-2xl font-bold text-purple-700">{careStats.total_walk_logs}</p>
+                  <p className="text-xs font-medium text-purple-600 mt-0.5">Total Walk Logs</p>
+                </div>
+              </div>
+            )}
+
+            {/* Recent Connections table */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
+                Recent Connections
+              </p>
+              {careConnections.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-border py-8 text-center">
+                  <p className="text-slate-400 text-sm">No connections yet</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {careConnections.map((c) => (
+                    <div key={c.id} className="bg-white border border-border rounded-2xl px-4 py-3">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm text-slate-900 truncate">{c.dog_name}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {c.walker_name ?? '—'}
+                            {c.walker_phone && <span className="text-slate-400"> · {c.walker_phone}</span>}
+                          </p>
+                          {c.walker_role && (
+                            <p className="text-xs text-slate-400 capitalize">{c.walker_role.replace('_', ' ')}</p>
+                          )}
+                        </div>
+                        <span className={`flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          c.status === 'active'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {c.status}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400">
+                        {c.claimed_at
+                          ? `Claimed ${timeAgo(c.claimed_at)}`
+                          : `Created ${timeAgo(c.created_at)}`}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recent Walk Logs table */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
+                Recent Walk Logs
+              </p>
+              {careWalkLogs.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-border py-8 text-center">
+                  <p className="text-slate-400 text-sm">No walk logs yet</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {careWalkLogs.map((l) => (
+                    <div key={l.id} className="bg-white border border-border rounded-2xl px-4 py-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm text-slate-900">{l.dog_name}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">{l.walker_name ?? 'Unknown walker'}</p>
+                        </div>
+                        <p className="text-[11px] text-slate-400 flex-shrink-0">{timeAgo(l.created_at)}</p>
+                      </div>
+                      <div className="flex gap-3 mt-2 text-xs text-slate-600 flex-wrap">
+                        {l.duration_mins && <span>⏱ {l.duration_mins} min</span>}
+                        <span>💩 {l.poop_count}</span>
+                        <span>💧 {l.pee_count}</span>
+                        {l.mood && <span className="capitalize text-slate-400">{l.mood}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )

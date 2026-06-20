@@ -88,10 +88,8 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
             {[
               { href: '/dog-walking', label: 'Dog walking' },
               { href: '/grooming', label: 'Grooming' },
-              { href: '/vet', label: 'Vets' },
-              { href: '/dog-training', label: 'Dog training' },
-              { href: '/pet-store', label: 'Pet stores' },
-              { href: '/insurance', label: 'Pet insurance' },
+              { href: '/setup', label: 'Care reports' },
+              { href: '/broadcast', label: 'Post a request' },
             ].map(({ href, label }) => (
               <a key={href} href={href} className="block text-sm mb-2 transition-colors"
                 style={{ color: 'rgba(255,255,255,0.5)' }}
