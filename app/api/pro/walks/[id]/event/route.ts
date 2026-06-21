@@ -36,14 +36,17 @@ export async function POST(
   const { data: provider } = await (db.from('providers') as any)
     .select('id')
     .eq('id', session.provider_id)
-    .eq('email', user.email)
-    .single()
+    .ilike('email', user.email!)
+    .maybeSingle()
 
   if (!provider) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const body = await req.json()
-  if (!['pee', 'poop'].includes(body.type)) {
-    return NextResponse.json({ error: 'type must be pee or poop' }, { status: 400 })
+  if (!['pee', 'poop', 'poop_photo'].includes(body.type)) {
+    return NextResponse.json({ error: 'type must be pee, poop, or poop_photo' }, { status: 400 })
+  }
+  if (body.type === 'poop_photo' && typeof body.photo_url !== 'string') {
+    return NextResponse.json({ error: 'photo_url required for poop_photo events' }, { status: 400 })
   }
 
   const newEvent: WalkEvent = {
@@ -51,6 +54,7 @@ export async function POST(
     ts: new Date().toISOString(),
     lat: typeof body.lat === 'number' ? body.lat : undefined,
     lng: typeof body.lng === 'number' ? body.lng : undefined,
+    ...(body.type === 'poop_photo' && { photo_url: body.photo_url }),
   }
 
   const currentEvents: WalkEvent[] = Array.isArray(session.walk_events) ? session.walk_events : []

@@ -10,8 +10,10 @@ async function getProvider(userEmail: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data } = await (admin().from('providers') as any)
     .select('id, name')
-    .eq('email', userEmail)
-    .single()
+    .ilike('email', userEmail)
+    .eq('status', 'approved')
+    .limit(1)
+    .maybeSingle()
   return data as { id: string; name: string } | null
 }
 

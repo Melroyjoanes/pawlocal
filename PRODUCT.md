@@ -1,37 +1,50 @@
-# Product
+# PupStep — Product Context
+
+## Product Purpose
+Hyperlocal pet services platform for Mumbai dog parents. GPS-verified walk reports delivered to WhatsApp, connecting dog parents with verified local walkers, groomers, vets, and trainers. Territory: Juhu, Versova, Andheri West, Santacruz West.
 
 ## Register
-
-product
+brand (marketing surfaces: landing, pricing, category pages)
+product (app surfaces: pro dashboard, walk tracker, clients page)
 
 ## Users
 
-Mumbai pet owners (primarily Juhu, Bandra, Andheri) who are in research mode: comparing dog walkers, groomers, vets, and pet stores before making a decision. They open the app when they need a trustworthy recommendation, not an impulse booking. They want enough information to feel confident before hitting WhatsApp.
+### Primary: Dog parent (Mumbai, 25–45)
+Working professional. Anxious about leaving their dog with walkers. Wants proof their dog went out, how far, and if they pooped. Currently gets zero accountability from walkers.
 
-Secondary user: pet service providers (dog walkers, groomers, vets) who want free, professional-looking visibility in their neighbourhood.
+### Secondary: Service provider (walker, groomer — low-literacy, Hinglish)
+Not very English-literate. Runs on WhatsApp. Doesn't want complex apps. Needs GPS walk logs to prove value to clients.
 
-## Product Purpose
+## Brand
+- Name: PupStep
+- Tagline: GPS walk reports for Mumbai dogs
+- Voice: Warm, trustworthy, playful. Mumbai local. Never corporate. Never clinical.
+- Personality: The reliable dog-loving friend who also happens to be good with tech.
 
-PupStep is a curated, hyperlocal directory of pet services in Mumbai. It is not a booking platform. The job it does: surface trusted, vetted pet service providers on a map, with enough detail (pricing, hours, bio, photos, Verified badge) that a pet owner can make a confident decision and contact via WhatsApp. Every listing is manually reviewed.
+## Colors
+- Teal (primary): oklch(0.48 0.17 196) — trust, calm, verified
+- Orange (accent/CTA): #FF8C52 — energy, warmth, Mumbai
+- Cream (background): #FFFBEB — soft, inviting, never cold white
+- Dark (text): #0A2F35 — deep forest green-black
 
-## Brand Personality
+## Typography
+- Display/headings: Fredoka (playful, rounded, bold)
+- Body/UI: Nunito (friendly, readable, variable weight)
 
-Trustworthy, calm, neighbourhood. The Practo of pet services: professional without being clinical, local without being scrappy. Voice is direct and helpful, never salesy or urgent.
+## Pricing
+- PupStep Pro (dog parents only): ₹249/month or ₹1,999/year
+- Providers: always free
+- Payment: Razorpay
 
 ## Anti-references
+- Not Sploot (managed, premium, cold)
+- Not Whistle (American, clinical)
+- Nothing that looks like a SaaS dashboard pricing page
+- No purple gradients, no dark mode on marketing pages
 
-- Swiggy / Zomato: food-delivery UI patterns — countdown urgency, aggressive red/orange CTAs, push-to-order energy. PupStep is research-first, not impulse-first.
-- JustDial / Sulekha: cluttered, ad-heavy, low-trust directory aesthetic.
-- Generic marketplaces (Fiverr, Urban Company clones): transactional, no local personality.
-
-## Design Principles
-
-1. **Trust is the product.** Every design decision should increase the pet owner's confidence, not pressure them into action. No urgency patterns, no fake scarcity.
-2. **Scan before you commit.** Users browse and compare. Cards, profiles, and lists must support fast scanning: price, location, and hours visible without clicking.
-3. **Verified is the moat.** The Verified badge is PupStep's key differentiator. It must be visually distinctive without being shouty.
-4. **Local, not corporate.** Warm enough to feel like a neighbourhood recommendation, professional enough to be trusted.
-5. **Calm density.** More information per screen than a food-delivery app, but never cluttered. Think Practo profile cards, not Swiggy restaurant tiles.
-
-## Accessibility & Inclusion
-
-WCAG AA as baseline. Respect prefers-reduced-motion. Sufficient contrast on tinted surfaces. WhatsApp CTA must be large enough for mobile thumb use.
+## Tech Stack
+- Next.js 15 App Router, TypeScript strict
+- Tailwind v4
+- Framer Motion
+- Supabase (auth, DB, storage)
+- Razorpay for payments
