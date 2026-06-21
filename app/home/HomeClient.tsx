@@ -45,9 +45,68 @@ interface Props {
   completedWalk: WalkSession | null
   walkerConnections: WalkerConnection[]
   lastWalk: LastWalk | null
+  isPro: boolean
 }
 
 const cardClass = 'rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.08)] bg-white'
+
+function UpgradeBanner() {
+  return (
+    <div
+      style={{
+        borderRadius: '16px',
+        background: 'rgba(255,140,82,0.08)',
+        border: '1.5px solid rgba(255,140,82,0.3)',
+        padding: '14px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '12px',
+      }}
+    >
+      <div style={{ flex: 1 }}>
+        <p
+          style={{
+            fontFamily: 'var(--font-nunito), sans-serif',
+            fontSize: '14px',
+            fontWeight: 700,
+            color: '#0A2F35',
+            margin: '0 0 2px',
+          }}
+        >
+          🔓 Unlock walk reports for ₹199/month
+        </p>
+        <p
+          style={{
+            fontFamily: 'var(--font-nunito), sans-serif',
+            fontSize: '12px',
+            color: '#6B7280',
+            margin: 0,
+          }}
+        >
+          Get WhatsApp reports after every walk.
+        </p>
+      </div>
+      <Link
+        href="/upgrade"
+        style={{
+          flexShrink: 0,
+          backgroundColor: '#FF8C52',
+          color: '#ffffff',
+          borderRadius: '100px',
+          padding: '6px 14px',
+          fontSize: '12px',
+          fontWeight: 700,
+          fontFamily: 'var(--font-nunito), sans-serif',
+          textDecoration: 'none',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        Upgrade →
+      </Link>
+    </div>
+  )
+}
 
 const stagger = {
   hidden: {},
@@ -236,10 +295,12 @@ function StateB({
   walk,
   connections,
   firstDog,
+  isPro,
 }: {
   walk: WalkSession
   connections: WalkerConnection[]
   firstDog: Dog | null
+  isPro: boolean
 }) {
   const walkerName = (walk.providers as { name: string } | null)?.name ?? 'Your walker'
   const durationSec = walk.started_at && walk.ended_at
@@ -260,9 +321,27 @@ function StateB({
                 ✓ Walked today
               </span>
             </div>
-            <h2 className="font-[family-name:var(--font-fredoka)] text-xl font-bold text-[#0A2F35]">
-              {dogName} walked today!
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="font-[family-name:var(--font-fredoka)] text-xl font-bold text-[#0A2F35]">
+                {dogName} walked today!
+              </h2>
+              {isPro && (
+                <span
+                  style={{
+                    backgroundColor: 'oklch(0.48 0.17 196)',
+                    color: '#ffffff',
+                    borderRadius: '100px',
+                    padding: '2px 10px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-nunito), sans-serif',
+                    flexShrink: 0,
+                  }}
+                >
+                  Pro
+                </span>
+              )}
+            </div>
             <p className="text-sm text-gray-500 mt-0.5">
               with {walkerName} · {formatTime(walk.started_at)}
             </p>
@@ -305,11 +384,13 @@ function StateC({
   firstDog,
   connections,
   lastWalk,
+  isPro,
 }: {
   displayName: string
   firstDog: Dog | null
   connections: WalkerConnection[]
   lastWalk: LastWalk | null
+  isPro: boolean
 }) {
   const firstName = displayName.split(' ')[0]
 
@@ -327,9 +408,27 @@ function StateC({
           <div className="flex items-center gap-4">
             <DogAvatar dog={firstDog} size="lg" />
             <div className="flex-1 min-w-0">
-              <h2 className="font-[family-name:var(--font-fredoka)] text-2xl font-bold text-[#0A2F35]">
-                {firstDog.name}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-[family-name:var(--font-fredoka)] text-2xl font-bold text-[#0A2F35]">
+                  {firstDog.name}
+                </h2>
+                {isPro && (
+                  <span
+                    style={{
+                      backgroundColor: 'oklch(0.48 0.17 196)',
+                      color: '#ffffff',
+                      borderRadius: '100px',
+                      padding: '2px 10px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      fontFamily: 'var(--font-nunito), sans-serif',
+                      flexShrink: 0,
+                    }}
+                  >
+                    Pro
+                  </span>
+                )}
+              </div>
               {firstDog.breed && (
                 <p className="text-sm text-gray-400 mt-0.5">{firstDog.breed}</p>
               )}
@@ -383,23 +482,26 @@ export default function HomeClient({
   completedWalk,
   walkerConnections,
   lastWalk,
+  isPro,
 }: Props) {
   return (
     <div
       className="min-h-screen bg-[#FFFBEB] px-4 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
       style={{ fontFamily: 'var(--font-nunito), sans-serif' }}
     >
-      <div className="max-w-lg mx-auto">
+      <div className="max-w-lg mx-auto flex flex-col gap-4">
+        {!isPro && <UpgradeBanner />}
         {activeWalk ? (
           <StateA walk={activeWalk} displayName={displayName} />
         ) : completedWalk ? (
-          <StateB walk={completedWalk} connections={walkerConnections} firstDog={firstDog} />
+          <StateB walk={completedWalk} connections={walkerConnections} firstDog={firstDog} isPro={isPro} />
         ) : (
           <StateC
             displayName={displayName}
             firstDog={firstDog}
             connections={walkerConnections}
             lastWalk={lastWalk}
+            isPro={isPro}
           />
         )}
       </div>

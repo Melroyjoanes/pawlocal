@@ -132,7 +132,8 @@ export default function UpgradeClient({ currentPlan, expiresAt }: Props) {
             })
             const verifyData = await verifyRes.json() as { ok?: boolean; error?: string }
             if (!verifyRes.ok || !verifyData.ok) throw new Error(verifyData.error ?? 'Verification failed')
-            setSuccess(true)
+            // After payment, send user to setup so they activate immediately
+            window.location.href = '/setup?just_paid=1'
           } catch (err) {
             setError(err instanceof Error ? err.message : 'Payment verification failed')
           } finally {

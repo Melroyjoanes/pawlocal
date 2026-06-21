@@ -42,6 +42,7 @@ export default async function HomePage() {
     { data: completedWalkRaw },
     { data: walkerConnectionsRaw },
     { data: lastWalkRaw },
+    { data: subData },
   ] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (db.from('profiles') as any)
@@ -88,6 +89,15 @@ export default async function HomePage() {
       .eq('parent_user_id', user.id)
       .order('started_at', { ascending: false })
       .limit(1),
+
+    // Active subscription check
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (db.from('subscriptions') as any)
+      .select('plan, status, expires_at')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle(),
   ])
 
   const userMeta = user.user_metadata ?? {}
@@ -103,6 +113,7 @@ export default async function HomePage() {
   const completedWalk = completedWalkRaw?.[0] ?? null
   const walkerConnections = walkerConnectionsRaw ?? []
   const lastWalk = lastWalkRaw?.[0] ?? null
+  const isPro = !!subData
 
   return (
     <HomeClient
@@ -117,6 +128,7 @@ export default async function HomePage() {
       walkerConnections={walkerConnections as any}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       lastWalk={lastWalk as any}
+      isPro={isPro}
     />
   )
 }
