@@ -227,7 +227,9 @@ export default function LiveMapClient({ sessionId, session }: Props) {
 
       if (cancelled || !data) return
 
-      const pts: LatLng[] = data.map((r) => ({ lat: r.lat, lng: r.lng }))
+      const pts: LatLng[] = data
+        .filter((r) => typeof r.lat === 'number' && typeof r.lng === 'number')
+        .map((r) => ({ lat: r.lat as number, lng: r.lng as number }))
       setLocations(pts)
 
       if (pts.length > 0) {
