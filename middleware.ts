@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 
 function isProtected(pathname: string) {
   if (pathname === '/my-account') return { redirect: '/?auth_required=1' }
+  if (pathname === '/home') return { redirect: '/?auth_required=1' }
   if (pathname.startsWith('/dashboard')) return { redirect: '/account?reason=provider' }
   if (/^\/provider\/[^/]+\/edit/.test(pathname)) return { redirect: '/?auth_required=1' }
   if (pathname.startsWith('/pro/')) return { redirect: '/pro' }
@@ -16,6 +17,41 @@ export async function middleware(request: NextRequest) {
   // and suppress the customer header/footer for those isolated shells.
   let response = NextResponse.next({ request })
   response.headers.set('x-pathname', pathname)
+
+  // Redirect logged-in pet parents from the marketing homepage to their personal home.
+  // Providers are handled by ProviderAutoRedirect on the client side.
+  if (pathname === '/') {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return request.cookies.getAll() },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+            response = NextResponse.next({ request })
+            response.headers.set('x-pathname', pathname)
+            cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
+          },
+        },
+      }
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: providerRow } = await supabase
+        .from('providers')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (!providerRow) {
+        const homeUrl = request.nextUrl.clone()
+        homeUrl.pathname = '/home'
+        homeUrl.search = ''
+        return NextResponse.redirect(homeUrl)
+      }
+    }
+    return response
+  }
 
   const protection = isProtected(pathname)
   if (!protection) return response

@@ -58,7 +58,7 @@ const CAT_POS: Record<string, string> = {
 const HERO_DOG_PHOTOS = [
   { id: 'photo-1552053831-71594a27632d', alt: 'Golden retriever', rotate: -5 },
   { id: 'photo-1587300003388-59208cc962cb', alt: 'Puppy portrait',   rotate: 3  },
-  { id: 'photo-1548681528-6a5c45dbe30',  alt: 'Dog on a walk',     rotate: -2 },
+  { id: 'photo-1537151608828-ea2b11777ee8', alt: 'Dog on a walk',     rotate: -2 },
 ]
 
 // ─── Clay color system ────────────────────────────────────────────────────────
@@ -171,8 +171,9 @@ function DogPhotoStrip({ rm }: { rm: boolean }) {
           initial={rm ? {} : { opacity: 0, y: 18, rotate: 0 }}
           animate={{ opacity: 1, y: 0, rotate: p.rotate }}
           transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1], delay: 0.2 + i * 0.08 }}
+              className="w-[84px] h-[104px] lg:w-[96px] lg:h-[118px]"
           style={{
-            width: 84, height: 104, borderRadius: 14, overflow: 'hidden', flexShrink: 0,
+            borderRadius: 14, overflow: 'hidden', flexShrink: 0,
             boxShadow: '0 4px 0 rgba(0,0,0,0.10), 0 14px 28px rgba(10,47,53,0.14), inset 0 1.5px 0 rgba(255,255,255,0.85)',
             border: '3px solid rgba(255,255,255,0.95)',
           }}
@@ -469,7 +470,7 @@ function WalkReportCard() {
       animate={{ opacity: 1, y: 0, rotate: 0 }}
       transition={{ duration: 0.65, ease: EASE_EXP, delay: 0.2 }}
       style={{
-        borderRadius: 28, width: '100%', maxWidth: 360,
+        borderRadius: 28, width: '100%', maxWidth: 420,
         background: 'linear-gradient(155deg,#FFFDF5 0%,#FFF8E1 100%)',
         boxShadow: '0 8px 0 rgba(120,53,15,0.14),0 28px 72px rgba(0,0,0,0.18),inset 0 1.5px 0 rgba(255,255,255,0.95)',
         border: '1.5px solid rgba(253,230,138,0.7)',
@@ -554,7 +555,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
   }, [rm])
 
   // Only show dog-walking + grooming from directory
-  const DISPLAY_CATS = CATEGORIES.filter(c => ['dog-walking', 'grooming', 'vet', 'dog-training'].includes(c.slug))
+  const DISPLAY_CATS = CATEGORIES.filter(c => ['dog-walking', 'grooming'].includes(c.slug))
 
   const STEPS = [
     { Icon: Megaphone, title: 'Post your request', sub: '"Need a groomer this Sunday in Juhu, ₹500 budget"', ckey: 'amber' as CKey },
@@ -633,7 +634,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
                 transition={{ duration: 0.45, ease: EASE_EXP, delay: 0.16 }}
                 className="text-lg sm:text-xl text-slate-500 mb-8 max-w-lg mx-auto lg:mx-0"
                 style={{ lineHeight: 1.65 }}>
-                Share PupStep with whoever walks your dog. After every walk, they log it in 60 seconds — GPS, photos, poop count. A care report lands in your WhatsApp.
+                Share PupStep with whoever walks your dog. After every walk, they log it in 60 seconds — GPS route, photos, poop count. A care report lands straight in your WhatsApp. Your vet will want to see this log.
               </motion.p>
 
               <motion.div
@@ -659,8 +660,8 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
                 className="flex flex-wrap gap-2 justify-center lg:justify-start">
                 {([
                   { Icon: Check,      label: 'Setup in 2 minutes', ckey: 'white' as CKey },
-                  { Icon: Navigation, label: 'Every walk GPS tracked', ckey: 'amber' as CKey },
-                  { Icon: IndianRupee, label: 'Zero fees forever', ckey: 'mint' as CKey },
+                  { Icon: Navigation, label: 'GPS tracked every walk', ckey: 'amber' as CKey },
+                  { Icon: ClipboardList, label: 'Vet-ready walk log', ckey: 'mint' as CKey },
                 ] as const).map(({ Icon, label, ckey }) => (
                   <div key={label} className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2"
                     style={{ ...cs(ckey), borderRadius: 100, color: (C[ckey] as { text: string }).text }}>
@@ -671,7 +672,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
             </div>
 
             {/* Dog photos + Walk report card */}
-            <div className="flex-shrink-0 w-full max-w-sm flex flex-col">
+            <div className="flex-shrink-0 w-full max-w-sm lg:max-w-[460px] flex flex-col">
               <DogPhotoStrip rm={rm} />
               <div className="flex justify-center lg:justify-end">
                 <WalkReportCard />
@@ -692,7 +693,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
 
       {/* ══ HOW IT WORKS — zigzag editorial (no identical cards) ═══════════════ */}
       <section style={{ ...BLEED, background: 'linear-gradient(120deg,#FEF9ED 0%,#FEF3C7 55%,#FEF9ED 100%)', borderTop: '1.5px solid rgba(253,230,138,0.9)', borderBottom: '1.5px solid rgba(253,230,138,0.9)' }}
-        className="py-14 sm:py-20">
+        className="py-14 sm:py-20 lg:py-28">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <FadeUp className="text-center mb-12">
             <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#F07030' }}>3 steps, 60 seconds</p>
@@ -779,7 +780,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
 
       {/* ══ GPS SECTION (dark teal, walking dog) ═══════════════════════════════ */}
       <section style={{ ...BLEED, background: 'linear-gradient(135deg,#0A2F35 0%,#0D3D45 50%,#0A2F35 100%)', position: 'relative', overflow: 'hidden' }}
-        className="py-14 sm:py-20">
+        className="py-14 sm:py-20 lg:py-28">
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
           <motion.div style={{ position: 'absolute', top: -40, right: -30, opacity: 0.07 }}
             animate={rm ? {} : { y: [0,-15,0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}>
@@ -850,7 +851,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
       </section>
 
       {/* ══ CATEGORIES — bento with varied heights ══════════════════════════════ */}
-      <section style={{ ...BLEED, background: 'white' }} className="py-12 sm:py-16">
+      <section style={{ ...BLEED, background: 'white' }} className="py-12 sm:py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <FadeUp className="mb-9">
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
@@ -861,7 +862,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
             </div>
           </FadeUp>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-3 sm:gap-4">
             {/* Directory cards — 4 photo categories */}
             {DISPLAY_CATS.map((cat, i) => {
               const ck      = (CAT_CLAY[cat.slug] ?? 'white') as CKey
@@ -871,7 +872,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
               const t       = C[ck] as { bg: string; shadow: string; border: string; text: string }
               const heights = ['clamp(185px,26vw,260px)', 'clamp(165px,22vw,230px)', 'clamp(175px,24vw,245px)', 'clamp(155px,20vw,215px)']
               return (
-                <FadeUp key={cat.slug} delay={i * 0.06} className="lg:col-span-2 md:col-span-1">
+                <FadeUp key={cat.slug} delay={i * 0.06} className="lg:col-span-6 md:col-span-2">
                   <Link href={`/${cat.slug}`} className="block group">
                     <motion.div
                       whileHover={rm ? {} : { y: -5, scale: 1.01 }}
@@ -911,7 +912,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
             })}
 
             {/* Feature card 1 — Care Reports (QR walker system) */}
-            <FadeUp delay={0.12} className="lg:col-span-3 md:col-span-1">
+            <FadeUp delay={0.12} className="lg:col-span-6 md:col-span-2">
               <Link href="/setup" className="block group">
                 <motion.div
                   whileHover={rm ? {} : { y: -5, scale: 1.01 }}
@@ -930,7 +931,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
                       </p>
                     </div>
                     <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                      <span className="text-xs font-bold" style={{ color: '#17C8CC' }}>Set up free →</span>
+                      <span className="text-xs font-bold" style={{ color: '#17C8CC' }}>Set up your dog →</span>
                       <span style={{ fontSize: 20 }}>📋</span>
                     </div>
                   </div>
@@ -939,7 +940,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
             </FadeUp>
 
             {/* Feature card 2 — Post a broadcast request */}
-            <FadeUp delay={0.18} className="lg:col-span-3 md:col-span-2">
+            <FadeUp delay={0.18} className="lg:col-span-6 md:col-span-2">
               <Link href="/broadcast" className="block group">
                 <motion.div
                   whileHover={rm ? {} : { y: -5, scale: 1.01 }}
@@ -975,7 +976,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
       </section>
 
       {/* ══ TESTIMONIALS — 3 genuinely different cards ══════════════════════════ */}
-      <section style={{ ...BLEED, background: C.pageBg }} className="py-12 sm:py-16">
+      <section style={{ ...BLEED, background: C.pageBg }} className="py-12 sm:py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <FadeUp className="text-center mb-9">
             <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.8rem,4vw,2.8rem)' }}>Pet parents love it</h2>
@@ -1007,7 +1008,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
               <div className="p-5" style={{ borderRadius: 22, ...cs('amber') }}>
                 <div className="flex mb-2">{Array(5).fill(0).map((_,j) => <Star key={j} size={11} fill="#92400E" color="#92400E" />)}</div>
                 <p className="text-sm font-medium text-amber-900 leading-relaxed mb-4" style={{ opacity: 0.88 }}>
-                  &ldquo;GPS tracking is incredible. And zero booking fees! Can&apos;t believe this is actually free.&rdquo;
+                  &ldquo;GPS tracking is incredible. The WhatsApp report after every walk is the best thing to happen to dog parents in Mumbai.&rdquo;
                 </p>
                 <div className="flex items-center gap-2">
                   <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🐶</div>
@@ -1049,7 +1050,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
       </section>
 
       {/* ══ WHY PUPSTEP — asymmetric bento, NOT identical cards ═════════════════ */}
-      <section style={{ ...BLEED, background: 'white' }} className="py-12 sm:py-16">
+      <section style={{ ...BLEED, background: 'white' }} className="py-12 sm:py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <FadeUp className="text-center mb-9">
             <p className="text-xs font-bold uppercase tracking-widest mb-2.5" style={{ color: '#F07030' }}>Why pet parents choose us</p>
@@ -1072,7 +1073,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
                   </p>
                 </div>
                 <div className="mt-6">
-                  <Btn href="/setup" ckey="tealCTA">Get started free <ArrowRight size={14} /></Btn>
+                  <Btn href="/setup" ckey="tealCTA">Start tracking walks <ArrowRight size={14} /></Btn>
                 </div>
               </div>
             </FadeUp>
@@ -1110,8 +1111,8 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
                   <IndianRupee size={24} style={{ color: '#4C1D95' }} strokeWidth={1.8} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-violet-950 text-lg mb-1.5">Zero fees, always</h3>
-                  <p className="text-violet-900 text-sm leading-relaxed opacity-80 max-w-sm">No subscription, no booking fee, no commission. PupStep is free forever for pet parents.</p>
+                  <h3 className="font-bold text-violet-950 text-lg mb-1.5">No booking commission</h3>
+                  <p className="text-violet-900 text-sm leading-relaxed opacity-80 max-w-sm">No middleman cut, no booking fees. Contact providers directly on WhatsApp and agree on your own terms.</p>
                 </div>
               </div>
             </FadeUp>
@@ -1121,7 +1122,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
 
       {/* ══ BROADCAST ═══════════════════════════════════════════════════════════ */}
       <section style={{ ...BLEED, background: 'linear-gradient(135deg,#0D3528 0%,#1A5C42 50%,#0D3528 100%)', position: 'relative', overflow: 'hidden' }}
-        className="py-12 sm:py-16">
+        className="py-12 sm:py-16 lg:py-24">
         <div className="absolute inset-0 pointer-events-none" aria-hidden>
           <div style={{ position: 'absolute', top: -80, right: -60, width: 420, height: 420, borderRadius: '50%', background: '#F07030', opacity: 0.055 }} />
         </div>
@@ -1138,7 +1139,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
               <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-md mx-auto lg:mx-0 leading-relaxed">
                 Post your request once. Verified providers nearby reply directly on WhatsApp. No middleman, no fees.
               </p>
-              <Btn href="/broadcast" size="lg"><Megaphone size={15} /> Post a Request — Free</Btn>
+              <Btn href="/broadcast" size="lg"><Megaphone size={15} /> Post a Request</Btn>
             </FadeUp>
 
             {/* Animated step cards */}
@@ -1182,10 +1183,10 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
             Are you a walker or groomer<br /><span style={{ color: '#FF8C52' }}>in {neighbourhood}?</span>
           </h2>
           <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-lg mx-auto leading-relaxed">
-            Get listed free. Send care reports after every session. Build trust with clients, get more work — no fees, ever.
+            Get listed. Send GPS care reports after every session. Build trust with clients, get more work — no booking commission, ever.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
-            <Btn href="/join" ckey="amberCTA" size="lg">Get listed free <ArrowRight size={15} /></Btn>
+            <Btn href="/join" ckey="amberCTA" size="lg">Get listed <ArrowRight size={15} /></Btn>
             <motion.div whileHover={rm ? {} : { y: -3, scale: 1.03 }} whileTap={rm ? {} : { y: 3, scale: 0.98 }}
               transition={SPRING} className="inline-block">
               <Link href="/broadcast"
@@ -1227,7 +1228,7 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
         <div className="max-w-7xl mx-auto px-5 sm:px-8 flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
           <LucidePaw size={16} style={{ color: '#F07030', opacity: 0.45 }} />
           <p className="text-xs sm:text-sm text-slate-400">
-            Mumbai&apos;s most trusted hyperlocal pet services directory. Every listing manually verified by our team.
+            GPS-verified walk reports for Mumbai dog parents. Every provider manually verified by our team.
           </p>
         </div>
       </section>

@@ -126,10 +126,11 @@ export type ProviderPhotoInsert = {
 }
 
 export type WalkEvent = {
-  type: 'pee' | 'poop'
+  type: 'pee' | 'poop' | 'poop_photo'
   ts: string
   lat?: number
   lng?: number
+  photo_url?: string
 }
 
 export type WalkSession = {

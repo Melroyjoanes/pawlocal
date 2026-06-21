@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
+
 type Client = {
   id: string
   pet_name: string
@@ -29,7 +31,21 @@ function buildWaLink(token: string, petName: string): string {
   return `https://wa.me/?text=${encodeURIComponent(msg)}`
 }
 
-export default function ProClientsClient() {
+interface Props {
+  providerId: string
+  providerName: string
+}
+
+export default function ProClientsClient({ providerId, providerName }: Props) {
+  const connectLink = `${SITE_URL}/join/pro/${providerId}`
+  const [copied, setCopied] = useState(false)
+
+  function handleCopy() {
+    navigator.clipboard.writeText(connectLink).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2200)
+    })
+  }
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -116,6 +132,49 @@ export default function ProClientsClient() {
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-5">
+
+        {/* Share link card */}
+        <div className="mb-5 rounded-2xl border border-teal-100 bg-white p-4 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-widest text-teal-600 mb-1">Your connect link</p>
+          <p className="text-xs text-stone-500 mb-3 leading-relaxed">
+            Share this with {providerName.split(' ')[0]}'s clients — they tap it, enter their dog's name, and they're connected instantly.
+          </p>
+
+          {/* QR code */}
+          <div className="flex gap-4 items-start">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=96x96&margin=4&data=${encodeURIComponent(connectLink)}`}
+              alt="Connect QR code"
+              width={96}
+              height={96}
+              className="rounded-xl border border-stone-100 flex-shrink-0"
+            />
+            <div className="flex-1 min-w-0 space-y-2">
+              <p className="text-[11px] font-mono text-stone-400 truncate bg-stone-50 rounded-lg px-2.5 py-2 border border-stone-100">
+                {connectLink.replace('https://', '')}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleCopy}
+                  className="flex-1 py-2 rounded-xl text-xs font-bold transition-all active:opacity-70"
+                  style={{ background: copied ? '#D1FAE5' : '#0A2F35', color: copied ? '#065F46' : '#fff' }}
+                >
+                  {copied ? '✓ Copied!' : 'Copy link'}
+                </button>
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`Hi! I'm ${providerName} on PupStep 🐾\n\nTap this link to connect with me and get a GPS walk report after every session:\n${connectLink}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center py-2 rounded-xl text-xs font-bold text-white"
+                  style={{ background: '#25D366' }}
+                >
+                  Share on WA
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Add client button + inline form */}
         <div className="mb-5">

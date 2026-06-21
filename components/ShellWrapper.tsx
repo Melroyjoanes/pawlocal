@@ -15,7 +15,8 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
     pathname.startsWith('/track') ||
     pathname.startsWith('/walk-report') ||
     pathname.startsWith('/connect') ||
-    pathname.startsWith('/walker')
+    pathname.startsWith('/walker') ||
+    pathname.startsWith('/live')
 
   if (isIsolated) return <>{children}</>
 
@@ -150,11 +151,13 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
           <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
             © {new Date().getFullYear()} PupStep · Juhu, Mumbai · Every listing manually verified.
           </p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
             {[
+              { href: '/privacy-policy', label: 'Privacy Policy' },
+              { href: '/terms', label: 'Terms' },
+              { href: '/refund-policy', label: 'Refund Policy' },
               { href: '/faq', label: 'FAQs' },
               { href: '/contact', label: 'Contact' },
-              { href: '/join', label: 'For providers' },
             ].map(({ href, label }) => (
               <a key={href} href={href} className="text-xs transition-colors"
                 style={{ color: 'rgba(255,255,255,0.35)' }}

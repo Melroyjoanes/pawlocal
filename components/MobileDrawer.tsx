@@ -7,11 +7,9 @@ import type { User } from '@supabase/supabase-js'
 
 // Per-category tints pulled straight from the design system
 const CATEGORIES = [
-  { slug: 'dog-walking',  icon: '🦮', name: 'Dog Walking',  bg: 'linear-gradient(135deg,#FEF9C3,#FDE68A)', fg: '#78350F' },
-  { slug: 'grooming',     icon: '✂️',  name: 'Grooming',    bg: 'linear-gradient(135deg,#F5F3FF,#E9D5FF)', fg: '#4C1D95' },
-  { slug: 'vet',          icon: '🏥', name: 'Vet / Doctor', bg: 'linear-gradient(135deg,#FFF1F2,#FECDD3)', fg: '#9F1239' },
-  { slug: 'pet-store',    icon: '🐾', name: 'Pet Store',    bg: 'linear-gradient(135deg,#F0FDF4,#BBF7D0)', fg: '#064E3B' },
-  { slug: 'dog-training', icon: '🎯', name: 'Dog Training', bg: 'linear-gradient(135deg,#E0F2FE,#BAE6FD)', fg: '#0C4A6E' },
+  { slug: 'dog-walking', icon: '🦮', name: 'Dog Walking', bg: 'linear-gradient(135deg,#FEF9C3,#FDE68A)', fg: '#78350F' },
+  { slug: 'grooming',    icon: '✂️',  name: 'Grooming',   bg: 'linear-gradient(135deg,#F5F3FF,#E9D5FF)', fg: '#4C1D95' },
+  { slug: 'pet-store',   icon: '🐾', name: 'Pet Store',   bg: 'linear-gradient(135deg,#F0FDF4,#BBF7D0)', fg: '#064E3B' },
 ]
 
 // expo-out — smooth deceleration, never bouncy
@@ -179,7 +177,7 @@ export default function MobileDrawer() {
                       Welcome to PupStep 🐶
                     </p>
                     <p className="text-white/60 text-[12px] mb-3.5">
-                      Juhu, Mumbai&apos;s pet community
+                      GPS walk reports for Mumbai dogs
                     </p>
                     <a
                       href="/account"

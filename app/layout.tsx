@@ -35,9 +35,9 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: { default: "PupStep — Mumbai's Verified Pet People", template: '%s | PupStep' },
-  description: "Mumbai's most trusted pet directory. Find verified walkers, vets, groomers and more near you. WhatsApp direct. Zero booking fees.",
-  keywords: ['pet services Mumbai', 'dog walker Mumbai', 'vets Juhu', 'dog grooming Mumbai', 'pet store Juhu', 'emergency vet Mumbai', 'verified pet care Mumbai'],
+  title: { default: 'PupStep — GPS Walk Reports for Mumbai Dogs', template: '%s | PupStep' },
+  description: 'GPS-verified walk reports straight to your WhatsApp. The walk log your Mumbai dog deserves. Know every walk happened. Every time.',
+  keywords: ['dog walk tracker Mumbai', 'GPS walk report Mumbai', 'dog walker Juhu', 'dog grooming Mumbai', 'walk accountability Mumbai', 'verified dog walker Mumbai', 'dog care Mumbai'],
   authors: [{ name: 'PupStep' }],
   creator: 'PupStep',
   openGraph: {
@@ -45,8 +45,8 @@ export const metadata: Metadata = {
     locale: 'en_IN',
     url: siteUrl,
     siteName: 'PupStep',
-    title: "PupStep — Mumbai's Verified Pet People",
-    description: "Mumbai's most trusted pet directory. Verified walkers, vets & groomers — WhatsApp direct, zero fees.",
+    title: 'PupStep — GPS Walk Reports for Mumbai Dogs',
+    description: 'GPS-verified walk reports to your WhatsApp. Know your dog got walked. Trusted by Mumbai dog parents.',
     images: [{
       url: `${siteUrl}/api/og`,
       width: 1200,
@@ -56,8 +56,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: "PupStep — Mumbai's Verified Pet People",
-    description: "Mumbai's most trusted pet directory. Verified walkers, vets & groomers — WhatsApp direct, zero fees.",
+    title: 'PupStep — GPS Walk Reports for Mumbai Dogs',
+    description: 'GPS-verified walk reports to your WhatsApp. Know your dog got walked. Trusted by Mumbai dog parents.',
     images: [`${siteUrl}/api/og`],
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },

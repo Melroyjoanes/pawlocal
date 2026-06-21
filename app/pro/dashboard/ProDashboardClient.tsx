@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import type { Provider } from '@/lib/supabase/types'
+import StartWalkPanel from './StartWalkPanel'
 
 type DashboardBroadcast = {
   id: string
@@ -130,6 +131,9 @@ export default function ProDashboardClient({ provider, stats, broadcasts, firstN
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-5 space-y-5">
+
+        {/* ── Start Walk Panel ──────────────────────────────────────── */}
+        <StartWalkPanel walkerName={providerName} walkerPhone={provider.whatsapp ?? provider.phone ?? undefined} />
 
         {/* ── Greeting ─────────────────────────────────────────────── */}
         <motion.div

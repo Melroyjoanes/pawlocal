@@ -8,9 +8,7 @@ import type { Broadcast } from '@/lib/supabase/types'
 const SERVICES = [
   { slug: 'dog-walking', label: 'Dog Walking', icon: '🦮' },
   { slug: 'grooming', label: 'Grooming', icon: '✂️' },
-  { slug: 'vet', label: 'Vet', icon: '🏥' },
   { slug: 'pet-store', label: 'Pet Store', icon: '🐾' },
-  { slug: 'dog-training', label: 'Dog Training', icon: '🎯' },
 ]
 
 const MUMBAI_AREAS = [

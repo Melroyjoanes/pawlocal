@@ -18,7 +18,7 @@ import { google } from 'googleapis'
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { resolve } from 'path'
 import { createServer } from 'http'
-import { open } from 'child_process'
+import { exec } from 'child_process'
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const SHEET_ID   = '1g0Wnd80LRCfA-MjY4m-Y6IEaqba9_q43tnwE8YrHOFg'
@@ -72,7 +72,7 @@ async function getAuth() {
   console.log('   (If browser does not open, visit this URL manually:)')
   console.log('  ', authUrl, '\n')
 
-  try { open(authUrl, 'open') } catch { /* ignore */ }
+  try { exec(`open "${authUrl}"`) } catch { /* ignore */ }
 
   const code = await new Promise((resolve, reject) => {
     const server = createServer((req, res) => {
