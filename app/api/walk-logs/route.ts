@@ -85,5 +85,27 @@ export async function POST(req: NextRequest) {
 
   if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
 
-  return NextResponse.json({ ok: true, log_id: log.id }, { status: 201 })
+  // Look up owner phone for WhatsApp notification link
+  const { data: connWithPhone } = await (db.from('walker_connections') as any)
+    .select('owner_phone, walker_name')
+    .eq('id', connection.id)
+    .single()
+
+  let wa_link: string | null = null
+  if (connWithPhone?.owner_phone) {
+    const phone = connWithPhone.owner_phone.replace(/\D/g, '')
+    const fullPhone = phone.startsWith('91') ? phone : `91${phone}`
+    const dogRow = await (db.from('dogs') as any).select('name').eq('id', connection.dog_id).single()
+    const dogName = dogRow?.data?.name ?? 'your dog'
+    const poopEmoji = (poop_count ?? 0) > 0 ? `💩 ${poop_count}` : ''
+    const peeEmoji = (pee_count ?? 0) > 0 ? `🌿 ${pee_count}` : ''
+    const distText = distance_km ? `${distance_km}km` : ''
+    const durText = duration_mins ? `${duration_mins} min` : ''
+    const stats = [durText, distText, poopEmoji, peeEmoji].filter(Boolean).join(' · ')
+    const moodText = mood ? ` Mood: ${mood} 😊` : ''
+    const msg = `🐾 *${dogName}'s walk report*\n${stats}${moodText}\n${notes ? `\n"${notes}"` : ''}\n\nLogged by ${connection.walker_name ?? 'your walker'} via PupStep`
+    wa_link = `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`
+  }
+
+  return NextResponse.json({ ok: true, log_id: log.id, wa_link }, { status: 201 })
 }

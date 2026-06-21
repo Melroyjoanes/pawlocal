@@ -98,6 +98,7 @@ export default function WalkerClient({
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [parentWaLink, setParentWaLink] = useState<string | null>(null)
 
   async function handlePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -229,6 +230,7 @@ export default function WalkerClient({
       }
 
       // Reset walk state, go to success screen
+      if (data.wa_link) setParentWaLink(data.wa_link)
       setPoopCount(0)
       setPeeCount(0)
       setMood('')
@@ -562,9 +564,22 @@ export default function WalkerClient({
             Report sent!
           </h2>
           <p className="text-sm text-slate-500 mb-8 leading-relaxed px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {ownerFirstName} has been notified of today&apos;s walk 🐾
+            {parentWaLink
+              ? `Walk logged successfully! Tap below to send ${ownerFirstName} the report.`
+              : `Walk logged successfully! 🐾`}
           </p>
           <div className="w-full max-w-sm space-y-3">
+            {parentWaLink && (
+              <a
+                href={parentWaLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-white text-base shadow-md"
+                style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', fontSize: '17px' }}
+              >
+                📲 Notify {ownerFirstName} on WhatsApp
+              </a>
+            )}
             {(() => {
               const dashUrl = typeof window !== 'undefined'
                 ? `${window.location.origin}/walker/${token}`
@@ -578,7 +593,7 @@ export default function WalkerClient({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-white text-base"
-                  style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)' }}
+                  style={{ background: '#0A2F35', fontFamily: 'var(--font-fredoka)' }}
                 >
                   📲 Send yourself this link on WhatsApp
                 </a>

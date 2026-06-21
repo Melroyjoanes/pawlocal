@@ -13,9 +13,9 @@ function admin() {
 export default async function SetupQRPage({
   searchParams,
 }: {
-  searchParams: Promise<{ dog?: string }>
+  searchParams: Promise<{ dog?: string; phone?: string }>
 }) {
-  const { dog: dogId } = await searchParams
+  const { dog: dogId, phone: ownerPhone } = await searchParams
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -45,7 +45,7 @@ export default async function SetupQRPage({
   // Fetch or create walker connection
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let { data: connection } = await (db.from('walker_connections') as any)
-    .select('id, token, walker_name, walker_phone, status, otp')
+    .select('id, token, walker_name, walker_phone, status, otp, owner_phone')
     .eq('dog_id', dogId)
     .eq('owner_id', user.id)
     .order('created_at', { ascending: false })
@@ -62,8 +62,9 @@ export default async function SetupQRPage({
         token,
         status: 'pending',
         otp: generateOTP(),
+        owner_phone: ownerPhone ?? null,
       })
-      .select('id, token, walker_name, walker_phone, status, otp')
+      .select('id, token, walker_name, walker_phone, status, otp, owner_phone')
       .single()
 
     if (insertErr) {
