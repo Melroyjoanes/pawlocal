@@ -38,6 +38,21 @@ interface LastWalk {
   status: string
 }
 
+interface WalkLog {
+  id: string
+  started_at: string
+  ended_at: string | null
+  duration_mins: number | null
+  distance_km: number | null
+  poop_count: number | null
+  pee_count: number | null
+  mood: string | null
+  walker_name: string | null
+}
+
+interface WeekDay { label: string; date: string; walked: boolean }
+interface WeekData { days: WeekDay[]; totalKm: number; totalPoops: number; totalWalks: number }
+
 interface Props {
   displayName: string
   firstDog: Dog | null
@@ -46,6 +61,11 @@ interface Props {
   walkerConnections: WalkerConnection[]
   lastWalk: LastWalk | null
   isPro: boolean
+  walkStreak: number
+  weekData: WeekData
+  lastWalkLog: WalkLog | null
+  todayWalked: boolean
+  todayLogs: WalkLog[]
 }
 
 const cardClass = 'rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.08)] bg-white'
@@ -158,12 +178,124 @@ function DogAvatar({ dog, size = 'md' }: { dog: Dog | null; size?: 'sm' | 'md' |
   )
 }
 
+function WalkStreak({ streak }: { streak: number }) {
+  if (streak === 0) return null
+  return (
+    <motion.div variants={fadeUp} style={{
+      background: 'linear-gradient(135deg, #FF8C52 0%, #FF6B35 100%)',
+      borderRadius: 16,
+      padding: '12px 16px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+    }}>
+      <span style={{ fontSize: 28 }}>🔥</span>
+      <div>
+        <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1 }}>
+          {streak}-day streak
+        </p>
+        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: 'rgba(255,255,255,0.85)', margin: 0 }}>
+          Keep it up! Don&apos;t break the chain.
+        </p>
+      </div>
+    </motion.div>
+  )
+}
+
+function WeekGrid({ weekData }: { weekData: WeekData }) {
+  return (
+    <motion.div variants={fadeUp} className={cardClass} style={{ padding: '16px' }}>
+      <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 12px' }}>This week</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+        {weekData.days.map((d, i) => (
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: d.walked ? 'oklch(0.48 0.17 196)' : '#F3F4F6',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 14,
+              color: d.walked ? '#fff' : 'transparent',
+              fontWeight: 700,
+            }}>
+              {d.walked ? '✓' : ''}
+            </div>
+            <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, color: '#9CA3AF', fontWeight: 600 }}>{d.label}</span>
+          </div>
+        ))}
+      </div>
+      {weekData.totalWalks > 0 && (
+        <div style={{ display: 'flex', gap: 12, borderTop: '1px solid #F3F4F6', paddingTop: 12 }}>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 18, fontWeight: 700, color: '#0A2F35', margin: 0 }}>{weekData.totalWalks}</p>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#9CA3AF', margin: 0 }}>walks</p>
+          </div>
+          {weekData.totalKm > 0 && (
+            <div style={{ flex: 1, textAlign: 'center', borderLeft: '1px solid #F3F4F6' }}>
+              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 18, fontWeight: 700, color: '#0A2F35', margin: 0 }}>{weekData.totalKm} km</p>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#9CA3AF', margin: 0 }}>distance</p>
+            </div>
+          )}
+          {weekData.totalPoops > 0 && (
+            <div style={{ flex: 1, textAlign: 'center', borderLeft: '1px solid #F3F4F6' }}>
+              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 18, fontWeight: 700, color: '#0A2F35', margin: 0 }}>💩 {weekData.totalPoops}</p>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#9CA3AF', margin: 0 }}>healthy</p>
+            </div>
+          )}
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+function LastWalkCard({ log }: { log: WalkLog }) {
+  return (
+    <motion.div variants={fadeUp} className={cardClass} style={{ padding: '16px' }}>
+      <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px' }}>Last walk</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div>
+          <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#0A2F35', margin: 0 }}>
+            {log.walker_name ?? 'Your walker'} · {formatTime(log.started_at)}
+          </p>
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF', margin: 0 }}>{formatDate(log.started_at)}</p>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {log.duration_mins && (
+          <span style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#C2410C' }}>
+            ⏱ {log.duration_mins} min
+          </span>
+        )}
+        {log.distance_km && (
+          <span style={{ background: '#F0FDFA', border: '1px solid #99F6E4', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#0F766E' }}>
+            📍 {log.distance_km} km
+          </span>
+        )}
+        {(log.poop_count ?? 0) > 0 && (
+          <span style={{ background: '#FEF9C3', border: '1px solid #FDE047', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#854D0E' }}>
+            💩 {log.poop_count}
+          </span>
+        )}
+        {(log.pee_count ?? 0) > 0 && (
+          <span style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#166534' }}>
+            🌿 {log.pee_count}
+          </span>
+        )}
+        {log.mood && (
+          <span style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#1D4ED8' }}>
+            😊 {log.mood}
+          </span>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
 function QuickActions() {
   const actions = [
-    { label: 'My Dog', emoji: '🐕', href: '/my-dogs' },
+    { label: 'Add Dog', emoji: '🐕', href: '/setup' },
     { label: 'My Team', emoji: '👥', href: '/my-account' },
-    { label: 'Reports', emoji: '📋', href: '/my-reports' },
-    { label: 'Settings', emoji: '⚙', href: '/my-account' },
+    { label: 'Reports', emoji: '📋', href: '/my-account' },
+    { label: 'Upgrade', emoji: '⭐', href: '/upgrade' },
   ]
   return (
     <motion.div variants={fadeUp} className={`${cardClass} p-4`}>
@@ -385,24 +517,39 @@ function StateC({
   connections,
   lastWalk,
   isPro,
+  walkStreak,
+  weekData,
+  lastWalkLog,
+  todayWalked,
+  todayLogs,
 }: {
   displayName: string
   firstDog: Dog | null
   connections: WalkerConnection[]
   lastWalk: LastWalk | null
   isPro: boolean
+  walkStreak: number
+  weekData: WeekData
+  lastWalkLog: WalkLog | null
+  todayWalked: boolean
+  todayLogs: WalkLog[]
 }) {
   const firstName = displayName.split(' ')[0]
 
+  // Determine last walked date — prefer walk_logs, fall back to walk_sessions
+  const lastWalkedDate = lastWalkLog?.started_at ?? lastWalk?.started_at ?? null
+
   return (
     <motion.div className="flex flex-col gap-4" variants={stagger} initial="hidden" animate="show">
+      {/* 1. Greeting */}
       <motion.div variants={fadeUp}>
         <h1 className="font-[family-name:var(--font-fredoka)] text-3xl font-bold text-[#0A2F35]">
           {getGreeting()}, {firstName} 👋
         </h1>
-        <p className="text-gray-500 text-sm mt-1">Here's everything for your pup today.</p>
+        <p className="text-gray-500 text-sm mt-1">Here&apos;s everything for your pup today.</p>
       </motion.div>
 
+      {/* 2. Dog card */}
       {firstDog ? (
         <motion.div variants={fadeUp} className={`${cardClass} p-5`}>
           <div className="flex items-center gap-4">
@@ -432,9 +579,9 @@ function StateC({
               {firstDog.breed && (
                 <p className="text-sm text-gray-400 mt-0.5">{firstDog.breed}</p>
               )}
-              {lastWalk ? (
+              {lastWalkedDate ? (
                 <p className="text-xs text-gray-400 mt-1">
-                  Last walked {formatDate(lastWalk.started_at)}
+                  Last walked {formatDate(lastWalkedDate)}
                 </p>
               ) : (
                 <p className="text-xs text-amber-500 mt-1 font-medium">No walks logged yet</p>
@@ -445,7 +592,7 @@ function StateC({
             <div className="mt-4 bg-amber-50 rounded-xl p-3 flex items-start gap-3">
               <span className="text-xl mt-0.5">🔗</span>
               <div>
-                <p className="text-sm font-semibold text-[#0A2F35]">Share your walker's QR</p>
+                <p className="text-sm font-semibold text-[#0A2F35]">Share your walker&apos;s QR</p>
                 <p className="text-xs text-gray-500 mt-0.5">
                   Let {connections[0].walker_name} log walks from their phone.
                 </p>
@@ -469,7 +616,54 @@ function StateC({
         </motion.div>
       )}
 
+      {/* 3. Today status */}
+      {todayWalked && todayLogs[0] ? (
+        <motion.div variants={fadeUp} style={{ background: '#F0FDF4', border: '1.5px solid #86EFAC', borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 24 }}>✅</span>
+          <div>
+            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#166534', margin: 0 }}>
+              Walked today!
+            </p>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#16A34A', margin: 0 }}>
+              {todayLogs[0].walker_name ?? 'Your walker'} · {todayLogs[0].duration_mins ? `${todayLogs[0].duration_mins} min` : formatTime(todayLogs[0].started_at)}
+            </p>
+          </div>
+        </motion.div>
+      ) : connections.length > 0 ? (
+        <motion.div variants={fadeUp} style={{ background: '#FFFBEB', border: '1.5px solid #FDE68A', borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 22 }}>⏳</span>
+            <div>
+              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, color: '#92400E', margin: 0 }}>No walk yet today</p>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#B45309', margin: 0 }}>{connections[0].walker_name} hasn&apos;t logged yet</p>
+            </div>
+          </div>
+          {connections[0].walker_phone && (
+            <a
+              href={`https://wa.me/91${connections[0].walker_phone.replace(/\D/g,'')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ background: '#25D366', color: '#fff', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-nunito)', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}
+            >
+              💬 Remind
+            </a>
+          )}
+        </motion.div>
+      ) : null}
+
+      {/* 4. Walk streak */}
+      <WalkStreak streak={walkStreak} />
+
+      {/* 5. Week grid */}
+      <WeekGrid weekData={weekData} />
+
+      {/* 6. Last walk from walk_logs */}
+      {lastWalkLog && <LastWalkCard log={lastWalkLog} />}
+
+      {/* 7. Walker team */}
       <WalkerTeam connections={connections} />
+
+      {/* 8. Quick actions */}
       <QuickActions />
     </motion.div>
   )
@@ -483,6 +677,11 @@ export default function HomeClient({
   walkerConnections,
   lastWalk,
   isPro,
+  walkStreak,
+  weekData,
+  lastWalkLog,
+  todayWalked,
+  todayLogs,
 }: Props) {
   return (
     <div
@@ -502,6 +701,11 @@ export default function HomeClient({
             connections={walkerConnections}
             lastWalk={lastWalk}
             isPro={isPro}
+            walkStreak={walkStreak}
+            weekData={weekData}
+            lastWalkLog={lastWalkLog}
+            todayWalked={todayWalked}
+            todayLogs={todayLogs}
           />
         )}
       </div>

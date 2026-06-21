@@ -24,6 +24,51 @@ function todayMidnightIST(): string {
   return new Date(midnightIST.getTime() - istOffset).toISOString()
 }
 
+function fourteenDaysAgoIST(): string {
+  const d = new Date(todayMidnightIST())
+  d.setDate(d.getDate() - 14)
+  return d.toISOString()
+}
+
+function computeStreak(logs: Array<{ started_at: string }>): number {
+  if (!logs || logs.length === 0) return 0
+  const istOffset = 5.5 * 60 * 60 * 1000
+  const toISTDateStr = (iso: string) => {
+    const d = new Date(new Date(iso).getTime() + istOffset)
+    return d.toISOString().slice(0, 10)
+  }
+  const walkedDates = new Set(logs.map(l => toISTDateStr(l.started_at)))
+  let streak = 0
+  const now = new Date(Date.now() + istOffset)
+  const check = new Date(now)
+  check.setUTCHours(0, 0, 0, 0)
+  while (walkedDates.has(check.toISOString().slice(0, 10))) {
+    streak++
+    check.setDate(check.getDate() - 1)
+  }
+  return streak
+}
+
+function computeWeekData(logs: Array<{ started_at: string; distance_km?: number | null; poop_count?: number | null }>) {
+  const istOffset = 5.5 * 60 * 60 * 1000
+  const toISTDateStr = (iso: string) => new Date(new Date(iso).getTime() + istOffset).toISOString().slice(0, 10)
+  const now = new Date(Date.now() + istOffset)
+  const days: { label: string; date: string; walked: boolean }[] = []
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now)
+    d.setDate(d.getDate() - i)
+    const dateStr = d.toISOString().slice(0, 10)
+    const label = ['S','M','T','W','T','F','S'][d.getUTCDay()]
+    days.push({ label, date: dateStr, walked: false })
+  }
+  const walkedDates = new Set(logs.map(l => toISTDateStr(l.started_at)))
+  days.forEach(d => { d.walked = walkedDates.has(d.date) })
+  const totalKm = logs.reduce((s, l) => s + (l.distance_km ?? 0), 0)
+  const totalPoops = logs.reduce((s, l) => s + (l.poop_count ?? 0), 0)
+  const totalWalks = walkedDates.size
+  return { days, totalKm: Math.round(totalKm * 10) / 10, totalPoops, totalWalks }
+}
+
 export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -43,6 +88,8 @@ export default async function HomePage() {
     { data: walkerConnectionsRaw },
     { data: lastWalkRaw },
     { data: subData },
+    { data: walkLogsRaw },
+    { data: todayLogsRaw },
   ] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (db.from('profiles') as any)
@@ -98,6 +145,22 @@ export default async function HomePage() {
       .eq('status', 'active')
       .gt('expires_at', new Date().toISOString())
       .maybeSingle(),
+
+    // Walk logs last 14 days — for streak + week summary + last walk
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (db.from('walk_logs') as any)
+      .select('id, started_at, ended_at, duration_mins, distance_km, poop_count, pee_count, mood, walker_name')
+      .eq('owner_id', user.id)
+      .gte('started_at', fourteenDaysAgoIST())
+      .order('started_at', { ascending: false }),
+
+    // Today's walk logs
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (db.from('walk_logs') as any)
+      .select('id, started_at, duration_mins, distance_km, poop_count, pee_count, mood, walker_name')
+      .eq('owner_id', user.id)
+      .gte('started_at', todayMidnight)
+      .order('started_at', { ascending: false }),
   ])
 
   const userMeta = user.user_metadata ?? {}
@@ -115,6 +178,17 @@ export default async function HomePage() {
   const lastWalk = lastWalkRaw?.[0] ?? null
   const isPro = !!subData
 
+  const recentLogs = walkLogsRaw ?? []
+  const todayLogs = todayLogsRaw ?? []
+  const walkStreak = computeStreak(recentLogs)
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const last7Logs = recentLogs.filter((l: { started_at: string }) => l.started_at >= sevenDaysAgo)
+  const weekData = computeWeekData(last7Logs)
+
+  const lastWalkLog = recentLogs[0] ?? null
+  const todayWalked = todayLogs.length > 0
+
   return (
     <HomeClient
       displayName={displayName}
@@ -129,6 +203,15 @@ export default async function HomePage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       lastWalk={lastWalk as any}
       isPro={isPro}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      walkStreak={walkStreak}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      weekData={weekData as any}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      lastWalkLog={lastWalkLog as any}
+      todayWalked={todayWalked}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      todayLogs={todayLogs as any}
     />
   )
 }
