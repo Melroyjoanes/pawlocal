@@ -9,6 +9,7 @@ interface WalkerClientProps {
   healthNotes: string | null
   ownerFirstName: string
   walkerName: string
+  ownerPhone: string | null
 }
 
 interface WalkLog {
@@ -72,6 +73,7 @@ export default function WalkerClient({
   healthNotes,
   ownerFirstName,
   walkerName,
+  ownerPhone,
 }: WalkerClientProps) {
   const [phase, setPhase] = useState<WalkPhase>('idle')
   const [logs, setLogs] = useState<WalkLog[]>([])
@@ -99,6 +101,7 @@ export default function WalkerClient({
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [parentWaLink, setParentWaLink] = useState<string | null>(null)
+  const [startWaLink, setStartWaLink] = useState<string | null>(null)
 
   async function handlePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -145,6 +148,14 @@ export default function WalkerClient({
     setGpsError(null)
     setPhase('walking')
     walkStartRef.current = new Date()
+
+    // Generate walk-started WhatsApp link for parent notification
+    if (ownerPhone) {
+      const phone = ownerPhone.replace(/\D/g, '')
+      const fullPhone = phone.startsWith('91') ? phone : `91${phone}`
+      const msg = `🐾 ${dogName}'s walk has started!\n\n${walkerName} is now walking ${dogName}. You'll get a full report when the walk ends.\n\nPowered by PupStep`
+      setStartWaLink(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`)
+    }
 
     // Start timer
     timerRef.current = setInterval(() => {
@@ -308,6 +319,28 @@ export default function WalkerClient({
       {/* ─── IDLE PHASE ─── */}
       {phase === 'idle' && (
         <div className="px-5 space-y-4">
+          {healthNotes && (
+            <div style={{
+              background: '#FFF7ED',
+              border: '1.5px solid #FED7AA',
+              borderRadius: 14,
+              padding: '12px 14px',
+              marginBottom: 16,
+              display: 'flex',
+              gap: 10,
+              alignItems: 'flex-start',
+            }}>
+              <span style={{ fontSize: 20, flexShrink: 0 }}>⚠️</span>
+              <div>
+                <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: '#92400E', margin: '0 0 3px' }}>
+                  Health notes from owner
+                </p>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#B45309', margin: 0, lineHeight: 1.5 }}>
+                  {healthNotes}
+                </p>
+              </div>
+            </div>
+          )}
           <button
             onClick={startWalk}
             className="w-full py-5 rounded-2xl font-bold text-2xl text-white shadow-lg active:scale-[0.97] transition-transform"
@@ -370,6 +403,35 @@ export default function WalkerClient({
       {/* ─── WALKING PHASE ─── */}
       {phase === 'walking' && (
         <div className="px-5 space-y-4">
+          {/* Walk started — notify parent prompt */}
+          {startWaLink && elapsed < 120 && (
+            <a
+              href={startWaLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                background: '#25D366',
+                borderRadius: 14,
+                padding: '10px 14px',
+                textDecoration: 'none',
+                marginBottom: 8,
+              }}
+            >
+              <span style={{ fontSize: 20 }}>📲</span>
+              <div>
+                <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: '#fff', margin: 0 }}>
+                  Notify {ownerFirstName} walk has started
+                </p>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: 'rgba(255,255,255,0.85)', margin: 0 }}>
+                  Tap to send a WhatsApp message
+                </p>
+              </div>
+            </a>
+          )}
+
           {/* Live stats */}
           <div className="rounded-2xl bg-[#0A2F35] text-white px-5 py-5 shadow-lg">
             <p className="text-xs text-teal-300 font-bold uppercase tracking-widest mb-3">Walk in progress</p>

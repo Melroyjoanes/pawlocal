@@ -40,6 +40,7 @@ export default async function WalkerPage({ params }: WalkerPageProps) {
       healthNotes={data.healthNotes}
       ownerFirstName={data.ownerFirstName}
       walkerName={data.walkerName ?? 'Walker'}
+      ownerPhone={data.ownerPhone ?? null}
     />
   )
 }
