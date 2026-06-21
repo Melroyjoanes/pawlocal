@@ -26,7 +26,7 @@ export default function TermsPage() {
         <div className="space-y-8" style={{ fontFamily: 'var(--font-nunito)', color: '#0A2F35' }}>
 
           <p className="text-sm leading-relaxed" style={{ opacity: 0.75 }}>
-            These Terms &amp; Conditions (&quot;Terms&quot;) govern your use of PupStep (&quot;Platform&quot;), operated by Melroy D&apos;Souza,
+            These Terms &amp; Conditions (&quot;Terms&quot;) govern your use of PupStep (&quot;Platform&quot;), operated by Melroy Joanes,
             Juhu, Mumbai, Maharashtra, India (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;). By accessing or using PupStep, you agree to be
             bound by these Terms. If you do not agree, please do not use the Platform.
           </p>
@@ -154,7 +154,7 @@ export default function TermsPage() {
             <div className="bg-white rounded-2xl border border-stone-200 p-5 mt-2">
               <p className="font-bold text-base mb-3" style={{ color: '#0A2F35' }}>Grievance Officer</p>
               <p className="text-sm leading-loose" style={{ opacity: 0.8 }}>
-                <strong>Name:</strong> Melroy D&apos;Souza<br />
+                <strong>Name:</strong> Melroy Joanes<br />
                 <strong>Designation:</strong> Founder &amp; Grievance Officer<br />
                 <strong>Email:</strong>{' '}
                 <a href="mailto:melroy@verfolia.com" style={{ color: 'oklch(0.48 0.17 196)' }}>melroy@verfolia.com</a><br />

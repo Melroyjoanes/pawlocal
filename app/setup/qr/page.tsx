@@ -55,7 +55,7 @@ export default async function SetupQRPage({
   if (!connection) {
     const token = generateToken()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: newConn } = await (db.from('walker_connections') as any)
+    const { data: newConn, error: insertErr } = await (db.from('walker_connections') as any)
       .insert({
         dog_id: dogId,
         owner_id: user.id,
@@ -65,6 +65,33 @@ export default async function SetupQRPage({
       })
       .select('id, token, walker_name, walker_phone, status, otp')
       .single()
+
+    if (insertErr) {
+      return (
+        <div className="min-h-dvh flex flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: '#FFFBEB' }}>
+          <span className="text-5xl">⚙️</span>
+          <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}>
+            One-time setup needed
+          </h1>
+          <p className="text-sm max-w-xs leading-relaxed" style={{ color: '#0A2F35', opacity: 0.7, fontFamily: 'var(--font-nunito)' }}>
+            A database trigger needs to be removed before QR codes can be generated.
+            Go to <strong>Supabase Dashboard → SQL Editor</strong> and run:
+          </p>
+          <pre className="text-left text-xs rounded-xl p-4 max-w-sm w-full overflow-x-auto" style={{ background: '#0A2F35', color: '#FFFBEB', fontFamily: 'monospace' }}>
+{`DROP TRIGGER IF EXISTS sheets_walker_connections
+  ON walker_connections;
+DROP TRIGGER IF EXISTS sheets_dogs ON dogs;
+DROP FUNCTION IF EXISTS public.send_sheets_webhook()
+  CASCADE;`}
+          </pre>
+          <p className="text-xs" style={{ color: '#0A2F35', opacity: 0.5 }}>
+            After running that SQL, come back and try again.
+          </p>
+          <a href="/setup" className="mt-2 text-sm font-semibold" style={{ color: 'oklch(0.48 0.17 196)' }}>← Back to setup</a>
+        </div>
+      )
+    }
+
     connection = newConn
   }
 

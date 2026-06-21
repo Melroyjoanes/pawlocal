@@ -27,7 +27,7 @@ export default function PrivacyPolicyPage() {
 
           <section>
             <p className="text-sm leading-relaxed" style={{ opacity: 0.75 }}>
-              PupStep (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is operated by Melroy D&apos;Souza, Juhu, Mumbai, Maharashtra, India.
+              PupStep (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is operated by Melroy Joanes, Juhu, Mumbai, Maharashtra, India.
               This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit{' '}
               <strong>pupstep.in</strong> or use our mobile web application. Please read this policy carefully. If you disagree
               with its terms, please discontinue use of the site.
@@ -178,7 +178,7 @@ export default function PrivacyPolicyPage() {
             <div className="bg-white rounded-2xl border border-stone-200 p-5 mt-2">
               <p className="font-bold text-base mb-3" style={{ color: '#0A2F35' }}>Designated Grievance Officer</p>
               <p className="text-sm leading-loose" style={{ opacity: 0.8 }}>
-                <strong>Name:</strong> Melroy D&apos;Souza<br />
+                <strong>Name:</strong> Melroy Joanes<br />
                 <strong>Designation:</strong> Founder &amp; Grievance Officer<br />
                 <strong>Email:</strong> <a href="mailto:melroy@verfolia.com" style={{ color: 'oklch(0.48 0.17 196)' }}>melroy@verfolia.com</a><br />
                 <strong>Address:</strong> PupStep, Juhu, Mumbai, Maharashtra — 400049, India<br />

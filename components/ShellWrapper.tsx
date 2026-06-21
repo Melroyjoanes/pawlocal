@@ -49,7 +49,6 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
             <nav className="flex items-center gap-0.5 mr-1">
               {[
                 { href: '/search', label: 'Find' },
-                { href: '/map', label: 'Near me' },
                 { href: '/broadcast', label: 'Post request' },
                 { href: '/blog', label: 'Blog' },
                 { href: '/faq', label: 'FAQs' },
@@ -108,7 +107,6 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
             <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>Discover</p>
             {[
               { href: '/search', label: 'Find services' },
-              { href: '/map', label: 'Map view' },
               { href: '/broadcast', label: 'Post a request' },
               { href: '/join', label: 'List your business' },
             ].map(({ href, label }) => (
