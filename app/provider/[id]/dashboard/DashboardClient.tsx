@@ -90,9 +90,8 @@ function ClaimBanner({ providerId, isClaimed }: { providerId: string; isClaimed:
             type="button"
             className="underline"
             onClick={async () => {
-              const supabase = createClient()
-              await supabase.auth.signOut()
-              window.location.reload()
+              await fetch('/api/auth/signout', { method: 'POST' })
+              window.location.href = '/?signed_out=1'
             }}
           >
             Sign out first
@@ -129,8 +128,7 @@ function SignOutButton() {
 
   async function handleSignOut() {
     setLoading(true)
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    await fetch('/api/auth/signout', { method: 'POST' })
     window.location.href = '/?signed_out=1'
   }
 
@@ -449,8 +447,7 @@ function WrongAccount({ provider, category }: { provider: ProviderWithPhotos; ca
 
   async function handleSwitch() {
     setLoading(true)
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    await fetch('/api/auth/signout', { method: 'POST' })
     window.location.href = `/?auth_required=1&next=${encodeURIComponent(`/provider/${provider.id}/dashboard`)}`
   }
 

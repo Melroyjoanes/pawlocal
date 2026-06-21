@@ -76,9 +76,8 @@ export default function ProDashboardClient({ provider, stats, broadcasts, firstN
   if (provider.price_min == null && provider.price_max == null) missingItems.push('Pricing')
 
   async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/pro')
+    await fetch('/api/auth/signout', { method: 'POST' })
+    window.location.href = '/?signed_out=1'
   }
 
   async function handleAvailabilityToggle() {

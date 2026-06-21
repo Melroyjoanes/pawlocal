@@ -19,9 +19,14 @@ export async function DELETE() {
 
   const db = admin()
 
-  // Delete user data in order (most dependent first)
-  // profiles row + cascaded rows are handled by FK ON DELETE CASCADE in schema
-  // but we delete subscriptions and broadcasts explicitly to be safe
+  // Delete in dependency order — deepest children first so no FK violation
+  // walk_logs → walker_connections → dogs (all reference auth.users without CASCADE)
+  await (db.from('walk_logs') as any).delete().eq('owner_id', user.id)
+  await (db.from('walker_connections') as any).delete().eq('owner_id', user.id)
+  await (db.from('dogs') as any).delete().eq('owner_id', user.id)
+  // Null-out provider user_id (provider listing stays, just unlinked)
+  await (db.from('providers') as any).update({ user_id: null }).eq('user_id', user.id)
+  // Standard user data
   await (db.from('subscriptions') as any).delete().eq('user_id', user.id)
   await (db.from('broadcasts') as any).delete().eq('user_id', user.id)
   await (db.from('saved_providers') as any).delete().eq('user_id', user.id)

@@ -36,8 +36,8 @@ export default function UserMenu() {
   }, [])
 
   async function signOut() {
-    await supabase.auth.signOut()
     setMenuOpen(false)
+    await fetch('/api/auth/signout', { method: 'POST' })
     window.location.href = '/?signed_out=1'
   }
 

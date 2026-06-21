@@ -176,8 +176,7 @@ export default function MyAccountClient({
 
   async function handleSignOut() {
     setSigningOut(true)
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    await fetch('/api/auth/signout', { method: 'POST' })
     window.location.href = '/?signed_out=1'
   }
 
@@ -192,9 +191,7 @@ export default function MyAccountClient({
         setDeleting(false)
         return
       }
-      // Sign out client-side then redirect
-      const supabase = createClient()
-      await supabase.auth.signOut()
+      await fetch('/api/auth/signout', { method: 'POST' })
       window.location.href = '/?deleted=1'
     } catch {
       setDeleteError('Network error. Please try again.')
