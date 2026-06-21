@@ -414,7 +414,7 @@ export default function QRDisplayClient({
           }}
         >
           <Link
-            href="/my-dogs"
+            href="/my-account"
             style={{
               display: 'block',
               width: '100%',
@@ -430,7 +430,7 @@ export default function QRDisplayClient({
               transition: 'background-color 0.15s',
             }}
           >
-            My dogs &amp; reports →
+            My account &amp; reports →
           </Link>
 
           <Link
