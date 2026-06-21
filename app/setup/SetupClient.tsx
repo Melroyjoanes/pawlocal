@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 
 interface Props {
   userName: string | null
+  justPaid?: boolean
 }
 
 const steps = [
@@ -40,13 +41,14 @@ const steps = [
   },
 ]
 
-export default function SetupClient({ userName }: Props) {
+export default function SetupClient({ userName, justPaid }: Props) {
   const router = useRouter()
   const [showForm, setShowForm] = useState(false)
 
   const [name, setName] = useState('')
   const [breed, setBreed] = useState('')
   const [healthNotes, setHealthNotes] = useState('')
+  const [ownerPhone, setOwnerPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -67,6 +69,7 @@ export default function SetupClient({ userName }: Props) {
           name: name.trim(),
           breed: breed.trim() || null,
           health_notes: healthNotes.trim() || null,
+          owner_phone: ownerPhone.trim() || null,
         }),
       })
 
@@ -76,7 +79,7 @@ export default function SetupClient({ userName }: Props) {
       }
 
       const dog = await res.json()
-      router.push(`/setup/qr?dog=${dog.id}`)
+      router.push(`/setup/qr?dog=${dog.id}&phone=${encodeURIComponent(ownerPhone.trim())}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setLoading(false)
@@ -127,6 +130,12 @@ export default function SetupClient({ userName }: Props) {
                   : "Set up your dog's walk reports"}
               </h1>
             </div>
+
+            {justPaid && (
+              <div style={{ background: 'rgba(13,148,136,0.1)', border: '1.5px solid rgba(13,148,136,0.3)', borderRadius: 14, padding: '12px 16px', marginBottom: 16, textAlign: 'center', fontSize: 14, color: '#0A2F35', fontFamily: 'var(--font-nunito)' }}>
+                🎉 <strong>Payment successful!</strong> Now set up your dog to start getting walk reports.
+              </div>
+            )}
 
             {/* Step cards */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -372,6 +381,41 @@ export default function SetupClient({ userName }: Props) {
                     color: '#0A2F35',
                     outline: 'none',
                     resize: 'vertical',
+                    transition: 'border-color 0.15s',
+                  }}
+                  onFocus={e => (e.target.style.borderColor = '#FF8C52')}
+                  onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+                />
+              </div>
+
+              {/* Owner Phone */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label
+                  htmlFor="owner-phone"
+                  style={{
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    color: '#0A2F35',
+                  }}
+                >
+                  Your WhatsApp number (for walk reports){' '}
+                  <span style={{ fontWeight: 400, color: '#9CA3AF' }}>(optional)</span>
+                </label>
+                <input
+                  id="owner-phone"
+                  type="tel"
+                  inputMode="numeric"
+                  value={ownerPhone}
+                  onChange={e => setOwnerPhone(e.target.value)}
+                  placeholder="9876543210"
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: '10px',
+                    border: '2px solid #E5E7EB',
+                    fontSize: '15px',
+                    fontFamily: 'var(--font-nunito), sans-serif',
+                    color: '#0A2F35',
+                    outline: 'none',
                     transition: 'border-color 0.15s',
                   }}
                   onFocus={e => (e.target.style.borderColor = '#FF8C52')}

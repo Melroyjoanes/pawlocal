@@ -83,6 +83,10 @@ export default function UserMenu() {
             <p className="text-xs text-muted-foreground truncate">{user.email ?? user.phone}</p>
           </div>
           <div className="py-1">
+            <a href="/home" onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+              🏠 My home
+            </a>
             <a href="/my-account" onClick={() => setMenuOpen(false)}
               className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
               🐶 My account

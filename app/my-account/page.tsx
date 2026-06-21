@@ -23,31 +23,19 @@ export default async function MyAccountPage() {
   const rawPhone = user.phone ?? ''
   const normalizedPhone = rawPhone.replace(/\D/g, '').replace(/^91/, '')
 
-  // Fetch broadcasts — by user_id first (works after migration 017), then fall back to phone
-  let broadcasts: {
-    id: string; service_slug: string; pet_description: string;
-    area: string; date_needed: string; budget: string | null;
-    status: string; created_at: string;
-  }[] = []
-
-  // Try by user_id first (works after migration 017 when user_id is set on broadcasts)
+  // Fetch broadcasts by user_id (works for all auth providers incl. Google — migration 017 added user_id column)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: broadcastsByUser } = await (supabase.from('broadcasts') as any)
-    .select('id, service_slug, pet_description, area, date_needed, budget, status, created_at')
+  const { data: broadcastsData } = await (admin().from('broadcasts') as any)
+    .select('id, service_slug, pet_description, area, date_needed, budget, poster_name, status, created_at, expires_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
+    .limit(20)
 
-  if (broadcastsByUser && broadcastsByUser.length > 0) {
-    broadcasts = broadcastsByUser
-  } else if (normalizedPhone.length >= 10) {
-    // Fallback: match by phone for older broadcasts
-    const { data } = await supabase
-      .from('broadcasts')
-      .select('id, service_slug, pet_description, area, date_needed, budget, status, created_at')
-      .ilike('poster_whatsapp', `%${normalizedPhone}%`)
-      .order('created_at', { ascending: false })
-    broadcasts = data ?? []
-  }
+  const broadcasts: {
+    id: string; service_slug: string; pet_description: string;
+    area: string; date_needed: string; budget: string | null;
+    poster_name: string | null; status: string; created_at: string; expires_at: string | null;
+  }[] = broadcastsData ?? []
 
   // Fetch claimed walk reports, grooming reports, informal walk logs, subscription, profile, dogs, and walker connections in parallel
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
