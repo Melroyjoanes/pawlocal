@@ -178,7 +178,7 @@ export default function MyAccountClient({
     setSigningOut(true)
     const supabase = createClient()
     await supabase.auth.signOut()
-    window.location.href = '/'
+    window.location.href = '/?signed_out=1'
   }
 
   async function handleDeleteAccount() {

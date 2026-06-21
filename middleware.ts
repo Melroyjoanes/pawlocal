@@ -21,6 +21,10 @@ export async function middleware(request: NextRequest) {
   // Redirect logged-in pet parents from the marketing homepage to their personal home.
   // Providers are handled by ProviderAutoRedirect on the client side.
   if (pathname === '/') {
+    // Skip auto-redirect when the user just signed out — cookies may still be present
+    // on this request even though the client cleared them.
+    if (request.nextUrl.searchParams.get('signed_out') === '1') return response
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
