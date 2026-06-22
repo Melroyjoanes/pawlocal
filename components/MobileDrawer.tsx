@@ -195,33 +195,6 @@ export default function MobileDrawer() {
               <div className="flex-1 overflow-y-auto overscroll-contain">
                 <div className="px-4 pt-5 pb-4 space-y-6">
 
-                  {/* Browse — colorful 2-col grid */}
-                  <section>
-                    <p style={EYEBROW}>Browse</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {CATEGORIES.map((cat, i) => (
-                        <motion.a
-                          key={cat.slug}
-                          href={`/${cat.slug}`}
-                          onClick={() => setOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-[11px] rounded-2xl"
-                          style={{ background: cat.bg, boxShadow: CHIP_SHADOW }}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3, ease: EXPO_OUT, delay: 0.18 + i * 0.04 }}
-                          whileHover={{ y: -2 }}
-                          whileTap={{ scale: 0.97 }}
-                        >
-                          <span className="text-[20px] leading-none">{cat.icon}</span>
-                          <span className="text-[12.5px] font-semibold leading-tight"
-                            style={{ color: cat.fg }}>
-                            {cat.name}
-                          </span>
-                        </motion.a>
-                      ))}
-                    </div>
-                  </section>
-
                   {/* Quick links */}
                   <section>
                     <p style={EYEBROW}>Quick links</p>
@@ -275,15 +248,15 @@ export default function MobileDrawer() {
                               <span className="text-[18px] w-7 text-center leading-none flex-shrink-0">🐶</span>
                               <span className="text-[14px] font-medium text-stone-700">My account</span>
                             </a>
+                            <a href="/home" onClick={() => setOpen(false)}
+                              className="flex items-center gap-3 px-2 py-[11px] rounded-xl hover:bg-amber-50 active:bg-amber-100 transition-colors">
+                              <span className="text-[18px] w-7 text-center leading-none flex-shrink-0">🏠</span>
+                              <span className="text-[14px] font-medium text-stone-700">My home</span>
+                            </a>
                             <a href="/my-account" onClick={() => setOpen(false)}
                               className="flex items-center gap-3 px-2 py-[11px] rounded-xl hover:bg-amber-50 active:bg-amber-100 transition-colors">
                               <span className="text-[18px] w-7 text-center leading-none flex-shrink-0">🐾</span>
                               <span className="text-[14px] font-medium text-stone-700">Walk reports</span>
-                            </a>
-                            <a href="/broadcast" onClick={() => setOpen(false)}
-                              className="flex items-center gap-3 px-2 py-[11px] rounded-xl hover:bg-amber-50 active:bg-amber-100 transition-colors">
-                              <span className="text-[18px] w-7 text-center leading-none flex-shrink-0">⭐</span>
-                              <span className="text-[14px] font-medium text-stone-700">Post a request</span>
                             </a>
                           </>
                         )}

@@ -7,11 +7,10 @@ import {
 } from 'framer-motion'
 import {
   MapPin, Search, ClipboardList, ShieldCheck, MessageCircle,
-  IndianRupee, Check, Timer, Ruler, Megaphone, Bell, Star,
+  IndianRupee, Check, Timer, Ruler, Megaphone, Star,
   Droplets, Sparkles, ArrowRight, Users, Navigation,
   PawPrint as LucidePaw,
 } from 'lucide-react'
-import { CATEGORIES } from '@/lib/categories'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const EASE_EXP  = [0.16, 1, 0.3, 1] as const
@@ -121,13 +120,6 @@ const BLEED: React.CSSProperties = {
   width: '100vw',
   marginLeft: 'calc(50% - 50vw)',
   marginRight: 'calc(50% - 50vw)',
-}
-
-const CAT_CLAY: Record<string, CKey> = {
-  'dog-walking': 'amber',
-  'grooming':    'lavender',
-  'vet':         'mint',
-  'dog-training':'sky',
 }
 
 // ─── Decorative: PawPrint SVG ─────────────────────────────────────────────────
@@ -399,49 +391,6 @@ function FadeUp({ children, delay = 0, className = '' }: {
   )
 }
 
-// ─── Clay card with 3-D tilt (mouse only) ────────────────────────────────────
-function ClayCard({ ckey = 'white' as CKey, children, className = '', style = {}, href, radius = 24 }: {
-  ckey?: CKey; children: React.ReactNode; className?: string
-  style?: React.CSSProperties; href?: string; radius?: number
-}) {
-  const ref     = useRef<HTMLDivElement>(null)
-  const hasH    = useHasHover()
-  const rm      = useReducedMotion()
-  const rx      = useMotionValue(0)
-  const ry      = useMotionValue(0)
-  const srx     = useSpring(rx, { stiffness: 280, damping: 28 })
-  const sry     = useSpring(ry, { stiffness: 280, damping: 28 })
-
-  const onMove = (e: React.MouseEvent) => {
-    if (!hasH || rm || !ref.current) return
-    const r = ref.current.getBoundingClientRect()
-    rx.set(((e.clientY - r.top) / r.height - 0.5) * -6)
-    ry.set(((e.clientX - r.left) / r.width - 0.5) * 6)
-  }
-  const onLeave = () => { rx.set(0); ry.set(0) }
-
-  const inner = (
-    <motion.div
-      ref={ref}
-      onMouseMove={onMove}
-      onMouseLeave={onLeave}
-      whileHover={rm ? {} : { y: -4, scale: 1.01 }}
-      whileTap={rm ? {} : { y: 1, scale: 0.99 }}
-      transition={SPRING}
-      style={{
-        ...(hasH && !rm ? { rotateX: srx, rotateY: sry, transformStyle: 'preserve-3d' as const } : {}),
-        borderRadius: radius,
-        willChange: 'transform',
-        ...cs(ckey), ...style,
-      }}
-      className={`overflow-hidden ${className}`}
-    >
-      {children}
-    </motion.div>
-  )
-  return href ? <Link href={href} className="block">{inner}</Link> : inner
-}
-
 // ─── CTA button ───────────────────────────────────────────────────────────────
 function Btn({ href, children, ckey = 'amberCTA' as CKey, size = 'md', className = '' }: {
   href: string; children: React.ReactNode; ckey?: CKey; size?: 'sm' | 'md' | 'lg'; className?: string
@@ -539,29 +488,11 @@ function WalkReportCard() {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 interface Props {
-  countMap: Record<string, number>
-  totalProviders: number
   neighbourhood?: string
 }
 
-export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props) {
-  const rm        = useReducedMotion()
-  const [step, setStep] = useState(0)
-
-  useEffect(() => {
-    if (rm) return
-    const id = setInterval(() => setStep(s => (s + 1) % 3), 2400)
-    return () => clearInterval(id)
-  }, [rm])
-
-  // Only show dog-walking + grooming from directory
-  const DISPLAY_CATS = CATEGORIES.filter(c => ['dog-walking', 'grooming'].includes(c.slug))
-
-  const STEPS = [
-    { Icon: Megaphone, title: 'Post your request', sub: '"Need a groomer this Sunday in Juhu, ₹500 budget"', ckey: 'amber' as CKey },
-    { Icon: Bell,      title: 'Verified providers see it', sub: '3 nearby providers notified instantly',          ckey: 'peach' as CKey },
-    { Icon: MessageCircle, title: 'They WhatsApp you', sub: 'Pick the best fit. Zero fees.',                    ckey: 'mint'  as CKey },
-  ]
+export default function LandingPage({ neighbourhood = 'Juhu' }: Props) {
+  const rm = useReducedMotion()
 
   return (
     <div style={{ background: C.pageBg }} className="-mt-8">
@@ -645,10 +576,10 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
                 <Btn href="/setup" size="lg">Set up your dog <ArrowRight size={15} /></Btn>
                 <motion.div whileHover={rm ? {} : { y: -3, scale: 1.03 }} whileTap={rm ? {} : { y: 3, scale: 0.98 }}
                   transition={SPRING} className="inline-block">
-                  <Link href="/dog-walking"
+                  <Link href="/broadcast"
                     className="inline-flex items-center gap-2 rounded-full font-bold px-6 py-3.5 text-sm"
                     style={{ background: 'transparent', border: '2px solid rgba(180,83,9,0.22)', color: '#78350F' }}>
-                    Find a verified walker <Navigation size={13} />
+                    Post a request <Megaphone size={13} />
                   </Link>
                 </motion.div>
               </motion.div>
@@ -850,131 +781,6 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
         </div>
       </section>
 
-      {/* ══ CATEGORIES — bento with varied heights ══════════════════════════════ */}
-      <section style={{ ...BLEED, background: 'white' }} className="py-12 sm:py-16 lg:py-24">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <FadeUp className="mb-9">
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#F07030' }}>What does your pup need?</p>
-                <h2 className="font-display text-slate-900" style={{ fontSize: 'clamp(1.7rem,4vw,2.6rem)', lineHeight: 1.12 }}>Find the right care near {neighbourhood}</h2>
-              </div>
-            </div>
-          </FadeUp>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-3 sm:gap-4">
-            {/* Directory cards — 4 photo categories */}
-            {DISPLAY_CATS.map((cat, i) => {
-              const ck      = (CAT_CLAY[cat.slug] ?? 'white') as CKey
-              const photo   = CAT_PHOTO[cat.slug]
-              const pos     = CAT_POS[cat.slug] ?? 'center 30%'
-              const count   = countMap[cat.slug]
-              const t       = C[ck] as { bg: string; shadow: string; border: string; text: string }
-              const heights = ['clamp(185px,26vw,260px)', 'clamp(165px,22vw,230px)', 'clamp(175px,24vw,245px)', 'clamp(155px,20vw,215px)']
-              return (
-                <FadeUp key={cat.slug} delay={i * 0.06} className="lg:col-span-6 md:col-span-2">
-                  <Link href={`/${cat.slug}`} className="block group">
-                    <motion.div
-                      whileHover={rm ? {} : { y: -5, scale: 1.01 }}
-                      whileTap={rm ? {} : { y: 2, scale: 0.99 }}
-                      transition={SPRING}
-                      style={{ borderRadius: 20, overflow: 'hidden', boxShadow: t.shadow, border: t.border, height: heights[i] ?? heights[0] }}
-                      className="flex flex-col">
-                      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photo} alt={`${cat.name} in ${neighbourhood}`} loading="lazy" decoding="async"
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: pos, transition: 'transform 0.5s ease', display: 'block' }}
-                          className="group-hover:scale-105" />
-                        <div style={{ position: 'absolute', inset: 0, background: t.bg, opacity: 0.12, mixBlendMode: 'multiply', pointerEvents: 'none' }} aria-hidden />
-                        {count ? (
-                          <div style={{ position: 'absolute', top: 9, right: 9, background: 'rgba(255,255,255,0.95)', borderRadius: 100, padding: '3px 9px', fontSize: 10, fontWeight: 700, color: t.text, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-                            {count} nearby
-                          </div>
-                        ) : null}
-                      </div>
-                      <div style={{ background: t.bg, padding: '11px 14px 14px' }}>
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg leading-none">{cat.icon}</span>
-                            <p className="font-bold text-sm leading-tight" style={{ color: t.text }}>{cat.name}</p>
-                          </div>
-                          <motion.span className="font-bold text-base flex-shrink-0" style={{ color: t.text }}
-                            animate={rm ? {} : { x: [0, 3, 0] }}
-                            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: i * 0.3 }}>
-                            →
-                          </motion.span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  </Link>
-                </FadeUp>
-              )
-            })}
-
-            {/* Feature card 1 — Care Reports (QR walker system) */}
-            <FadeUp delay={0.12} className="lg:col-span-6 md:col-span-2">
-              <Link href="/setup" className="block group">
-                <motion.div
-                  whileHover={rm ? {} : { y: -5, scale: 1.01 }}
-                  whileTap={rm ? {} : { y: 2, scale: 0.99 }}
-                  transition={SPRING}
-                  className="flex flex-col justify-between"
-                  style={{ borderRadius: 20, overflow: 'hidden', height: 'clamp(195px,30vw,275px)', ...cs('teal') }}>
-                  <div className="p-5 flex flex-col justify-between h-full">
-                    <div>
-                      <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(23,200,204,0.12)', border: '1.5px solid rgba(23,200,204,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                        <ClipboardList size={20} style={{ color: '#17C8CC' }} strokeWidth={1.6} />
-                      </div>
-                      <p className="font-bold text-sm text-white leading-snug mb-1">Daily Care Reports</p>
-                      <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                        Your walker logs every walk. You see it all.
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                      <span className="text-xs font-bold" style={{ color: '#17C8CC' }}>Set up your dog →</span>
-                      <span style={{ fontSize: 20 }}>📋</span>
-                    </div>
-                  </div>
-                </motion.div>
-              </Link>
-            </FadeUp>
-
-            {/* Feature card 2 — Post a broadcast request */}
-            <FadeUp delay={0.18} className="lg:col-span-6 md:col-span-2">
-              <Link href="/broadcast" className="block group">
-                <motion.div
-                  whileHover={rm ? {} : { y: -5, scale: 1.01 }}
-                  whileTap={rm ? {} : { y: 2, scale: 0.99 }}
-                  transition={SPRING}
-                  className="flex flex-col justify-between"
-                  style={{ borderRadius: 20, overflow: 'hidden', height: 'clamp(165px,26vw,235px)', ...cs('peach') }}>
-                  <div className="p-5 flex flex-col justify-between h-full">
-                    <div>
-                      <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(255,255,255,0.5)', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                        <Megaphone size={20} style={{ color: '#7C2D12' }} strokeWidth={1.6} />
-                      </div>
-                      <p className="font-bold text-sm leading-snug mb-1" style={{ color: '#7C2D12' }}>Post a Request</p>
-                      <p className="text-xs leading-relaxed" style={{ color: 'rgba(124,45,18,0.65)' }}>
-                        Need a groomer this Sunday? Tell the neighbourhood.
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.4)' }}>
-                      <span className="text-xs font-bold" style={{ color: '#C2410C' }}>Post now →</span>
-                      <span style={{ fontSize: 20 }}>📢</span>
-                    </div>
-                  </div>
-                </motion.div>
-              </Link>
-            </FadeUp>
-          </div>
-
-          <FadeUp delay={0.26} className="mt-9 flex items-center justify-center gap-3 flex-wrap">
-            <p className="text-sm text-slate-400">Can&apos;t find what you need?</p>
-            <Btn href="/broadcast" ckey="amber"><Megaphone size={13} /> Post a request</Btn>
-          </FadeUp>
-        </div>
-      </section>
-
       {/* ══ TESTIMONIALS — 3 genuinely different cards ══════════════════════════ */}
       <section style={{ ...BLEED, background: C.pageBg }} className="py-12 sm:py-16 lg:py-24">
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
@@ -1120,51 +926,6 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
         </div>
       </section>
 
-      {/* ══ BROADCAST ═══════════════════════════════════════════════════════════ */}
-      <section style={{ ...BLEED, background: 'linear-gradient(135deg,#0D3528 0%,#1A5C42 50%,#0D3528 100%)', position: 'relative', overflow: 'hidden' }}
-        className="py-12 sm:py-16 lg:py-24">
-        <div className="absolute inset-0 pointer-events-none" aria-hidden>
-          <div style={{ position: 'absolute', top: -80, right: -60, width: 420, height: 420, borderRadius: '50%', background: '#F07030', opacity: 0.055 }} />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-5 sm:px-8">
-          <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
-            <FadeUp className="flex-1 text-center lg:text-left">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 mb-6 uppercase tracking-wider"
-                style={{ ...cs('amber'), borderRadius: 100, color: C.amber.text }}>
-                <Sparkles size={11} /> Pet Broadcast · bonus feature
-              </span>
-              <h2 className="font-display text-white leading-tight mb-4" style={{ fontSize: 'clamp(1.9rem,4.5vw,3.4rem)' }}>
-                Need a new walker or groomer?<br /><span style={{ color: '#FF8C52' }}>Just post it.</span>
-              </h2>
-              <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-md mx-auto lg:mx-0 leading-relaxed">
-                Post your request once. Verified providers nearby reply directly on WhatsApp. No middleman, no fees.
-              </p>
-              <Btn href="/broadcast" size="lg"><Megaphone size={15} /> Post a Request</Btn>
-            </FadeUp>
-
-            {/* Animated step cards */}
-            <div className="flex-shrink-0 w-full max-w-sm space-y-3">
-              {STEPS.map((s, i) => (
-                <motion.div key={i}
-                  animate={rm ? {} : { scale: step === i ? 1.03 : 1, opacity: step === i ? 1 : 0.42 }}
-                  transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  style={{ ...cs(s.ckey), outline: !rm && step === i ? '2px solid rgba(255,255,255,0.16)' : 'none' }}
-                  className="flex items-start gap-4 p-4 rounded-[20px]"
-                >
-                  <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <s.Icon size={17} style={{ color: (C[s.ckey] as { text: string }).text }} strokeWidth={1.8} />
-                  </div>
-                  <div>
-                    <p className="font-bold text-sm" style={{ color: (C[s.ckey] as { text: string }).text }}>{s.title}</p>
-                    <p className="text-xs mt-0.5 opacity-70" style={{ color: (C[s.ckey] as { text: string }).text }}>{s.sub}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ══ PROVIDER CTA ════════════════════════════════════════════════════════ */}
       <section style={{ ...BLEED, background: 'linear-gradient(135deg,#0A2F35 0%,#0D3D45 100%)', position: 'relative', overflow: 'hidden' }}
         className="py-14 sm:py-20">
@@ -1177,49 +938,18 @@ export default function LandingPage({ countMap, neighbourhood = 'Juhu' }: Props)
         <FadeUp className="relative max-w-3xl mx-auto px-5 sm:px-8 text-center">
           <span className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 mb-6 uppercase tracking-wider"
             style={{ ...cs('amber'), borderRadius: 100, color: C.amber.text }}>
-            <Users size={11} /> For walkers and groomers
+            <Users size={11} /> For dog walkers
           </span>
           <h2 className="font-display text-white leading-tight mb-5" style={{ fontSize: 'clamp(1.9rem,4.5vw,3.4rem)' }}>
-            Are you a walker or groomer<br /><span style={{ color: '#FF8C52' }}>in {neighbourhood}?</span>
+            Walk dogs in {neighbourhood}?<br /><span style={{ color: '#FF8C52' }}>Find clients here.</span>
           </h2>
           <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-lg mx-auto leading-relaxed">
-            Get listed. Send GPS care reports after every session. Build trust with clients, get more work — no booking commission, ever.
+            Pet parents in your area post requests on PupStep. Browse and reply on WhatsApp. No commission, ever.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
-            <Btn href="/join" ckey="amberCTA" size="lg">Get listed <ArrowRight size={15} /></Btn>
-            <motion.div whileHover={rm ? {} : { y: -3, scale: 1.03 }} whileTap={rm ? {} : { y: 3, scale: 0.98 }}
-              transition={SPRING} className="inline-block">
-              <Link href="/broadcast"
-                className="inline-flex items-center gap-2 rounded-full font-bold px-8 py-4 text-base"
-                style={{ background: 'rgba(255,255,255,0.08)', border: '2px solid rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.82)' }}>
-                <Megaphone size={15} /> Browse requests
-              </Link>
-            </motion.div>
+            <Btn href="/broadcast" ckey="amberCTA" size="lg"><Megaphone size={15} /> Browse requests</Btn>
           </div>
         </FadeUp>
-      </section>
-
-      {/* ══ MAP TEASER ═══════════════════════════════════════════════════════════ */}
-      <section style={{ ...BLEED, background: 'white' }} className="py-5">
-        <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <ClayCard ckey="white" href="/map" className="p-5 sm:p-7">
-            <div className="flex items-center justify-between gap-5">
-              <div className="flex items-center gap-4">
-                <motion.div animate={rm ? {} : { rotate: [0, 8, -8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  style={{ width: 46, height: 46, borderRadius: 14, background: '#E0F2FE', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Navigation size={20} style={{ color: '#075985' }} strokeWidth={1.8} />
-                </motion.div>
-                <div>
-                  <p className="font-bold text-slate-800 text-sm sm:text-base">See everything on one map</p>
-                  <p className="text-xs sm:text-sm text-slate-400 mt-0.5">All vets, groomers, and walkers near you</p>
-                </div>
-              </div>
-              <span className="text-sm font-bold text-slate-300 hidden sm:flex items-center gap-1 flex-shrink-0">
-                Open map <ArrowRight size={13} />
-              </span>
-            </div>
-          </ClayCard>
-        </div>
       </section>
 
       {/* ══ FOOTER TRUST LINE ════════════════════════════════════════════════════ */}

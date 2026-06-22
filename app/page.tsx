@@ -1,16 +1,11 @@
 import type { Metadata } from 'next'
-import { createClient } from '@/lib/supabase/server'
 import LandingPage from '@/components/LandingPage'
 import ProviderAutoRedirect from '@/components/ProviderAutoRedirect'
 
-// Revalidate every 5 minutes — provider counts change rarely, no need to hit
-// Supabase on every single request. ISR serves cached HTML instantly.
-export const revalidate = 300
-
 export const metadata: Metadata = {
-  title: "PupStep — Mumbai's Verified Pet People",
+  title: "PupStep — GPS Walk Reports for Mumbai Dogs",
   description:
-    "Mumbai's most trusted pet directory. Find verified walkers, vets, groomers and more near you. WhatsApp direct. Zero booking fees.",
+    "Share PupStep with your dog walker. They log every walk in 60 seconds — GPS route, photos, poop count. A care report lands straight in your WhatsApp.",
 }
 
 export default async function HomePage({
@@ -20,34 +15,6 @@ export default async function HomePage({
 }) {
   const { area } = await searchParams
   const neighbourhood = area ?? 'Juhu'
-
-  const supabase = await createClient()
-
-  // Try to filter by neighbourhood — gracefully falls back to all if column doesn't exist yet
-  let counts: { category_slug: string }[] | null = null
-  const { data: filtered, error } = await supabase
-    .from('providers')
-    .select('category_slug')
-    .eq('status', 'approved')
-    .eq('neighbourhood', neighbourhood)
-
-  if (error) {
-    // Migration 010 not run yet — fall back to all approved providers
-    const { data: all } = await supabase
-      .from('providers')
-      .select('category_slug')
-      .eq('status', 'approved')
-    counts = all
-  } else {
-    counts = filtered
-  }
-
-  const countMap: Record<string, number> = {}
-  counts?.forEach((row) => {
-    countMap[row.category_slug] = (countMap[row.category_slug] ?? 0) + 1
-  })
-
-  const totalProviders = Object.values(countMap).reduce((a, b) => a + b, 0)
 
   return (
     <>
@@ -160,7 +127,7 @@ export default async function HomePage({
         }}
       />
       <ProviderAutoRedirect />
-      <LandingPage countMap={countMap} totalProviders={totalProviders} neighbourhood={neighbourhood} />
+      <LandingPage neighbourhood={neighbourhood} />
     </>
   )
 }

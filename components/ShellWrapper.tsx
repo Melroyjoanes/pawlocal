@@ -48,8 +48,7 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
             <nav className="flex items-center gap-0.5 mr-1">
               {[
-                { href: '/search', label: 'Find' },
-                { href: '/broadcast', label: 'Post request' },
+                { href: '/upgrade', label: 'Pricing' },
                 { href: '/blog', label: 'Blog' },
                 { href: '/faq', label: 'FAQs' },
                 { href: '/contact', label: 'Contact' },
@@ -63,7 +62,6 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
                 </a>
               ))}
             </nav>
-            <HeaderSearch />
           </div>
           <AuthNavItem />
         </div>
@@ -80,18 +78,18 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
               <Image src="/logo.webp" alt="PupStep" width={130} height={48} className="h-10 w-auto" />
             </div>
             <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              Mumbai&apos;s verified pet services directory. Juhu · Versova · Andheri West · Santacruz West.
+              GPS walk reports for Mumbai dog parents. Share with your walker, get a WhatsApp report after every walk.
             </p>
           </div>
 
-          {/* Services */}
+          {/* Product */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>Services</p>
+            <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>Product</p>
             {[
-              { href: '/dog-walking', label: 'Dog walking' },
-              { href: '/grooming', label: 'Grooming' },
-              { href: '/setup', label: 'Care reports' },
+              { href: '/setup', label: 'Set up your dog' },
+              { href: '/home', label: 'Walk dashboard' },
               { href: '/broadcast', label: 'Post a request' },
+              { href: '/upgrade', label: 'Pricing' },
             ].map(({ href, label }) => (
               <a key={href} href={href} className="block text-sm mb-2 transition-colors"
                 style={{ color: 'rgba(255,255,255,0.5)' }}
@@ -102,13 +100,13 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
             ))}
           </div>
 
-          {/* Discover */}
+          {/* For walkers */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>Discover</p>
+            <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>For walkers</p>
             {[
-              { href: '/search', label: 'Find services' },
-              { href: '/broadcast', label: 'Post a request' },
-              { href: '/join', label: 'List your business' },
+              { href: '/broadcast', label: 'Browse requests' },
+              { href: '/faq', label: 'How it works' },
+              { href: '/contact', label: 'Get in touch' },
             ].map(({ href, label }) => (
               <a key={href} href={href} className="block text-sm mb-2 transition-colors"
                 style={{ color: 'rgba(255,255,255,0.5)' }}
