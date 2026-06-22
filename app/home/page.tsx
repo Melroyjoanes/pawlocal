@@ -89,7 +89,6 @@ export default async function HomePage() {
     { data: lastWalkRaw },
     { data: subData },
     { data: walkLogsRaw },
-    { data: todayLogsRaw },
   ] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (db.from('profiles') as any)
@@ -146,20 +145,12 @@ export default async function HomePage() {
       .gt('expires_at', new Date().toISOString())
       .maybeSingle(),
 
-    // Walk logs last 14 days — for streak + week summary + last walk
+    // Walk logs last 14 days — covers streak, week grid, last walk, AND today (derived below)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (db.from('walk_logs') as any)
       .select('id, started_at, ended_at, duration_mins, distance_km, poop_count, pee_count, mood, walker_name')
       .eq('owner_id', user.id)
       .gte('started_at', fourteenDaysAgoIST())
-      .order('started_at', { ascending: false }),
-
-    // Today's walk logs
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (db.from('walk_logs') as any)
-      .select('id, started_at, duration_mins, distance_km, poop_count, pee_count, mood, walker_name')
-      .eq('owner_id', user.id)
-      .gte('started_at', todayMidnight)
       .order('started_at', { ascending: false }),
   ])
 
@@ -179,7 +170,8 @@ export default async function HomePage() {
   const isPro = !!subData
 
   const recentLogs = walkLogsRaw ?? []
-  const todayLogs = todayLogsRaw ?? []
+  // Derive today's logs from the 14-day fetch — no extra round-trip needed
+  const todayLogs = recentLogs.filter((l: { started_at: string }) => l.started_at >= todayMidnight)
   const walkStreak = computeStreak(recentLogs)
 
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()

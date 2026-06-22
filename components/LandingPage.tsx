@@ -303,6 +303,8 @@ const ROUTE_PATH = ROUTE.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x} ${y}`).
 
 function WalkingDogMap({ dark = false }: { dark?: boolean }) {
   const reduced = useReducedMotion()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const inView = useInView(containerRef)
   const dogX = useMotionValue(ROUTE[0][0] - 10)
   const dogY = useMotionValue(ROUTE[0][1] - 10)
   const sDX  = useSpring(dogX, { stiffness: 40, damping: 10 })
@@ -319,10 +321,10 @@ function WalkingDogMap({ dark = false }: { dark?: boolean }) {
   }, [dir, dogX, dogY])
 
   useEffect(() => {
-    if (reduced) return
+    if (reduced || !inView) return
     const id = setInterval(tick, 620)
     return () => clearInterval(id)
-  }, [reduced, tick])
+  }, [reduced, inView, tick])
 
   const bg        = dark ? 'rgba(255,255,255,0.03)' : '#E6F7F8'
   const border    = dark ? '1px solid rgba(255,255,255,0.09)' : '1.5px solid rgba(10,138,150,0.18)'
@@ -330,7 +332,7 @@ function WalkingDogMap({ dark = false }: { dark?: boolean }) {
   const grid      = dark ? 'rgba(255,255,255,0.05)' : 'rgba(10,138,150,0.07)'
 
   return (
-    <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', background: bg, border }}>
+    <div ref={containerRef} style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', background: bg, border }}>
       <svg viewBox="0 0 294 100" xmlns="http://www.w3.org/2000/svg"
         style={{ width: '100%', height: 100, display: 'block' }} aria-hidden>
         {/* grid */}
@@ -493,13 +495,16 @@ interface Props {
 
 export default function LandingPage({ neighbourhood = 'Juhu' }: Props) {
   const rm = useReducedMotion()
+  // Pause infinite hero animations when scrolled off-screen to avoid sustained GPU drain
+  const heroRef = useRef<HTMLElement>(null)
+  const heroInView = useInView(heroRef)
 
   return (
     <div style={{ background: C.pageBg }} className="-mt-8">
       <PawCursor />
 
       {/* ══ HERO ══════════════════════════════════════════════════════════════ */}
-      <section style={{ ...BLEED, background: '#FFFBEB', position: 'relative', overflow: 'hidden' }}
+      <section ref={heroRef} style={{ ...BLEED, background: '#FFFBEB', position: 'relative', overflow: 'hidden' }}
         className="min-h-[100svh] flex flex-col justify-center">
         {/* Dot grid bg */}
         <div className="absolute inset-0 pointer-events-none" aria-hidden
@@ -507,15 +512,15 @@ export default function LandingPage({ neighbourhood = 'Juhu' }: Props) {
         {/* Spheres */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
           <motion.div style={{ position: 'absolute', top: -70, right: -55 }}
-            animate={rm ? {} : { y: [0, -18, 0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}>
+            animate={rm || !heroInView ? {} : { y: [0, -18, 0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}>
             <TealSphere size={300} />
           </motion.div>
           <motion.div style={{ position: 'absolute', bottom: -30, left: 80 }}
-            animate={rm ? {} : { y: [0, -12, 0] }} transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}>
+            animate={rm || !heroInView ? {} : { y: [0, -12, 0] }} transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}>
             <TealSphere size={160} />
           </motion.div>
           <motion.div style={{ position: 'absolute', top: '34%', left: '5%' }}
-            animate={rm ? {} : { y: [0, -10, 0], rotate: [-18, -14, -18] }}
+            animate={rm || !heroInView ? {} : { y: [0, -10, 0], rotate: [-18, -14, -18] }}
             transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}>
             <Bone size={72} color="#F59E0B" opacity={0.5} />
           </motion.div>
@@ -528,7 +533,7 @@ export default function LandingPage({ neighbourhood = 'Juhu' }: Props) {
             { top: '76%', left: undefined, right: '13%', size: 16, rotate: 15, d: 0.2 },
           ]).map(({ top, left, right, size, rotate, d }, i) => (
             <motion.div key={i} style={{ position: 'absolute', top, left, right, transform: `rotate(${rotate}deg)` }}
-              animate={rm ? {} : { opacity: [0.28, 0.5, 0.28] }}
+              animate={rm || !heroInView ? {} : { opacity: [0.28, 0.5, 0.28] }}
               transition={{ duration: 3.2 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay: d }}>
               <Paw size={size} color="#F07030" opacity={1} />
             </motion.div>

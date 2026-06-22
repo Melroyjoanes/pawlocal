@@ -16,13 +16,15 @@ export default async function ProDashboardPage() {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/pro')
+  // Phone-auth users have no email — prevent null assertion crash + infinite redirect loop
+  if (!user.email) redirect('/pro')
 
   // 2. Fetch provider by email (approved only) using admin client
   const admin = adminClient()
   const { data: provider } = await admin
     .from('providers')
     .select('*, provider_photos(url, is_primary)')
-    .eq('email', user.email!)
+    .eq('email', user.email)
     .eq('status', 'approved')
     .order('created_at', { ascending: true }).limit(1).maybeSingle()
 
@@ -30,24 +32,29 @@ export default async function ProDashboardPage() {
 
   const typedProvider = provider as Provider & { provider_photos?: { url: string; is_primary: boolean }[] }
 
-  // 3. Fetch analytics
+  // 3. Fetch analytics — date-filtered at DB level to avoid unbounded row scan
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const analyticsResult = await admin
-    .from('provider_analytics')
-    .select('event_type, created_at')
-    .eq('provider_id', provider.id)
+  const [analyticsRecentResult, totalViewsResult] = await Promise.all([
+    admin
+      .from('provider_analytics')
+      .select('event_type')
+      .eq('provider_id', provider.id)
+      .gte('created_at', thirtyDaysAgo.toISOString()),
+    admin
+      .from('provider_analytics')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider_id', provider.id)
+      .eq('event_type', 'view'),
+  ])
 
-  const allEvents = (analyticsResult.data ?? []) as { event_type: string; created_at: string }[]
+  const recentEvents = (analyticsRecentResult.data ?? []) as { event_type: string }[]
 
   // 4. Compute stats
-  const recentEvents = allEvents.filter(
-    (e) => new Date(e.created_at) >= thirtyDaysAgo
-  )
   const viewsThisMonth = recentEvents.filter((e) => e.event_type === 'view').length
   const whatsappTapsThisMonth = recentEvents.filter((e) => e.event_type === 'whatsapp_click').length
-  const totalViews = allEvents.filter((e) => e.event_type === 'view').length
+  const totalViews = totalViewsResult.count ?? 0
 
   const firstName = (provider.name as string).split(' ')[0]
 

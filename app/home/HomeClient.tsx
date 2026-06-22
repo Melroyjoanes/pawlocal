@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
+import ParentBottomNav from '@/components/ParentBottomNav'
 
 interface Dog {
   id: string
@@ -684,11 +686,40 @@ export default function HomeClient({
   todayLogs,
 }: Props) {
   return (
-    <div
-      className="min-h-screen bg-[#FFFBEB] px-4 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
-      style={{ fontFamily: 'var(--font-nunito), sans-serif' }}
-    >
-      <div className="max-w-lg mx-auto flex flex-col gap-4">
+    <div className="min-h-dvh" style={{ background: '#FFFBEB', fontFamily: 'var(--font-nunito), sans-serif' }}>
+
+      {/* ── App header ─────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 bg-[#FFFBEB]" style={{ borderBottom: '1px solid oklch(0.906 0.06 88)' }}>
+        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+          <Link href="/home">
+            <Image src="/logo.webp" alt="PupStep" width={130} height={48} className="h-9 w-auto" priority />
+          </Link>
+          <div className="flex items-center gap-2">
+            {activeWalk && (
+              <span className="flex items-center gap-1.5 text-xs font-bold text-[#25D366] bg-green-50 border border-green-200 rounded-full px-3 py-1">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#25D366] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#25D366]" />
+                </span>
+                Walk live
+              </span>
+            )}
+            <Link
+              href="/my-account"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+              style={{
+                background: 'oklch(0.52 0.17 196 / 0.12)',
+                color: 'oklch(0.44 0.16 196)',
+              }}
+            >
+              {displayName.charAt(0).toUpperCase()}
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Content ────────────────────────────────────────────────────────── */}
+      <main className="max-w-lg mx-auto px-4 pt-5 pb-28 flex flex-col gap-4">
         {!isPro && <UpgradeBanner />}
         {activeWalk ? (
           <StateA walk={activeWalk} displayName={displayName} />
@@ -708,7 +739,9 @@ export default function HomeClient({
             todayLogs={todayLogs}
           />
         )}
-      </div>
+      </main>
+
+      <ParentBottomNav />
     </div>
   )
 }

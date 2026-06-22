@@ -38,7 +38,7 @@ export default function UserMenu() {
   async function signOut() {
     setMenuOpen(false)
     await supabase.auth.signOut()
-    window.location.href = '/'
+    window.location.href = '/?signed_out=1'
   }
 
   if (loading) return <div className="w-9 h-9 rounded-full bg-slate-200 animate-pulse" />

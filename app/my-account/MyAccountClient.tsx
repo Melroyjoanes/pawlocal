@@ -1,9 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import TrialBanner from '@/components/TrialBanner'
+import ParentBottomNav from '@/components/ParentBottomNav'
 
 interface Broadcast {
   id: string; service_slug: string; pet_description: string
@@ -104,13 +107,12 @@ const CONDITION_STYLE: Record<string, { bg: string; color: string }> = {
   infected:  { bg: '#FFF1F2', color: '#BE123C' },
 }
 
-type Tab = 'broadcasts' | 'dogs' | 'team' | 'bookings' | 'grooming'
+type Tab = 'dogs' | 'team' | 'bookings' | 'grooming'
 const TABS: { id: Tab; label: string; emoji: string }[] = [
-  { id: 'broadcasts', label: 'Broadcasts', emoji: '📣' },
-  { id: 'dogs',       label: 'My Dogs',    emoji: '🐕' },
-  { id: 'team',       label: 'My Team',    emoji: '👥' },
-  { id: 'bookings',   label: 'Walk Reports', emoji: '🐕' },
-  { id: 'grooming',   label: 'Grooming',   emoji: '✂️' },
+  { id: 'dogs',       label: 'My Dogs',      emoji: '🐕' },
+  { id: 'team',       label: 'My Team',      emoji: '👥' },
+  { id: 'bookings',   label: 'Walk Reports', emoji: '🐾' },
+  { id: 'grooming',   label: 'Grooming',     emoji: '✂️' },
 ]
 
 function EmptyState({ emoji, title, sub, cta, ctaHref }: {
@@ -144,7 +146,7 @@ export default function MyAccountClient({
   dogs, walkerConnections,
   userDisplay, userAvatar, subStatus,
 }: Props) {
-  const [tab, setTab] = useState<Tab>('broadcasts')
+  const [tab, setTab] = useState<Tab>('dogs')
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>(initialBroadcasts)
   const [displayName, setDisplayName] = useState(userDisplay)
   const [editingName, setEditingName] = useState(false)
@@ -178,7 +180,7 @@ export default function MyAccountClient({
     setSigningOut(true)
     const supabase = createClient()
     await supabase.auth.signOut()
-    window.location.href = '/'
+    window.location.href = '/?signed_out=1'
   }
 
   async function handleDeleteAccount() {
@@ -202,7 +204,6 @@ export default function MyAccountClient({
 
   const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'
   const counts: Record<Tab, number> = {
-    broadcasts: broadcasts.length,
     dogs: dogs.length,
     team: walkerConnections.filter(w => w.status === 'active').length,
     bookings: claimedReports.length + walkLogs.length,
@@ -210,7 +211,19 @@ export default function MyAccountClient({
   }
 
   return (
-    <div className="max-w-lg mx-auto pb-20">
+    <div className="min-h-dvh" style={{ background: '#FFFBEB' }}>
+
+      {/* ── App header ──────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-40 bg-[#FFFBEB]" style={{ borderBottom: '1px solid oklch(0.906 0.06 88)' }}>
+        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
+          <Link href="/home">
+            <Image src="/logo.webp" alt="PupStep" width={130} height={48} className="h-9 w-auto" priority />
+          </Link>
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">My Account</span>
+        </div>
+      </header>
+
+    <div className="max-w-lg mx-auto px-4 pb-28 pt-5">
 
       {/* ── Profile section ── */}
       <div
@@ -356,67 +369,6 @@ export default function MyAccountClient({
           exit={{ opacity: 0, y: -4 }}
           transition={{ duration: 0.2, ease: EASE }}
         >
-
-          {/* BROADCASTS */}
-          {tab === 'broadcasts' && (
-            <div className="flex flex-col gap-3">
-              {broadcasts.length === 0 ? (
-                <EmptyState emoji="📣" title="No broadcasts yet"
-                  sub="Post a need and let verified providers reply directly on WhatsApp."
-                  cta="Post a broadcast →" ctaHref="/broadcast" />
-              ) : (
-                <>
-                  {broadcasts.map(b => {
-                    const s = STATUS_STYLE[b.status] ?? STATUS_STYLE.closed
-                    return (
-                      <div key={b.id} className="rounded-2xl p-4"
-                        style={{
-                          background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
-                          boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 6px 20px rgba(15,45,50,0.07)',
-                          border: '1px solid rgba(226,220,200,0.7)',
-                        }}
-                      >
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <p className="font-semibold text-slate-900 text-sm">
-                            {SERVICE_LABELS[b.service_slug] ?? b.service_slug}
-                          </p>
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full capitalize"
-                              style={{ background: s.bg, color: s.color }}>
-                              {b.status}
-                            </span>
-                            {b.status === 'active' && (
-                              <button
-                                onClick={() => closeBroadcast(b.id)}
-                                className="w-6 h-6 rounded-full bg-slate-100 text-slate-400 text-xs hover:bg-red-50 hover:text-red-500 transition-colors flex items-center justify-center"
-                                title="Close broadcast"
-                              >
-                                ✕
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <p className="text-sm text-slate-600 mb-2 leading-relaxed">{b.pet_description}</p>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
-                          <span>📍 {b.area}</span>
-                          <span>📅 {b.date_needed}</span>
-                          {b.budget && <span>💰 {b.budget}</span>}
-                          <span className="ml-auto">
-                            {new Date(b.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                          </span>
-                        </div>
-                      </div>
-                    )
-                  })}
-                  <a href="/broadcast"
-                    className="text-center text-sm font-semibold py-3 rounded-2xl transition-colors"
-                    style={{ color: 'var(--pl-teal)' }}>
-                    + Post another
-                  </a>
-                </>
-              )}
-            </div>
-          )}
 
           {/* MY DOGS */}
           {tab === 'dogs' && (
@@ -796,9 +748,9 @@ export default function MyAccountClient({
         </motion.div>
       </AnimatePresence>
 
-      {/* ── Footer: browse CTA ── */}
+      {/* ── Footer: quick links ── */}
       <div className="mt-10 pt-6 border-t border-border/50 flex flex-col gap-2">
-        <a href="/"
+        <a href="/home"
           className="flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-sm transition-all"
           style={{
             background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
@@ -807,9 +759,9 @@ export default function MyAccountClient({
             color: '#374151',
           }}
         >
-          🐾 Back to home
+          🏠 Go to my home
         </a>
-        <a href="/broadcast"
+        <a href="/setup"
           className="flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm transition-all"
           style={{
             background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
@@ -817,7 +769,7 @@ export default function MyAccountClient({
             boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.45), inset 0 -4px 0 rgba(175,65,10,0.30), 0 10px 28px rgba(245,110,35,0.48)',
           }}
         >
-          📣 Post a broadcast
+          🐕 Set up / edit my dog
         </a>
       </div>
 
@@ -887,6 +839,9 @@ export default function MyAccountClient({
         )}
       </AnimatePresence>
 
+    </div>
+
+      <ParentBottomNav />
     </div>
   )
 }

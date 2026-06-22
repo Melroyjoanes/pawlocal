@@ -16,7 +16,15 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
     pathname.startsWith('/walk-report') ||
     pathname.startsWith('/connect') ||
     pathname.startsWith('/walker') ||
-    pathname.startsWith('/live')
+    pathname.startsWith('/live') ||
+    // Parent app pages — these have their own app shell (sticky header + bottom nav)
+    pathname === '/home' ||
+    pathname === '/my-account' ||
+    pathname.startsWith('/my-reports') ||
+    pathname.startsWith('/my-dogs') ||
+    pathname === '/setup' ||
+    pathname.startsWith('/setup/') ||
+    pathname === '/upgrade'
 
   if (isIsolated) return <>{children}</>
 

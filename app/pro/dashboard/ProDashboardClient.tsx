@@ -56,7 +56,7 @@ export default function ProDashboardClient({ provider, stats, firstName, provide
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
-    window.location.href = '/'
+    window.location.href = '/?signed_out=1'
   }
 
   async function handleAvailabilityToggle() {
