@@ -1,4 +1,6 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import LandingPage from '@/components/LandingPage'
 import ProviderAutoRedirect from '@/components/ProviderAutoRedirect'
 
@@ -15,6 +17,10 @@ export default async function HomePage({
 }) {
   const { area } = await searchParams
   const neighbourhood = area ?? 'Juhu'
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) redirect('/home')
 
   return (
     <>
