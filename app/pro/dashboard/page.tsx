@@ -30,41 +30,16 @@ export default async function ProDashboardPage() {
 
   const typedProvider = provider as Provider & { provider_photos?: { url: string; is_primary: boolean }[] }
 
-  // 3. Fetch analytics + broadcasts in parallel
+  // 3. Fetch analytics
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const categorySlugs: string[] =
-    typedProvider.category_slugs?.length
-      ? typedProvider.category_slugs
-      : [typedProvider.category_slug]
-
-  const [analyticsResult, broadcastsResult] = await Promise.all([
-    admin
-      .from('provider_analytics')
-      .select('event_type, created_at')
-      .eq('provider_id', provider.id),
-    admin
-      .from('broadcasts')
-      .select('id, service_slug, pet_description, area, date_needed, budget, poster_name, poster_whatsapp')
-      .eq('status', 'active')
-      .gt('expires_at', new Date().toISOString())
-      .in('service_slug', categorySlugs)
-      .order('created_at', { ascending: false })
-      .limit(3),
-  ])
+  const analyticsResult = await admin
+    .from('provider_analytics')
+    .select('event_type, created_at')
+    .eq('provider_id', provider.id)
 
   const allEvents = (analyticsResult.data ?? []) as { event_type: string; created_at: string }[]
-  const broadcasts = (broadcastsResult.data ?? []) as {
-    id: string
-    service_slug: string
-    pet_description: string
-    area: string
-    date_needed: string
-    budget: string | null
-    poster_name: string
-    poster_whatsapp: string
-  }[]
 
   // 4. Compute stats
   const recentEvents = allEvents.filter(
@@ -80,7 +55,6 @@ export default async function ProDashboardPage() {
     <ProDashboardClient
       provider={typedProvider}
       stats={{ viewsThisMonth, whatsappTapsThisMonth, totalViews }}
-      broadcasts={broadcasts}
       firstName={firstName}
       providerName={provider.name as string}
     />

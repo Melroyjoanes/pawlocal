@@ -88,25 +88,7 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
             {[
               { href: '/setup', label: 'Set up your dog' },
               { href: '/home', label: 'Walk dashboard' },
-              { href: '/broadcast', label: 'Post a request' },
               { href: '/upgrade', label: 'Pricing' },
-            ].map(({ href, label }) => (
-              <a key={href} href={href} className="block text-sm mb-2 transition-colors"
-                style={{ color: 'rgba(255,255,255,0.5)' }}
-                onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>
-                {label}
-              </a>
-            ))}
-          </div>
-
-          {/* For walkers */}
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>For walkers</p>
-            {[
-              { href: '/broadcast', label: 'Browse requests' },
-              { href: '/faq', label: 'How it works' },
-              { href: '/contact', label: 'Get in touch' },
             ].map(({ href, label }) => (
               <a key={href} href={href} className="block text-sm mb-2 transition-colors"
                 style={{ color: 'rgba(255,255,255,0.5)' }}

@@ -8,21 +8,9 @@ import { createClient } from '@/lib/supabase/client'
 import type { Provider } from '@/lib/supabase/types'
 import StartWalkPanel from './StartWalkPanel'
 
-type DashboardBroadcast = {
-  id: string
-  service_slug: string
-  pet_description: string
-  area: string
-  date_needed: string
-  budget: string | null
-  poster_name: string
-  poster_whatsapp: string
-}
-
 type Props = {
   provider: Provider & { provider_photos?: { url: string; is_primary: boolean }[] }
   stats: { viewsThisMonth: number; whatsappTapsThisMonth: number; totalViews: number }
-  broadcasts: DashboardBroadcast[]
   firstName: string
   providerName: string
 }
@@ -52,22 +40,12 @@ function formatDate(dateStr: string) {
 const SPRING = { type: 'spring', stiffness: 420, damping: 36 } as const
 const EASE_OUT = { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] } as const
 
-export default function ProDashboardClient({ provider, stats, broadcasts, firstName, providerName }: Props) {
+export default function ProDashboardClient({ provider, stats, firstName, providerName }: Props) {
   const router = useRouter()
-  const [interested, setInterested] = useState<Record<string, boolean>>({})
   const [isAvailable, setIsAvailable] = useState<boolean>(
     (provider as unknown as { is_available?: boolean }).is_available !== false
   )
 
-  async function handleInterest(broadcastId: string, serviceSlug: string, area: string) {
-    if (interested[broadcastId]) return
-    setInterested(prev => ({ ...prev, [broadcastId]: true }))
-    fetch('/api/broadcast/interest', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ broadcast_id: broadcastId, provider_name: providerName, service_slug: serviceSlug, area }),
-    }).catch(() => {})
-  }
   const [toggling, setToggling] = useState(false)
 
   const missingItems: string[] = []
@@ -76,8 +54,9 @@ export default function ProDashboardClient({ provider, stats, broadcasts, firstN
   if (provider.price_min == null && provider.price_max == null) missingItems.push('Pricing')
 
   async function handleSignOut() {
-    await fetch('/api/auth/signout', { method: 'POST' })
-    window.location.href = '/?signed_out=1'
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    window.location.href = '/'
   }
 
   async function handleAvailabilityToggle() {
@@ -262,74 +241,6 @@ export default function ProDashboardClient({ provider, stats, broadcasts, firstN
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* ── Leads ────────────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ...EASE_OUT, delay: 0.18 }}
-        >
-          <p className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-3">
-            Leads near you
-          </p>
-
-          {broadcasts.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-border p-7 text-center shadow-sm">
-              <div className="text-4xl mb-3">🔍</div>
-              <p className="font-semibold text-stone-700 mb-1">No active leads right now</p>
-              <p className="text-sm text-stone-400">Pet owners post here when they need help. Check back soon.</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {broadcasts.map((broadcast, i) => (
-                <motion.div
-                  key={broadcast.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ ...EASE_OUT, delay: 0.2 + i * 0.05 }}
-                  className="bg-white rounded-2xl border border-border p-4 shadow-sm"
-                >
-                  {/* Service + date */}
-                  <div className="flex items-start justify-between gap-3 mb-2.5">
-                    <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-100">
-                      {formatServiceSlug(broadcast.service_slug)}
-                    </span>
-                    <span className="text-xs text-stone-400 flex-shrink-0">📅 {formatDate(broadcast.date_needed)}</span>
-                  </div>
-
-                  {/* Description */}
-                  <p className="text-sm font-semibold text-stone-900 leading-snug mb-1">
-                    {broadcast.pet_description}
-                  </p>
-                  <div className="flex items-center gap-3 text-xs text-stone-400 mb-4">
-                    <span>📍 {broadcast.area}</span>
-                    {broadcast.budget && <span>💰 {broadcast.budget}</span>}
-                  </div>
-
-                  {/* I'm Interested CTA — notifies admin, no direct customer number exposed */}
-                  {(() => {
-                    const sent = interested[broadcast.id]
-                    return (
-                      <button
-                        onClick={() => handleInterest(broadcast.id, broadcast.service_slug, broadcast.area)}
-                        disabled={sent}
-                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition-all"
-                        style={sent ? {
-                          background: '#F0FDF4', color: '#15803D',
-                        } : {
-                          background: 'linear-gradient(160deg, oklch(0.52 0.17 196) 0%, oklch(0.44 0.16 196) 100%)',
-                          color: '#fff',
-                        }}
-                      >
-                        {sent ? "✓ Interest sent — we'll connect you" : "🙋 I'm Interested"}
-                      </button>
-                    )
-                  })()}
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </motion.div>
 
         {/* ── Quick actions ─────────────────────────────────────────── */}
         <motion.div

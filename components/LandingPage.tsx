@@ -7,8 +7,8 @@ import {
 } from 'framer-motion'
 import {
   MapPin, Search, ClipboardList, ShieldCheck, MessageCircle,
-  IndianRupee, Check, Timer, Ruler, Megaphone, Star,
-  Droplets, Sparkles, ArrowRight, Users, Navigation,
+  IndianRupee, Check, Timer, Ruler, Star,
+  Droplets, Sparkles, ArrowRight, Navigation,
   PawPrint as LucidePaw,
 } from 'lucide-react'
 
@@ -576,10 +576,10 @@ export default function LandingPage({ neighbourhood = 'Juhu' }: Props) {
                 <Btn href="/setup" size="lg">Set up your dog <ArrowRight size={15} /></Btn>
                 <motion.div whileHover={rm ? {} : { y: -3, scale: 1.03 }} whileTap={rm ? {} : { y: 3, scale: 0.98 }}
                   transition={SPRING} className="inline-block">
-                  <Link href="/broadcast"
+                  <Link href="/upgrade"
                     className="inline-flex items-center gap-2 rounded-full font-bold px-6 py-3.5 text-sm"
                     style={{ background: 'transparent', border: '2px solid rgba(180,83,9,0.22)', color: '#78350F' }}>
-                    Post a request <Megaphone size={13} />
+                    See pricing <ArrowRight size={13} />
                   </Link>
                 </motion.div>
               </motion.div>
@@ -926,32 +926,6 @@ export default function LandingPage({ neighbourhood = 'Juhu' }: Props) {
         </div>
       </section>
 
-      {/* ══ PROVIDER CTA ════════════════════════════════════════════════════════ */}
-      <section style={{ ...BLEED, background: 'linear-gradient(135deg,#0A2F35 0%,#0D3D45 100%)', position: 'relative', overflow: 'hidden' }}
-        className="py-14 sm:py-20">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-          <motion.div style={{ position: 'absolute', top: -60, left: -60, opacity: 0.07 }}
-            animate={rm ? {} : { y: [0,-12,0] }} transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}>
-            <TealSphere size={240} />
-          </motion.div>
-        </div>
-        <FadeUp className="relative max-w-3xl mx-auto px-5 sm:px-8 text-center">
-          <span className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-1.5 mb-6 uppercase tracking-wider"
-            style={{ ...cs('amber'), borderRadius: 100, color: C.amber.text }}>
-            <Users size={11} /> For dog walkers
-          </span>
-          <h2 className="font-display text-white leading-tight mb-5" style={{ fontSize: 'clamp(1.9rem,4.5vw,3.4rem)' }}>
-            Walk dogs in {neighbourhood}?<br /><span style={{ color: '#FF8C52' }}>Find clients here.</span>
-          </h2>
-          <p className="text-stone-400 text-base sm:text-lg mb-8 max-w-lg mx-auto leading-relaxed">
-            Pet parents in your area post requests on PupStep. Browse and reply on WhatsApp. No commission, ever.
-          </p>
-          <div className="flex flex-wrap gap-3 justify-center">
-            <Btn href="/broadcast" ckey="amberCTA" size="lg"><Megaphone size={15} /> Browse requests</Btn>
-          </div>
-        </FadeUp>
-      </section>
-
       {/* ══ FOOTER TRUST LINE ════════════════════════════════════════════════════ */}
       <section style={{ ...BLEED, background: 'white', borderTop: '1px solid #FDE68A' }}
         className="py-5 pb-28 lg:pb-5">
@@ -976,10 +950,10 @@ export default function LandingPage({ neighbourhood = 'Juhu' }: Props) {
             style={{ background: 'linear-gradient(155deg,#FF8C52 0%,#F56B22 100%)', boxShadow: '0 4px 0 rgba(175,65,10,0.30),0 8px 20px rgba(245,107,34,0.32)', color: '#451A03' }}>
             Set up my dog
           </Link>
-          <Link href="/broadcast"
+          <Link href="/upgrade"
             className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold"
             style={{ background: 'linear-gradient(155deg,#FFEDD5 0%,#FED7AA 100%)', boxShadow: '0 4px 0 rgba(194,65,12,0.12)', color: '#7C2D12' }}>
-            <Megaphone size={14} /> Post Request
+            See pricing
           </Link>
         </div>
       </motion.div>

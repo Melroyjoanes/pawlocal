@@ -200,10 +200,9 @@ export default function MobileDrawer() {
                     <p style={EYEBROW}>Quick links</p>
                     <nav>
                       {[
-                        { href: '/broadcast', icon: '📣', label: 'Post a request' },
-                        { href: '/blog',      icon: '📝', label: 'Blog' },
-                        { href: '/faq',       icon: '❓', label: 'FAQs' },
-                        { href: '/contact',   icon: '💬', label: 'Contact us' },
+                        { href: '/blog',    icon: '📝', label: 'Blog' },
+                        { href: '/faq',     icon: '❓', label: 'FAQs' },
+                        { href: '/contact', icon: '💬', label: 'Contact us' },
                       ].map(({ href, icon, label }) => (
                         <a
                           key={href}
