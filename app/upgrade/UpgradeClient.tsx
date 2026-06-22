@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
+import ParentBottomNav from '@/components/ParentBottomNav'
 
 declare global {
   interface Window {
@@ -12,6 +14,7 @@ declare global {
 interface Props {
   currentPlan: 'monthly' | 'annual' | null
   expiresAt: string | null
+  isLoggedIn: boolean
 }
 
 const FEATURES = [
@@ -84,7 +87,7 @@ function Spinner() {
   )
 }
 
-export default function UpgradeClient({ currentPlan, expiresAt }: Props) {
+export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn }: Props) {
   const [loading, setLoading] = useState<'monthly' | 'annual' | null>(null)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -217,10 +220,27 @@ export default function UpgradeClient({ currentPlan, expiresAt }: Props) {
   // — Main pricing view —
   return (
     <div
-      className="min-h-dvh py-16 px-4"
+      className="min-h-dvh"
       style={{ background: 'linear-gradient(180deg, #FFFBEB 0%, #FFF3C4 100%)' }}
     >
-      <div className="max-w-lg mx-auto">
+      {/* Sticky app header */}
+      <header
+        className="sticky top-0 z-40 flex items-center justify-between px-4 h-14"
+        style={{ background: 'rgba(255,251,235,0.95)', borderBottom: '1px solid oklch(0.906 0.06 88)', backdropFilter: 'blur(8px)' }}
+      >
+        <Link href={isLoggedIn ? '/home' : '/'} className="flex items-center">
+          <Image src="/logo.webp" alt="PupStep" width={120} height={44} className="h-9 w-auto" priority />
+        </Link>
+        <Link
+          href={isLoggedIn ? '/my-account' : '/login'}
+          className="text-xs font-bold px-4 py-2 rounded-full"
+          style={{ background: isLoggedIn ? 'oklch(0.48 0.17 196 / 0.1)' : '#FF8C52', color: isLoggedIn ? 'oklch(0.48 0.17 196)' : '#fff', fontFamily: 'var(--font-nunito)' }}
+        >
+          {isLoggedIn ? 'My account' : 'Sign in'}
+        </Link>
+      </header>
+
+      <div className="max-w-lg mx-auto px-4 py-10 pb-32">
 
         {/* Header */}
         <div className="text-center mb-12">
@@ -331,18 +351,24 @@ export default function UpgradeClient({ currentPlan, expiresAt }: Props) {
               ))}
             </ul>
 
-            <button
-              onClick={() => handleCheckout('annual')}
-              disabled={loading !== null}
-              className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
-              style={{
-                background: '#FF8C52',
-                boxShadow: CLAY_SHADOW_ORANGE,
-                fontFamily: 'var(--font-nunito)',
-              }}
-            >
-              {loading === 'annual' ? <><Spinner /> Processing…</> : 'Get Annual Plan'}
-            </button>
+            {isLoggedIn ? (
+              <button
+                onClick={() => handleCheckout('annual')}
+                disabled={loading !== null}
+                className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
+                style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
+              >
+                {loading === 'annual' ? <><Spinner /> Processing…</> : 'Get Annual Plan'}
+              </button>
+            ) : (
+              <Link
+                href="/login?next=/upgrade"
+                className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center"
+                style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
+              >
+                Get started free
+              </Link>
+            )}
           </div>
 
           {/* Monthly — secondary card */}
@@ -397,19 +423,34 @@ export default function UpgradeClient({ currentPlan, expiresAt }: Props) {
               ))}
             </ul>
 
-            <button
-              onClick={() => handleCheckout('monthly')}
-              disabled={loading !== null}
-              className="w-full py-3.5 rounded-[18px] font-bold text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
-              style={{
-                background: 'rgba(255,140,82,0.12)',
-                color: '#E07030',
-                fontFamily: 'var(--font-nunito)',
-                boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.9), inset 0 -2px 0 rgba(200,80,0,0.12), 0 4px 12px rgba(255,140,82,0.18)',
-              }}
-            >
-              {loading === 'monthly' ? <><Spinner /> Processing…</> : 'Start Monthly'}
-            </button>
+            {isLoggedIn ? (
+              <button
+                onClick={() => handleCheckout('monthly')}
+                disabled={loading !== null}
+                className="w-full py-3.5 rounded-[18px] font-bold text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
+                style={{
+                  background: 'rgba(255,140,82,0.12)',
+                  color: '#E07030',
+                  fontFamily: 'var(--font-nunito)',
+                  boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.9), inset 0 -2px 0 rgba(200,80,0,0.12), 0 4px 12px rgba(255,140,82,0.18)',
+                }}
+              >
+                {loading === 'monthly' ? <><Spinner /> Processing…</> : 'Start Monthly'}
+              </button>
+            ) : (
+              <Link
+                href="/login?next=/upgrade"
+                className="w-full py-3.5 rounded-[18px] font-bold text-sm flex items-center justify-center"
+                style={{
+                  background: 'rgba(255,140,82,0.12)',
+                  color: '#E07030',
+                  fontFamily: 'var(--font-nunito)',
+                  boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.9), inset 0 -2px 0 rgba(200,80,0,0.12), 0 4px 12px rgba(255,140,82,0.18)',
+                }}
+              >
+                Start with monthly
+              </Link>
+            )}
           </div>
         </div>
 
@@ -497,6 +538,8 @@ export default function UpgradeClient({ currentPlan, expiresAt }: Props) {
         </div>
 
       </div>
+
+      {isLoggedIn && <ParentBottomNav />}
     </div>
   )
 }

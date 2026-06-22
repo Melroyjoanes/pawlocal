@@ -3,129 +3,127 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
-import type { Metadata } from 'next'
-
-// export const metadata: Metadata = {
-//   title: 'FAQs — PupStep',
-//   description: 'Everything you need to know about PupStep — finding verified pet services, walk reports, care reports, and more in Juhu, Mumbai.',
-// }
 
 const EASE_EXP = [0.16, 1, 0.3, 1] as const
 
 const FAQS: { category: string; color: string; textColor: string; icon: string; items: { q: string; a: string }[] }[] = [
   {
-    category: 'General',
+    category: 'About PupStep',
     color: '#FEF3C7',
     textColor: '#78350F',
     icon: '🐾',
     items: [
       {
         q: 'What is PupStep?',
-        a: 'PupStep is Mumbai\'s most trusted hyperlocal pet services directory. We list manually verified dog walkers, groomers, vets, trainers, pet stores and more — all in Juhu and surrounding areas. You contact providers directly on WhatsApp. Zero booking fees, always.',
+        a: 'PupStep is a GPS walk reporting app for Mumbai dog parents. Every time your walker takes your dog out, they log the session through PupStep — GPS route, photo, duration, and health notes. You get a detailed report after every single walk.',
       },
       {
-        q: 'Which areas does PupStep cover?',
-        a: 'We currently focus on Juhu, Versova, Andheri West, and Santacruz West in Mumbai. We\'re expanding to more neighbourhoods soon. If you\'re a provider in a nearby area, get listed and we\'ll add your neighbourhood.',
+        q: 'Which areas does PupStep work in?',
+        a: 'We focus on Juhu, Versova, Andheri West, and Santacruz West in Mumbai. Your walker can use PupStep from anywhere in the city, and we\'re expanding coverage as we grow.',
       },
       {
         q: 'Is PupStep free to use?',
-        a: 'Completely free for pet parents. You browse, find a provider, and WhatsApp them directly — no platform fee, no commission, no hidden charges. For providers, listing is also free.',
+        a: 'Dog walkers use PupStep for free, always. For dog parents, there is a free trial when you sign up, followed by ₹249/month or ₹1,999/year for unlimited walk reports and the full care diary.',
       },
       {
         q: 'Do I need to create an account?',
-        a: 'You can browse without an account. Sign in to save care reports, track your dog\'s health history, and manage your bookings. Signing in takes under 30 seconds with Google.',
+        a: 'Yes — you sign in once and all your dog\'s walk reports are saved automatically to your account. Sign in takes under 30 seconds with your phone number or Google.',
       },
     ],
   },
   {
-    category: 'Walk Reports & Care Reports',
+    category: 'GPS Walk Reports',
     color: '#F0FDF4',
     textColor: '#064E3B',
-    icon: '📋',
+    icon: '📍',
     items: [
       {
-        q: 'What is a care report?',
-        a: 'After every walk or grooming session, your PupStep provider logs the session and sends you a care report. It includes a photo of your dog, GPS walk route, duration, poop and pee count, mood notes, and any observations. Reports are saved to your account automatically.',
+        q: 'What is a GPS walk report?',
+        a: 'A GPS walk report is a detailed log of your dog\'s walk, created by your walker after every session. It includes the GPS route map, walk duration, a photo of your dog, poop and pee count, mood notes, and any observations. Every report is saved permanently to your dog\'s profile.',
       },
       {
-        q: 'How do I receive my dog\'s care reports?',
-        a: 'Your walker or groomer sends a report link via WhatsApp after each session. You can also sign into pupstep.in and view all reports in your account under "My Reports". Every report is saved permanently.',
+        q: 'How does my walker send the report?',
+        a: 'Your walker logs the walk from their PupStep dashboard at pupstep.in/pro. It takes under 2 minutes — they tap start, walk your dog with GPS running, then add a photo and quick notes when they\'re done. The report appears in your account instantly.',
       },
       {
-        q: 'Can I share care reports with my vet?',
-        a: 'Yes — every care report has a shareable link. Just forward it to your vet on WhatsApp or email. Vets love seeing the walk distance, poop consistency, and mood trends over time. It makes consultations much more useful.',
+        q: 'Can I share walk reports with my vet?',
+        a: 'Yes. Every report has a permanent shareable link. Forward it to your vet on WhatsApp or email. Vets appreciate seeing walk frequency, distance, and health trends over time — it makes consultations sharper.',
       },
       {
-        q: 'Do all providers send care reports?',
-        a: 'Dog walkers and groomers on PupStep are encouraged to send care reports via the provider dashboard. When browsing, you can see how many reports a provider has sent — providers with more reports are generally more consistent and trusted.',
+        q: 'How long are reports saved?',
+        a: 'Walk reports are saved permanently. You can scroll back through your dog\'s entire history from day one. Nothing is ever deleted.',
       },
     ],
   },
   {
-    category: 'Finding Providers',
+    category: 'For Dog Parents',
     color: '#E0F2FE',
     textColor: '#0C4A6E',
-    icon: '🔍',
+    icon: '🏠',
     items: [
       {
-        q: 'How do I find a dog walker in Juhu?',
-        a: 'Visit the Dog Walking section, browse verified walkers near you, and WhatsApp any walker directly from their profile. You\'ll see their location, services, report history, and the Verified badge if they\'ve been reviewed by our team.',
+        q: 'How do I get started?',
+        a: 'Sign up at pupstep.in, add your dog\'s details (name, breed, age), and share the walker setup link with your dog walker. Once they connect, their walk logs automatically appear in your dashboard.',
       },
       {
-        q: 'What does the Verified badge mean?',
-        a: 'Every provider with a Verified badge has been manually reviewed by the PupStep team. We check their identity, experience, references, and track record before approving them. If they\'re listed with a Verified badge, we\'d trust them with our own dog.',
+        q: 'What if my walker is not on PupStep yet?',
+        a: 'Ask them to create a free walker account at pupstep.in/pro — it takes 5 minutes to set up and costs them nothing, ever. Most walkers are happy to use it once they see how quick the logging is.',
       },
       {
-        q: 'Can I post a request if I can\'t find what I need?',
-        a: 'Yes! Use Pet Broadcast — post your request once (e.g. "Looking for a groomer near Juhu who does home visits") and verified providers nearby will reply directly to your WhatsApp. It\'s free and takes 30 seconds.',
+        q: 'Can I have multiple dogs on one account?',
+        a: 'Yes. Add as many dogs as you have under a single account. Walk reports are tagged to each dog individually so you can track each one separately.',
       },
       {
-        q: 'How do I contact a provider?',
-        a: 'Every provider profile has a WhatsApp button. Tap it and you\'ll go directly to a WhatsApp chat with the provider. No middleman, no booking form, no commission. Just a direct conversation.',
+        q: 'What do I see in my PupStep dashboard?',
+        a: 'Your home screen shows a live feed of recent walk reports, today\'s activity, and quick stats. You can also view the full care diary — grooming records, vet visits, feeding logs, and medication history — all in one place.',
       },
     ],
   },
   {
-    category: 'For Providers',
-    color: '#F5F3FF',
-    textColor: '#4C1D95',
-    icon: '🦮',
-    items: [
-      {
-        q: 'How do I get listed on PupStep?',
-        a: 'Visit pupstep.in/join and fill in your profile — name, category, location, WhatsApp number, a short bio, and your services. Our team reviews every submission and gets back to you within 48 hours.',
-      },
-      {
-        q: 'Is listing free for providers?',
-        a: 'Yes, listing is completely free. We don\'t charge a monthly fee, commission, or take any percentage of your earnings. PupStep is a discovery platform — once a pet parent contacts you, everything happens between you and them directly.',
-      },
-      {
-        q: 'How do I send care reports to my clients?',
-        a: 'Sign in at pupstep.in/pro and go to your provider dashboard. After each session, log the walk or groom details — the system generates a care report and gives you a link to share with your client on WhatsApp. Takes under 2 minutes.',
-      },
-      {
-        q: 'Will sending care reports help me get more clients?',
-        a: 'Absolutely. Providers who consistently send care reports are trusted more by pet parents, appear higher in search, and get more repeat bookings. Your report count is shown on your profile — it\'s a visible trust signal.',
-      },
-    ],
-  },
-  {
-    category: 'Pricing & Payments',
+    category: 'Pricing & Plans',
     color: '#FFF1F2',
     textColor: '#9F1239',
     icon: '₹',
     items: [
       {
-        q: 'Does PupStep charge a booking fee?',
-        a: 'Never. PupStep is a free directory. There is no booking fee, no platform commission, and no subscription required to contact providers. What you pay the provider is between you and them.',
+        q: 'How much does PupStep cost?',
+        a: '₹249/month (cancel anytime) or ₹1,999/year — that\'s 2 months free, saving you ₹990. Dog walkers are always free.',
       },
       {
-        q: 'How do I pay the provider?',
-        a: 'Directly to the provider — UPI, cash, bank transfer, whatever they prefer. You negotiate rates and payment methods with the provider on WhatsApp. PupStep is not involved in any financial transaction.',
+        q: 'What is included in the plan?',
+        a: 'All plans include GPS-tagged walk logs, photo diary, grooming records, vet visit history, and feeding and medication tracker. The Annual plan also unlocks vet-ready health PDFs you can download and share.',
       },
       {
-        q: 'What are typical rates for dog walking in Mumbai?',
-        a: 'Dog walking rates in Juhu and Andheri West typically range from ₹200–₹600 per walk depending on duration, number of dogs, and the walker\'s experience. Check individual profiles and discuss directly with the walker.',
+        q: 'Is there a free trial?',
+        a: 'Yes. You get a free trial when you first sign up. You will not be charged anything until the trial period ends, and you can cancel before then with no questions asked.',
+      },
+      {
+        q: 'Can I cancel anytime?',
+        a: 'Monthly plans can be cancelled before the next billing date. Annual plans get a full refund within 7 days of purchase, and a pro-rated refund after that. No hoops to jump through.',
+      },
+    ],
+  },
+  {
+    category: 'For Dog Walkers',
+    color: '#F5F3FF',
+    textColor: '#4C1D95',
+    icon: '🦮',
+    items: [
+      {
+        q: 'Is PupStep free for dog walkers?',
+        a: 'Completely free. Always. Walkers never pay anything to use PupStep — not now, not ever. The subscription is only for dog parents.',
+      },
+      {
+        q: 'How do I send a walk report to my client?',
+        a: 'Sign in at pupstep.in/pro and go to your walker dashboard. After each walk, log the session with GPS route, a photo, and quick notes. The report generates in seconds and goes straight to your client\'s PupStep account.',
+      },
+      {
+        q: 'How do I connect with a dog parent on PupStep?',
+        a: 'Share your walker profile link with your client. Once they sign up and add their dog, they connect it to your walker profile. After that, every walk you log goes straight to their dashboard automatically.',
+      },
+      {
+        q: 'What if I walk dogs for multiple different owners?',
+        a: 'Each client has their own PupStep account. When you log a walk for a specific dog, the report automatically goes to that dog\'s parent. You can manage all your clients from one dashboard.',
       },
     ],
   },
@@ -146,7 +144,7 @@ function FAQItem({ q, a, isOpen, onToggle }: { q: string; a: string; isOpen: boo
           animate={{ rotate: isOpen ? 45 : 0 }}
           transition={{ duration: 0.2, ease: 'easeInOut' }}
           className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold mt-0.5"
-          style={{ background: isOpen ? '#0A8A96' : '#F1F5F9', color: isOpen ? '#fff' : '#64748B' }}
+          style={{ background: isOpen ? 'oklch(0.48 0.17 196)' : '#F1F5F9', color: isOpen ? '#fff' : '#64748B' }}
         >
           +
         </motion.span>
@@ -189,7 +187,7 @@ export default function FAQPage() {
           </h1>
           <p className="text-slate-500 text-lg max-w-xl mx-auto" style={{ lineHeight: 1.65 }}>
             Everything you need to know about PupStep. Can&apos;t find an answer?{' '}
-            <Link href="/contact" className="font-semibold underline underline-offset-2" style={{ color: '#0A8A96' }}>
+            <Link href="/contact" className="font-semibold underline underline-offset-2" style={{ color: 'oklch(0.48 0.17 196)' }}>
               Drop us a message →
             </Link>
           </p>
@@ -247,7 +245,7 @@ export default function FAQPage() {
           <div className="flex-1">
             <p className="font-bold text-white text-lg mb-1">Still have questions?</p>
             <p className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>
-              Our team is available on WhatsApp and email. We usually reply within a few hours.
+              Our team is on WhatsApp and email. We usually reply within a few hours.
             </p>
           </div>
           <Link href="/contact"

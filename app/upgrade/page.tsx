@@ -1,9 +1,8 @@
 import { cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
-import { redirect } from 'next/navigation'
 import UpgradeClient from './UpgradeClient'
 
-export const metadata = { title: 'Upgrade to PupStep Pro' }
+export const metadata = { title: 'Pricing — PupStep' }
 
 export default async function UpgradePage() {
   const cookieStore = await cookies()
@@ -13,16 +12,23 @@ export default async function UpgradePage() {
     { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
   )
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login?next=/upgrade')
 
-  const { data: sub } = await supabase
-    .from('subscriptions')
-    .select('plan, status, expires_at')
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .gt('expires_at', new Date().toISOString())
-    .maybeSingle()
+  let currentPlan: 'monthly' | 'annual' | null = null
+  let expiresAt: string | null = null
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return <UpgradeClient currentPlan={(sub as any)?.plan ?? null} expiresAt={(sub as any)?.expires_at ?? null} />
+  if (user) {
+    const { data: sub } = await supabase
+      .from('subscriptions')
+      .select('plan, status, expires_at')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    currentPlan = (sub as any)?.plan ?? null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expiresAt = (sub as any)?.expires_at ?? null
+  }
+
+  return <UpgradeClient currentPlan={currentPlan} expiresAt={expiresAt} isLoggedIn={!!user} />
 }
