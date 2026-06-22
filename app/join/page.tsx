@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { CATEGORIES } from '@/lib/categories'
 
-const SERVICE_CATEGORIES = CATEGORIES.filter((c) => !['insurance', 'vet', 'dog-training'].includes(c.slug))
+const SERVICE_CATEGORIES = CATEGORIES.filter((c) => !['vet', 'dog-training'].includes(c.slug))
 
 const MUMBAI_AREAS = [
   'Juhu', 'Andheri West', 'Andheri East', 'Bandra', 'Khar',

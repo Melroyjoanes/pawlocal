@@ -272,8 +272,8 @@ const POSTS: BlogPost[] = [
         <h3>7. Photos or videos of the symptom</h3>
         <p>If your dog has been limping occasionally but is fine by the time you reach the clinic, a 10-second video is worth more than any description. Same for a rash that comes and goes, a cough at specific times of day, or unusual behaviour around food. Keep a habit of filming anything that concerns you before it stops happening.</p>
 
-        <h3>8. Your dog&apos;s insurance card or policy number</h3>
-        <p>If you have pet insurance, the policy number and insurer&apos;s contact are both useful to have on hand. Some Mumbai vets now have experience with insurance reimbursements and can advise you on how to document the visit for a claim.</p>
+        <h3>8. A note on vet bills</h3>
+        <p>If your building society or employer offers any health reimbursement benefit, keep original bills from every visit. Some Mumbai vets can issue itemised receipts — always ask for one even if you don&apos;t need it immediately.</p>
 
         <h3>9. A non-slip mat or towel for the examination table</h3>
         <p>This is a Mumbai-specific tip. Most vet clinics in the western suburbs are busy practices with examination tables that are smooth metal or plastic — slippery for anxious dogs. A small rubber mat or a folded cotton towel from home helps your dog feel more stable on the table and reduces stress during the examination. Less stress means a more accurate physical assessment.</p>
@@ -285,88 +285,6 @@ const POSTS: BlogPost[] = [
         <p>The best time to visit most private vets in Juhu and Andheri West is Tuesday to Friday, 10 am to noon. Weekends and Monday mornings are their busiest periods. If it&apos;s a non-urgent visit, booking a midweek morning slot usually means more time with the vet and shorter waits.</p>
 
         <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Looking for a vet in the western suburbs? <Link href="/vet" className="underline text-sky-800">Browse verified vets on PupStep</Link> or WhatsApp us at <a href="https://wa.me/919892620677" className="underline text-sky-800">+91 98926 20677</a>.</p>
-      </>
-    ),
-  },
-  {
-    slug: 'pet-insurance-india-guide',
-    category: 'Insurance',
-    categoryColor: '#FEFCE8',
-    categoryText: '#713F12',
-    image: 'https://images.unsplash.com/photo-1561037404-61cd46aa615b?auto=format&fit=crop&w=1200&q=80',
-    title: 'Is pet insurance worth it in India? An honest breakdown',
-    date: 'May 5, 2026',
-    readTime: '8 min read',
-    author: 'PupStep Team',
-    content: (
-      <>
-        <p>Emergency vet bills in Mumbai are not hypothetical. An intestinal obstruction surgery for a medium-sized dog runs ₹25,000–₹60,000 depending on the clinic. An overnight ICU stay for a parvovirus case can exceed ₹40,000. A broken leg in a Labrador, including surgery and post-op care, can cross ₹80,000.</p>
-        <p>Most Indian pet parents either pay out of pocket, rely on friends and family, or make treatment decisions based on what they can afford in the moment — not what&apos;s medically best for their dog. Pet insurance exists to change that calculation. Whether it makes sense for you depends on a few specific factors.</p>
-
-        <h2>The honest state of pet insurance in India in 2026</h2>
-        <p>Pet insurance in India is genuinely improving but still limited compared to markets like the UK or US. The good news: reimbursement-based policies from mainstream insurers are now available, premiums have become more reasonable, and several urban vets now have experience with the claims process. The challenges: claim processes can still be paperwork-heavy, waiting periods apply to most policies, and pre-existing conditions are universally excluded.</p>
-
-        <h2>What policies currently exist in India</h2>
-        <p>As of mid-2026, the main options for Indian pet parents are:</p>
-
-        <h3>New India Assurance — Pet Insurance Policy</h3>
-        <p>One of the oldest and most widely available. Covers death due to accident or illness, surgery costs, and some veterinary expenses. The sum insured is typically calculated based on the dog&apos;s market value (purchase price), which creates a quirk: a mixed-breed rescue with low market value gets low coverage even if your vet bills are the same as a pedigreed dog&apos;s. Premiums are reasonable (₹2,000–₹8,000 per year depending on breed and age). Claims are reimbursement-based and require original bills.</p>
-
-        <h3>Bajaj Allianz — Dog Insurance</h3>
-        <p>Covers surgical procedures, accidents, and illness-related vet expenses. A slightly smoother digital claims process than the public sector insurers. Requires a health certificate from a registered vet at the time of policy purchase. Some policyholders in Mumbai report faster claim resolution times. Premiums are comparable to New India.</p>
-
-        <h3>Digit Insurance — Pet Insurance</h3>
-        <p>The most digitally native option. Claims filed entirely via app. Covers accidents and illnesses including hospitalisation. Worth noting: waiting periods of 30 days for illness claims (accidents are covered from day one). Clearer documentation of what&apos;s excluded than most competitors.</p>
-
-        <h3>HDFC Ergo — Pet Insurance</h3>
-        <p>A newer entrant. Covers third-party liability in addition to health — relevant if your dog bites someone. Broader coverage for veterinary consultations, not just hospitalisation. Premium is slightly higher but the coverage scope is wider.</p>
-
-        <h2>What is typically covered and what is excluded</h2>
-        <p><strong>Usually covered:</strong></p>
-        <ul>
-          <li>Accidental injury treatment</li>
-          <li>Emergency surgery</li>
-          <li>Hospitalisation costs</li>
-          <li>Illness-related vet bills (after waiting period)</li>
-          <li>Some policies: tick and vector-borne disease treatment</li>
-        </ul>
-        <p><strong>Almost universally excluded:</strong></p>
-        <ul>
-          <li>Pre-existing conditions at the time of purchase</li>
-          <li>Preventive care (vaccines, deworming, routine dental)</li>
-          <li>Breeding or pregnancy costs</li>
-          <li>Grooming</li>
-          <li>Elective procedures</li>
-          <li>Conditions that appear in the first 30 days (for illness cover)</li>
-        </ul>
-
-        <h2>The Mumbai-specific consideration</h2>
-        <p>Dogs in western Mumbai face specific health risks that affect the insurance calculation. Leptospirosis from monsoon flooding is real — and treatment costs for a dog that develops severe leptospirosis can easily cross ₹30,000. Tick fever (Babesiosis, Ehrlichiosis) is common in dogs that walk near gardens and costs ₹15,000–₹25,000 to treat if severe. Most policies cover these if they weren&apos;t pre-existing at the time of purchase.</p>
-
-        <h2>Is it actually worth it? Our honest assessment</h2>
-        <p>For most pet parents in Mumbai, pet insurance is worth considering if:</p>
-        <ul>
-          <li>You would genuinely struggle to pay ₹40,000–₹60,000 at short notice without significant financial stress</li>
-          <li>Your dog is between 1 and 5 years old (premiums are lower, claims are more likely to be paid without pre-existing condition complications)</li>
-          <li>You own a breed with known health risks — Labs and Golden Retrievers for hip dysplasia, Pugs and Bulldogs for respiratory issues, Cocker Spaniels for ear problems</li>
-        </ul>
-        <p>It is less clearly worth it if:</p>
-        <ul>
-          <li>Your dog is already above 7 years and has any diagnosed condition (most policies won&apos;t cover it, and premiums for senior dogs are high)</li>
-          <li>You have a dedicated emergency fund equivalent to 3–4 months of household expenses</li>
-          <li>You can absorb a ₹50,000 bill without making treatment decisions based on cost</li>
-        </ul>
-
-        <h2>Practical tips for buying pet insurance in India</h2>
-        <ul>
-          <li>Get the policy when your dog is young and healthy — pre-existing conditions are the biggest exclusion</li>
-          <li>Always get a vet health certificate before applying — it protects you later if a claim is disputed on pre-existing condition grounds</li>
-          <li>Read the waiting period carefully — a 30-day illness waiting period means you&apos;re unprotected for the first month</li>
-          <li>Keep every vet receipt and prescription — most claims require original documentation</li>
-          <li>Check if your specific vet is on the insurer&apos;s cashless network — most policies in India are reimbursement-based, but cashless options are starting to appear</li>
-        </ul>
-
-        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Questions about pet insurance providers in Mumbai? We&apos;re happy to help. WhatsApp us at <a href="https://wa.me/919892620677" className="underline text-amber-700">+91 98926 20677</a> or <Link href="/insurance" className="underline text-amber-700">browse verified insurance providers on PupStep</Link>.</p>
       </>
     ),
   },

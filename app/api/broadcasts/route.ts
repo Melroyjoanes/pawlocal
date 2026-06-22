@@ -19,7 +19,6 @@ const SERVICE_LABELS: Record<string, { icon: string; label: string }> = {
   'vet':          { icon: '🏥', label: 'Vet' },
   'pet-store':    { icon: '🛍️', label: 'Pet Store' },
   'dog-training': { icon: '🎯', label: 'Dog Training' },
-  'insurance':    { icon: '🛡️', label: 'Insurance' },
 }
 
 function maskPhone(digits: string): string {

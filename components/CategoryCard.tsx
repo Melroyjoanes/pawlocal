@@ -33,11 +33,6 @@ const CAT_GRAD: Record<string, { bg: string; shadow: string; border: string }> =
     shadow: 'inset 0 1.5px 0 rgba(255,255,255,0.92), inset 0 -3px 0 rgba(8,145,178,0.18), 0 10px 28px rgba(186,230,253,0.5)',
     border: '1px solid rgba(186,230,253,0.7)',
   },
-  'insurance': {
-    bg: 'linear-gradient(145deg, #FEFCE8 0%, #FEF08A 100%)',          // lemon bright
-    shadow: 'inset 0 1.5px 0 rgba(255,255,255,0.92), inset 0 -3px 0 rgba(161,98,7,0.14), 0 10px 28px rgba(254,240,138,0.55)',
-    border: '1px solid rgba(254,240,138,0.7)',
-  },
 }
 
 const DEFAULT_CARD = {
@@ -47,7 +42,6 @@ const DEFAULT_CARD = {
 }
 
 export default function CategoryCard({ category, count }: Props) {
-  const isInsurance = category.slug === 'insurance'
   const clay = CAT_GRAD[category.slug] ?? DEFAULT_CARD
 
   return (
@@ -93,19 +87,7 @@ export default function CategoryCard({ category, count }: Props) {
 
       {/* Count or action */}
       <div className="flex-shrink-0 text-right">
-        {isInsurance ? (
-          <span
-            className="text-xs font-bold px-2.5 py-1 rounded-full"
-            style={{
-              background: 'linear-gradient(160deg, #FEF3C7 0%, #FDE68A 100%)',
-              color: '#78350F',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 6px rgba(253,230,138,0.5)',
-              border: '1px solid rgba(253,230,138,0.6)',
-            }}
-          >
-            Compare →
-          </span>
-        ) : count !== undefined && count > 0 ? (
+        {count !== undefined && count > 0 ? (
           <span
             className="text-xs font-bold px-2.5 py-1 rounded-full"
             style={{

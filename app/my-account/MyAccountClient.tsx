@@ -75,7 +75,7 @@ interface Props {
 const SERVICE_LABELS: Record<string, string> = {
   'dog-walking': '🦮 Dog Walking', 'grooming': '✂️ Grooming',
   'vet': '🏥 Vet', 'pet-store': '🏪 Pet Store',
-  'dog-training': '🎓 Dog Training', 'insurance': '🛡️ Insurance',
+  'dog-training': '🎓 Dog Training',
 }
 const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
   active:    { bg: '#F0FDF4', color: '#15803D' },

@@ -1,4 +1,4 @@
-export type CategorySlug = 'dog-walking' | 'grooming' | 'vet' | 'pet-store' | 'insurance' | 'dog-training'
+export type CategorySlug = 'dog-walking' | 'grooming' | 'vet' | 'pet-store' | 'dog-training'
 
 export type Category = {
   id: string

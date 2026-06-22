@@ -33,11 +33,6 @@ const CATEGORY_SEO: Record<string, { title: string; description: string; keyword
     description: 'Find certified dog trainers in Mumbai. Puppy training, obedience, behaviour correction. Verified trainers, WhatsApp direct.',
     keywords: ['dog trainer Mumbai', 'dog training Juhu', 'puppy training Mumbai', 'obedience training dog Mumbai', 'dog behaviour trainer Juhu'],
   },
-  'insurance': {
-    title: 'Pet Insurance India — Compare Plans for Dogs & Cats | PupStep',
-    description: 'Compare the best pet insurance plans in India. Cover for accidents, illness, surgery. Find the right plan for your dog or cat.',
-    keywords: ['pet insurance India', 'dog insurance Mumbai', 'cat insurance India', 'best pet insurance India', 'pet health insurance'],
-  },
 }
 
 export async function generateMetadata(

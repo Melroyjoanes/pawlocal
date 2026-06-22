@@ -21,7 +21,6 @@ const SERVICE_LABELS: Record<string, string> = {
   'vet':          '🏥 Vet Visit',
   'pet-store':    '🛒 Pet Store',
   'dog-training': '🎓 Dog Training',
-  'insurance':    '🛡 Insurance',
   'other':        '📌 Other',
 }
 

@@ -6,8 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { CATEGORIES, JUHU_CENTER, getCategoryBySlug } from '@/lib/categories'
 import type { ProviderWithPhotos } from '@/lib/supabase/types'
 
-// Insurance is an affiliate page — no map pins
-const MAP_CATEGORIES = CATEGORIES.filter((c) => c.slug !== 'insurance')
+const MAP_CATEGORIES = CATEGORIES
 
 export default function MapPage() {
   const [providers, setProviders] = useState<ProviderWithPhotos[]>([])

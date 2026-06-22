@@ -56,15 +56,6 @@ export const CATEGORIES: CategoryConfig[] = [
     tagline: 'Trainers near Juhu',
     description: 'Obedience, behaviour correction and puppy training',
   },
-  {
-    slug: 'insurance',
-    name: 'Insurance',
-    icon: '🛡️',
-    color: '#D97706',
-    bgColor: 'bg-amber-50',
-    tagline: 'Compare pet insurance plans',
-    description: 'Protect your pet with the right insurance plan',
-  },
 ]
 
 export function getCategoryBySlug(slug: string): CategoryConfig | undefined {

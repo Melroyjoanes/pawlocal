@@ -46,7 +46,6 @@ const CATEGORY_FILTERS = [
   { label: '🏥 Vet', value: 'vet' },
   { label: '🐾 Pet Store', value: 'pet-store' },
   { label: '🎯 Training', value: 'dog-training' },
-  { label: '🛡️ Insurance', value: 'insurance' },
 ]
 
 export default async function SearchPage({ searchParams }: PageProps) {

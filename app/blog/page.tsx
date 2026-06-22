@@ -71,22 +71,9 @@ const POSTS = [
     date: 'May 12, 2026',
     featured: false,
   },
-  {
-    slug: 'pet-insurance-india-guide',
-    category: 'Insurance',
-    categoryColor: '#FEFCE8',
-    categoryText: '#713F12',
-    emoji: '🛡️',
-    image: 'https://images.unsplash.com/photo-1561037404-61cd46aa615b?auto=format&fit=crop&w=900&q=80',
-    title: 'Is pet insurance worth it in India? An honest breakdown',
-    excerpt: 'Vet bills in Mumbai can hit ₹50,000+ for emergencies. We break down the top pet insurance options in India — what\'s covered, what\'s not, and what to watch out for.',
-    readTime: '8 min read',
-    date: 'May 5, 2026',
-    featured: false,
-  },
 ]
 
-const CATEGORIES = ['All', 'Dog Walking', 'Care Reports', 'Grooming', 'Health', 'Community', 'Insurance']
+const CATEGORIES = ['All', 'Dog Walking', 'Care Reports', 'Grooming', 'Health', 'Community']
 
 export default function BlogPage() {
   const featured = POSTS[0]

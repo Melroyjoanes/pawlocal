@@ -66,8 +66,7 @@ export default function CategoryPage({ initialProviders }: Props) {
     ? providers.filter((p) => (p as ProviderWithPhotos & { is_emergency?: boolean }).is_emergency)
     : providers
 
-  // Visible categories (exclude insurance from the quick-switch bar)
-  const BROWSE_CATS = CATEGORIES.filter(c => c.slug !== 'insurance')
+  const BROWSE_CATS = CATEGORIES
 
   return (
     <div className="-mx-4 sm:mx-0">
