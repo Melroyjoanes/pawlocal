@@ -5,13 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
 
-// Per-category tints pulled straight from the design system
-const CATEGORIES = [
-  { slug: 'dog-walking', icon: '🦮', name: 'Dog Walking', bg: 'linear-gradient(135deg,#FEF9C3,#FDE68A)', fg: '#78350F' },
-  { slug: 'grooming',    icon: '✂️',  name: 'Grooming',   bg: 'linear-gradient(135deg,#F5F3FF,#E9D5FF)', fg: '#4C1D95' },
-  { slug: 'pet-store',   icon: '🐾', name: 'Pet Store',   bg: 'linear-gradient(135deg,#F0FDF4,#BBF7D0)', fg: '#064E3B' },
-]
-
 // expo-out — smooth deceleration, never bouncy
 const EXPO_OUT = [0.16, 1, 0.3, 1] as const
 
@@ -42,23 +35,14 @@ const EYEBROW = {
 const CHIP_SHADOW = 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.07), 0 3px 10px rgba(0,0,0,0.07)'
 
 export default function MobileDrawer() {
-  const [open, setOpen]         = useState(false)
-  const [user, setUser]         = useState<User | null>(null)
-  const [isProvider, setIsProvider] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
 
   // — Auth state —
   useEffect(() => {
     const supabase = createClient()
-    async function load(u: User | null) {
-      setUser(u)
-      if (!u?.email) { setIsProvider(false); return }
-      const { data } = await supabase
-        .from('providers').select('id')
-        .eq('email', u.email).eq('status', 'approved').maybeSingle()
-      setIsProvider(!!data)
-    }
-    supabase.auth.getUser().then(({ data }) => load(data.user))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => load(s?.user ?? null))
+    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setUser(s?.user ?? null))
     return () => subscription.unsubscribe()
   }, [])
 
@@ -76,7 +60,7 @@ export default function MobileDrawer() {
   const firstName   = displayName.split(' ')[0]
   const avatarUrl   = user?.user_metadata?.avatar_url ?? user?.user_metadata?.picture
   const initials    = displayName.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
-  const dashHref    = isProvider ? '/pro/dashboard' : '/my-account'
+  const dashHref    = '/home'
 
   return (
     <>
@@ -166,7 +150,7 @@ export default function MobileDrawer() {
                         Hey, {firstName || 'there'}! 🐾
                       </p>
                       <p className="text-white/65 text-[12px] mt-0.5">
-                        {isProvider ? 'Provider dashboard →' : 'View my account →'}
+                        View my dashboard →
                       </p>
                     </div>
                   </a>
@@ -222,43 +206,23 @@ export default function MobileDrawer() {
                     <section>
                       <p style={EYEBROW}>My stuff</p>
                       <nav>
-                        {isProvider ? (
-                          <>
-                            <a href="/pro/dashboard" onClick={() => setOpen(false)}
-                              className="flex items-center gap-3 px-2 py-[11px] rounded-xl hover:bg-amber-50 active:bg-amber-100 transition-colors">
-                              <span className="text-[18px] w-7 text-center leading-none flex-shrink-0">🏠</span>
-                              <span className="text-[14px] font-medium text-stone-700">Provider dashboard</span>
-                            </a>
-                            <a href="/pro/reports/live" onClick={() => setOpen(false)}
-                              className="flex items-center gap-3 px-2 py-[11px] rounded-xl hover:bg-amber-50 active:bg-amber-100 transition-colors">
-                              <span className="text-[18px] w-7 text-center leading-none flex-shrink-0">📍</span>
-                              <span className="text-[14px] font-medium text-stone-700">Active walk</span>
-                            </a>
-                            <a href="/pro/bookings" onClick={() => setOpen(false)}
-                              className="flex items-center gap-3 px-2 py-[11px] rounded-xl hover:bg-amber-50 active:bg-amber-100 transition-colors">
-                              <span className="text-[18px] w-7 text-center leading-none flex-shrink-0">📅</span>
-                              <span className="text-[14px] font-medium text-stone-700">My bookings</span>
-                            </a>
-                          </>
-                        ) : (
-                          <>
-                            <a href="/my-account" onClick={() => setOpen(false)}
-                              className="flex items-center gap-3 px-2 py-[11px] rounded-xl hover:bg-amber-50 active:bg-amber-100 transition-colors">
-                              <span className="text-[18px] w-7 text-center leading-none flex-shrink-0">🐶</span>
-                              <span className="text-[14px] font-medium text-stone-700">My account</span>
-                            </a>
-                            <a href="/home" onClick={() => setOpen(false)}
-                              className="flex items-center gap-3 px-2 py-[11px] rounded-xl hover:bg-amber-50 active:bg-amber-100 transition-colors">
-                              <span className="text-[18px] w-7 text-center leading-none flex-shrink-0">🏠</span>
-                              <span className="text-[14px] font-medium text-stone-700">My home</span>
-                            </a>
-                            <a href="/my-account" onClick={() => setOpen(false)}
-                              className="flex items-center gap-3 px-2 py-[11px] rounded-xl hover:bg-amber-50 active:bg-amber-100 transition-colors">
-                              <span className="text-[18px] w-7 text-center leading-none flex-shrink-0">🐾</span>
-                              <span className="text-[14px] font-medium text-stone-700">Walk reports</span>
-                            </a>
-                          </>
-                        )}
+                        <>
+                          <a href="/home" onClick={() => setOpen(false)}
+                            className="flex items-center gap-3 px-2 py-[11px] rounded-xl hover:bg-amber-50 active:bg-amber-100 transition-colors">
+                            <span className="text-[18px] w-7 text-center leading-none flex-shrink-0">🏠</span>
+                            <span className="text-[14px] font-medium text-stone-700">My home</span>
+                          </a>
+                          <a href="/my-reports" onClick={() => setOpen(false)}
+                            className="flex items-center gap-3 px-2 py-[11px] rounded-xl hover:bg-amber-50 active:bg-amber-100 transition-colors">
+                            <span className="text-[18px] w-7 text-center leading-none flex-shrink-0">📋</span>
+                            <span className="text-[14px] font-medium text-stone-700">Walk reports</span>
+                          </a>
+                          <a href="/my-account" onClick={() => setOpen(false)}
+                            className="flex items-center gap-3 px-2 py-[11px] rounded-xl hover:bg-amber-50 active:bg-amber-100 transition-colors">
+                            <span className="text-[18px] w-7 text-center leading-none flex-shrink-0">👤</span>
+                            <span className="text-[14px] font-medium text-stone-700">My account</span>
+                          </a>
+                        </>
                       </nav>
                     </section>
                   )}

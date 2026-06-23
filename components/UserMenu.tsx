@@ -87,13 +87,13 @@ export default function UserMenu() {
               className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
               🏠 My home
             </a>
+            <a href="/my-reports" onClick={() => setMenuOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+              📋 My reports
+            </a>
             <a href="/my-account" onClick={() => setMenuOpen(false)}
               className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-              🐶 My account
-            </a>
-            <a href="/my-listing" onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-              🏪 My listing
+              👤 My account
             </a>
             <button onClick={signOut}
               className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors">
