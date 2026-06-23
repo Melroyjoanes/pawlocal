@@ -33,6 +33,7 @@ export default function QRDisplayClient({
   const [status, setStatus] = useState(initialStatus)
   const [justConnected, setJustConnected] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [walkerGuideOpen, setWalkerGuideOpen] = useState(false)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Build connect URL and WhatsApp share URL using window.location.origin (client-side only)
@@ -541,6 +542,51 @@ export default function QRDisplayClient({
             </a>
           </div>
         )}
+
+        {/* What your walker will see — collapsible parent guide */}
+        {(() => {
+          const walkerSteps = [
+            { icon: '📱', title: 'Connect screen', desc: 'Walker opens the link → enters 4-digit OTP → types their name and phone' },
+            { icon: '🏠', title: 'Walker dashboard', desc: `They see a big "Start Walk" button with ${dogName}'s health notes below it` },
+            { icon: '🗺️', title: 'During the walk', desc: 'Live GPS map + two big buttons: 💧 Toilet and 💩 Potty. They tap when it happens.' },
+            { icon: '📸', title: 'After the walk', desc: 'They take a photo of your dog, then tap "Send report" — you get the WhatsApp link instantly' },
+          ]
+          return (
+            <div style={{ width: '100%', background: '#F8F7F4', borderRadius: 16, overflow: 'hidden', border: '1.5px solid rgba(226,220,200,0.7)' }}>
+              <button
+                onClick={() => setWalkerGuideOpen(o => !o)}
+                style={{ width: '100%', background: 'none', border: 'none', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', minHeight: 48 }}
+              >
+                <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: '#0A2F35', margin: 0 }}>
+                  👁 What will my walker see?
+                </p>
+                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: 'oklch(0.48 0.17 196)', fontWeight: 700 }}>
+                  {walkerGuideOpen ? 'Hide ↑' : 'Show ↓'}
+                </span>
+              </button>
+              {walkerGuideOpen && (
+                <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {walkerSteps.map((s, i) => (
+                    <div key={i} style={{ background: '#fff', borderRadius: 12, padding: '10px 14px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: 22, flexShrink: 0 }}>{s.icon}</span>
+                      <div>
+                        <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 13, fontWeight: 700, color: '#0A2F35', margin: '0 0 2px' }}>
+                          Step {i + 1}: {s.title}
+                        </p>
+                        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#64748B', margin: 0, lineHeight: 1.5 }}>
+                          {s.desc}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#94A3B8', textAlign: 'center', margin: 0 }}>
+                    Your walker can also try a practice walk on their dashboard before the first real walk
+                  </p>
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {/* Navigation links */}
         <div

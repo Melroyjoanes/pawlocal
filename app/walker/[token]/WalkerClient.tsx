@@ -207,6 +207,12 @@ export default function WalkerClient({
   const [isDemoWalk, setIsDemoWalk] = useState(false)
   const [showDemoConfirm, setShowDemoConfirm] = useState(false)
   const [showDemoSuccess, setShowDemoSuccess] = useState(false)
+  // demoStep: 1=walk+gps, 2=toilet hint, 3=potty hint, 4=walk to 200m, 5=end walk ready
+  const [demoStep, setDemoStep] = useState(1)
+  const [demoToiletDone, setDemoToiletDone] = useState(false)
+  const [demoPottyDone, setDemoPottyDone] = useState(false)
+  const [demoNudge, setDemoNudge] = useState<string | null>(null)
+  const demoNudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     const dismissed = localStorage.getItem(`pup-saved-${token}`)
@@ -372,6 +378,50 @@ export default function WalkerClient({
     )
   }
 
+  // Demo step progression — driven by distanceKm and events
+  useEffect(() => {
+    if (!isDemoWalk || phase !== 'walking') return
+    const dm = distanceKm * 1000 // metres
+
+    if (demoStep === 1 && dm >= 50) {
+      setDemoStep(2)
+      setDemoNudge(null)
+    } else if (demoStep === 2 && (demoToiletDone) ) {
+      setDemoStep(3)
+      setDemoNudge(null)
+    } else if (demoStep === 3 && (demoPottyDone)) {
+      setDemoStep(4)
+      setDemoNudge(null)
+    } else if (demoStep === 4 && dm >= 200) {
+      setDemoStep(5)
+      setDemoNudge(null)
+    }
+  }, [isDemoWalk, phase, distanceKm, demoStep, demoToiletDone, demoPottyDone])
+
+  // Nudge timer — fire if walker hasn't advanced within 5s
+  useEffect(() => {
+    if (!isDemoWalk || phase !== 'walking') return
+    if (demoNudgeTimer.current) clearTimeout(demoNudgeTimer.current)
+    const nudges: Record<number, string[]> = {
+      1: ['Take a few steps forward to see your route appear on the map 🗺️', 'Keep moving — walk forward with the phone! 👟'],
+      2: ['Tap the 💧 Toilet button above to practice — it\'s safe, this is just a demo!', 'Try tapping Toilet 💧 now. Tap it even if Bruno didn\'t go!'],
+      3: ['Now tap 💩 Potty to practice that button too!', 'Tap Potty 💩 to try it — no photo will open in demo mode'],
+      4: ['Keep walking! Almost at 200m 🐕', `${Math.round(200 - distanceKm * 1000)}m more — you\'re doing great!`],
+      5: ['Tap the red End Walk button below to finish ↓', 'Great job! Tap End Walk to see the report ↓'],
+    }
+    const msgs = nudges[demoStep] ?? []
+    let i = 0
+    function scheduleNudge() {
+      demoNudgeTimer.current = setTimeout(() => {
+        setDemoNudge(msgs[i % msgs.length] ?? null)
+        i++
+        scheduleNudge()
+      }, 5000)
+    }
+    scheduleNudge()
+    return () => { if (demoNudgeTimer.current) clearTimeout(demoNudgeTimer.current) }
+  }, [isDemoWalk, phase, demoStep]) // eslint-disable-line react-hooks/exhaustive-deps
+
   function startWalk() {
     setGpsRoute([])
     setDistanceKm(0)
@@ -379,6 +429,10 @@ export default function WalkerClient({
     setGpsError(null)
     setCurrentPos(null)
     setWalkEvents([])
+    setDemoStep(1)
+    setDemoToiletDone(false)
+    setDemoPottyDone(false)
+    setDemoNudge(null)
     setPhase('walking')
     walkStartRef.current = new Date()
 
@@ -431,6 +485,13 @@ export default function WalkerClient({
   }
 
   function endWalk() {
+    // Demo mode: gate on 200m
+    if (isDemoWalk && distanceKm * 1000 < 200) {
+      const remaining = Math.round(200 - distanceKm * 1000)
+      setDemoNudge(`Walk ${remaining}m more before ending the practice walk`)
+      return
+    }
+    if (demoNudgeTimer.current) clearTimeout(demoNudgeTimer.current)
     // Stop timer
     if (timerRef.current) {
       clearInterval(timerRef.current)
@@ -442,8 +503,8 @@ export default function WalkerClient({
       watchIdRef.current = null
     }
     setPhase('logging')
-    // Auto-open camera after form renders
-    setTimeout(() => photoInputRef.current?.click(), 400)
+    // Auto-open camera after form renders (skip in demo)
+    if (!isDemoWalk) setTimeout(() => photoInputRef.current?.click(), 400)
   }
 
   function handlePeeTap() {
@@ -454,6 +515,11 @@ export default function WalkerClient({
       lng: loc?.lng ?? null,
       ts: new Date().toISOString(),
     }])
+    // Advance demo step
+    if (isDemoWalk && demoStep === 2) {
+      setDemoToiletDone(true)
+      setDemoNudge('Great! 💧 Toilet logged. Now try 💩 Potty →')
+    }
   }
 
   function handlePoopTap() {
@@ -465,7 +531,13 @@ export default function WalkerClient({
       ts: new Date().toISOString(),
       photoUrl: null,
     }])
-    poopPhotoInputRef.current?.click()
+    // In demo mode skip the camera entirely
+    if (!isDemoWalk) {
+      poopPhotoInputRef.current?.click()
+    } else if (demoStep === 3) {
+      setDemoPottyDone(true)
+      setDemoNudge('Great! 💩 Potty logged. Now keep walking to 200m →')
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -863,25 +935,27 @@ export default function WalkerClient({
           }}>
             ✅
           </div>
-          <h2 style={{
-            fontFamily: 'var(--font-fredoka)',
-            fontSize: 28,
-            fontWeight: 700,
-            color: '#0A2F35',
-            textAlign: 'center',
-            margin: '0 0 10px',
-          }}>
-            Practice complete!
+          <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 28, fontWeight: 700, color: '#0A2F35', textAlign: 'center', margin: '0 0 10px' }}>
+            Practice complete! 🎉
           </h2>
-          <p style={{
-            fontFamily: 'var(--font-nunito)',
-            fontSize: 15,
-            color: '#64748B',
-            textAlign: 'center',
-            margin: '0 0 36px',
-            lineHeight: 1.6,
-          }}>
-            You know exactly what to do. Now start the real walk with {dogName}.
+          {/* What they accomplished */}
+          <div style={{ background: '#F0FDF4', border: '1.5px solid #86EFAC', borderRadius: 14, padding: '12px 16px', marginBottom: 24, width: '100%', maxWidth: 360 }}>
+            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 13, fontWeight: 700, color: '#166534', margin: '0 0 8px' }}>You practised:</p>
+            {[
+              { done: true, label: `Walked ${Math.round(distanceKm * 1000)}m with GPS tracking` },
+              { done: demoToiletDone, label: 'Tapped Toilet 💧 button' },
+              { done: demoPottyDone, label: 'Tapped Potty 💩 button' },
+              { done: true, label: 'Took a dog photo 📸' },
+              { done: true, label: 'Generated the report' },
+            ].map((item, i) => (
+              <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                <span style={{ fontSize: 14 }}>{item.done ? '✅' : '⬜'}</span>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: item.done ? '#166534' : '#94A3B8', margin: 0 }}>{item.label}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#64748B', textAlign: 'center', margin: '0 0 28px', lineHeight: 1.6 }}>
+            Now you know exactly what to do on the real walk with {dogName}.
           </p>
           <div style={{ width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <button
@@ -1228,7 +1302,75 @@ export default function WalkerClient({
                   </div>
                 )}
 
-                {/* Keep screen open banner */}
+                {/* ── DEMO guided hint system ── */}
+                {isDemoWalk && (() => {
+                  const dm = Math.round(distanceKm * 1000)
+                  const remaining = Math.max(0, 200 - dm)
+                  // Step hint card
+                  const stepHints: Record<number, { icon: string; text: string; color: string; border: string }> = {
+                    1: { icon: '🗺️', text: `Walk forward to see your route on the map`, color: '#0A2F35', border: 'oklch(0.88 0.06 196)' },
+                    2: { icon: '💧', text: `If Bruno does susu (toilet), tap the Toilet button now`, color: '#1D4ED8', border: '#BFDBFE' },
+                    3: { icon: '💩', text: `If Bruno does potty, tap the Potty button now`, color: '#92400E', border: '#FDE047' },
+                    4: { icon: '🐕', text: `Keep walking — ${remaining}m more to finish the practice`, color: '#0A2F35', border: 'oklch(0.88 0.06 196)' },
+                    5: { icon: '✅', text: `Great walk! Now tap End Walk to finish the practice`, color: '#166534', border: '#86EFAC' },
+                  }
+                  const hint = stepHints[demoStep]
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {/* Step indicator dots */}
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                        {[1,2,3,4,5].map(s => (
+                          <div key={s} style={{
+                            width: s < demoStep ? 20 : s === demoStep ? 28 : 8,
+                            height: 8, borderRadius: 100,
+                            background: s < demoStep ? 'oklch(0.48 0.17 196)' : s === demoStep ? '#FF8C52' : '#E2E8F0',
+                            transition: 'all 0.3s ease',
+                          }} />
+                        ))}
+                      </div>
+                      {/* Active hint */}
+                      <div style={{ background: '#fff', border: `2px solid ${hint.border}`, borderRadius: 14, padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                        <span style={{ fontSize: 20, flexShrink: 0 }}>{hint.icon}</span>
+                        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: hint.color, margin: 0, lineHeight: 1.4 }}>
+                          {demoNudge ?? hint.text}
+                        </p>
+                      </div>
+                      {/* Progress bar for steps 1 + 4 */}
+                      {(demoStep === 1 || demoStep === 4) && (
+                        <div style={{ background: '#F1F5F9', borderRadius: 100, height: 8, overflow: 'hidden' }}>
+                          <div style={{
+                            height: '100%',
+                            width: `${Math.min(100, (dm / 200) * 100)}%`,
+                            background: 'oklch(0.48 0.17 196)',
+                            borderRadius: 100,
+                            transition: 'width 0.5s ease',
+                          }} />
+                        </div>
+                      )}
+                      {(demoStep === 1 || demoStep === 4) && (
+                        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#64748B', textAlign: 'center', margin: 0 }}>
+                          {dm}m / 200m walked
+                        </p>
+                      )}
+                      {/* Skip buttons for steps 2 and 3 */}
+                      {demoStep === 2 && (
+                        <button onClick={() => { setDemoToiletDone(true); setDemoNudge(null) }}
+                          style={{ background: 'none', border: 'none', fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#94A3B8', textDecoration: 'underline', cursor: 'pointer', padding: '4px 0', minHeight: 36 }}>
+                          Bruno didn't go — skip this step →
+                        </button>
+                      )}
+                      {demoStep === 3 && (
+                        <button onClick={() => { setDemoPottyDone(true); setDemoNudge(null) }}
+                          style={{ background: 'none', border: 'none', fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#94A3B8', textDecoration: 'underline', cursor: 'pointer', padding: '4px 0', minHeight: 36 }}>
+                          Bruno didn't go — skip this step →
+                        </button>
+                      )}
+                    </div>
+                  )
+                })()}
+
+                {/* Keep screen open banner — real walks only */}
+                {!isDemoWalk && (
                 <div className="rounded-xl px-3 py-2 flex items-center gap-2"
                   style={{ background: 'oklch(0.97 0.02 196)', border: '1px solid oklch(0.88 0.06 196)' }}>
                   <span className="text-base flex-shrink-0">📱</span>
@@ -1236,6 +1378,7 @@ export default function WalkerClient({
                     Keep this screen open during the walk to track GPS
                   </p>
                 </div>
+                )}
 
                 {/* Walk started — notify parent prompt */}
                 {startWaLink && elapsed < 120 && (
@@ -1317,13 +1460,21 @@ export default function WalkerClient({
 
                 {/* End Walk button */}
                 <div className="mt-auto">
-                  <button
-                    onClick={endWalk}
-                    className="w-full py-4 rounded-2xl font-bold text-xl text-white shadow-md active:scale-[0.97] transition-transform"
-                    style={{ background: '#DC2626', fontFamily: 'var(--font-fredoka)' }}
-                  >
-                    End Walk
-                  </button>
+                  {isDemoWalk && demoStep < 5 ? (
+                    <div style={{ background: '#F1F5F9', borderRadius: 18, padding: '14px 16px', textAlign: 'center' }}>
+                      <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', margin: 0, fontWeight: 600 }}>
+                        Complete the steps above first · {Math.max(0, Math.round(200 - distanceKm * 1000))}m remaining
+                      </p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={endWalk}
+                      className="w-full py-4 rounded-2xl font-bold text-xl text-white shadow-md active:scale-[0.97] transition-transform"
+                      style={{ background: isDemoWalk ? '#FF8C52' : '#DC2626', fontFamily: 'var(--font-fredoka)' }}
+                    >
+                      {isDemoWalk ? 'End Practice Walk ✓' : 'End Walk'}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
