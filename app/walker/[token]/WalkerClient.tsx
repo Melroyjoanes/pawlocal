@@ -116,6 +116,7 @@ export default function WalkerClient({
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [parentWaLink, setParentWaLink] = useState<string | null>(null)
+  const [reportUrl, setReportUrl] = useState<string | null>(null)
   const [startWaLink, setStartWaLink] = useState<string | null>(null)
 
   async function handlePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
@@ -314,6 +315,7 @@ export default function WalkerClient({
 
       // Reset walk state, go to success screen
       if (data.wa_link) setParentWaLink(data.wa_link)
+      if (data.report_url) setReportUrl(data.report_url)
       setPoopCount(0)
       setPeeCount(0)
       setMood('')
@@ -778,14 +780,24 @@ export default function WalkerClient({
                 <span className="text-4xl">✅</span>
               </div>
               <h2 className="text-3xl font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                Report sent!
+                Report ready!
               </h2>
-              <p className="text-sm text-slate-500 mb-8 leading-relaxed px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {parentWaLink
-                  ? `Walk logged successfully! Tap below to send ${ownerFirstName} the report.`
+              <p className="text-sm text-slate-500 mb-6 leading-relaxed px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {ownerFirstName
+                  ? `Great walk! Send ${ownerFirstName} the report link below.`
                   : `Walk logged successfully! 🐾`}
               </p>
+
+              {/* Report link card */}
+              {reportUrl && (
+                <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-100 px-4 py-3 mb-5 shadow-sm text-left">
+                  <p className="text-xs text-slate-400 mb-0.5 font-semibold uppercase tracking-wide">Walk report link</p>
+                  <p className="text-sm font-medium text-[#0A2F35] break-all leading-snug">{reportUrl}</p>
+                </div>
+              )}
+
               <div className="w-full max-w-sm space-y-3">
+                {/* Send to owner via WhatsApp (includes report URL) */}
                 {parentWaLink && (
                   <a
                     href={parentWaLink}
@@ -794,15 +806,30 @@ export default function WalkerClient({
                     className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-white text-base shadow-md"
                     style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', fontSize: '17px' }}
                   >
-                    📲 Notify {ownerFirstName} on WhatsApp
+                    📲 Send report to {ownerFirstName ?? 'owner'}
                   </a>
                 )}
+
+                {/* View the report */}
+                {reportUrl && (
+                  <a
+                    href={reportUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-base border-2"
+                    style={{ borderColor: 'oklch(0.48 0.17 196)', color: 'oklch(0.48 0.17 196)', fontFamily: 'var(--font-fredoka)' }}
+                  >
+                    👁 View report →
+                  </a>
+                )}
+
+                {/* Save dashboard link to WhatsApp */}
                 {(() => {
                   const dashUrl = typeof window !== 'undefined'
                     ? `${window.location.origin}/walker/${token}`
                     : `https://pupstep.in/walker/${token}`
                   const waText = encodeURIComponent(
-                    `Your PupStep walk log for ${dogName} 🐾\nReturn here anytime to log walks:\n${dashUrl}`
+                    `My PupStep walker dashboard for ${dogName} 🐾\nReturn here anytime:\n${dashUrl}`
                   )
                   return (
                     <a
@@ -812,12 +839,13 @@ export default function WalkerClient({
                       className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-white text-base"
                       style={{ background: '#0A2F35', fontFamily: 'var(--font-fredoka)' }}
                     >
-                      📲 Send yourself this link on WhatsApp
+                      📲 Save my dashboard link
                     </a>
                   )
                 })()}
+
                 <button
-                  onClick={() => setPhase('idle')}
+                  onClick={() => { setPhase('idle'); setReportUrl(null); setParentWaLink(null) }}
                   className="w-full py-4 rounded-2xl font-bold text-lg text-white"
                   style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)' }}
                 >

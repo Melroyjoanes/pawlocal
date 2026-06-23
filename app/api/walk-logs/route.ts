@@ -41,6 +41,7 @@ export async function POST(req: NextRequest) {
     ended_at,
     gps_route,
     photo_url,
+    walk_events,
   } = body
 
   if (!connection_token) {
@@ -107,5 +108,66 @@ export async function POST(req: NextRequest) {
     wa_link = `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`
   }
 
-  return NextResponse.json({ ok: true, log_id: log.id, wa_link }, { status: 201 })
+  // Also create a public walk report so the pet parent gets the beautiful report card
+  const reportToken = require('crypto').randomBytes(16).toString('hex')
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
+
+  // Extract poop_events / pee_events from walk_events (GPS-tagged taps during walk)
+  type WalkEvent = { type: 'pee' | 'poop'; lat: number | null; lng: number | null; ts: string; photoUrl?: string | null }
+  const events: WalkEvent[] = Array.isArray(walk_events) ? walk_events : []
+  const poopEvents = events
+    .filter((e) => e.type === 'poop' && e.lat != null && e.lng != null)
+    .map((e) => ({ lat: e.lat!, lng: e.lng!, time: e.ts }))
+  const peeEvents = events
+    .filter((e) => e.type === 'pee' && e.lat != null && e.lng != null)
+    .map((e) => ({ lat: e.lat!, lng: e.lng!, time: e.ts }))
+
+  // Use GPS-tagged counts if available, otherwise fall back to submitted counts
+  const finalPoopCount = poopEvents.length > 0 ? poopEvents.length : (poop_count ?? 0)
+  const finalPeeCount = peeEvents.length > 0 ? peeEvents.length : (pee_count ?? 0)
+
+  const dogRow = await (db.from('dogs') as any).select('name').eq('id', connection.dog_id).maybeSingle()
+  const dogName = dogRow?.data?.name ?? 'your dog'
+
+  const moodEmoji: Record<string, string> = { great: '😊', good: '😐', tired: '😴', anxious: '😟' }
+  const moodNote = mood ? `[Mood: ${moodEmoji[mood] ?? '😊'} ${mood}] ` : ''
+  const reportNotes = moodNote + (notes?.trim() ?? '')
+
+  // Fire-and-forget — don't block the response on report creation
+  ;(async () => {
+    try {
+      await (db.from('walk_reports') as any).insert({
+        provider_id: null,
+        walker_name: connection.walker_name ?? 'Your Walker',
+        connection_id: connection.id,
+        owner_id: connection.owner_id,
+        token: reportToken,
+        dog_name: dogName,
+        duration_mins: duration_mins ?? 0,
+        poop_count: finalPoopCount,
+        pee_count: finalPeeCount,
+        notes: reportNotes || null,
+        photo_url: photo_url ?? null,
+        walk_date: started_at ?? new Date().toISOString(),
+        route_points: gps_route ?? null,
+        distance_meters: distance_km != null ? Math.round(distance_km * 1000) : null,
+        poop_events: poopEvents.length > 0 ? poopEvents : null,
+        pee_events: peeEvents.length > 0 ? peeEvents : null,
+      })
+    } catch (err) {
+      console.error('[walk-logs] report creation failed:', err)
+    }
+  })()
+
+  const reportUrl = `${siteUrl}/walk-report/${reportToken}`
+
+  // Build WhatsApp link — override the plain-text one with the report URL
+  if (connWithPhone?.owner_phone) {
+    const phone = connWithPhone.owner_phone.replace(/\D/g, '')
+    const fullPhone = phone.startsWith('91') ? phone : `91${phone}`
+    const msg = `🐾 *${dogName}'s walk report is ready!*\n\nTap to view: ${reportUrl}\n\nLogged by ${connection.walker_name ?? 'your walker'} via PupStep`
+    wa_link = `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`
+  }
+
+  return NextResponse.json({ ok: true, log_id: log.id, wa_link, report_token: reportToken, report_url: reportUrl }, { status: 201 })
 }

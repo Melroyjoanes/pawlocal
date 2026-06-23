@@ -63,7 +63,8 @@ async function getReport(token: string): Promise<WalkReport | null> {
     pee_count: data.pee_count,
     notes: data.notes ?? null,
     photo_url: data.photo_url ?? null,
-    provider_name: provider?.name ?? 'Your Walker',
+    // QR-connected walkers have no provider row — use walker_name stored on the report
+    provider_name: provider?.name ?? data.walker_name ?? 'Your Walker',
     is_verified: provider?.is_verified ?? false,
     verification_tier: provider?.verification_tier ?? 'contacted',
     start_location: data.start_location ?? null,
