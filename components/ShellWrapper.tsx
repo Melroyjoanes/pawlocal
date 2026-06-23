@@ -24,7 +24,8 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
     pathname.startsWith('/my-dogs') ||
     pathname === '/setup' ||
     pathname.startsWith('/setup/') ||
-    pathname === '/upgrade'
+    pathname === '/upgrade' ||
+    pathname.startsWith('/walker-guide')
 
   if (isIsolated) return <>{children}</>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Props {
@@ -49,8 +49,30 @@ export default function SetupClient({ userName, justPaid }: Props) {
   const [breed, setBreed] = useState('')
   const [healthNotes, setHealthNotes] = useState('')
   const [ownerPhone, setOwnerPhone] = useState('')
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const ext = file.name.split('.').pop() ?? 'jpg'
+      const path = `dog-photos/${Date.now()}.${ext}`
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+      await supabase.storage.from('provider-photos').upload(path, file)
+      const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
+      setPhotoUrl(data.publicUrl)
+    } catch (err) {
+      console.error('Photo upload failed', err)
+    } finally {
+      setUploading(false)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -70,6 +92,7 @@ export default function SetupClient({ userName, justPaid }: Props) {
           breed: breed.trim() || null,
           health_notes: healthNotes.trim() || null,
           owner_phone: ownerPhone.trim() || null,
+          photo_url: photoUrl ?? null,
         }),
       })
 
@@ -285,6 +308,51 @@ export default function SetupClient({ userName, justPaid }: Props) {
             </div>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Dog Photo */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    background: photoUrl ? 'transparent' : '#FFFBEB',
+                    border: '2.5px dashed #FF8C52',
+                    cursor: uploading ? 'not-allowed' : 'pointer',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '32px',
+                    position: 'relative',
+                  }}
+                >
+                  {photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={photoUrl} alt="dog preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                  ) : (
+                    <span>🐕</span>
+                  )}
+                  {uploading && (
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>
+                      <span style={{ fontSize: '13px' }}>⏳</span>
+                    </div>
+                  )}
+                </button>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  style={{ display: 'none' }}
+                  onChange={handlePhotoChange}
+                />
+                <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: '#9CA3AF', margin: 0 }}>
+                  {photoUrl ? 'Tap to change photo' : 'Add a photo (optional)'}
+                </p>
+              </div>
+
               {/* Dog Name */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label

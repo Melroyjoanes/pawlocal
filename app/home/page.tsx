@@ -204,6 +204,8 @@ export default async function HomePage() {
       todayWalked={todayWalked}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       todayLogs={todayLogs as any}
+      trialStatus={isPro ? 'active' : 'none'}
+      trialDaysRemaining={null}
     />
   )
 }

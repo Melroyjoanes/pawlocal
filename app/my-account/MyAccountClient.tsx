@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -107,12 +107,23 @@ const CONDITION_STYLE: Record<string, { bg: string; color: string }> = {
   infected:  { bg: '#FFF1F2', color: '#BE123C' },
 }
 
-type Tab = 'dogs' | 'team' | 'bookings' | 'grooming'
+interface BillingRow {
+  id: string
+  plan: string
+  status: string
+  amount_paise: number
+  expires_at: string | null
+  created_at: string
+  razorpay_payment_id: string | null
+}
+
+type Tab = 'dogs' | 'team' | 'bookings' | 'grooming' | 'plan'
 const TABS: { id: Tab; label: string; emoji: string }[] = [
   { id: 'dogs',       label: 'My Dogs',      emoji: '🐕' },
   { id: 'team',       label: 'My Team',      emoji: '👥' },
   { id: 'bookings',   label: 'Walk Reports', emoji: '🐾' },
   { id: 'grooming',   label: 'Grooming',     emoji: '✂️' },
+  { id: 'plan',       label: 'Plan & Billing', emoji: '💳' },
 ]
 
 function EmptyState({ emoji, title, sub, cta, ctaHref }: {
@@ -156,6 +167,44 @@ export default function MyAccountClient({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  // Plan & Billing state
+  const [billingHistory, setBillingHistory] = useState<BillingRow[]>([])
+  const [billingLoading, setBillingLoading] = useState(false)
+  const [cancellingPlan, setCancellingPlan] = useState(false)
+  const [cancelSuccess, setCancelSuccess] = useState(false)
+
+  useEffect(() => {
+    if (tab === 'plan' && billingHistory.length === 0 && !billingLoading) {
+      setBillingLoading(true)
+      fetch('/api/payments/billing-history')
+        .then(r => r.json())
+        .then(d => { setBillingHistory(d.history ?? []) })
+        .catch(() => {})
+        .finally(() => setBillingLoading(false))
+    }
+  }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleCancelPlan() {
+    const activeSub = subStatus?.status === 'active'
+    if (!activeSub) return
+    const expiryStr = subStatus?.expires_at
+      ? new Date(subStatus.expires_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+      : 'your plan end date'
+    const confirmed = window.confirm(`Cancel your PupStep subscription? You keep access until ${expiryStr}.`)
+    if (!confirmed) return
+    setCancellingPlan(true)
+    try {
+      const res = await fetch('/api/payments/cancel', { method: 'POST' })
+      if (res.ok) {
+        setCancelSuccess(true)
+      }
+    } catch {
+      // silent fail — user can retry
+    } finally {
+      setCancellingPlan(false)
+    }
+  }
 
   async function handleSaveName() {
     if (!nameInput.trim() || nameInput.trim() === displayName) { setEditingName(false); return }
@@ -208,6 +257,7 @@ export default function MyAccountClient({
     team: walkerConnections.filter(w => w.status === 'active').length,
     bookings: claimedReports.length + walkLogs.length,
     grooming: claimedGroomingReports.length,
+    plan: 0,
   }
 
   return (
@@ -744,6 +794,164 @@ export default function MyAccountClient({
               })()}
             </div>
           )}
+
+          {/* PLAN & BILLING */}
+          {tab === 'plan' && (() => {
+            const isActive = subStatus?.status === 'active'
+            const isExpired = subStatus?.status === 'expired'
+            const hasPlan = isActive || isExpired
+            const expiryStr = subStatus?.expires_at
+              ? new Date(subStatus.expires_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+              : null
+
+            // Check billing history for a more detailed status (past_due/cancelled)
+            const latestBill = billingHistory[0]
+            const latestBillStatus = latestBill?.status
+
+            const statusBadge = isActive
+              ? { bg: '#F0FDF4', color: '#15803D', label: 'Active' }
+              : latestBillStatus === 'past_due'
+              ? { bg: '#FFF1F2', color: '#BE123C', label: 'Payment failed' }
+              : { bg: '#F8FAFC', color: '#64748B', label: 'Cancelled' }
+
+            return (
+              <div className="flex flex-col gap-4">
+
+                {/* Current plan card */}
+                <div
+                  className="rounded-2xl p-5"
+                  style={{
+                    background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
+                    boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), 0 8px 24px -4px rgba(10,47,53,0.14), 0 32px 64px -12px rgba(10,47,53,0.10)',
+                    border: '1px solid rgba(226,220,200,0.7)',
+                  }}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Current Plan</p>
+
+                  {subStatus && hasPlan ? (
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-bold text-slate-900 text-lg capitalize" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                          PupStep Pro
+                        </p>
+                        {expiryStr && (
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {isActive ? 'Renews' : 'Access until'} {expiryStr}
+                          </p>
+                        )}
+                      </div>
+                      <span
+                        className="text-xs font-bold px-3 py-1 rounded-full flex-shrink-0"
+                        style={{ background: statusBadge.bg, color: statusBadge.color }}
+                      >
+                        {statusBadge.label}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-start gap-3">
+                      <p className="text-sm text-slate-500">You don&apos;t have an active plan.</p>
+                      <Link
+                        href="/upgrade"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all"
+                        style={{
+                          background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
+                          color: '#451A03',
+                          boxShadow: '0 4px 0px rgba(175,65,10,0.28)',
+                        }}
+                      >
+                        Upgrade to Pro
+                      </Link>
+                    </div>
+                  )}
+
+                  {/* Cancel button */}
+                  {isActive && !cancelSuccess && (
+                    <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(226,220,200,0.6)' }}>
+                      <button
+                        onClick={handleCancelPlan}
+                        disabled={cancellingPlan}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                        style={{ background: '#F1F5F9', color: '#475569', border: '1px solid rgba(226,220,200,0.8)' }}
+                      >
+                        {cancellingPlan ? 'Cancelling…' : 'Cancel subscription'}
+                      </button>
+                    </div>
+                  )}
+
+                  {cancelSuccess && expiryStr && (
+                    <div className="mt-4 rounded-xl px-3 py-2.5" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+                      <p className="text-sm text-green-800 font-semibold">
+                        Cancelled. Access continues until {expiryStr}.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Billing history */}
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-0.5 mb-3">Billing History</p>
+                  {billingLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <span className="text-slate-400 text-sm">Loading…</span>
+                    </div>
+                  ) : billingHistory.length === 0 ? (
+                    <div
+                      className="rounded-2xl p-5 text-center"
+                      style={{
+                        background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
+                        border: '1px solid rgba(226,220,200,0.7)',
+                      }}
+                    >
+                      <p className="text-sm text-slate-400">No billing history yet.</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {billingHistory.map(row => {
+                        const rowStatus = row.status === 'active'
+                          ? { bg: '#F0FDF4', color: '#15803D' }
+                          : row.status === 'past_due'
+                          ? { bg: '#FFF1F2', color: '#BE123C' }
+                          : { bg: '#F8FAFC', color: '#64748B' }
+                        return (
+                          <div
+                            key={row.id}
+                            className="rounded-2xl px-4 py-3 flex items-center justify-between gap-3"
+                            style={{
+                              background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
+                              boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), 0 4px 12px rgba(15,45,50,0.06)',
+                              border: '1px solid rgba(226,220,200,0.7)',
+                            }}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-slate-900 capitalize">{row.plan} plan</p>
+                              <p className="text-[10px] text-slate-400 mt-0.5">
+                                {new Date(row.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                {row.razorpay_payment_id && (
+                                  <span className="ml-1.5 opacity-60">· {row.razorpay_payment_id.slice(0, 16)}…</span>
+                                )}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <p className="text-sm font-bold text-slate-900">
+                                ₹{(row.amount_paise / 100).toLocaleString('en-IN')}
+                              </p>
+                              <span
+                                className="text-[10px] font-bold px-2 py-0.5 rounded-full capitalize"
+                                style={{ background: rowStatus.bg, color: rowStatus.color }}
+                              >
+                                {row.status === 'past_due' ? 'Failed' : row.status}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+              </div>
+            )
+          })()}
 
         </motion.div>
       </AnimatePresence>

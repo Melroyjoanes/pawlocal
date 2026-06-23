@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
+import { sendEmail, emailTemplate } from '@/lib/email'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -101,6 +102,40 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Fire-and-forget email to dog owner via client_id → owner lookup
+  if (client_id) {
+    ;(async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: clientRow } = await (admin().from('provider_clients') as any)
+          .select('owner_id')
+          .eq('id', client_id)
+          .single()
+
+        if (clientRow?.owner_id) {
+          const { data: { user: ownerUser } } = await admin().auth.admin.getUserById(clientRow.owner_id as string)
+          const ownerEmail = ownerUser?.email
+          if (ownerEmail) {
+            const walkerName: string = provider.name as string
+            const durationMins: number = Number(duration_mins)
+            sendEmail({
+              to: ownerEmail,
+              subject: `🐾 ${(dog_name as string).trim()}'s walk report is ready`,
+              html: emailTemplate(
+                'Walk report ready!',
+                `${walkerName} just submitted a walk report for ${(dog_name as string).trim()}. Duration: ${durationMins} mins.`,
+                'View report',
+                'https://pupstep.in/my-reports',
+              ),
+            }).catch(() => {})
+          }
+        }
+      } catch {
+        // swallow — never block the response
+      }
+    })()
+  }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
   const reportUrl = `${siteUrl}/walk-report/${data.token}`

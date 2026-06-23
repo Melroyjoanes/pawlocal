@@ -6,6 +6,53 @@
 
 import { useState } from 'react'
 
+type Lang = 'en' | 'hi' | 'mr'
+
+const STRINGS = {
+  en: {
+    brand: 'PupStep 🐾',
+    codeLabel: 'Enter the 4-digit code shown by the owner *',
+    nameLabel: 'Your name *',
+    phoneLabel: 'Your phone number *',
+    roleLabel: 'I am the...',
+    submitBtn: 'Connect & Start Logging →',
+    roleDogWalker: '🐕 Dog Walker',
+    roleFamilyFriend: '👨‍👩‍👧 Family / Friend',
+    roleProfessional: '💼 Professional Walker',
+    roleOther: '👤 Other',
+    phonePlaceholder: '10-digit number',
+    dashboardHint: "We'll send your dashboard link here",
+  },
+  hi: {
+    brand: 'PupStep 🐾',
+    codeLabel: 'मालिक द्वारा दिखाया गया 4-अंकीय कोड दर्ज करें *',
+    nameLabel: 'आपका नाम *',
+    phoneLabel: 'आपका फोन नंबर *',
+    roleLabel: 'मैं हूँ...',
+    submitBtn: 'जोड़ें और शुरू करें →',
+    roleDogWalker: '🐕 कुत्ता वॉकर',
+    roleFamilyFriend: '👨‍👩‍👧 परिवार / मित्र',
+    roleProfessional: '💼 पेशेवर वॉकर',
+    roleOther: '👤 अन्य',
+    phonePlaceholder: '10 अंकों का नंबर',
+    dashboardHint: 'हम यहाँ आपका डैशबोर्ड लिंक भेजेंगे',
+  },
+  mr: {
+    brand: 'PupStep 🐾',
+    codeLabel: 'मालकाने दाखवलेला 4-अंकी कोड टाका *',
+    nameLabel: 'तुमचे नाव *',
+    phoneLabel: 'तुमचा फोन नंबर *',
+    roleLabel: 'मी आहे...',
+    submitBtn: 'कनेक्ट करा आणि सुरू करा →',
+    roleDogWalker: '🐕 कुत्रा वॉकर',
+    roleFamilyFriend: '👨‍👩‍👧 कुटुंब / मित्र',
+    roleProfessional: '💼 व्यावसायिक वॉकर',
+    roleOther: '👤 इतर',
+    phonePlaceholder: '10-अंकी नंबर',
+    dashboardHint: 'आम्ही येथे तुमचा डॅशबोर्ड लिंक पाठवू',
+  },
+} as const
+
 interface ConnectClientProps {
   token: string
   dogName: string
@@ -16,13 +63,6 @@ interface ConnectClientProps {
   isClaimed: boolean
 }
 
-const ROLE_OPTIONS = [
-  { value: 'dog_walker', label: '🐕 Dog Walker' },
-  { value: 'family_friend', label: '👨‍👩‍👧 Family / Friend' },
-  { value: 'professional', label: '💼 Professional Walker' },
-  { value: 'other', label: '👤 Other' },
-]
-
 export default function ConnectClient({
   token,
   dogName,
@@ -31,12 +71,22 @@ export default function ConnectClient({
   ownerFirstName,
   dogBreed,
 }: ConnectClientProps) {
+  const [lang, setLang] = useState<Lang>('en')
   const [otp, setOtp] = useState('')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [role, setRole] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const t = STRINGS[lang]
+
+  const ROLE_OPTIONS = [
+    { value: 'dog_walker', label: t.roleDogWalker },
+    { value: 'family_friend', label: t.roleFamilyFriend },
+    { value: 'professional', label: t.roleProfessional },
+    { value: 'other', label: t.roleOther },
+  ]
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -90,10 +140,29 @@ export default function ConnectClient({
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#FFFBEB' }}>
+      {/* Language toggle */}
+      <div className="flex items-center justify-center pt-4 px-6 gap-2">
+        {(['en', 'hi', 'mr'] as Lang[]).map((l) => (
+          <button
+            key={l}
+            type="button"
+            onClick={() => setLang(l)}
+            className="px-3 py-1.5 rounded-full text-xs font-bold transition-all"
+            style={{
+              background: lang === l ? 'oklch(0.48 0.17 196)' : 'rgba(0,0,0,0.06)',
+              color: lang === l ? '#ffffff' : '#4B5563',
+              fontFamily: 'var(--font-nunito)',
+            }}
+          >
+            {l === 'en' ? 'English' : l === 'hi' ? 'हिंदी' : 'मराठी'}
+          </button>
+        ))}
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-center pt-8 pb-4 px-6">
+      <div className="flex items-center justify-center pt-6 pb-4 px-6">
         <span className="text-2xl font-bold text-[#0A2F35]" style={{ fontFamily: 'var(--font-fredoka)' }}>
-          PupStep 🐾
+          {t.brand}
         </span>
       </div>
 
@@ -159,7 +228,7 @@ export default function ConnectClient({
       <form onSubmit={handleSubmit} className="flex-1 px-5 space-y-4">
         <div>
           <label className="block text-sm font-bold text-[#0A2F35] mb-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-            Enter the 4-digit code shown by the owner *
+            {t.codeLabel}
           </label>
           <input
             type="text"
@@ -177,7 +246,7 @@ export default function ConnectClient({
 
         <div>
           <label className="block text-sm font-bold text-[#0A2F35] mb-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-            Your name *
+            {t.nameLabel}
           </label>
           <input
             type="text"
@@ -192,7 +261,7 @@ export default function ConnectClient({
 
         <div>
           <label className="block text-sm font-bold text-[#0A2F35] mb-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-            Your phone number *
+            {t.phoneLabel}
           </label>
           <input
             type="tel"
@@ -201,18 +270,18 @@ export default function ConnectClient({
             maxLength={10}
             value={phone}
             onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-            placeholder="10-digit number"
+            placeholder={t.phonePlaceholder}
             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF8C52] min-h-[52px]"
             style={{ fontFamily: 'var(--font-nunito)' }}
           />
           <p className="text-xs text-slate-400 mt-1 ml-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-            We&apos;ll send your dashboard link here
+            {t.dashboardHint}
           </p>
         </div>
 
         <div>
           <label className="block text-sm font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-nunito)' }}>
-            I am the...
+            {t.roleLabel}
           </label>
           <div className="grid grid-cols-2 gap-2">
             {ROLE_OPTIONS.map((opt) => (
@@ -253,7 +322,7 @@ export default function ConnectClient({
               fontFamily: 'var(--font-fredoka)',
             }}
           >
-            {loading ? 'Connecting…' : 'Connect & Start Logging →'}
+            {loading ? 'Connecting…' : t.submitBtn}
           </button>
         </div>
       </form>
