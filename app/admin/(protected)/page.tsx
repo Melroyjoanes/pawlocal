@@ -6,7 +6,7 @@ import { getCategoryBySlug } from '@/lib/categories'
 import { Stars } from '@/components/StarRating'
 
 type ProviderStatus = 'pending' | 'approved' | 'rejected'
-type AdminTab = 'providers' | 'broadcasts' | 'reports' | 'grooming' | 'reviews' | 'stats' | 'care'
+type AdminTab = 'providers' | 'broadcasts' | 'reports' | 'grooming' | 'reviews' | 'stats' | 'care' | 'saas'
 
 // ── Care System interfaces ────────────────────────────────────────
 interface CareStats {
@@ -984,6 +984,23 @@ export default function AdminPage() {
       reports_viewed: number
       open_rate: number
     }[]
+    mrr: number
+    arr: number
+    activeSubscribers: number
+    monthlySubscribers: number
+    annualSubscribers: number
+    trialUsers: number
+    newSubscribersThisMonth: number
+    cancelledThisMonth: number
+    pastDueCount: number
+    recentSubscriptions: {
+      user_id: string
+      plan: string
+      status: string
+      amount_paise: number
+      expires_at: string | null
+      created_at: string
+    }[]
   } | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
   const [providerStats, setProviderStats] = useState<Record<string, { views30d: number; reportsThisWeek: number; reportsSent30d: number }>>({})
@@ -1086,6 +1103,16 @@ export default function AdminPage() {
       totalWalkReports: data.totalWalkReports,
       claimedReports: data.claimedReports,
       providerStats: data.providerStats,
+      mrr: data.mrr ?? 0,
+      arr: data.arr ?? 0,
+      activeSubscribers: data.activeSubscribers ?? 0,
+      monthlySubscribers: data.monthlySubscribers ?? 0,
+      annualSubscribers: data.annualSubscribers ?? 0,
+      trialUsers: data.trialUsers ?? 0,
+      newSubscribersThisMonth: data.newSubscribersThisMonth ?? 0,
+      cancelledThisMonth: data.cancelledThisMonth ?? 0,
+      pastDueCount: data.pastDueCount ?? 0,
+      recentSubscriptions: data.recentSubscriptions ?? [],
     })
     setStatsLoading(false)
   }

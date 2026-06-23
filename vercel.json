@@ -9,5 +9,10 @@
         }
       ]
     }
+  ],
+  "crons": [
+    { "path": "/api/cron/trial-expiry",     "schedule": "0 1 * * *"  },
+    { "path": "/api/cron/renewal-reminder", "schedule": "0 8 * * *"  },
+    { "path": "/api/cron/weekly-summary",   "schedule": "0 9 * * 1"  }
   ]
 }

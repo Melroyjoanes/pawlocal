@@ -45,5 +45,21 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Start trial on first dog creation if not already started
+  ;(async () => {
+    try {
+      const { data: profile } = await (admin().from('profiles') as any)
+        .select('trial_started_at')
+        .eq('id', user.id)
+        .single()
+      if (profile && profile.trial_started_at === null) {
+        await (admin().from('profiles') as any)
+          .update({ trial_started_at: new Date().toISOString() })
+          .eq('id', user.id)
+      }
+    } catch { /* non-critical */ }
+  })()
+
   return NextResponse.json(data, { status: 201 })
 }

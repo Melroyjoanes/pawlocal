@@ -89,6 +89,7 @@ export default async function HomePage() {
     { data: lastWalkRaw },
     { data: subData },
     { data: walkLogsRaw },
+    { data: trialProfileData },
   ] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (db.from('profiles') as any)
@@ -145,6 +146,13 @@ export default async function HomePage() {
       .gt('expires_at', new Date().toISOString())
       .maybeSingle(),
 
+    // Trial status from profiles
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (db.from('profiles') as any)
+      .select('trial_started_at')
+      .eq('id', user.id)
+      .maybeSingle(),
+
     // Walk logs last 14 days — covers streak, week grid, last walk, AND today (derived below)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (db.from('walk_logs') as any)
@@ -168,6 +176,23 @@ export default async function HomePage() {
   const walkerConnections = walkerConnectionsRaw ?? []
   const lastWalk = lastWalkRaw?.[0] ?? null
   const isPro = !!subData
+
+  // Compute trial status from profiles.trial_started_at
+  const trialStartedAt: string | null = (trialProfileData as { trial_started_at?: string | null } | null)?.trial_started_at ?? null
+  const TRIAL_DAYS = 14
+  let trialStatus = 'no_trial'
+  let trialDaysRemaining: number | null = null
+  if (!isPro && trialStartedAt) {
+    const msRemaining = new Date(trialStartedAt).getTime() + TRIAL_DAYS * 86400 * 1000 - Date.now()
+    if (msRemaining > 0) {
+      trialStatus = 'trial'
+      trialDaysRemaining = Math.ceil(msRemaining / 86400000)
+    } else {
+      trialStatus = 'expired'
+    }
+  } else if (isPro) {
+    trialStatus = 'active'
+  }
 
   const recentLogs = walkLogsRaw ?? []
   // Derive today's logs from the 14-day fetch — no extra round-trip needed
@@ -204,8 +229,8 @@ export default async function HomePage() {
       todayWalked={todayWalked}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       todayLogs={todayLogs as any}
-      trialStatus={isPro ? 'active' : 'none'}
-      trialDaysRemaining={null}
+      trialStatus={trialStatus}
+      trialDaysRemaining={trialDaysRemaining}
     />
   )
 }

@@ -40,6 +40,18 @@ export async function POST(req: NextRequest) {
 
   const adminClient = admin()
 
+  // Re-activate subscription when a past_due user pays again
+  if (event.event === 'payment.captured') {
+    const userId = event.payload.payment?.entity.notes.user_id
+    if (userId) {
+      await adminClient
+        .from('subscriptions')
+        .update({ status: 'active' })
+        .eq('user_id', userId)
+        .eq('status', 'past_due')
+    }
+  }
+
   if (event.event === 'payment.failed') {
     const userId = event.payload.payment?.entity.notes.user_id
     if (userId) {

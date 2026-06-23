@@ -50,5 +50,23 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // Fire-and-forget welcome / renewal email
+  ;(async () => {
+    const email = user.email
+    if (!email || !process.env.RESEND_API_KEY) return
+    const planLabel = plan === 'annual' ? '₹1,999/year' : '₹249/month'
+    const expiryLabel = new Date(expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
+      body: JSON.stringify({
+        from: 'PupStep <hello@pupstep.in>',
+        to: [email],
+        subject: 'Welcome to PupStep Pro 🐾',
+        html: `<p>Hi!</p><p>You're now on PupStep Pro (${planLabel}). Your access runs until <strong>${expiryLabel}</strong>.</p><p>Enjoy unlimited walk reports, GPS tracking, and the full care diary. <a href="https://pupstep.in/home">Go to your dashboard →</a></p><p>Thanks,<br/>The PupStep Team</p>`,
+      }),
+    }).catch(() => {})
+  })()
+
   return NextResponse.json({ ok: true, expires_at: expiresAt })
 }
