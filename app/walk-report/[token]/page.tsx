@@ -159,6 +159,20 @@ export default async function WalkReportPage({
 
   const isClaimedByMe = !!user && report.customer_id === user.id
 
+  // Check if this is the owner's first-ever walk report
+  let isFirstReport = false
+  if (report.customer_id) {
+    const adminFirst = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { count } = await (adminFirst.from('walk_reports') as any)
+      .select('id', { count: 'exact', head: true })
+      .eq('owner_id', report.customer_id)
+    isFirstReport = (count ?? 0) === 1
+  }
+
   // Check new system: is user the linked owner via provider_clients?
   let isLinkedOwner = false
   if (user && report.client_id) {
@@ -181,6 +195,7 @@ export default async function WalkReportPage({
     <WalkReportCard
       report={report}
       isOwner={isOwner}
+      isFirstReport={isFirstReport}
     />
   )
 }

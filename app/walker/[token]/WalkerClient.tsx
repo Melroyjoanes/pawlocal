@@ -203,6 +203,11 @@ export default function WalkerClient({
   const [activeTab, setActiveTab] = useState<WalkerTab>('walk')
   const [showSaveNotice, setShowSaveNotice] = useState(false)
 
+  // Demo walk state
+  const [isDemoWalk, setIsDemoWalk] = useState(false)
+  const [showDemoConfirm, setShowDemoConfirm] = useState(false)
+  const [showDemoSuccess, setShowDemoSuccess] = useState(false)
+
   useEffect(() => {
     const dismissed = localStorage.getItem(`pup-saved-${token}`)
     if (!dismissed) setShowSaveNotice(true)
@@ -312,6 +317,61 @@ export default function WalkerClient({
     fetchLogs()
   }, [fetchLogs])
 
+  function retryGPS() {
+    if (!navigator.geolocation) {
+      setGpsError('GPS not available on this device.')
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const point: GpsPoint = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          ts: new Date().toISOString(),
+        }
+        setCurrentPos({ lat: point.lat, lng: point.lng })
+        setGpsError(null)
+        // Resume watchPosition
+        if (watchIdRef.current !== null) {
+          navigator.geolocation.clearWatch(watchIdRef.current)
+        }
+        watchIdRef.current = navigator.geolocation.watchPosition(
+          (p) => {
+            const pt: GpsPoint = {
+              lat: p.coords.latitude,
+              lng: p.coords.longitude,
+              ts: new Date().toISOString(),
+            }
+            setCurrentPos({ lat: pt.lat, lng: pt.lng })
+            setGpsRoute((prev) => {
+              const last = prev[prev.length - 1]
+              if (last) {
+                const delta = haversineKm(last.lat, last.lng, pt.lat, pt.lng)
+                setDistanceKm((d) => +(d + delta).toFixed(3))
+              }
+              return [...prev, pt]
+            })
+            lastPointRef.current = pt
+          },
+          (err) => {
+            if (err.code === err.PERMISSION_DENIED) {
+              setGpsError('Location access denied. Distance won\'t be tracked.')
+            }
+          },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+        )
+      },
+      (err) => {
+        if (err.code === err.PERMISSION_DENIED) {
+          setGpsError('Location access denied. Distance won\'t be tracked.')
+        } else {
+          setGpsError('Could not get location. Please try again.')
+        }
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+    )
+  }
+
   function startWalk() {
     setGpsRoute([])
     setDistanceKm(0)
@@ -410,6 +470,21 @@ export default function WalkerClient({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+
+    // Demo walk — skip API, go straight to demo success screen
+    if (isDemoWalk) {
+      setMood('')
+      setNotes('')
+      setPhotoUrl(null)
+      setElapsed(0)
+      setDistanceKm(0)
+      setGpsRoute([])
+      setWalkEvents([])
+      setPhase('idle')
+      setShowDemoSuccess(true)
+      return
+    }
+
     setSubmitting(true)
     setSubmitError(null)
 
@@ -486,6 +561,371 @@ export default function WalkerClient({
         <div className="fixed top-4 left-4 right-4 z-50 bg-[#0A2F35] text-white rounded-2xl px-5 py-4 text-sm font-semibold text-center shadow-xl animate-bounce-once"
           style={{ fontFamily: 'var(--font-nunito)' }}>
           {toast}
+        </div>
+      )}
+
+      {/* ─── FEATURE 1: GPS Permission Recovery Screen ─── */}
+      {phase === 'walking' && gpsError !== null && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 50,
+          background: '#FFFBEB',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '0 20px 40px',
+          overflowY: 'auto',
+        }}>
+          {/* Back button */}
+          <div style={{ paddingTop: 52, paddingBottom: 8 }}>
+            <button
+              onClick={() => { setPhase('idle'); setGpsError(null) }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white shadow-md text-gray-700 active:opacity-60 transition-opacity"
+              style={{ fontFamily: 'var(--font-nunito)' }}
+            >
+              ← Back
+            </button>
+          </div>
+
+          {/* Icon */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24, marginBottom: 20 }}>
+            <div style={{
+              width: 72,
+              height: 72,
+              borderRadius: '50%',
+              background: 'oklch(0.48 0.17 196)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 32,
+            }}>
+              📍
+            </div>
+          </div>
+
+          {/* Heading */}
+          <h1 style={{
+            fontFamily: 'var(--font-fredoka)',
+            fontSize: 24,
+            fontWeight: 700,
+            color: '#0A2F35',
+            textAlign: 'center',
+            margin: '0 0 10px',
+          }}>
+            Location access needed
+          </h1>
+
+          {/* Subtext */}
+          <p style={{
+            fontFamily: 'var(--font-nunito)',
+            fontSize: 14,
+            color: '#64748B',
+            textAlign: 'center',
+            margin: '0 0 28px',
+            lineHeight: 1.6,
+          }}>
+            Without GPS, {ownerFirstName} cannot see the route {dogName} walked.
+          </p>
+
+          {/* Android steps */}
+          <div style={{
+            background: '#fff',
+            borderRadius: 16,
+            padding: '16px 16px',
+            marginBottom: 14,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          }}>
+            <p style={{
+              fontFamily: 'var(--font-fredoka)',
+              fontSize: 13,
+              fontWeight: 700,
+              color: '#64748B',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              margin: '0 0 12px',
+            }}>
+              On Android
+            </p>
+            {[
+              'Open Chrome Settings (three dots, top right)',
+              'Tap "Site settings"',
+              'Find "Location" and allow',
+            ].map((step, i) => (
+              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: i < 2 ? 10 : 0 }}>
+                <div style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: '50%',
+                  background: 'oklch(0.48 0.17 196)',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'var(--font-fredoka)',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  flexShrink: 0,
+                }}>
+                  {i + 1}
+                </div>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#0A2F35', margin: 0, lineHeight: 1.5 }}>
+                  {step}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* iPhone steps */}
+          <div style={{
+            background: '#fff',
+            borderRadius: 16,
+            padding: '16px 16px',
+            marginBottom: 28,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          }}>
+            <p style={{
+              fontFamily: 'var(--font-fredoka)',
+              fontSize: 13,
+              fontWeight: 700,
+              color: '#64748B',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              margin: '0 0 12px',
+            }}>
+              On iPhone
+            </p>
+            {[
+              'Go to Settings → Safari',
+              'Tap "Location"',
+              'Select "Allow"',
+            ].map((step, i) => (
+              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: i < 2 ? 10 : 0 }}>
+                <div style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: '50%',
+                  background: 'oklch(0.48 0.17 196)',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: 'var(--font-fredoka)',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  flexShrink: 0,
+                }}>
+                  {i + 1}
+                </div>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#0A2F35', margin: 0, lineHeight: 1.5 }}>
+                  {step}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Try again button */}
+          <button
+            onClick={retryGPS}
+            className="w-full active:scale-[0.97] transition-transform"
+            style={{
+              background: 'oklch(0.48 0.17 196)',
+              borderRadius: 16,
+              minHeight: 56,
+              border: 'none',
+              fontFamily: 'var(--font-fredoka)',
+              fontSize: 18,
+              fontWeight: 700,
+              color: '#fff',
+              cursor: 'pointer',
+            }}
+          >
+            Try location again
+          </button>
+        </div>
+      )}
+
+      {/* ─── FEATURE 3: Demo Confirm Bottom Sheet ─── */}
+      {showDemoConfirm && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 50,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'flex-end',
+          }}
+          onClick={() => setShowDemoConfirm(false)}
+        >
+          <div
+            style={{
+              background: '#FFFBEB',
+              borderRadius: '20px 20px 0 0',
+              padding: '12px 20px 40px',
+              width: '100%',
+              animation: 'slideUp 200ms ease-out',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Handle bar */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+              <div style={{ width: 40, height: 4, borderRadius: 100, background: '#CBD5E1' }} />
+            </div>
+            <h2 style={{
+              fontFamily: 'var(--font-fredoka)',
+              fontSize: 20,
+              fontWeight: 700,
+              color: '#0A2F35',
+              margin: '0 0 10px',
+            }}>
+              Practice walk
+            </h2>
+            <p style={{
+              fontFamily: 'var(--font-nunito)',
+              fontSize: 14,
+              color: '#64748B',
+              margin: '0 0 24px',
+              lineHeight: 1.6,
+            }}>
+              This is a practice run. No report will be sent to anyone. You&apos;ll see exactly how the real walk works.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button
+                onClick={() => {
+                  setShowDemoConfirm(false)
+                  setIsDemoWalk(true)
+                  startWalk()
+                }}
+                className="w-full active:scale-[0.97] transition-transform"
+                style={{
+                  background: '#FF8C52',
+                  borderRadius: 16,
+                  minHeight: 56,
+                  border: 'none',
+                  fontFamily: 'var(--font-fredoka)',
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: '#fff',
+                  cursor: 'pointer',
+                }}
+              >
+                Start practice walk
+              </button>
+              <button
+                onClick={() => {
+                  setShowDemoConfirm(false)
+                  setIsDemoWalk(false)
+                  startWalk()
+                }}
+                className="w-full active:scale-[0.97] transition-transform"
+                style={{
+                  background: 'transparent',
+                  borderRadius: 16,
+                  minHeight: 44,
+                  border: '2px solid oklch(0.48 0.17 196)',
+                  fontFamily: 'var(--font-fredoka)',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  color: 'oklch(0.48 0.17 196)',
+                  cursor: 'pointer',
+                }}
+              >
+                Skip — start real walk
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── FEATURE 3: Demo Success Screen ─── */}
+      {showDemoSuccess && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 50,
+          background: '#FFFBEB',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 24px',
+        }}>
+          <div style={{
+            width: 72,
+            height: 72,
+            borderRadius: '50%',
+            background: '#DCFCE7',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 36,
+            marginBottom: 20,
+          }}>
+            ✅
+          </div>
+          <h2 style={{
+            fontFamily: 'var(--font-fredoka)',
+            fontSize: 28,
+            fontWeight: 700,
+            color: '#0A2F35',
+            textAlign: 'center',
+            margin: '0 0 10px',
+          }}>
+            Practice complete!
+          </h2>
+          <p style={{
+            fontFamily: 'var(--font-nunito)',
+            fontSize: 15,
+            color: '#64748B',
+            textAlign: 'center',
+            margin: '0 0 36px',
+            lineHeight: 1.6,
+          }}>
+            You know exactly what to do. Now start the real walk with {dogName}.
+          </p>
+          <div style={{ width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <button
+              onClick={() => {
+                setShowDemoSuccess(false)
+                setIsDemoWalk(false)
+                setPhase('idle')
+              }}
+              className="w-full active:scale-[0.97] transition-transform"
+              style={{
+                background: '#FF8C52',
+                borderRadius: 16,
+                minHeight: 56,
+                border: 'none',
+                fontFamily: 'var(--font-fredoka)',
+                fontSize: 18,
+                fontWeight: 700,
+                color: '#fff',
+                cursor: 'pointer',
+              }}
+            >
+              Start real walk now
+            </button>
+            <button
+              onClick={() => {
+                setShowDemoSuccess(false)
+                setIsDemoWalk(true)
+                startWalk()
+              }}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontFamily: 'var(--font-nunito)',
+                fontSize: 13,
+                color: 'oklch(0.48 0.17 196)',
+                textDecoration: 'underline',
+                padding: '8px 16px',
+                minHeight: 44,
+                cursor: 'pointer',
+              }}
+            >
+              Watch again
+            </button>
+          </div>
         </div>
       )}
 
@@ -608,13 +1048,32 @@ export default function WalkerClient({
                 </div>
               )}
               <button
-                onClick={startWalk}
+                onClick={() => { setIsDemoWalk(false); startWalk() }}
                 className="w-full py-5 rounded-2xl font-bold text-2xl text-white shadow-lg active:scale-[0.97] transition-transform"
                 style={{ background: 'linear-gradient(135deg, #FF8C52 0%, #F07030 100%)', fontFamily: 'var(--font-fredoka)' }}
               >
                 🐾 Start Walk
               </button>
-              <p className="text-center text-xs text-slate-400">GPS tracking starts automatically when you begin</p>
+              <div className="flex flex-col items-center gap-1">
+                <p className="text-center text-xs text-slate-400">GPS tracking starts automatically when you begin</p>
+                <button
+                  onClick={() => setShowDemoConfirm(true)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    fontFamily: 'var(--font-nunito)',
+                    fontSize: 13,
+                    color: 'oklch(0.48 0.17 196)',
+                    textDecoration: 'underline',
+                    marginTop: 8,
+                    padding: '8px 16px',
+                    minHeight: 44,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Try a practice walk first
+                </button>
+              </div>
 
               {/* First-time guide card — only shown before any walks are logged */}
               {logs.length === 0 && !logsLoading && (
@@ -735,10 +1194,40 @@ export default function WalkerClient({
                     </div>
                   </div>
                 )}
+
+                {/* PRACTICE banner */}
+                {isDemoWalk && (
+                  <div style={{ position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', zIndex: 20, background: '#FF8C52', borderRadius: 100, padding: '4px 14px' }}>
+                    <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 12, fontWeight: 700, color: '#fff', margin: 0 }}>PRACTICE</p>
+                  </div>
+                )}
               </div>
 
               {/* ── Controls — bottom section ── */}
               <div className="flex-1 flex flex-col px-5 pt-4 pb-6 gap-3" style={{ background: '#FFFBEB' }}>
+                {/* FEATURE 2: Health notes pinned during walk */}
+                {healthNotes && (
+                  <div style={{
+                    background: '#FFFBEB',
+                    border: '2px solid #FCD34D',
+                    borderRadius: 14,
+                    padding: '10px 14px',
+                    display: 'flex',
+                    gap: 10,
+                    alignItems: 'flex-start',
+                  }}>
+                    <span style={{ fontSize: 20, flexShrink: 0 }}>⚠️</span>
+                    <div>
+                      <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 13, fontWeight: 700, color: '#92400E', margin: '0 0 2px' }}>
+                        {dogName}&apos;s health notes
+                      </p>
+                      <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#78350F', margin: 0, lineHeight: 1.5 }}>
+                        {healthNotes}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* Keep screen open banner */}
                 <div className="rounded-xl px-3 py-2 flex items-center gap-2"
                   style={{ background: 'oklch(0.97 0.02 196)', border: '1px solid oklch(0.88 0.06 196)' }}>

@@ -72,51 +72,72 @@ interface Props {
   todayLogs: WalkLog[]
   trialStatus: string
   trialDaysRemaining: number | null
+  totalReports: number
 }
 
 const cardClass = 'rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.08)] bg-white'
 
-function UpgradeBanner({ trialStatus, daysRemaining }: { trialStatus: string; daysRemaining: number | null }) {
+function UpgradeBanner({ trialStatus, daysRemaining, totalReports }: { trialStatus: string; daysRemaining: number | null; totalReports: number }) {
   if (trialStatus === 'trial' && daysRemaining !== null && daysRemaining <= 3) {
+    if (totalReports > 0) {
+      return (
+        <div style={{ borderRadius: '16px', background: 'rgba(255,100,30,0.08)', border: '1.5px solid rgba(255,100,30,0.4)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#C2410C', margin: '0 0 2px' }}>
+              🚨 {totalReports} walk {totalReports === 1 ? 'report' : 'reports'} will lock in {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'}. Upgrade to keep them.
+            </p>
+          </div>
+          <Link href="/upgrade" style={{ flexShrink: 0, backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '100px', padding: '8px 14px', minHeight: 44, display: 'flex', alignItems: 'center', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade Now →</Link>
+        </div>
+      )
+    }
     return (
       <div style={{ borderRadius: '16px', background: 'rgba(255,100,30,0.08)', border: '1.5px solid rgba(255,100,30,0.4)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
         <div style={{ flex: 1 }}>
           <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#C2410C', margin: '0 0 2px' }}>
-            🚨 Only {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left!
+            🚨 Only {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left in your trial.
           </p>
-          <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: '#9A3412', margin: 0 }}>Upgrade now to keep your walk reports →</p>
         </div>
-        <Link href="/upgrade" style={{ flexShrink: 0, backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '100px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade →</Link>
+        <Link href="/upgrade" style={{ flexShrink: 0, backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '100px', padding: '8px 14px', minHeight: 44, display: 'flex', alignItems: 'center', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade →</Link>
       </div>
     )
   }
   if (trialStatus === 'trial' && daysRemaining !== null && daysRemaining > 3) {
+    if (totalReports > 0) {
+      return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(251,191,36,0.10)', border: '1.5px solid rgba(251,191,36,0.35)', borderRadius: '100px', padding: '7px 14px' }}>
+          <span style={{ fontSize: '14px' }}>📋</span>
+          <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#92400E', flex: 1 }}>{totalReports} walk {totalReports === 1 ? 'report' : 'reports'} saved. Older ones lock after {daysRemaining} days.</span>
+          <Link href="/upgrade" style={{ color: 'oklch(0.44 0.16 196)', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Keep full history →</Link>
+        </div>
+      )
+    }
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(251,191,36,0.10)', border: '1.5px solid rgba(251,191,36,0.35)', borderRadius: '100px', padding: '7px 14px' }}>
         <span style={{ fontSize: '14px' }}>⏳</span>
-        <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#92400E', flex: 1 }}>{daysRemaining} days left in your trial</span>
+        <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#92400E', flex: 1 }}>{daysRemaining} days left in your free trial</span>
         <Link href="/upgrade" style={{ color: '#B45309', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade →</Link>
       </div>
     )
   }
   if (trialStatus === 'expired') {
     return (
-      <div style={{ borderRadius: '16px', background: '#0A2F35', border: '1.5px solid rgba(255,255,255,0.08)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-        <div style={{ flex: 1 }}>
-          <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#FCA5A5', margin: '0 0 2px' }}>⛔ Your trial has ended</p>
-          <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>Upgrade to restore your walk reports →</p>
-        </div>
-        <Link href="/upgrade" style={{ flexShrink: 0, backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '100px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade →</Link>
+      <div style={{ borderRadius: '16px', background: '#0A2F35', border: '1.5px solid rgba(255,255,255,0.08)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#FCA5A5', margin: 0 }}>
+          {totalReports > 0
+            ? `🔒 ${totalReports} ${totalReports === 1 ? 'report is' : 'reports are'} locked. Upgrade to access Bruno's full care diary.`
+            : '⛔ Your trial has ended. Upgrade to start receiving walk reports.'}
+        </p>
+        <Link href="/upgrade" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>Unlock for ₹249/month</Link>
       </div>
     )
   }
   return (
     <div style={{ borderRadius: '16px', background: 'rgba(255,140,82,0.08)', border: '1.5px solid rgba(255,140,82,0.3)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
       <div style={{ flex: 1 }}>
-        <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#0A2F35', margin: '0 0 2px' }}>🔓 Unlock walk reports for ₹249/month</p>
-        <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: '#6B7280', margin: 0 }}>Get WhatsApp reports after every walk.</p>
+        <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#0A2F35', margin: '0 0 2px' }}>🔓 Start your free trial — 14 days free, then ₹249/month</p>
       </div>
-      <Link href="/upgrade" style={{ flexShrink: 0, backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '100px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade →</Link>
+      <Link href="/setup" style={{ flexShrink: 0, color: 'oklch(0.44 0.16 196)', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Set up your dog →</Link>
     </div>
   )
 }
@@ -847,7 +868,7 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
   )
 }
 
-export default function HomeClient({ displayName, firstDog, activeWalk, completedWalk, walkerConnections, lastWalk, isPro, walkStreak, weekData, lastWalkLog, todayWalked, todayLogs, trialStatus, trialDaysRemaining }: Props) {
+export default function HomeClient({ displayName, firstDog, activeWalk, completedWalk, walkerConnections, lastWalk, isPro, walkStreak, weekData, lastWalkLog, todayWalked, todayLogs, trialStatus, trialDaysRemaining, totalReports }: Props) {
   const [showCelebration, setShowCelebration] = useState(false)
   const [teamSheetOpen, setTeamSheetOpen] = useState(false)
   const [dogEditOpen, setDogEditOpen] = useState(false)
@@ -916,7 +937,7 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
 
       {/* ── Content ────────────────────────────────────────────────────────── */}
       <main className="max-w-lg mx-auto px-4 pt-5 pb-28 flex flex-col gap-4">
-        {!isPro && <UpgradeBanner trialStatus={trialStatus} daysRemaining={trialDaysRemaining} />}
+        {!isPro && <UpgradeBanner trialStatus={trialStatus} daysRemaining={trialDaysRemaining} totalReports={totalReports} />}
 
         {/* First-report celebration */}
         {showCelebration && lastWalkLog && (

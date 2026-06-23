@@ -6,7 +6,7 @@ import { getCategoryBySlug } from '@/lib/categories'
 import { Stars } from '@/components/StarRating'
 
 type ProviderStatus = 'pending' | 'approved' | 'rejected'
-type AdminTab = 'providers' | 'broadcasts' | 'reports' | 'grooming' | 'reviews' | 'stats' | 'care' | 'saas'
+type AdminTab = 'providers' | 'broadcasts' | 'reports' | 'grooming' | 'reviews' | 'stats' | 'care' | 'saas' | 'pipeline'
 
 // ── Care System interfaces ────────────────────────────────────────
 interface CareStats {
@@ -1001,6 +1001,15 @@ export default function AdminPage() {
       expires_at: string | null
       created_at: string
     }[]
+    recentWalkReports: {
+      id: string
+      dog_name: string
+      walker_name: string | null
+      quality_score: number | null
+      created_at: string
+      owner_id: string
+      walk_date: string
+    }[]
   } | null>(null)
   const [statsLoading, setStatsLoading] = useState(false)
   const [providerStats, setProviderStats] = useState<Record<string, { views30d: number; reportsThisWeek: number; reportsSent30d: number }>>({})
@@ -1009,6 +1018,8 @@ export default function AdminPage() {
   const [careConnections, setCareConnections] = useState<CareConnection[]>([])
   const [careWalkLogs, setCareWalkLogs] = useState<CareWalkLog[]>([])
   const [careLoading, setCareLoading] = useState(false)
+  const [pipeline, setPipeline] = useState<any[]>([])
+  const [pipelineLoading, setPipelineLoading] = useState(false)
 
   // Load counts on mount — all via admin API routes (service role, bypasses RLS)
   useEffect(() => {
@@ -1113,6 +1124,7 @@ export default function AdminPage() {
       cancelledThisMonth: data.cancelledThisMonth ?? 0,
       pastDueCount: data.pastDueCount ?? 0,
       recentSubscriptions: data.recentSubscriptions ?? [],
+      recentWalkReports: data.recentWalkReports ?? [],
     })
     setStatsLoading(false)
   }
@@ -1131,6 +1143,13 @@ export default function AdminPage() {
     }
   }
 
+  async function loadPipeline() {
+    setPipelineLoading(true)
+    const data = await fetch('/api/admin/pipeline').then(r => r.json()).catch(() => [])
+    setPipeline(Array.isArray(data) ? data : [])
+    setPipelineLoading(false)
+  }
+
   useEffect(() => { loadProviders(filter) }, [filter])
   useEffect(() => { if (tab === 'reviews') loadReviews() }, [tab])
   useEffect(() => { if (tab === 'broadcasts') loadBroadcasts() }, [tab])
@@ -1138,6 +1157,7 @@ export default function AdminPage() {
   useEffect(() => { if (tab === 'grooming') loadGroomingReports() }, [tab])
   useEffect(() => { if (tab === 'stats') loadStats() }, [tab])
   useEffect(() => { if (tab === 'care') loadCare() }, [tab])
+  useEffect(() => { if (tab === 'pipeline') loadPipeline() }, [tab])
 
   async function updateStatus(id: string, status: 'approved' | 'rejected') {
     await fetch(`/api/admin/providers/${id}`, {
@@ -1226,6 +1246,7 @@ export default function AdminPage() {
           { key: 'reviews', label: '⭐ Reviews', badge: 0, badgeColor: '' },
           { key: 'stats', label: '📊 Stats', badge: 0, badgeColor: '' },
           { key: 'care', label: '🐾 Care', badge: 0, badgeColor: '' },
+          { key: 'pipeline', label: '🔄 Pipeline', badge: 0, badgeColor: '' },
         ] as { key: AdminTab; label: string; badge: number; badgeColor: string }[]).map(({ key, label, badge, badgeColor }) => (
           <button
             key={key}
@@ -1613,6 +1634,53 @@ export default function AdminPage() {
                 })}
               </div>
             </div>
+
+            {/* Recent walk report quality */}
+            {stats.recentWalkReports.length > 0 && (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3">
+                  Recent Walk Quality Scores
+                </p>
+                <div className="bg-white border border-border rounded-2xl overflow-hidden">
+                  <table className="w-full text-[12px]">
+                    <thead>
+                      <tr style={{ background: '#0A2F35' }}>
+                        <th className="text-left px-3 py-2.5 text-white font-semibold">Dog</th>
+                        <th className="text-left px-3 py-2.5 text-white font-semibold">Walker</th>
+                        <th className="text-center px-3 py-2.5 text-white font-semibold">Quality</th>
+                        <th className="text-right px-3 py-2.5 text-white font-semibold">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.recentWalkReports.map((r, i) => {
+                        const q = r.quality_score
+                        const qStyle = q == null
+                          ? { background: '#F1F5F9', color: '#64748B' }
+                          : q >= 70
+                            ? { background: '#DCFCE7', color: '#166534' }
+                            : q >= 40
+                              ? { background: '#FEF3C7', color: '#92400E' }
+                              : { background: '#FEE2E2', color: '#991B1B' }
+                        return (
+                          <tr key={r.id} style={{ background: i % 2 === 0 ? '#ffffff' : '#F8FAFC' }}>
+                            <td className="px-3 py-2 font-medium text-slate-800">{r.dog_name}</td>
+                            <td className="px-3 py-2 text-slate-600">{r.walker_name ?? '—'}</td>
+                            <td className="px-3 py-2 text-center">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold" style={qStyle}>
+                                {q != null ? q : '—'}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2 text-right text-slate-400">
+                              {new Date(r.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )
       )}
@@ -1783,6 +1851,121 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )
+      )}
+
+      {/* ── PIPELINE TAB ─────────────────────────────────────────── */}
+      {tab === 'pipeline' && (
+        pipelineLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl border border-border p-4 animate-pulse h-16" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Summary row */}
+            <div className="bg-teal-50 border border-teal-200 rounded-2xl px-4 py-3">
+              <p className="text-sm font-semibold text-teal-800">
+                {pipeline.length} customer{pipeline.length !== 1 ? 's' : ''}
+                {' · '}
+                {pipeline.filter(c => c.walksCount > 0).length} completed first walk
+                {' · '}
+                {pipeline.filter(c => c.isPaid).length} paying
+              </p>
+            </div>
+
+            {pipeline.length === 0 ? (
+              <div className="py-20 text-center">
+                <div className="text-4xl mb-3">🔄</div>
+                <p className="font-semibold text-slate-700">No customers yet</p>
+              </div>
+            ) : (
+              <div className="bg-white border border-border rounded-2xl overflow-x-auto">
+                <table className="w-full text-[12px] min-w-[640px]">
+                  <thead>
+                    <tr style={{ background: '#0A2F35' }}>
+                      <th className="text-left px-3 py-2.5 text-white font-semibold sticky left-0" style={{ background: '#0A2F35' }}>Customer</th>
+                      <th className="text-center px-3 py-2.5 text-white font-semibold">Dog?</th>
+                      <th className="text-center px-3 py-2.5 text-white font-semibold">Walker?</th>
+                      <th className="text-center px-3 py-2.5 text-white font-semibold">Walks</th>
+                      <th className="text-center px-3 py-2.5 text-white font-semibold">Reports</th>
+                      <th className="text-center px-3 py-2.5 text-white font-semibold">Opened?</th>
+                      <th className="text-center px-3 py-2.5 text-white font-semibold">Quality</th>
+                      <th className="text-center px-3 py-2.5 text-white font-semibold">Paid?</th>
+                      <th className="text-right px-3 py-2.5 text-white font-semibold">Since</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pipeline.map((c, i) => {
+                      const q = c.avgQuality as number | null
+                      const qStyle = q == null
+                        ? { background: '#F1F5F9', color: '#64748B' }
+                        : q >= 70
+                          ? { background: '#DCFCE7', color: '#166534' }
+                          : q >= 40
+                            ? { background: '#FEF3C7', color: '#92400E' }
+                            : { background: '#FEE2E2', color: '#991B1B' }
+                      return (
+                        <tr
+                          key={c.id}
+                          style={{ background: i % 2 === 0 ? '#ffffff' : '#F8FAFC' }}
+                          className="hover:bg-teal-50 transition-colors"
+                        >
+                          <td className="px-3 py-2.5 sticky left-0" style={{ background: 'inherit' }}>
+                            <p className="font-semibold text-slate-800 truncate max-w-[140px]">{c.name}</p>
+                            <p className="text-[11px] text-slate-400 truncate max-w-[140px]">{c.email}</p>
+                          </td>
+                          <td className="px-3 py-2.5 text-center text-base">
+                            {c.hasDog ? '✅' : '🔴'}
+                          </td>
+                          <td className="px-3 py-2.5 text-center text-base">
+                            {c.walkerConnected ? '✅' : '🔴'}
+                          </td>
+                          <td className="px-3 py-2.5 text-center font-semibold text-slate-700">
+                            {c.walksCount}
+                          </td>
+                          <td className="px-3 py-2.5 text-center font-semibold text-slate-700">
+                            {c.reportsCount}
+                          </td>
+                          <td className="px-3 py-2.5 text-center text-base">
+                            {c.reportOpened ? '✅' : '🔴'}
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
+                            {q != null ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold" style={qStyle}>
+                                {q}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">—</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5 text-center">
+                            {c.isPaid ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700">
+                                Paid
+                              </span>
+                            ) : c.trialStarted ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-700">
+                                Trial
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500">
+                                Free
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2.5 text-right text-slate-400 whitespace-nowrap">
+                            {new Date(c.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )
       )}

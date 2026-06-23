@@ -27,6 +27,7 @@ export default function QRDisplayClient({
   const [shareUrl, setShareUrl] = useState('')
   const [walkerDashUrl, setWalkerDashUrl] = useState('')
   const [walkerDashWaUrl, setWalkerDashWaUrl] = useState('')
+  const [hindiScript, setHindiScript] = useState('')
   const [walkerName, setWalkerName] = useState(initialWalkerName)
   const [walkerPhone, setWalkerPhone] = useState(initialWalkerPhone)
   const [status, setStatus] = useState(initialStatus)
@@ -43,6 +44,7 @@ export default function QRDisplayClient({
     setShareUrl('https://wa.me/?text=' + encodeURIComponent(msg))
     const dashUrl = origin + '/walker/' + token
     setWalkerDashUrl(dashUrl)
+    setHindiScript(`Hi! PupStep se apne kutte ki walk track karo.\n\n1. Yeh link kholo\n2. Code daalo jo main dikhata/dikhati hun\n3. Apna naam aur number daalo\n4. "Walk shuru karo" dabao\n5. Chalne ke waqt 💧 Toilet aur 💩 Potty button dabao\n6. Walk khatam hone pe kutte ki photo lo\n7. "Send karo" dabao\n\nBas! Owner ko report mil jayegi. 🐾\n\n${url}`)
   }, [token, dogName, otp])
 
   // Build walker dashboard WhatsApp URL (depends on walkerName which may update after poll)
@@ -510,6 +512,32 @@ export default function QRDisplayClient({
               }}
             >
               📲 Share via WhatsApp
+            </a>
+
+            {/* Hindi walker instructions button */}
+            <a
+              href={hindiScript ? `https://wa.me/?text=${encodeURIComponent(hindiScript)}` : '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 10,
+                width: '100%',
+                minHeight: 52,
+                borderRadius: 14,
+                background: '#25D366',
+                color: '#fff',
+                fontFamily: 'var(--font-fredoka)',
+                fontSize: 16,
+                fontWeight: 700,
+                textDecoration: 'none',
+                padding: '0 16px',
+                boxSizing: 'border-box',
+              }}
+            >
+              📋 Send walker instructions (Hindi)
             </a>
           </div>
         )}

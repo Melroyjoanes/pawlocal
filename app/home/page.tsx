@@ -90,6 +90,7 @@ export default async function HomePage() {
     { data: subData },
     { data: walkLogsRaw },
     { data: trialProfileData },
+    { count: reportCount },
   ] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (db.from('profiles') as any)
@@ -160,6 +161,12 @@ export default async function HomePage() {
       .eq('owner_id', user.id)
       .gte('started_at', fourteenDaysAgoIST())
       .order('started_at', { ascending: false }),
+
+    // Total walk reports count for trial conversion banner
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (db.from('walk_reports') as any)
+      .select('id', { count: 'exact', head: true })
+      .eq('owner_id', user.id),
   ])
 
   const userMeta = user.user_metadata ?? {}
@@ -231,6 +238,7 @@ export default async function HomePage() {
       todayLogs={todayLogs as any}
       trialStatus={trialStatus}
       trialDaysRemaining={trialDaysRemaining}
+      totalReports={reportCount ?? 0}
     />
   )
 }

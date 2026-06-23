@@ -149,6 +149,15 @@ export async function POST(req: NextRequest) {
   const moodNote = mood ? `[Mood: ${moodEmoji[mood] ?? '😊'} ${mood}] ` : ''
   const reportNotes = moodNote + (notes?.trim() ?? '')
 
+  // Quality score calculation (0-100)
+  const gpsPoints = Array.isArray(gps_route) ? gps_route.length : 0
+  const qualityScore =
+    (gpsPoints >= 5 ? 30 : gpsPoints > 0 ? 15 : 0) +    // GPS route
+    (photo_url ? 25 : 0) +                                 // Dog photo
+    (poopEvents.length + peeEvents.length > 0 ? 20 : 0) + // Events
+    ((duration_mins ?? 0) >= 5 ? 15 : 0) +                // Duration
+    (notes?.trim() ? 10 : 0)                               // Notes
+
   // Fire-and-forget — don't block the response on report creation
   ;(async () => {
     try {
@@ -169,6 +178,7 @@ export async function POST(req: NextRequest) {
         distance_meters: distance_km != null ? Math.round(distance_km * 1000) : null,
         poop_events: poopEvents.length > 0 ? poopEvents : null,
         pee_events: peeEvents.length > 0 ? peeEvents : null,
+        quality_score: qualityScore,
       })
     } catch (err) {
       console.error('[walk-logs] report creation failed:', err)

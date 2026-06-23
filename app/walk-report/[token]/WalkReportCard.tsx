@@ -243,9 +243,11 @@ const CLAY_CARD = {
 export default function WalkReportCard({
   report,
   isOwner,
+  isFirstReport,
 }: {
   report: WalkReport
   isOwner: boolean
+  isFirstReport: boolean
 }) {
   const [copied, setCopied] = useState(false)
   const [burst, setBurst] = useState(false)
@@ -316,6 +318,55 @@ export default function WalkReportCard({
       </AnimatePresence>
 
       <div className="w-full max-w-lg">
+
+        {/* ── First report celebration banner ─────────────────── */}
+        {isFirstReport && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            style={{
+              background: 'linear-gradient(135deg, oklch(0.48 0.17 196) 0%, oklch(0.38 0.15 196) 100%)',
+              padding: '20px 16px',
+              textAlign: 'center',
+              marginBottom: 24,
+              borderRadius: 20,
+            }}
+          >
+            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>
+              🎉 First walk report!
+            </p>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: 'rgba(255,255,255,0.85)', margin: '0 0 16px', lineHeight: 1.5 }}>
+              {report.dog_name}&apos;s care diary has started. Every walk will be saved here.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 320, margin: '0 auto' }}>
+              <a
+                href={`https://wa.me/?text=${encodeURIComponent(`Hi! Please use PupStep after every walk with ${report.dog_name}. It only takes 2 minutes and I can see exactly where you went. Thank you! 🐾`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  background: '#25D366', color: '#fff', borderRadius: 12, padding: '12px 20px',
+                  fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, textDecoration: 'none',
+                  minHeight: 48,
+                }}
+              >
+                📲 Ask walker to do this daily
+              </a>
+              <a
+                href="/upgrade"
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'rgba(255,255,255,0.15)', color: '#fff', borderRadius: 12, padding: '10px 20px',
+                  fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 600, textDecoration: 'none',
+                  minHeight: 44,
+                }}
+              >
+                Upgrade to keep all reports →
+              </a>
+            </div>
+          </motion.div>
+        )}
 
         {/* ── Header ─────────────────────────────────────────── */}
         <motion.div

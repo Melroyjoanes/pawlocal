@@ -24,7 +24,7 @@ export async function GET() {
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const [approvedRes, pendingRes, rejectedRes, broadcastRes, providersRes, analyticsRes, walkReportsRes, claimedRes, walkReportsByProviderRes, careCardViewRes] = await Promise.all([
+  const [approvedRes, pendingRes, rejectedRes, broadcastRes, providersRes, analyticsRes, walkReportsRes, claimedRes, walkReportsByProviderRes, careCardViewRes, recentWalkReportsRes] = await Promise.all([
     db.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
     db.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
     db.from('providers').select('id', { count: 'exact', head: true }).eq('status', 'rejected'),
@@ -35,6 +35,10 @@ export async function GET() {
     db.from('walk_reports').select('id', { count: 'exact', head: true }).not('customer_id', 'is', null),
     db.from('walk_reports').select('provider_id').gte('created_at', thirtyDaysAgo.toISOString()),
     db.from('provider_analytics').select('provider_id').eq('event_type', 'care_card_view').gte('created_at', thirtyDaysAgo.toISOString()),
+    (db.from('walk_reports') as any)
+      .select('id, dog_name, walker_name, quality_score, created_at, owner_id, walk_date')
+      .order('created_at', { ascending: false })
+      .limit(20),
   ])
 
   // SaaS metrics queries
@@ -105,5 +109,6 @@ export async function GET() {
     cancelledThisMonth: cancelledThisMonthRes.count ?? 0,
     pastDueCount: pastDueRes.count ?? 0,
     recentSubscriptions: recentSubsRes.data ?? [],
+    recentWalkReports: recentWalkReportsRes.data ?? [],
   })
 }
