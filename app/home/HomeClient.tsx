@@ -249,13 +249,16 @@ function LastWalkCard({ log }: { log: WalkLog }) {
           <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF', margin: 0 }}>{formatDate(log.started_at)}</p>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
         {log.duration_mins && <span style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#C2410C' }}>⏱ {log.duration_mins} min</span>}
         {log.distance_km && <span style={{ background: '#F0FDFA', border: '1px solid #99F6E4', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#0F766E' }}>📍 {log.distance_km} km</span>}
         {(log.poop_count ?? 0) > 0 && <span style={{ background: '#FEF9C3', border: '1px solid #FDE047', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#854D0E' }}>💩 {log.poop_count}</span>}
         {(log.pee_count ?? 0) > 0 && <span style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#166534' }}>🌿 {log.pee_count}</span>}
         {log.mood && <span style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#1D4ED8' }}>😊 {log.mood}</span>}
       </div>
+      <Link href="/my-reports" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, paddingTop: 10, borderTop: '1px solid rgba(226,220,200,0.5)', fontSize: 12, fontWeight: 700, color: 'oklch(0.44 0.16 196)', textDecoration: 'none', fontFamily: 'var(--font-nunito)' }}>
+        View full report →
+      </Link>
     </motion.div>
   )
 }

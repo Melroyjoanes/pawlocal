@@ -56,9 +56,20 @@ export default async function MyReportsPage() {
     .eq('customer_id', user.id)
     .order('grooming_date', { ascending: false })
 
+  // Also fetch QR-walker reports where owner_id = user.id (new flow from walk-logs API)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: ownerWalkReports } = await (admin().from('walk_reports') as any)
+    .select('id, token, dog_name, duration_mins, poop_count, pee_count, distance_meters, walk_date, created_at, photo_url, notes, provider_id, walker_name, providers(name)')
+    .eq('owner_id', user.id)
+    .order('walk_date', { ascending: false })
+
   // Merge and dedupe
   const walkMap = new Map()
-  for (const r of [...(walkReports ?? []), ...(linkedWalkReports ?? [])]) walkMap.set(r.id, r)
+  for (const r of [...(walkReports ?? []), ...(linkedWalkReports ?? []), ...(ownerWalkReports ?? [])]) {
+    // Normalise provider name: use walker_name if no provider row
+    if (!r.providers?.name && r.walker_name) r.providers = { name: r.walker_name }
+    walkMap.set(r.id, r)
+  }
   const groomMap = new Map()
   for (const r of [...(claimedGroomingReports ?? []), ...(linkedGroomingReports ?? [])]) groomMap.set(r.id, r)
 

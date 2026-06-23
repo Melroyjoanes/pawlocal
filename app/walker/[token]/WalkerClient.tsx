@@ -1126,6 +1126,7 @@ export default function WalkerClient({
                       {log.notes && (
                         <p className="text-xs text-slate-400 mt-2 italic">&ldquo;{log.notes}&rdquo;</p>
                       )}
+                      <p className="text-xs text-slate-300 mt-2">✅ Report sent to owner</p>
                     </div>
                   ))}
                 </div>
