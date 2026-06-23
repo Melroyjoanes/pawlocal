@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation'
 
 const NAV = [
   { href: '/home',       label: 'Home',    icon: '🏠' },
-  { href: '/my-account', label: 'Account', icon: '🐕' },
-  { href: '/upgrade',    label: 'Upgrade', icon: '⭐' },
+  { href: '/my-reports', label: 'Reports', icon: '📋' },
+  { href: '/my-account', label: 'Account', icon: '👤' },
 ]
 
 export default function ParentBottomNav() {

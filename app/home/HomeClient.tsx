@@ -263,16 +263,23 @@ function LastWalkCard({ log }: { log: WalkLog }) {
   )
 }
 
-// ── Feature 1: QuickActions with onOpenTeam prop ───────────────────────────
-function QuickActions({ onOpenTeam }: { onOpenTeam: () => void }) {
+// ── Feature 1: QuickActions with onOpenTeam + onAddDog props ─────────────
+function QuickActions({ onOpenTeam, firstDog, onAddDog }: { onOpenTeam: () => void; firstDog: Dog | null; onAddDog: () => void }) {
   return (
     <motion.div variants={fadeUp} className={`${cardClass} p-4`}>
       <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Quick Actions</p>
       <div className="grid grid-cols-4 gap-2">
-        <Link href="/setup" className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors">
-          <span className="text-2xl">🐕</span>
-          <span className="text-[10px] font-semibold text-gray-600 text-center leading-tight">Add Dog</span>
-        </Link>
+        {firstDog ? (
+          <button onClick={onAddDog} className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors border-0">
+            <span className="text-2xl">🐕</span>
+            <span className="text-[10px] font-semibold text-gray-600 text-center leading-tight">Add Dog</span>
+          </button>
+        ) : (
+          <Link href="/setup" className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors">
+            <span className="text-2xl">🐕</span>
+            <span className="text-[10px] font-semibold text-gray-600 text-center leading-tight">Add Dog</span>
+          </Link>
+        )}
         <button onClick={onOpenTeam} className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors border-0">
           <span className="text-2xl">👥</span>
           <span className="text-[10px] font-semibold text-gray-600 text-center leading-tight">My Team</span>
@@ -287,6 +294,77 @@ function QuickActions({ onOpenTeam }: { onOpenTeam: () => void }) {
         </Link>
       </div>
     </motion.div>
+  )
+}
+
+// ── AddDogSheet ───────────────────────────────────────────────────────────
+function AddDogSheet({ open, onClose, onSaved }: { open: boolean; onClose: () => void; onSaved: () => void }) {
+  const [newDogName, setNewDogName] = useState('')
+  const [newDogBreed, setNewDogBreed] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  if (!open) return null
+
+  async function handleSubmit() {
+    if (!newDogName.trim()) return
+    setSaving(true)
+    try {
+      await fetch('/api/dogs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newDogName.trim(), breed: newDogBreed.trim() || null }),
+      })
+      setNewDogName('')
+      setNewDogBreed('')
+      onSaved()
+    } catch {
+      console.error('Failed to add dog')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 40 }} />
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, background: '#fff', borderRadius: '28px 28px 0 0', maxHeight: '70vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom, 16px)', boxShadow: '0 -8px 24px -4px rgba(10,47,53,0.14)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 8px' }}>
+          <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color: '#0A2F35', margin: 0 }}>Add another dog 🐕</h2>
+          <button onClick={onClose} style={{ background: '#F3F4F6', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6B7280' }}>✕</button>
+        </div>
+        <div style={{ padding: '8px 20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, color: '#0A2F35', fontFamily: 'var(--font-nunito)' }}>Dog&apos;s name <span style={{ color: '#EF4444' }}>*</span></label>
+            <input
+              value={newDogName}
+              onChange={e => setNewDogName(e.target.value)}
+              placeholder="Bruno, Max, Bella..."
+              style={{ padding: '10px 12px', borderRadius: 10, border: '2px solid #E5E7EB', fontSize: 14, fontFamily: 'var(--font-nunito)', color: '#0A2F35', outline: 'none' }}
+              onFocus={e => (e.target.style.borderColor = 'oklch(0.48 0.17 196)')}
+              onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+            />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 14, fontWeight: 600, color: '#0A2F35', fontFamily: 'var(--font-nunito)' }}>Breed <span style={{ fontWeight: 400, color: '#9CA3AF' }}>(optional)</span></label>
+            <input
+              value={newDogBreed}
+              onChange={e => setNewDogBreed(e.target.value)}
+              placeholder="Labrador, Pug..."
+              style={{ padding: '10px 12px', borderRadius: 10, border: '2px solid #E5E7EB', fontSize: 14, fontFamily: 'var(--font-nunito)', color: '#0A2F35', outline: 'none' }}
+              onFocus={e => (e.target.style.borderColor = 'oklch(0.48 0.17 196)')}
+              onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+            />
+          </div>
+          <button
+            onClick={handleSubmit}
+            disabled={saving || !newDogName.trim()}
+            style={{ background: saving || !newDogName.trim() ? '#9CA3AF' : 'oklch(0.48 0.17 196)', color: '#fff', border: 'none', borderRadius: 12, padding: '13px', fontSize: 15, fontWeight: 700, fontFamily: 'var(--font-fredoka)', cursor: saving || !newDogName.trim() ? 'not-allowed' : 'pointer' }}
+          >
+            {saving ? 'Saving...' : 'Save Dog →'}
+          </button>
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -578,7 +656,7 @@ function SettingsSheet({ open, onClose, displayName }: { open: boolean; onClose:
   )
 }
 
-function StateA({ walk, displayName, onOpenTeam }: { walk: WalkSession; displayName: string; onOpenTeam: () => void }) {
+function StateA({ walk, displayName, firstDog, onOpenTeam, onAddDog }: { walk: WalkSession; displayName: string; firstDog: Dog | null; onOpenTeam: () => void; onAddDog: () => void }) {
   const dogName = walk.pet_name ?? displayName
   const walkerName = (walk.providers as { name: string } | null)?.name ?? 'your walker'
   const trackHref = walk.share_token ? `/track/${walk.share_token}` : `/my-reports`
@@ -614,18 +692,19 @@ function StateA({ walk, displayName, onOpenTeam }: { walk: WalkSession; displayN
         <Link href="/my-dogs" className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 border-2 border-[#0A2F35] text-[#0A2F35] font-semibold text-sm hover:bg-[#0A2F35] hover:text-white transition-colors">+ Add Dog</Link>
         <Link href="/my-account" className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors">⚙ Settings</Link>
       </motion.div>
-      <QuickActions onOpenTeam={onOpenTeam} />
+      <QuickActions onOpenTeam={onOpenTeam} firstDog={firstDog} onAddDog={onAddDog} />
     </motion.div>
   )
 }
 
-function StateB({ walk, connections, firstDog, isPro, onOpenTeam, onEditDog }: {
+function StateB({ walk, connections, firstDog, isPro, onOpenTeam, onEditDog, onAddDog }: {
   walk: WalkSession
   connections: WalkerConnection[]
   firstDog: Dog | null
   isPro: boolean
   onOpenTeam: () => void
   onEditDog: (dog: Dog) => void
+  onAddDog: () => void
 }) {
   const walkerName = (walk.providers as { name: string } | null)?.name ?? 'Your walker'
   const durationSec = walk.started_at && walk.ended_at ? Math.floor((new Date(walk.ended_at).getTime() - new Date(walk.started_at).getTime()) / 1000) : null
@@ -660,12 +739,12 @@ function StateB({ walk, connections, firstDog, isPro, onOpenTeam, onEditDog }: {
         <Link href={trackHref} className="mt-4 flex items-center justify-center gap-2 w-full rounded-xl py-2.5 border-2 border-[#0A2F35] text-[#0A2F35] font-semibold text-sm hover:bg-[#0A2F35] hover:text-white transition-colors">View Route →</Link>
       </motion.div>
       <WalkerTeam connections={connections} />
-      <QuickActions onOpenTeam={onOpenTeam} />
+      <QuickActions onOpenTeam={onOpenTeam} firstDog={firstDog} onAddDog={onAddDog} />
     </motion.div>
   )
 }
 
-function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStreak, weekData, lastWalkLog, todayWalked, todayLogs, onOpenTeam, onEditDog }: {
+function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStreak, weekData, lastWalkLog, todayWalked, todayLogs, onOpenTeam, onEditDog, onAddDog }: {
   displayName: string
   firstDog: Dog | null
   connections: WalkerConnection[]
@@ -678,6 +757,7 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
   todayLogs: WalkLog[]
   onOpenTeam: () => void
   onEditDog: (dog: Dog) => void
+  onAddDog: () => void
 }) {
   const firstName = displayName.split(' ')[0]
   const lastWalkedDate = lastWalkLog?.started_at ?? lastWalk?.started_at ?? null
@@ -762,7 +842,7 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
       <WalkerTeam connections={connections} />
 
       {/* 8. Quick actions */}
-      <QuickActions onOpenTeam={onOpenTeam} />
+      <QuickActions onOpenTeam={onOpenTeam} firstDog={firstDog} onAddDog={onAddDog} />
     </motion.div>
   )
 }
@@ -773,6 +853,8 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
   const [dogEditOpen, setDogEditOpen] = useState(false)
   const [editingDog, setEditingDog] = useState<Dog | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [addDogOpen, setAddDogOpen] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
     if (lastWalkLog && !localStorage.getItem('pupstep_first_report_seen')) {
@@ -788,6 +870,11 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
   function handleEditDog(dog: Dog) {
     setEditingDog(dog)
     setDogEditOpen(true)
+  }
+
+  function showToast(msg: string) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 3000)
   }
 
   const showActivationChecklist = !lastWalkLog && walkerConnections.length === 0
@@ -878,9 +965,9 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
         )}
 
         {activeWalk ? (
-          <StateA walk={activeWalk} displayName={displayName} onOpenTeam={() => setTeamSheetOpen(true)} />
+          <StateA walk={activeWalk} displayName={displayName} firstDog={firstDog} onOpenTeam={() => setTeamSheetOpen(true)} onAddDog={() => setAddDogOpen(true)} />
         ) : completedWalk ? (
-          <StateB walk={completedWalk} connections={walkerConnections} firstDog={firstDog} isPro={isPro} onOpenTeam={() => setTeamSheetOpen(true)} onEditDog={handleEditDog} />
+          <StateB walk={completedWalk} connections={walkerConnections} firstDog={firstDog} isPro={isPro} onOpenTeam={() => setTeamSheetOpen(true)} onEditDog={handleEditDog} onAddDog={() => setAddDogOpen(true)} />
         ) : (
           <StateC
             displayName={displayName}
@@ -895,16 +982,29 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
             todayLogs={todayLogs}
             onOpenTeam={() => setTeamSheetOpen(true)}
             onEditDog={handleEditDog}
+            onAddDog={() => setAddDogOpen(true)}
           />
         )}
       </main>
 
       <ParentBottomNav />
 
+      {/* ── Toast ──────────────────────────────────────────────────────────── */}
+      {toast && (
+        <div style={{ position: 'fixed', bottom: 96, left: '50%', transform: 'translateX(-50%)', background: '#0A2F35', color: '#fff', borderRadius: 100, padding: '10px 20px', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-nunito)', zIndex: 100, whiteSpace: 'nowrap', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
+          {toast}
+        </div>
+      )}
+
       {/* ── Sheets ─────────────────────────────────────────────────────────── */}
       <TeamSheet open={teamSheetOpen} onClose={() => setTeamSheetOpen(false)} connections={walkerConnections} dogName={firstDog?.name ?? 'your dog'} />
       <DogEditSheet open={dogEditOpen} dog={editingDog} onClose={() => { setDogEditOpen(false); setEditingDog(null) }} />
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} displayName={displayName} />
+      <AddDogSheet
+        open={addDogOpen}
+        onClose={() => setAddDogOpen(false)}
+        onSaved={() => { setAddDogOpen(false); showToast('Dog added!'); setTimeout(() => window.location.reload(), 1000) }}
+      />
     </div>
   )
 }

@@ -37,6 +37,18 @@ export async function GET() {
     db.from('provider_analytics').select('provider_id').eq('event_type', 'care_card_view').gte('created_at', thirtyDaysAgo.toISOString()),
   ])
 
+  // SaaS metrics queries
+  const [activeSubsRes, monthlySubsRes, annualSubsRes, trialUsersRes, newSubsThisMonthRes, cancelledThisMonthRes, pastDueRes, recentSubsRes] = await Promise.all([
+    db.from('subscriptions').select('user_id', { count: 'exact', head: true }).eq('status', 'active'),
+    db.from('subscriptions').select('user_id', { count: 'exact', head: true }).eq('status', 'active').eq('plan', 'monthly'),
+    db.from('subscriptions').select('user_id', { count: 'exact', head: true }).eq('status', 'active').eq('plan', 'annual'),
+    db.from('profiles').select('id', { count: 'exact', head: true }).not('trial_started_at', 'is', null),
+    db.from('subscriptions').select('user_id', { count: 'exact', head: true }).gte('created_at', thirtyDaysAgo.toISOString()).eq('status', 'active'),
+    db.from('subscriptions').select('user_id', { count: 'exact', head: true }).eq('status', 'cancelled').gte('created_at', thirtyDaysAgo.toISOString()),
+    db.from('subscriptions').select('user_id', { count: 'exact', head: true }).eq('status', 'past_due'),
+    db.from('subscriptions').select('user_id, plan, status, amount_paise, expires_at, created_at').order('created_at', { ascending: false }).limit(10),
+  ])
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const analytics: any[] = analyticsRes.data ?? []
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,6 +82,11 @@ export async function GET() {
     }
   }).sort((a, b) => b.whatsapp_clicks - a.whatsapp_clicks)
 
+  const monthlyCount = monthlySubsRes.count ?? 0
+  const annualCount = annualSubsRes.count ?? 0
+  const mrr = Math.round((monthlyCount * 249 + annualCount * (1999 / 12)) * 100) / 100
+  const arr = Math.round(mrr * 12 * 100) / 100
+
   return NextResponse.json({
     totalApproved: approvedRes.count ?? 0,
     totalPending: pendingRes.count ?? 0,
@@ -78,5 +95,15 @@ export async function GET() {
     totalWalkReports: walkReportsRes.count ?? 0,
     claimedReports: claimedRes.count ?? 0,
     providerStats,
+    mrr,
+    arr,
+    activeSubscribers: activeSubsRes.count ?? 0,
+    monthlySubscribers: monthlyCount,
+    annualSubscribers: annualCount,
+    trialUsers: trialUsersRes.count ?? 0,
+    newSubscribersThisMonth: newSubsThisMonthRes.count ?? 0,
+    cancelledThisMonth: cancelledThisMonthRes.count ?? 0,
+    pastDueCount: pastDueRes.count ?? 0,
+    recentSubscriptions: recentSubsRes.data ?? [],
   })
 }

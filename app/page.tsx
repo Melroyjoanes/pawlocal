@@ -2,29 +2,21 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import LandingPage from '@/components/LandingPage'
-import ProviderAutoRedirect from '@/components/ProviderAutoRedirect'
 
 export const metadata: Metadata = {
   title: "PupStep — GPS Walk Reports for Mumbai Dogs",
   description:
-    "Share PupStep with your dog walker. They log every walk in 60 seconds — GPS route, photos, poop count. A care report lands straight in your WhatsApp.",
+    "Your dog gets walked. Now prove it. GPS route, pee/poop map, dog photo — sent to you on WhatsApp after every walk.",
 }
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ area?: string }>
-}) {
-  const { area } = await searchParams
-  const neighbourhood = area ?? 'Juhu'
-
+export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (user) redirect('/home')
 
   return (
     <>
-      {/* WebSite schema — enables sitelinks + brand recognition in Google */}
+      {/* WebSite schema */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -32,65 +24,12 @@ export default async function HomePage({
             "@context": "https://schema.org",
             "@type": "WebSite",
             "name": "PupStep",
-            "alternateName": "PupStep — Mumbai's Verified Pet People",
+            "description": "GPS walk reports for Mumbai dogs. Your dog gets walked — now prove it.",
             "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}`,
-            "potentialAction": {
-              "@type": "SearchAction",
-              "target": { "@type": "EntryPoint", "urlTemplate": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/search?q={search_term_string}` },
-              "query-input": "required name=search_term_string"
-            }
           })
         }}
       />
-      {/* Organization schema — brand authority signal */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Organization",
-            "name": "PupStep",
-            "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}`,
-            "logo": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/api/og`,
-            "description": "Mumbai's most trusted hyperlocal pet services directory. Verified walkers, vets, groomers and more — WhatsApp direct, zero booking fees.",
-            "areaServed": { "@type": "City", "name": "Mumbai", "containedInPlace": { "@type": "Country", "name": "India" } },
-            "foundingLocation": { "@type": "Place", "name": "Juhu, Mumbai, India" },
-            "sameAs": []
-          })
-        }}
-      />
-      {/* LocalBusiness / Directory schema */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "LocalBusiness",
-            "name": "PupStep",
-            "description": "Mumbai's verified pet people. Find trusted dog walkers, vets, groomers, trainers and pet stores near you.",
-            "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}`,
-            "image": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/api/og`,
-            "telephone": "",
-            "address": { "@type": "PostalAddress", "addressLocality": "Juhu", "addressRegion": "Mumbai", "addressCountry": "IN" },
-            "geo": { "@type": "GeoCoordinates", "latitude": 19.1075, "longitude": 72.8263 },
-            "areaServed": { "@type": "City", "name": "Mumbai" },
-            "serviceArea": { "@type": "GeoCircle", "geoMidpoint": { "@type": "GeoCoordinates", "latitude": 19.1075, "longitude": 72.8263 }, "geoRadius": "10000" },
-            "hasOfferCatalog": {
-              "@type": "OfferCatalog",
-              "name": "Pet Services",
-              "itemListElement": [
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Dog Walking", "areaServed": "Mumbai" } },
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Pet Grooming", "areaServed": "Mumbai" } },
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Veterinary Services", "areaServed": "Mumbai" } },
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Dog Training", "areaServed": "Mumbai" } },
-                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Pet Store", "areaServed": "Mumbai" } }
-              ]
-            },
-            "priceRange": "₹0 booking fees"
-          })
-        }}
-      />
-      {/* FAQ schema — triggers rich result accordion in Google search */}
+      {/* FAQ schema */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -100,40 +39,29 @@ export default async function HomePage({
             "mainEntity": [
               {
                 "@type": "Question",
-                "name": "What is PupStep?",
-                "acceptedAnswer": { "@type": "Answer", "text": "PupStep is Mumbai's verified pet services directory. We list trusted dog walkers, vets, groomers, trainers and pet stores — all manually verified by our team. You contact providers directly on WhatsApp. Zero booking fees." }
+                "name": "Does the walker need to download an app?",
+                "acceptedAnswer": { "@type": "Answer", "text": "No. They open a link on WhatsApp. No App Store, no signup." }
               },
               {
                 "@type": "Question",
-                "name": "How do I find a dog walker in Mumbai on PupStep?",
-                "acceptedAnswer": { "@type": "Answer", "text": `Visit ${process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : 'pupstep.in'}/dog-walking to browse verified dog walkers near you in Mumbai. Each walker has a detailed profile with reviews, GPS walk reports, and a direct WhatsApp button. No middleman, no booking fees.` }
+                "name": "How does the walker connect?",
+                "acceptedAnswer": { "@type": "Answer", "text": "You share a QR code or WhatsApp link. They enter a 4-digit code you show them. Done." }
               },
               {
                 "@type": "Question",
-                "name": "Are pet service providers on PupStep verified?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Yes. Every provider on PupStep is manually reviewed by our team before getting a Verified badge. We check their identity, experience, and references. You can also read real reviews from other pet parents." }
+                "name": "What happens after my free trial?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Reports from the last 3 days stay visible. Older history is locked until you upgrade for ₹249/month." }
               },
               {
                 "@type": "Question",
-                "name": "Does PupStep charge a booking fee?",
-                "acceptedAnswer": { "@type": "Answer", "text": "No. PupStep is completely free to use. You contact providers directly on WhatsApp and pay them directly. We never charge a booking fee or commission." }
+                "name": "Who pays?",
+                "acceptedAnswer": { "@type": "Answer", "text": "You (the dog parent) pay for the subscription. Your walker uses PupStep for free." }
               },
-              {
-                "@type": "Question",
-                "name": "Which areas in Mumbai does PupStep cover?",
-                "acceptedAnswer": { "@type": "Answer", "text": "PupStep currently focuses on Juhu, Versova, Andheri West, and surrounding areas in Mumbai. We are expanding to more neighbourhoods. Post a request on Pet Broadcast and nearby providers will reply." }
-              },
-              {
-                "@type": "Question",
-                "name": "How do I find a vet near me in Mumbai?",
-                "acceptedAnswer": { "@type": "Answer", "text": `Visit ${process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : 'pupstep.in'}/vet to find trusted veterinary clinics near you in Mumbai. All vets are verified. You can see their location on a map, read reviews, and WhatsApp them directly.` }
-              }
             ]
           })
         }}
       />
-      <ProviderAutoRedirect />
-      <LandingPage neighbourhood={neighbourhood} />
+      <LandingPage />
     </>
   )
 }
