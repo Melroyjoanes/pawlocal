@@ -32,21 +32,22 @@ export async function GET(
     return NextResponse.json({ error: 'Dog not found' }, { status: 404 })
   }
 
-  // Get the most recent PENDING connection — never reuse an active one.
-  // If the latest connection is already active (walker already registered),
-  // we create a fresh pending connection so a new walker can connect.
+  // Get the most recent connection for this dog (any status).
+  // Logic:
+  //   active  → walker already connected, return as-is so parent sees "connected"
+  //   pending → walker hasn't scanned yet, return QR + OTP
+  //   none    → first time, create a pending connection
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let { data: connection } = await (db.from('walker_connections') as any)
     .select('id, token, walker_name, walker_phone, status, otp')
     .eq('dog_id', dogId)
     .eq('owner_id', user.id)
-    .eq('status', 'pending')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
   if (!connection) {
-    // No pending connection exists — create a fresh one
+    // No connection at all — create the first pending one
     const token = generateToken()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: newConn, error: createError } = await (db.from('walker_connections') as any)
@@ -65,6 +66,11 @@ export async function GET(
     }
     connection = newConn
   }
+
+  // If the most recent connection is active and parent explicitly wants a new
+  // walker (e.g. navigated back to /setup/qr), they can use the Team sheet
+  // in /home which generates fresh QRs per connection. This endpoint is
+  // used only for setup polling — returning active is the correct behaviour.
 
   return NextResponse.json({
     token: connection.token,
