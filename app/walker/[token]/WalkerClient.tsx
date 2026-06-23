@@ -118,6 +118,7 @@ interface WalkerClientProps {
   token: string
   dogName: string
   dogBreed: string | null
+  dogPhotoUrl: string | null
   healthNotes: string | null
   ownerFirstName: string
   walkerName: string
@@ -153,11 +154,9 @@ type WalkPhase = 'idle' | 'walking' | 'logging' | 'success'
 type WalkerTab = 'walk' | 'grooming' | 'settings'
 
 const MOOD_OPTIONS = [
-  { value: 'great', label: '😄 Great' },
-  { value: 'good', label: '🙂 Good' },
-  { value: 'okay', label: '😐 Okay' },
-  { value: 'tired', label: '😪 Tired' },
-  { value: 'anxious', label: '😰 Anxious' },
+  { value: 'great', emoji: '😊', label: 'Great' },
+  { value: 'okay', emoji: '😐', label: 'Okay' },
+  { value: 'issue', emoji: '😟', label: 'Had a problem' },
 ]
 
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -191,6 +190,7 @@ export default function WalkerClient({
   token,
   dogName,
   dogBreed,
+  dogPhotoUrl,
   healthNotes,
   ownerFirstName,
   walkerName,
@@ -236,8 +236,6 @@ export default function WalkerClient({
   const [poopPhotoUploading, setPoopPhotoUploading] = useState(false)
 
   // Log form state
-  const [poopCount, setPoopCount] = useState(0)
-  const [peeCount, setPeeCount] = useState(0)
   const [mood, setMood] = useState('')
   const [notes, setNotes] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
@@ -324,12 +322,15 @@ export default function WalkerClient({
     setPhase('walking')
     walkStartRef.current = new Date()
 
-    // Generate walk-started WhatsApp link for parent notification
+    // Generate walk-started WhatsApp link for parent notification and auto-open
     if (ownerPhone) {
       const phone = ownerPhone.replace(/\D/g, '')
       const fullPhone = phone.startsWith('91') ? phone : `91${phone}`
       const msg = `🐾 ${dogName}'s walk has started!\n\n${walkerName} is now walking ${dogName}. You'll get a full report when the walk ends.\n\nPowered by PupStep`
-      setStartWaLink(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`)
+      const waUrl = `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`
+      setStartWaLink(waUrl)
+      // Auto-open WhatsApp to notify parent
+      setTimeout(() => window.open(waUrl, '_blank'), 300)
     }
 
     // Start timer
@@ -370,12 +371,6 @@ export default function WalkerClient({
   }
 
   function endWalk() {
-    // Pre-fill counts from walk events
-    const poops = walkEvents.filter(ev => ev.type === 'poop').length
-    const pees = walkEvents.filter(ev => ev.type === 'pee').length
-    setPoopCount(poops)
-    setPeeCount(pees)
-
     // Stop timer
     if (timerRef.current) {
       clearInterval(timerRef.current)
@@ -387,6 +382,8 @@ export default function WalkerClient({
       watchIdRef.current = null
     }
     setPhase('logging')
+    // Auto-open camera after form renders
+    setTimeout(() => photoInputRef.current?.click(), 400)
   }
 
   function handlePeeTap() {
@@ -418,6 +415,9 @@ export default function WalkerClient({
 
     const durationMins = Math.max(1, Math.round(elapsed / 60))
 
+    const finalPoopCount = walkEvents.filter(e => e.type === 'poop').length
+    const finalPeeCount = walkEvents.filter(e => e.type === 'pee').length
+
     try {
       const res = await fetch('/api/walk-logs', {
         method: 'POST',
@@ -428,8 +428,8 @@ export default function WalkerClient({
           distance_km: distanceKm > 0 ? +distanceKm.toFixed(2) : null,
           gps_route: gpsRoute.length > 0 ? gpsRoute : null,
           photo_url: photoUrl ?? null,
-          poop_count: poopCount,
-          pee_count: peeCount,
+          poop_count: finalPoopCount,
+          pee_count: finalPeeCount,
           mood: mood || null,
           notes: notes.trim() || null,
           started_at: walkStartRef.current?.toISOString() ?? null,
@@ -448,8 +448,6 @@ export default function WalkerClient({
       // Reset walk state, go to success screen
       if (data.wa_link) setParentWaLink(data.wa_link)
       if (data.report_url) setReportUrl(data.report_url)
-      setPoopCount(0)
-      setPeeCount(0)
       setMood('')
       setNotes('')
       setPhotoUrl(null)
@@ -516,9 +514,14 @@ export default function WalkerClient({
         <>
           {/* Dog card */}
           <div className="mx-5 mb-5 rounded-2xl bg-white border border-slate-100 px-4 py-4 flex items-center gap-4 shadow-sm">
-            <div className="w-14 h-14 rounded-full flex-shrink-0 flex items-center justify-center text-3xl"
+            <div className="w-14 h-14 rounded-full flex-shrink-0 overflow-hidden"
               style={{ background: '#FF8C52' }}>
-              🐕
+              {dogPhotoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={dogPhotoUrl} alt={dogName} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-3xl">🐕</div>
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs text-slate-500 font-medium">You&apos;re walking</p>
@@ -736,6 +739,15 @@ export default function WalkerClient({
 
               {/* ── Controls — bottom section ── */}
               <div className="flex-1 flex flex-col px-5 pt-4 pb-6 gap-3" style={{ background: '#FFFBEB' }}>
+                {/* Keep screen open banner */}
+                <div className="rounded-xl px-3 py-2 flex items-center gap-2"
+                  style={{ background: 'oklch(0.97 0.02 196)', border: '1px solid oklch(0.88 0.06 196)' }}>
+                  <span className="text-base flex-shrink-0">📱</span>
+                  <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: 'oklch(0.40 0.17 196)', margin: 0, fontWeight: 600 }}>
+                    Keep this screen open during the walk to track GPS
+                  </p>
+                </div>
+
                 {/* Walk started — notify parent prompt */}
                 {startWaLink && elapsed < 120 && (
                   <a
@@ -759,7 +771,7 @@ export default function WalkerClient({
 
                 {/* Pee / Poop tap buttons */}
                 <div className="grid grid-cols-2 gap-3">
-                  {/* Pee button */}
+                  {/* Toilet button */}
                   <button
                     type="button"
                     onClick={handlePeeTap}
@@ -768,7 +780,7 @@ export default function WalkerClient({
                   >
                     <span className="text-3xl">💧</span>
                     <span className="text-sm font-bold text-blue-700" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                      Pee
+                      Toilet 💧
                     </span>
                     {livePeeCount > 0 && (
                       <span className="text-xs font-bold text-blue-500 bg-blue-100 rounded-full px-2 py-0.5">
@@ -777,7 +789,7 @@ export default function WalkerClient({
                     )}
                   </button>
 
-                  {/* Poop button */}
+                  {/* Potty button */}
                   <button
                     type="button"
                     onClick={handlePoopTap}
@@ -786,7 +798,7 @@ export default function WalkerClient({
                   >
                     <span className="text-3xl">💩</span>
                     <span className="text-sm font-bold text-amber-700" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                      Poop + Photo
+                      Potty + Photo 💩
                     </span>
                     {livePoopCount > 0 && (
                       <span className="text-xs font-bold text-amber-600 bg-amber-100 rounded-full px-2 py-0.5">
@@ -831,167 +843,107 @@ export default function WalkerClient({
           {/* ─── LOGGING PHASE ─── */}
           {phase === 'logging' && (
             <div className="px-5">
-              {/* Summary banner */}
-              <div className="rounded-2xl bg-[#0A2F35] text-white px-5 py-4 mb-4 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-teal-300 font-bold uppercase tracking-widest">Walk complete</p>
-                  <p className="text-2xl font-bold mt-1" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                    {Math.round(elapsed / 60)} min · {distanceKm.toFixed(2)} km
-                  </p>
-                </div>
-                <div className="text-3xl">✅</div>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className="px-5 py-4 border-b border-slate-100">
-                  <h2 className="font-bold text-[#0A2F35] text-lg" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                    Log the details
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">This report goes straight to {ownerFirstName}</p>
-                </div>
-
-                <form onSubmit={handleSubmit} className="px-5 py-4 space-y-5">
-                  {/* Dog photo — first in form */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">
-                      Photo of {dogName} after the walk 📸
-                    </label>
-                    <input
-                      ref={photoInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      className="hidden"
-                      onChange={handlePhotoCapture}
-                    />
-                    {photoUrl ? (
-                      <div className="relative w-full rounded-xl overflow-hidden" style={{ maxHeight: 200 }}>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photoUrl} alt="Walk photo" className="w-full object-cover rounded-xl" style={{ maxHeight: 200 }} />
-                        <button
-                          type="button"
-                          onClick={() => setPhotoUrl(null)}
-                          className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black bg-opacity-50 text-white text-sm flex items-center justify-center"
-                        >✕</button>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* A) Walk summary card */}
+                {(() => {
+                  const finalPoopCount = walkEvents.filter(e => e.type === 'poop').length
+                  const finalPeeCount = walkEvents.filter(e => e.type === 'pee').length
+                  return (
+                    <div style={{ background: 'oklch(0.94 0.06 196)', borderRadius: 16, padding: '14px 16px' }}>
+                      <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: 'oklch(0.40 0.17 196)', margin: '0 0 6px' }}>
+                        This walk summary
+                      </p>
+                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 14, color: '#0A2F35', fontWeight: 600 }}>⏱ {Math.floor(elapsed / 60)} min</span>
+                        {distanceKm > 0 && <span style={{ fontSize: 14, color: '#0A2F35', fontWeight: 600 }}>📍 {distanceKm.toFixed(1)} km</span>}
+                        {finalPoopCount > 0 && <span style={{ fontSize: 14, color: '#0A2F35', fontWeight: 600 }}>💩 {finalPoopCount} potty</span>}
+                        {finalPeeCount > 0 && <span style={{ fontSize: 14, color: '#0A2F35', fontWeight: 600 }}>💧 {finalPeeCount} toilet</span>}
                       </div>
-                    ) : (
+                    </div>
+                  )
+                })()}
+
+                {/* B) Dog photo */}
+                <div>
+                  <label className="block text-sm font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                    Take a photo of {dogName} 📸
+                  </label>
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handlePhotoCapture}
+                  />
+                  {photoUrl ? (
+                    <div className="relative w-full rounded-xl overflow-hidden" style={{ maxHeight: 220 }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={photoUrl} alt="Walk photo" className="w-full object-cover rounded-xl" style={{ maxHeight: 220 }} />
                       <button
                         type="button"
-                        onClick={() => photoInputRef.current?.click()}
-                        disabled={uploading}
-                        className="w-full border-2 border-dashed border-slate-200 rounded-xl py-4 flex flex-col items-center gap-1 text-slate-400 hover:border-[#FF8C52] hover:text-[#FF8C52] transition-colors disabled:opacity-60"
-                      >
-                        <span className="text-2xl">{uploading ? '⏳' : '📷'}</span>
-                        <span className="text-xs font-semibold">{uploading ? 'Uploading…' : 'Tap to take a photo'}</span>
+                        onClick={() => setPhotoUrl(null)}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black bg-opacity-50 text-white text-sm flex items-center justify-center"
+                      >✕</button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      disabled={uploading}
+                      className="w-full border-2 border-dashed rounded-xl py-6 flex flex-col items-center gap-2 transition-colors disabled:opacity-60"
+                      style={{ borderColor: 'oklch(0.70 0.13 196)', color: 'oklch(0.48 0.17 196)' }}
+                    >
+                      <span className="text-3xl">{uploading ? '⏳' : '📷'}</span>
+                      <span className="text-sm font-bold">{uploading ? 'Uploading…' : 'Tap to take a photo'}</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* C) Mood — 3 big emoji buttons */}
+                <div>
+                  <label className="block text-sm font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                    How was {dogName}?
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {MOOD_OPTIONS.map((opt) => (
+                      <button key={opt.value} type="button"
+                        onClick={() => setMood(mood === opt.value ? '' : opt.value)}
+                        className="flex flex-col items-center gap-1 py-3 rounded-2xl border-2 transition-all active:scale-[0.97]"
+                        style={{
+                          borderColor: mood === opt.value ? 'oklch(0.48 0.17 196)' : '#E2E8F0',
+                          background: mood === opt.value ? 'oklch(0.95 0.04 196)' : '#fff',
+                          color: mood === opt.value ? 'oklch(0.40 0.17 196)' : '#64748B',
+                        }}>
+                        <span className="text-2xl">{opt.emoji}</span>
+                        <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-fredoka)' }}>{opt.label}</span>
                       </button>
-                    )}
+                    ))}
                   </div>
+                </div>
 
-                  {/* Poop photos from walk */}
-                  {poopPhotos.length > 0 && (
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">
-                        Poop photos from this walk 📸
-                      </label>
-                      <div className="flex gap-2 overflow-x-auto pb-1">
-                        {poopPhotos.map((ev, i) => (
-                          ev.photoUrl ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              key={i}
-                              src={ev.photoUrl}
-                              alt={`Poop photo ${i + 1}`}
-                              className="w-[50px] h-[50px] rounded-xl object-cover flex-shrink-0"
-                            />
-                          ) : null
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                {/* D) Notes — small, optional */}
+                <div>
+                  <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Anything to tell the owner? (optional)"
+                    rows={2}
+                    className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 resize-none"
+                    style={{ outlineColor: 'oklch(0.48 0.17 196)' }}
+                  />
+                </div>
 
-                  {/* Poop + Pee counters */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">
-                        Poop 💩
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <button type="button" onClick={() => setPoopCount((c) => Math.max(0, c - 1))}
-                          className="w-11 h-11 rounded-xl border-2 border-slate-200 bg-white text-xl font-bold text-slate-600 flex items-center justify-center active:bg-slate-50 transition-colors">
-                          −
-                        </button>
-                        <span className="flex-1 text-center text-2xl font-bold text-[#0A2F35]"
-                          style={{ fontFamily: 'var(--font-fredoka)' }}>{poopCount}</span>
-                        <button type="button" onClick={() => setPoopCount((c) => c + 1)}
-                          className="w-11 h-11 rounded-xl border-2 border-slate-200 bg-white text-xl font-bold text-slate-600 flex items-center justify-center active:bg-slate-50 transition-colors">
-                          +
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">
-                        Pee 💧
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <button type="button" onClick={() => setPeeCount((c) => Math.max(0, c - 1))}
-                          className="w-11 h-11 rounded-xl border-2 border-slate-200 bg-white text-xl font-bold text-slate-600 flex items-center justify-center active:bg-slate-50 transition-colors">
-                          −
-                        </button>
-                        <span className="flex-1 text-center text-2xl font-bold text-[#0A2F35]"
-                          style={{ fontFamily: 'var(--font-fredoka)' }}>{peeCount}</span>
-                        <button type="button" onClick={() => setPeeCount((c) => c + 1)}
-                          className="w-11 h-11 rounded-xl border-2 border-slate-200 bg-white text-xl font-bold text-slate-600 flex items-center justify-center active:bg-slate-50 transition-colors">
-                          +
-                        </button>
-                      </div>
-                    </div>
+                {submitError && (
+                  <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+                    <p className="text-sm text-red-700">{submitError}</p>
                   </div>
+                )}
 
-                  {/* Mood */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">
-                      {dogName}&apos;s mood
-                    </label>
-                    <div className="flex gap-2 flex-wrap">
-                      {MOOD_OPTIONS.map((opt) => (
-                        <button key={opt.value} type="button"
-                          onClick={() => setMood(mood === opt.value ? '' : opt.value)}
-                          className={`px-3.5 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all min-h-[44px]
-                            ${mood === opt.value
-                              ? 'border-[#FF8C52] bg-orange-50 text-[#0A2F35]'
-                              : 'border-slate-200 bg-white text-slate-600'
-                            }`}>
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Notes */}
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">
-                      Notes for {ownerFirstName}
-                    </label>
-                    <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Anything to report? (Optional)"
-                      rows={3}
-                      className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF8C52] resize-none"
-                    />
-                  </div>
-
-                  {submitError && (
-                    <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
-                      <p className="text-sm text-red-700">{submitError}</p>
-                    </div>
-                  )}
-
-                  <button type="submit" disabled={submitting}
-                    className="w-full py-4 rounded-2xl font-bold text-lg text-white disabled:opacity-60 active:scale-[0.98] transition-transform shadow-md min-h-[56px]"
-                    style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)' }}>
-                    {submitting ? 'Sending report…' : `Send report to ${ownerFirstName} ✓`}
-                  </button>
-                </form>
-              </div>
+                <button type="submit" disabled={submitting}
+                  className="w-full py-4 rounded-2xl font-bold text-lg text-white disabled:opacity-60 active:scale-[0.98] transition-transform shadow-md min-h-[56px]"
+                  style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)' }}>
+                  {submitting ? 'Sending report…' : `Send to ${ownerFirstName} ✓`}
+                </button>
+              </form>
             </div>
           )}
 
@@ -1054,15 +1006,24 @@ export default function WalkerClient({
                     `My PupStep walker dashboard for ${dogName} 🐾\nReturn here anytime:\n${dashUrl}`
                   )
                   return (
-                    <a
-                      href={`https://wa.me/?text=${waText}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-white text-base"
-                      style={{ background: '#0A2F35', fontFamily: 'var(--font-fredoka)' }}
-                    >
-                      📲 Save my dashboard link
-                    </a>
+                    <div className="rounded-2xl border-2 px-4 py-4 text-center"
+                      style={{ borderColor: 'oklch(0.88 0.06 196)', background: 'oklch(0.97 0.02 196)' }}>
+                      <p className="text-xs font-bold mb-2" style={{ color: 'oklch(0.40 0.17 196)', fontFamily: 'var(--font-fredoka)' }}>
+                        📌 Save your dashboard link
+                      </p>
+                      <p className="text-xs text-slate-500 mb-3" style={{ fontFamily: 'var(--font-nunito)' }}>
+                        Bookmark this page or send the link to yourself — you need it to log future walks
+                      </p>
+                      <a
+                        href={`https://wa.me/?text=${waText}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white text-sm"
+                        style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)' }}
+                      >
+                        📲 Send link to myself on WhatsApp
+                      </a>
+                    </div>
                   )
                 })()}
 
@@ -1103,7 +1064,7 @@ export default function WalkerClient({
                         <div className="flex items-center gap-2">
                           {log.mood && (
                             <span className="text-xl">
-                              {MOOD_OPTIONS.find((m) => m.value === log.mood)?.label.split(' ')[0] ?? '🐕'}
+                              {MOOD_OPTIONS.find((m) => m.value === log.mood)?.emoji ?? '🐕'}
                             </span>
                           )}
                           <div>
@@ -1119,8 +1080,8 @@ export default function WalkerClient({
                         <span className="text-xs text-slate-400 flex-shrink-0 pt-0.5">{formatDate(log.created_at)}</span>
                       </div>
                       <div className="flex gap-4 text-sm text-slate-500">
-                        <span>💩 {log.poop_count}</span>
-                        <span>💧 {log.pee_count}</span>
+                        <span>💩 Potty: {log.poop_count}</span>
+                        <span>💧 Toilet: {log.pee_count}</span>
                         {log.mood && <span className="capitalize text-slate-400">{log.mood}</span>}
                       </div>
                       {log.notes && (

@@ -37,6 +37,7 @@ export default async function WalkerPage({ params }: WalkerPageProps) {
       token={token}
       dogName={data.dogName}
       dogBreed={data.dogBreed}
+      dogPhotoUrl={data.dogPhoto ?? null}
       healthNotes={data.healthNotes}
       ownerFirstName={data.ownerFirstName}
       walkerName={data.walkerName ?? 'Walker'}
