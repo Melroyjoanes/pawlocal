@@ -86,6 +86,22 @@ export async function POST(req: NextRequest) {
 
   if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
 
+  // Increment total_walks on the walker's profile (fire-and-forget)
+  if (connection.walker_phone) {
+    ;(db.from('walkers') as any)
+      .select('id, total_walks')
+      .eq('phone', connection.walker_phone)
+      .maybeSingle()
+      .then(({ data: w }: { data: { id: string; total_walks: number } | null }) => {
+        if (w) {
+          (db.from('walkers') as any)
+            .update({ total_walks: (w.total_walks ?? 0) + 1, last_seen_at: new Date().toISOString() })
+            .eq('id', w.id)
+            .then(() => {})
+        }
+      })
+  }
+
   // Look up owner phone for WhatsApp notification link
   const { data: connWithPhone } = await (db.from('walker_connections') as any)
     .select('owner_phone, walker_name')

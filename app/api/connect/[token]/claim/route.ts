@@ -39,13 +39,41 @@ export async function POST(
     return NextResponse.json({ error: 'Incorrect code. Please ask the owner to show you their code again.' }, { status: 401 })
   }
 
+  const phone = walker_phone?.trim() ?? null
+  const now = new Date().toISOString()
+
+  // Upsert walker profile — phone is the unique key.
+  // This creates a permanent record of every walker who has ever connected,
+  // even if they connect to multiple dogs or multiple families.
+  let walkerId: string | null = null
+  if (phone) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: walkerRow, error: walkerErr } = await (db.from('walkers') as any)
+      .upsert(
+        {
+          phone,
+          name: walker_name.trim(),
+          role: walker_role ?? null,
+          last_seen_at: now,
+        },
+        { onConflict: 'phone', ignoreDuplicates: false }
+      )
+      .select('id')
+      .single()
+
+    if (!walkerErr && walkerRow) {
+      walkerId = walkerRow.id as string
+    }
+  }
+
   const { error: updateError } = await (db.from('walker_connections') as any)
     .update({
       status: 'active',
       walker_name: walker_name.trim(),
-      walker_phone: walker_phone?.trim() ?? null,
+      walker_phone: phone,
       walker_role: walker_role ?? null,
-      claimed_at: new Date().toISOString(),
+      claimed_at: now,
+      ...(walkerId ? { walker_id: walkerId } : {}),
     })
     .eq('id', connection.id)
 

@@ -31,18 +31,21 @@ export async function GET(
     return NextResponse.json({ error: 'Dog not found' }, { status: 404 })
   }
 
-  // Get existing connection or create one
+  // Get the most recent PENDING connection — never reuse an active one.
+  // If the latest connection is already active (walker already registered),
+  // we create a fresh pending connection so a new walker can connect.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let { data: connection } = await (db.from('walker_connections') as any)
     .select('id, token, walker_name, walker_phone, status, otp')
     .eq('dog_id', dogId)
     .eq('owner_id', user.id)
+    .eq('status', 'pending')
     .order('created_at', { ascending: false })
     .limit(1)
-    .single()
+    .maybeSingle()
 
   if (!connection) {
-    // Create a new connection with a random token
+    // No pending connection exists — create a fresh one
     const token = generateToken()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: newConn, error: createError } = await (db.from('walker_connections') as any)
