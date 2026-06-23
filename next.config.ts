@@ -44,7 +44,6 @@ const nextConfig: NextConfig = {
       { source: '/search',                  destination: '/', permanent: true },
       { source: '/map',                     destination: '/', permanent: true },
       { source: '/insurance',               destination: '/', permanent: true },
-      { source: '/account',                 destination: '/home',       permanent: true },
       { source: '/review/:path*',           destination: '/', permanent: true },
       { source: '/live/:path*',             destination: '/', permanent: true },
     ]
