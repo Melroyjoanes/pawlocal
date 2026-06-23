@@ -4,9 +4,10 @@
 // Ensure layout.tsx includes <meta name="mobile-web-app-capable" content="yes" />
 // and <meta name="apple-mobile-web-app-capable" content="yes" />
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 type Lang = 'en' | 'hi' | 'mr'
+type Step = 'form' | 'success'
 
 const STRINGS = {
   en: {
@@ -78,6 +79,16 @@ export default function ConnectClient({
   const [role, setRole] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [step, setStep] = useState<Step>('form')
+  const [walkerDashWaUrl, setWalkerDashWaUrl] = useState('')
+  const [walkerDashUrl, setWalkerDashUrl] = useState('')
+
+  useEffect(() => {
+    const dashUrl = `${window.location.origin}/walker/${token}`
+    setWalkerDashUrl(dashUrl)
+    const msg = `My PupStep dashboard for ${dogName} 🐾\nTap to start logging walks:\n${dashUrl}`
+    setWalkerDashWaUrl('https://wa.me/?text=' + encodeURIComponent(msg))
+  }, [token, dogName])
 
   const t = STRINGS[lang]
 
@@ -130,12 +141,65 @@ export default function ConnectClient({
         return
       }
 
-      window.location.replace(`/walker/${token}`)
+      setStep('success')
+      setLoading(false)
       return
     } catch {
       setError('Network error. Please check your connection and try again.')
       setLoading(false)
     }
+  }
+
+  // ── Success screen ────────────────────────────────────────────────────────
+  if (step === 'success') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ background: '#FFFBEB' }}>
+        <div className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
+          style={{ background: '#DCFCE7', border: '3px solid #86EFAC' }}>
+          <span className="text-5xl">🐾</span>
+        </div>
+
+        <h1
+          className="text-3xl font-bold text-[#0A2F35] mb-2"
+          style={{ fontFamily: 'var(--font-fredoka)' }}
+        >
+          You&apos;re connected to {dogName}!
+        </h1>
+
+        <p className="text-slate-500 text-sm mb-8 leading-relaxed px-2" style={{ fontFamily: 'var(--font-nunito)' }}>
+          Your walk dashboard is ready.<br />
+          <strong>{ownerFirstName}</strong> will send you your dashboard link on WhatsApp.<br />
+          Once you receive it, tap it to start logging walks.
+        </p>
+
+        <div className="w-full max-w-sm space-y-3">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide" style={{ fontFamily: 'var(--font-nunito)' }}>
+            OR save it yourself now:
+          </p>
+
+          {/* WhatsApp save button */}
+          <a
+            href={walkerDashWaUrl || '#'}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-white text-base shadow-md"
+            style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', fontSize: '17px', textDecoration: 'none' }}
+          >
+            📲 Save my dashboard link on WhatsApp
+          </a>
+
+          {/* Open dashboard button */}
+          <button
+            type="button"
+            onClick={() => window.location.replace(walkerDashUrl || `/walker/${token}`)}
+            className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-white text-base shadow-md"
+            style={{ background: 'oklch(0.48 0.17 196)', fontFamily: 'var(--font-fredoka)', fontSize: '17px' }}
+          >
+            → Open my dashboard
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (

@@ -25,10 +25,13 @@ export default function QRDisplayClient({
 }: Props) {
   const [connectUrl, setConnectUrl] = useState('')
   const [shareUrl, setShareUrl] = useState('')
+  const [walkerDashUrl, setWalkerDashUrl] = useState('')
+  const [walkerDashWaUrl, setWalkerDashWaUrl] = useState('')
   const [walkerName, setWalkerName] = useState(initialWalkerName)
   const [walkerPhone, setWalkerPhone] = useState(initialWalkerPhone)
   const [status, setStatus] = useState(initialStatus)
   const [justConnected, setJustConnected] = useState(false)
+  const [copied, setCopied] = useState(false)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Build connect URL and WhatsApp share URL using window.location.origin (client-side only)
@@ -38,7 +41,25 @@ export default function QRDisplayClient({
     setConnectUrl(url)
     const msg = `Hi! I use PupStep to track ${dogName}'s walks. Scan this QR code and enter code: ${otp ?? ''} 🐾\n${url}`
     setShareUrl('https://wa.me/?text=' + encodeURIComponent(msg))
+    const dashUrl = origin + '/walker/' + token
+    setWalkerDashUrl(dashUrl)
   }, [token, dogName, otp])
+
+  // Build walker dashboard WhatsApp URL (depends on walkerName which may update after poll)
+  useEffect(() => {
+    if (!walkerDashUrl) return
+    const displayName = walkerName ?? 'Your walker'
+    const msg = `Hi ${displayName}! Here's your PupStep dashboard for ${dogName} 🐾\nTap this link anytime to log walks:\n${walkerDashUrl}`
+    setWalkerDashWaUrl('https://wa.me/?text=' + encodeURIComponent(msg))
+  }, [walkerDashUrl, walkerName, dogName])
+
+  function handleCopyLink() {
+    if (!walkerDashUrl) return
+    navigator.clipboard.writeText(walkerDashUrl).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
 
   // Poll for walker connection status every 5 seconds
   useEffect(() => {
@@ -319,6 +340,96 @@ export default function QRDisplayClient({
             </div>
           )}
         </div>
+
+        {/* Walker dashboard sharing — shown only when connected */}
+        {isActive && (
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ borderTop: '1px solid #E5E7EB', width: '100%' }} />
+
+            <p
+              style={{
+                fontFamily: 'var(--font-fredoka), sans-serif',
+                fontSize: '17px',
+                fontWeight: 700,
+                color: '#0A2F35',
+                margin: 0,
+                textAlign: 'center',
+              }}
+            >
+              🎉 Share {walkerName ?? 'your walker'}&apos;s dashboard with them
+            </p>
+
+            <div
+              style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '16px',
+                padding: '16px',
+                boxShadow: '0 2px 12px rgba(10, 47, 53, 0.08)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+              }}
+            >
+              {/* WhatsApp button */}
+              <a
+                href={walkerDashWaUrl || '#'}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'center',
+                  backgroundColor: '#25D366',
+                  color: '#ffffff',
+                  textDecoration: 'none',
+                  borderRadius: '16px',
+                  padding: '14px 24px',
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  fontFamily: 'var(--font-fredoka), sans-serif',
+                  boxSizing: 'border-box',
+                }}
+              >
+                📲 Send {walkerName ?? 'walker'}&apos;s dashboard on WhatsApp
+              </a>
+
+              {/* Copy link button */}
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'center',
+                  backgroundColor: copied ? '#F0FDF4' : '#F3F4F6',
+                  color: copied ? '#15803D' : '#374151',
+                  border: copied ? '1px solid #86EFAC' : '1px solid #E5E7EB',
+                  borderRadius: '12px',
+                  padding: '12px 24px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-nunito), sans-serif',
+                  cursor: 'pointer',
+                  boxSizing: 'border-box',
+                }}
+              >
+                {copied ? '✅ Link copied!' : '🔗 Copy dashboard link'}
+              </button>
+
+              <p
+                style={{
+                  fontSize: '12px',
+                  color: '#6B7280',
+                  margin: 0,
+                  textAlign: 'center',
+                  fontFamily: 'var(--font-nunito), sans-serif',
+                }}
+              >
+                Your walker needs this link to start logging walks
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* How to share with your walker — shown only when pending */}
         {!isActive && (

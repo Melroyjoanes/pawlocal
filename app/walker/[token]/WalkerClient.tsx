@@ -2,6 +2,118 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 
+// ── Live map shown to walker during walk ──────────────────────────────────────
+function LiveMap({
+  currentPos,
+  routePointsRef,
+  poopEvents,
+  peeEvents,
+}: {
+  currentPos: { lat: number; lng: number } | null
+  routePointsRef: React.RefObject<{ lat: number; lng: number }[]>
+  poopEvents: { lat: number; lng: number; ts: string }[]
+  peeEvents: { lat: number; lng: number; ts: string }[]
+}) {
+  const mapDivRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<google.maps.Map | null>(null)
+  const polylineRef = useRef<google.maps.Polyline | null>(null)
+  const posMarkerRef = useRef<google.maps.Marker | null>(null)
+  const eventMarkersRef = useRef<google.maps.Marker[]>([])
+
+  useEffect(() => {
+    function initMap() {
+      if (!mapDivRef.current) return
+      const center = currentPos ?? { lat: 19.098, lng: 72.827 } // Juhu, Mumbai default
+      const gm = (window as { google?: { maps: typeof google.maps } }).google!.maps
+
+      const map = new gm.Map(mapDivRef.current, {
+        center,
+        zoom: 17,
+        disableDefaultUI: true,
+        styles: [
+          { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+          { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+        ],
+      })
+      mapRef.current = map
+
+      polylineRef.current = new gm.Polyline({
+        geodesic: true,
+        strokeColor: '#0f766e',
+        strokeOpacity: 1,
+        strokeWeight: 5,
+        map,
+      })
+
+      posMarkerRef.current = new gm.Marker({
+        position: center,
+        map,
+        zIndex: 10,
+        icon: {
+          path: gm.SymbolPath.CIRCLE,
+          scale: 11,
+          fillColor: '#0f766e',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 3,
+        },
+      })
+    }
+
+    if ((window as { google?: { maps: typeof google.maps } }).google?.maps) {
+      initMap()
+    } else {
+      const existing = document.getElementById('gmaps-script')
+      if (!existing) {
+        const script = document.createElement('script')
+        script.id = 'gmaps-script'
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+        script.async = true
+        script.onload = initMap
+        document.head.appendChild(script)
+      } else {
+        existing.addEventListener('load', initMap)
+      }
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pan + update route on every new GPS point
+  useEffect(() => {
+    if (!mapRef.current || !currentPos) return
+    posMarkerRef.current?.setPosition(currentPos)
+    polylineRef.current?.setPath(routePointsRef.current ?? [])
+    mapRef.current.panTo(currentPos)
+  }, [currentPos, routePointsRef])
+
+  // Add poop/pee markers when events change
+  useEffect(() => {
+    if (!mapRef.current) return
+    const gm = (window as { google?: { maps: typeof google.maps } }).google?.maps
+    if (!gm) return
+
+    // Clear old event markers
+    eventMarkersRef.current.forEach(m => m.setMap(null))
+    eventMarkersRef.current = []
+
+    const allEvents = [
+      ...poopEvents.map(e => ({ ...e, emoji: '💩' })),
+      ...peeEvents.map(e => ({ ...e, emoji: '💧' })),
+    ]
+
+    allEvents.forEach(evt => {
+      const marker = new gm.Marker({
+        position: { lat: evt.lat, lng: evt.lng },
+        map: mapRef.current!,
+        label: { text: evt.emoji, fontSize: '16px' },
+        icon: { path: gm.SymbolPath.CIRCLE, scale: 0 }, // invisible base, emoji label only
+      })
+      eventMarkersRef.current.push(marker)
+    })
+  }, [poopEvents, peeEvents])
+
+  return <div ref={mapDivRef} className="w-full h-full" />
+}
+
 interface WalkerClientProps {
   token: string
   dogName: string
@@ -89,16 +201,34 @@ export default function WalkerClient({
   const [logsLoading, setLogsLoading] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<WalkerTab>('walk')
+  const [showSaveNotice, setShowSaveNotice] = useState(false)
+
+  useEffect(() => {
+    const dismissed = localStorage.getItem(`pup-saved-${token}`)
+    if (!dismissed) setShowSaveNotice(true)
+  }, [token])
+
+  function dismissSaveNotice() {
+    localStorage.setItem(`pup-saved-${token}`, '1')
+    setShowSaveNotice(false)
+  }
 
   // Walk tracking state
   const [elapsed, setElapsed] = useState(0)
   const [distanceKm, setDistanceKm] = useState(0)
   const [gpsRoute, setGpsRoute] = useState<GpsPoint[]>([])
   const [gpsError, setGpsError] = useState<string | null>(null)
+  const [currentPos, setCurrentPos] = useState<{ lat: number; lng: number } | null>(null)
+  const routePointsRef = useRef<{ lat: number; lng: number }[]>([])
   const walkStartRef = useRef<Date | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const watchIdRef = useRef<number | null>(null)
   const lastPointRef = useRef<GpsPoint | null>(null)
+
+  // Keep routePointsRef in sync with gpsRoute state (for LiveMap polyline)
+  useEffect(() => {
+    routePointsRef.current = gpsRoute.map(p => ({ lat: p.lat, lng: p.lng }))
+  }, [gpsRoute])
 
   // Real-time walk events (pee/poop during walk)
   const [walkEvents, setWalkEvents] = useState<WalkEvent[]>([])
@@ -189,6 +319,7 @@ export default function WalkerClient({
     setDistanceKm(0)
     setElapsed(0)
     setGpsError(null)
+    setCurrentPos(null)
     setWalkEvents([])
     setPhase('walking')
     walkStartRef.current = new Date()
@@ -215,6 +346,7 @@ export default function WalkerClient({
             lng: pos.coords.longitude,
             ts: new Date().toISOString(),
           }
+          setCurrentPos({ lat: point.lat, lng: point.lng })
           setGpsRoute((prev) => {
             const last = prev[prev.length - 1]
             if (last) {
@@ -414,6 +546,42 @@ export default function WalkerClient({
           {/* ─── IDLE PHASE ─── */}
           {phase === 'idle' && (
             <div className="px-5 space-y-4">
+              {/* First-time save notice */}
+              {showSaveNotice && (
+                <div
+                  className="rounded-2xl px-4 py-4 flex gap-3 items-start"
+                  style={{ background: '#F0FDFA', border: '1.5px solid #99F6E4' }}
+                >
+                  <span className="text-xl flex-shrink-0 mt-0.5">💡</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-[#0D9488] mb-0.5" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                      Save your dashboard link
+                    </p>
+                    <p className="text-xs text-teal-700 mb-3 leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      Your client will send you this link on WhatsApp. Tap the button below to save it yourself too.
+                    </p>
+                    <a
+                      href={`https://wa.me/?text=${encodeURIComponent(`My PupStep dashboard for ${dogName} 🐾\nTap to log walks:\n${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={dismissSaveNotice}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white"
+                      style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', textDecoration: 'none' }}
+                    >
+                      📲 Save my dashboard link
+                    </a>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={dismissSaveNotice}
+                    className="text-teal-400 hover:text-teal-600 flex-shrink-0 text-lg leading-none"
+                    aria-label="Dismiss"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+
               {healthNotes && (
                 <div style={{
                   background: '#FFF7ED',
@@ -497,112 +665,166 @@ export default function WalkerClient({
 
           {/* ─── WALKING PHASE ─── */}
           {phase === 'walking' && (
-            <div className="px-5 space-y-4">
-              {/* Walk started — notify parent prompt */}
-              {startWaLink && elapsed < 120 && (
-                <a
-                  href={startWaLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    background: '#25D366',
-                    borderRadius: 14,
-                    padding: '10px 14px',
-                    textDecoration: 'none',
-                    marginBottom: 8,
-                  }}
-                >
-                  <span style={{ fontSize: 20 }}>📲</span>
-                  <div>
-                    <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: '#fff', margin: 0 }}>
-                      Notify {ownerFirstName} walk has started
-                    </p>
-                    <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: 'rgba(255,255,255,0.85)', margin: 0 }}>
-                      Tap to send a WhatsApp message
-                    </p>
-                  </div>
-                </a>
-              )}
+            <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 120px)' }}>
+              {/* ── Live map — top 46vh ── */}
+              <div className="relative w-full flex-shrink-0" style={{ height: '46vh' }}>
+                {/* Derive map event arrays from walkEvents */}
+                {(() => {
+                  const poopEventsForMap = walkEvents.filter(e => e.type === 'poop' && e.lat != null && e.lng != null) as { lat: number; lng: number; ts: string }[]
+                  const peeEventsForMap = walkEvents.filter(e => e.type === 'pee' && e.lat != null && e.lng != null) as { lat: number; lng: number; ts: string }[]
+                  return (
+                    <LiveMap
+                      currentPos={currentPos}
+                      routePointsRef={routePointsRef}
+                      poopEvents={poopEventsForMap}
+                      peeEvents={peeEventsForMap}
+                    />
+                  )
+                })()}
 
-              {/* Live stats */}
-              <div className="rounded-2xl bg-[#0A2F35] text-white px-5 py-5 shadow-lg">
-                <p className="text-xs text-teal-300 font-bold uppercase tracking-widest mb-3">Walk in progress</p>
-                <div className="grid grid-cols-2 gap-4">
+                {/* Back button — floating top-left */}
+                <button
+                  onClick={() => setPhase('idle')}
+                  className="absolute top-4 left-4 z-10 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white shadow-md text-gray-700 active:opacity-60 transition-opacity"
+                  style={{ fontFamily: 'var(--font-nunito)' }}
+                >
+                  ← Back
+                </button>
+
+                {/* Poop/pee live counts — floating top-right */}
+                <div className="absolute top-4 right-4 z-10 flex gap-2 bg-white bg-opacity-90 rounded-full px-3 py-1.5 shadow-md">
+                  <span className="text-sm font-bold text-gray-700">💩 {livePoopCount}</span>
+                  <span className="text-slate-300">·</span>
+                  <span className="text-sm font-bold text-gray-700">💧 {livePeeCount}</span>
+                </div>
+
+                {/* Timer + distance HUD — floating bottom of map */}
+                <div
+                  className="absolute bottom-0 left-0 right-0 z-10 flex items-end justify-between px-4 py-3"
+                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%)' }}
+                >
                   <div>
-                    <p className="text-4xl font-bold" style={{ fontFamily: 'var(--font-fredoka)', letterSpacing: '0.02em' }}>
+                    <p className="text-3xl font-bold text-white tabular-nums tracking-tight leading-none"
+                      style={{ fontFamily: 'var(--font-fredoka)' }}>
                       {formatElapsed(elapsed)}
                     </p>
-                    <p className="text-xs text-slate-400 mt-1">elapsed</p>
-                  </div>
-                  <div>
-                    <p className="text-4xl font-bold" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                      {distanceKm.toFixed(2)}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">km tracked</p>
+                    <p className="text-sm font-semibold text-white/80 mt-0.5">{distanceKm.toFixed(2)} km</p>
                   </div>
                 </div>
+
+                {/* GPS error overlay */}
                 {gpsError && (
-                  <p className="text-xs text-amber-300 mt-3">⚠️ {gpsError}</p>
+                  <div className="absolute top-14 left-4 right-4 z-10 px-3 py-2 rounded-xl text-xs text-amber-800 text-center"
+                    style={{ background: '#FFFBEB', border: '1px solid #FED7AA' }}>
+                    ⚠️ {gpsError}
+                  </div>
                 )}
-                {!gpsError && gpsRoute.length > 0 && (
-                  <p className="text-xs text-teal-300 mt-3">📍 GPS active · {gpsRoute.length} points logged</p>
-                )}
-                {!gpsError && gpsRoute.length === 0 && (
-                  <p className="text-xs text-slate-400 mt-3">📍 Acquiring GPS signal…</p>
+
+                {/* Getting GPS spinner */}
+                {!currentPos && !gpsError && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+                    <div className="flex flex-col items-center gap-2 text-gray-500">
+                      <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                      <p className="text-sm">Getting GPS…</p>
+                    </div>
+                  </div>
                 )}
               </div>
 
-              {/* Pee / Poop tap buttons */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* Pee button */}
-                <button
-                  type="button"
-                  onClick={handlePeeTap}
-                  className="rounded-2xl border-2 border-blue-200 bg-blue-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform"
-                  style={{ minHeight: 80 }}
-                >
-                  <span className="text-3xl">💧</span>
-                  <span className="text-sm font-bold text-blue-700" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                    Pee
-                  </span>
-                  {livePeeCount > 0 && (
-                    <span className="text-xs font-bold text-blue-500 bg-blue-100 rounded-full px-2 py-0.5">
-                      💧 {livePeeCount}
-                    </span>
-                  )}
-                </button>
+              {/* ── Controls — bottom section ── */}
+              <div className="flex-1 flex flex-col px-5 pt-4 pb-6 gap-3" style={{ background: '#FFFBEB' }}>
+                {/* Walk started — notify parent prompt */}
+                {startWaLink && elapsed < 120 && (
+                  <a
+                    href={startWaLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 rounded-2xl px-4 py-3 no-underline"
+                    style={{ background: '#25D366' }}
+                  >
+                    <span className="text-xl">📲</span>
+                    <div>
+                      <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: '#fff', margin: 0 }}>
+                        Notify {ownerFirstName} walk has started
+                      </p>
+                      <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: 'rgba(255,255,255,0.85)', margin: 0 }}>
+                        Tap to send a WhatsApp message
+                      </p>
+                    </div>
+                  </a>
+                )}
 
-                {/* Poop button */}
-                <button
-                  type="button"
-                  onClick={handlePoopTap}
-                  className="rounded-2xl border-2 border-amber-200 bg-amber-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform"
-                  style={{ minHeight: 80 }}
-                >
-                  <span className="text-3xl">💩</span>
-                  <span className="text-sm font-bold text-amber-700" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                    Poop + Photo
-                  </span>
-                  {livePoopCount > 0 && (
-                    <span className="text-xs font-bold text-amber-600 bg-amber-100 rounded-full px-2 py-0.5">
-                      💩 {livePoopCount}
-                      {poopPhotoUploading && ' ⏳'}
+                {/* Pee / Poop tap buttons */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Pee button */}
+                  <button
+                    type="button"
+                    onClick={handlePeeTap}
+                    className="rounded-2xl border-2 border-blue-200 bg-blue-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform"
+                    style={{ minHeight: 80 }}
+                  >
+                    <span className="text-3xl">💧</span>
+                    <span className="text-sm font-bold text-blue-700" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                      Pee
                     </span>
-                  )}
-                </button>
+                    {livePeeCount > 0 && (
+                      <span className="text-xs font-bold text-blue-500 bg-blue-100 rounded-full px-2 py-0.5">
+                        💧 {livePeeCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Poop button */}
+                  <button
+                    type="button"
+                    onClick={handlePoopTap}
+                    className="rounded-2xl border-2 border-amber-200 bg-amber-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform"
+                    style={{ minHeight: 80 }}
+                  >
+                    <span className="text-3xl">💩</span>
+                    <span className="text-sm font-bold text-amber-700" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                      Poop + Photo
+                    </span>
+                    {livePoopCount > 0 && (
+                      <span className="text-xs font-bold text-amber-600 bg-amber-100 rounded-full px-2 py-0.5">
+                        💩 {livePoopCount}
+                        {poopPhotoUploading && ' ⏳'}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {/* Poop photo thumbnails strip */}
+                {poopPhotos.length > 0 && (
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {poopPhotos.map((ev, i) => (
+                      ev.photoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={i}
+                          src={ev.photoUrl}
+                          alt={`Poop photo ${i + 1}`}
+                          className="w-14 h-14 rounded-xl object-cover flex-shrink-0 shadow"
+                        />
+                      ) : null
+                    ))}
+                  </div>
+                )}
+
+                {/* End Walk button */}
+                <div className="mt-auto">
+                  <button
+                    onClick={endWalk}
+                    className="w-full py-4 rounded-2xl font-bold text-xl text-white shadow-md active:scale-[0.97] transition-transform"
+                    style={{ background: '#DC2626', fontFamily: 'var(--font-fredoka)' }}
+                  >
+                    End Walk
+                  </button>
+                </div>
               </div>
-
-              <button
-                onClick={endWalk}
-                className="w-full py-5 rounded-2xl font-bold text-xl text-white shadow-md active:scale-[0.97] transition-transform"
-                style={{ background: '#0A2F35', fontFamily: 'var(--font-fredoka)' }}
-              >
-                End Walk →
-              </button>
-              <p className="text-center text-xs text-slate-400">Tap when the walk is done to log the report</p>
             </div>
           )}
 
