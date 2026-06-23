@@ -113,7 +113,7 @@ function UpgradeBanner({ trialStatus, daysRemaining }: { trialStatus: string; da
   return (
     <div style={{ borderRadius: '16px', background: 'rgba(255,140,82,0.08)', border: '1.5px solid rgba(255,140,82,0.3)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
       <div style={{ flex: 1 }}>
-        <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#0A2F35', margin: '0 0 2px' }}>🔓 Unlock walk reports for ₹199/month</p>
+        <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#0A2F35', margin: '0 0 2px' }}>🔓 Unlock walk reports for ₹249/month</p>
         <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: '#6B7280', margin: 0 }}>Get WhatsApp reports after every walk.</p>
       </div>
       <Link href="/upgrade" style={{ flexShrink: 0, backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '100px', padding: '6px 14px', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade →</Link>

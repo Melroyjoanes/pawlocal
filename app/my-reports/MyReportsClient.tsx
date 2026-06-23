@@ -365,9 +365,13 @@ export default function MyReportsClient({ walkReports, groomingReports, isSubscr
             style={{ background: 'white', border: '1.5px solid rgba(226,220,200,0.7)' }}>
             <div className="text-4xl mb-3">✂️</div>
             <h3 className="font-semibold text-stone-700 mb-1">Grooming reports coming soon</h3>
-            <p className="text-sm text-stone-400 leading-relaxed">
-              Ask your groomer to send reports after each session.
+            <p className="text-sm text-stone-400 leading-relaxed mb-3">
+              Ask your groomer to connect via the same QR code flow as your walker.
             </p>
+            <a href="/walker-guide" className="inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-full"
+              style={{ background: 'oklch(0.94 0.06 196)', color: 'oklch(0.44 0.16 196)' }}>
+              Share the guide with your groomer →
+            </a>
           </div>
         ) : filteredTimeline.length === 0 ? (
           <div className="rounded-2xl p-8 text-center"
