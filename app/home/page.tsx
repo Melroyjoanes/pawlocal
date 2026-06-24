@@ -162,9 +162,10 @@ export default async function HomePage() {
       .gte('started_at', fourteenDaysAgoIST())
       .order('started_at', { ascending: false }),
 
-    // Total walk reports count for trial conversion banner
+    // Total walk logs count for trial conversion banner
+    // Using walk_logs (not walk_reports) — walk_logs.owner_id has always existed
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (db.from('walk_reports') as any)
+    (db.from('walk_logs') as any)
       .select('id', { count: 'exact', head: true })
       .eq('owner_id', user.id),
   ])
