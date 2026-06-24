@@ -195,6 +195,320 @@ function formatDate(dateStr: string) {
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
 }
 
+const ROLE_OPTIONS = [
+  { value: 'dog_walker', label: 'Dog Walker' },
+  { value: 'family_friend', label: 'Family Friend' },
+  { value: 'professional', label: 'Professional' },
+  { value: 'other', label: 'Other' },
+]
+
+function SettingsTab({
+  token,
+  walkerName,
+  dogName,
+  dogBreed,
+  dogPhotoUrl,
+  healthNotes,
+  ownerFirstName,
+  ownerPhone,
+  careFocus,
+  showToast,
+}: {
+  token: string
+  walkerName: string
+  dogName: string
+  dogBreed: string | null
+  dogPhotoUrl: string | null
+  healthNotes: string | null
+  ownerFirstName: string
+  ownerPhone: string | null
+  careFocus: string | null
+  showToast: (msg: string) => void
+}) {
+  const [profileName, setProfileName] = useState(walkerName)
+  const [profileRole, setProfileRole] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
+
+  const dashUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/walker/${token}`
+    : `https://pupstep.in/walker/${token}`
+
+  async function handleSaveProfile() {
+    if (!profileName.trim()) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/walker/${token}/profile`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walker_name: profileName, walker_role: profileRole }),
+      })
+      if (res.ok) {
+        showToast('Profile updated ✓')
+      } else {
+        showToast('Failed to save. Try again.')
+      }
+    } catch {
+      showToast('Network error. Try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function handleCopyLink() {
+    navigator.clipboard.writeText(dashUrl).then(() => {
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
+    }).catch(() => {
+      showToast('Could not copy link')
+    })
+  }
+
+  const sectionHead = (title: string) => (
+    <p style={{
+      fontFamily: 'var(--font-fredoka)',
+      fontSize: 16,
+      fontWeight: 700,
+      color: '#0A2F35',
+      margin: '0 0 14px',
+    }}>{title}</p>
+  )
+
+  return (
+    <div className="px-5 pt-2 pb-10 space-y-4">
+
+      {/* ── Section 1: My Profile ── */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-5">
+        {sectionHead('My Profile')}
+        <div className="space-y-3">
+          <div>
+            <label style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 6 }}>
+              Name
+            </label>
+            <input
+              type="text"
+              value={profileName}
+              onChange={(e) => setProfileName(e.target.value)}
+              className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2"
+              style={{ fontFamily: 'var(--font-nunito)', outlineColor: 'oklch(0.48 0.17 196)' }}
+            />
+          </div>
+          <div>
+            <label style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 6 }}>
+              Role
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {ROLE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setProfileRole(opt.value)}
+                  className="py-2.5 px-3 rounded-xl border-2 text-sm font-bold transition-all active:scale-[0.97]"
+                  style={{
+                    fontFamily: 'var(--font-nunito)',
+                    borderColor: profileRole === opt.value ? 'oklch(0.48 0.17 196)' : '#E2E8F0',
+                    background: profileRole === opt.value ? 'oklch(0.95 0.04 196)' : '#fff',
+                    color: profileRole === opt.value ? 'oklch(0.40 0.17 196)' : '#64748B',
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleSaveProfile}
+            disabled={saving}
+            className="w-full rounded-2xl font-bold text-white disabled:opacity-60 active:scale-[0.97] transition-transform"
+            style={{
+              background: 'oklch(0.48 0.17 196)',
+              minHeight: 48,
+              fontFamily: 'var(--font-fredoka)',
+              fontSize: 16,
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            {saving ? 'Saving…' : 'Save changes'}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Section 2: Connected Dog ── */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-5">
+        {sectionHead('Connected Dog')}
+        {/* Dog identity row */}
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-14 h-14 rounded-full flex-shrink-0 overflow-hidden" style={{ background: '#FF8C52' }}>
+            {dogPhotoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={dogPhotoUrl} alt={dogName} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-3xl">🐕</div>
+            )}
+          </div>
+          <div>
+            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 18, fontWeight: 700, color: '#0A2F35', margin: 0 }}>
+              {dogName}
+            </p>
+            {dogBreed && (
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', margin: 0 }}>{dogBreed}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Care focus badge */}
+        {careFocus && careFocus !== 'normal' && CARE_FOCUS_CONFIG[careFocus] && (() => {
+          const cfg = CARE_FOCUS_CONFIG[careFocus]
+          return (
+            <div style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 12, padding: '8px 12px', marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 14 }}>{cfg.emoji}</span>
+              <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 700, color: cfg.color }}>{cfg.label}</span>
+            </div>
+          )
+        })()}
+
+        {/* Health notes */}
+        {healthNotes && (
+          <div style={{ background: '#FFFBEB', border: '1.5px solid #FCD34D', borderRadius: 12, padding: '10px 12px', marginBottom: 12, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#92400E', margin: 0, lineHeight: 1.5 }}>{healthNotes}</p>
+          </div>
+        )}
+
+        {/* Owner label */}
+        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', margin: '0 0 10px' }}>
+          Owner: <strong style={{ color: '#0A2F35' }}>{ownerFirstName}</strong>
+        </p>
+
+        {/* WhatsApp owner */}
+        {ownerPhone && (
+          <a
+            href={`https://wa.me/91${ownerPhone.replace(/\D/g, '')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white text-sm active:scale-[0.97] transition-transform"
+            style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', textDecoration: 'none' }}
+          >
+            💬 WhatsApp {ownerFirstName}
+          </a>
+        )}
+
+        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#94A3B8', marginTop: 10, textAlign: 'center' }}>
+          You cannot edit dog details. Ask the owner.
+        </p>
+      </div>
+
+      {/* ── Section 3: Your Dashboard Link ── */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-5">
+        {sectionHead('Your Dashboard Link')}
+        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', margin: '0 0 14px', lineHeight: 1.6 }}>
+          Use this same link every time you walk {dogName}. Bookmark it or save to WhatsApp.
+        </p>
+        <div className="space-y-2">
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent(`My PupStep dashboard for ${dogName} 🐾\nTap to log walks:\n${dashUrl}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white text-sm active:scale-[0.97] transition-transform"
+            style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', textDecoration: 'none' }}
+          >
+            📲 Save link on WhatsApp
+          </a>
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-sm active:scale-[0.97] transition-transform"
+            style={{
+              background: '#fff',
+              border: '2px solid oklch(0.48 0.17 196)',
+              color: 'oklch(0.48 0.17 196)',
+              fontFamily: 'var(--font-fredoka)',
+              cursor: 'pointer',
+            }}
+          >
+            {linkCopied ? 'Copied! ✓' : 'Copy link'}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Section 4: Walk Help ── */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-5">
+        {sectionHead('Walk Help')}
+        <div className="space-y-3">
+          {[
+            { icon: '🏃', boldWord: 'Start Walk', pre: 'Tap ', post: ` when you leave with ${dogName}` },
+            { icon: '💧💩', boldWord: 'Toilet', pre: 'Tap ', post: ' or Potty buttons when it happens' },
+            { icon: '📸', boldWord: null, pre: `Take a photo of ${dogName} after the walk`, post: '' },
+            { icon: '✅', boldWord: 'Send report', pre: 'Tap ', post: ' — owner gets it on WhatsApp' },
+          ].map((step, i) => (
+            <div key={i} className="flex items-start gap-3">
+              <div style={{
+                width: 24,
+                height: 24,
+                borderRadius: '50%',
+                background: 'oklch(0.48 0.17 196)',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontFamily: 'var(--font-fredoka)',
+                fontSize: 12,
+                fontWeight: 700,
+                flexShrink: 0,
+              }}>
+                {i + 1}
+              </div>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#0A2F35', margin: 0, lineHeight: 1.5 }}>
+                {step.icon} {step.pre}{step.boldWord ? <strong>{step.boldWord}</strong> : null}{step.post}
+              </p>
+            </div>
+          ))}
+        </div>
+        <a
+          href="/walker-guide"
+          style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: 'oklch(0.48 0.17 196)', display: 'block', textAlign: 'center', marginTop: 16 }}
+        >
+          Need GPS help? → View walker guide
+        </a>
+      </div>
+
+      {/* ── Section 5: Support ── */}
+      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-5">
+        {sectionHead('Support')}
+        <div className="space-y-2">
+          <a
+            href="https://wa.me/919999999999"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white text-sm active:scale-[0.97] transition-transform"
+            style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', textDecoration: 'none' }}
+          >
+            💬 WhatsApp PupStep support
+          </a>
+          <a
+            href={`https://wa.me/919999999999?text=${encodeURIComponent(`Problem with my PupStep dashboard [${token}]: `)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-sm active:scale-[0.97] transition-transform"
+            style={{
+              background: '#fff',
+              border: '2px solid #E2E8F0',
+              color: '#64748B',
+              fontFamily: 'var(--font-fredoka)',
+              textDecoration: 'none',
+            }}
+          >
+            🚨 Report a problem
+          </a>
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
 export default function WalkerClient({
   token,
   dogName,
@@ -1619,10 +1933,13 @@ export default function WalkerClient({
               <h2 className="text-3xl font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
                 Report ready!
               </h2>
-              <p className="text-sm text-slate-500 mb-6 leading-relaxed px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <p className="text-sm text-slate-500 mb-2 leading-relaxed px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
                 {ownerFirstName
-                  ? `Great walk! Send ${ownerFirstName} the report link below.`
-                  : `Walk logged successfully! 🐾`}
+                  ? `Walk report sent! Opening WhatsApp to notify ${ownerFirstName}.`
+                  : 'Walk report sent!'}
+              </p>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF', marginTop: 4, marginBottom: 16 }}>
+                PupStep has also emailed the report to the owner.
               </p>
 
               {/* Report link card */}
@@ -1780,47 +2097,21 @@ export default function WalkerClient({
 
       {/* ─── SETTINGS TAB ─── */}
       {activeTab === 'settings' && (
-        <div className="px-5 pt-2 space-y-4">
-          {/* Walker name card */}
-          <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-4">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Walker</p>
-            <p className="text-xl font-bold text-[#0A2F35]" style={{ fontFamily: 'var(--font-fredoka)' }}>
-              {walkerName}
-            </p>
-          </div>
-
-          {/* Save dashboard link */}
-          <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-4 space-y-3">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Save your dashboard link</p>
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent(`My PupStep dashboard for ${dogName}: ${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl font-bold text-white text-base shadow-md"
-              style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)' }}
-            >
-              📲 Send link to myself on WhatsApp
-            </a>
-            <p className="text-xs text-slate-400 text-center">
-              📌 Bookmark this page in your browser so you can always come back
-            </p>
-          </div>
-
-          {/* Owner contact */}
-          {ownerPhone && (
-            <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-4">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Owner contact</p>
-              <a
-                href={`tel:+91${ownerPhone.replace(/\D/g, '')}`}
-                className="flex items-center gap-3 py-3 px-4 rounded-xl border-2 font-bold text-[#0A2F35] active:bg-slate-50 transition-colors"
-                style={{ borderColor: 'oklch(0.48 0.17 196)', fontFamily: 'var(--font-fredoka)' }}
-              >
-                <span className="text-xl">📞</span>
-                <span>Contact {ownerFirstName}</span>
-              </a>
-            </div>
-          )}
-        </div>
+        <SettingsTab
+          token={token}
+          walkerName={walkerName}
+          dogName={dogName}
+          dogBreed={dogBreed}
+          dogPhotoUrl={dogPhotoUrl}
+          healthNotes={healthNotes}
+          ownerFirstName={ownerFirstName}
+          ownerPhone={ownerPhone}
+          careFocus={careFocus}
+          showToast={(msg) => {
+            setToast(msg)
+            setTimeout(() => setToast(null), 3000)
+          }}
+        />
       )}
 
       {/* ─── BOTTOM NAV ─── */}

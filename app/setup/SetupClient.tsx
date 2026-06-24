@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import AuthModal from '@/components/AuthModal'
 
 interface Props {
   user: { id: string; fullName: string | null } | null
@@ -68,6 +69,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [savingDraft, setSavingDraft] = useState(false)
+  const [authOpen, setAuthOpen] = useState(false)
 
   const photoInputRef = useRef<HTMLInputElement>(null)
   const autoSubmittedRef = useRef(false)
@@ -184,15 +186,8 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
     }
 
     if (!user) {
-      // Save draft → trigger Google Sign-In
-      const draft: DraftData = { name, careFocus, healthNotes, walkingInstructions, photoUrl, parentName, ownerPhone }
-      sessionStorage.setItem('pup-setup-draft', JSON.stringify(draft))
-      const { createClient } = await import('@/lib/supabase/client')
-      const supabase = createClient()
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: `${window.location.origin}/setup?recover=1` },
-      })
+      // Open auth modal — email OTP path keeps user on same page, draft stays in memory
+      setAuthOpen(true)
       return
     }
 
@@ -806,12 +801,22 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
 
           {!user && (
             <p style={{ textAlign: 'center', fontSize: 12, color: '#9CA3AF', margin: '-8px 0 0' }}>
-              You&apos;ll sign in with Google to save — feels like saving, not a wall 🔐
+              You&apos;ll sign in to save — feels like saving, not a wall 🔐
             </p>
           )}
         </div>
       </div>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        message="Sign in to save your dog's profile"
+        onSignedIn={(userId) => {
+          setAuthOpen(false)
+          submitDog(userId)
+        }}
+      />
     </div>
   )
 }

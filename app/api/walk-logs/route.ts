@@ -127,6 +127,7 @@ export async function POST(req: NextRequest) {
   // Also create a public walk report so the pet parent gets the beautiful report card
   const reportToken = require('crypto').randomBytes(16).toString('hex')
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
+  const reportUrl = `${siteUrl}/walk-report/${reportToken}`
 
   // Extract poop_events / pee_events from walk_events (GPS-tagged taps during walk)
   type WalkEvent = { type: 'pee' | 'poop'; lat: number | null; lng: number | null; ts: string; photoUrl?: string | null }
@@ -180,12 +181,55 @@ export async function POST(req: NextRequest) {
         pee_events: peeEvents.length > 0 ? peeEvents : null,
         quality_score: qualityScore,
       })
+
+      // Check notification preference and send email to parent
+      try {
+        // Get parent email + notification preferences
+        const { data: { user: ownerUser } } = await db.auth.admin.getUserById(connection.owner_id)
+        const ownerEmail = ownerUser?.email
+
+        if (ownerEmail) {
+          // Check notification_preferences — default to ON if column missing or not set
+          const { data: profileData } = await (db.from('profiles') as any)
+            .select('notification_preferences')
+            .eq('id', connection.owner_id)
+            .single()
+
+          const prefs = (profileData?.notification_preferences ?? {}) as Record<string, boolean>
+          const reportEmailEnabled = prefs.report_email !== false // default true
+
+          if (reportEmailEnabled) {
+            const stats = [
+              duration_mins ? `⏱ ${duration_mins} min` : null,
+              distance_km ? `📍 ${distance_km.toFixed(1)} km` : null,
+              finalPoopCount > 0 ? `💩 ${finalPoopCount}` : null,
+              finalPeeCount > 0 ? `💧 ${finalPeeCount}` : null,
+            ].filter(Boolean).join('  ·  ')
+
+            const { sendEmail, emailTemplate } = await import('@/lib/email')
+            sendEmail({
+              to: ownerEmail,
+              subject: `🐾 ${dogName}'s walk report is ready`,
+              html: emailTemplate(
+                `${dogName}'s walk is done`,
+                `${connection.walker_name ?? 'Your walker'} just completed a walk with ${dogName}.${stats ? `\n\n${stats}` : ''}`,
+                'View full report →',
+                reportUrl,
+              ),
+            }).catch(() => {})
+
+            // Track email sent
+            await (db.from('walk_reports') as any)
+              .update({ email_sent_at: new Date().toISOString() })
+              .eq('token', reportToken)
+              .catch(() => {})
+          }
+        }
+      } catch { /* non-critical */ }
     } catch (err) {
       console.error('[walk-logs] report creation failed:', err)
     }
   })()
-
-  const reportUrl = `${siteUrl}/walk-report/${reportToken}`
 
   // Build WhatsApp link — override the plain-text one with the report URL
   if (connWithPhone?.owner_phone) {

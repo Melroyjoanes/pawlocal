@@ -67,21 +67,23 @@ export default async function MyAccountPage() {
       .maybeSingle(),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin().from('profiles') as any)
-      .select('trial_started_at')
+      .select('trial_started_at, phone, notification_preferences')
       .eq('id', user.id)
       .maybeSingle(),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin().from('dogs') as any)
-      .select('id, name, breed, photo_url, health_notes')
+      .select('id, name, breed, photo_url, health_notes, care_focus, walking_instructions')
       .eq('owner_id', user.id),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (admin().from('walker_connections') as any)
-      .select('id, dog_id, walker_name, walker_phone, walker_role, status, claimed_at, dogs(name)')
+      .select('id, dog_id, walker_name, walker_phone, walker_role, status, claimed_at, connection_token, dogs(name)')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false }),
   ])
 
   const trialStartedAt = (profileData as any)?.trial_started_at ?? null
+  const profilePhone: string | null = (profileData as any)?.phone ?? null
+  const notificationPreferences: { report_email?: boolean; weekly_summary?: boolean } = (profileData as any)?.notification_preferences ?? {}
   const activeSub = subData ?? null
   let subStatus: { status: 'trial' | 'active' | 'expired' | 'no_trial'; trial_days_remaining: number | null; expires_at: string | null }
 
@@ -107,6 +109,7 @@ export default async function MyAccountPage() {
     (normalizedPhone.length >= 10 ? `+91 ${normalizedPhone}` : user.email ?? 'Your account')
 
   const userAvatar: string | null = userMeta.avatar_url ?? userMeta.picture ?? null
+  const userEmail: string | null = user.email ?? null
 
   return (
     <MyAccountClient
@@ -121,8 +124,11 @@ export default async function MyAccountPage() {
       walkerConnections={(walkerConnectionsRaw ?? []) as any}
       userDisplay={userDisplay}
       userAvatar={userAvatar}
+      userEmail={userEmail}
       userId={user.id}
       subStatus={subStatus}
+      profilePhone={profilePhone}
+      notificationPreferences={notificationPreferences}
     />
   )
 }
