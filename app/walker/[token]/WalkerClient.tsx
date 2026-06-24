@@ -256,7 +256,6 @@ export default function WalkerClient({
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [parentWaLink, setParentWaLink] = useState<string | null>(null)
   const [reportUrl, setReportUrl] = useState<string | null>(null)
-  const [startWaLink, setStartWaLink] = useState<string | null>(null)
 
   async function handlePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -436,15 +435,13 @@ export default function WalkerClient({
     setPhase('walking')
     walkStartRef.current = new Date()
 
-    // Generate walk-started WhatsApp link for parent notification and auto-open
-    if (ownerPhone) {
-      const phone = ownerPhone.replace(/\D/g, '')
-      const fullPhone = phone.startsWith('91') ? phone : `91${phone}`
-      const msg = `🐾 ${dogName}'s walk has started!\n\n${walkerName} is now walking ${dogName}. You'll get a full report when the walk ends.\n\nPowered by PupStep`
-      const waUrl = `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`
-      setStartWaLink(waUrl)
-      // Auto-open WhatsApp to notify parent
-      setTimeout(() => window.open(waUrl, '_blank'), 300)
+    // Notify parent via server-side email (fire-and-forget — never blocks the walker)
+    if (!isDemoWalk) {
+      fetch('/api/walks/notify-start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connection_token: token }),
+      }).catch(() => {})
     }
 
     // Start timer
@@ -1378,27 +1375,6 @@ export default function WalkerClient({
                     Keep this screen open during the walk to track GPS
                   </p>
                 </div>
-                )}
-
-                {/* Walk started — notify parent prompt */}
-                {startWaLink && elapsed < 120 && (
-                  <a
-                    href={startWaLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3 no-underline"
-                    style={{ background: '#25D366' }}
-                  >
-                    <span className="text-xl">📲</span>
-                    <div>
-                      <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: '#fff', margin: 0 }}>
-                        Notify {ownerFirstName} walk has started
-                      </p>
-                      <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: 'rgba(255,255,255,0.85)', margin: 0 }}>
-                        Tap to send a WhatsApp message
-                      </p>
-                    </div>
-                  </a>
                 )}
 
                 {/* Pee / Poop tap buttons */}

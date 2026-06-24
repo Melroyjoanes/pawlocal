@@ -88,8 +88,8 @@ export default async function HomePage() {
     { data: walkerConnectionsRaw },
     { data: lastWalkRaw },
     { data: subData },
-    { data: walkLogsRaw },
     { data: trialProfileData },
+    { data: walkLogsRaw },
     { count: reportCount },
   ] = await Promise.all([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
