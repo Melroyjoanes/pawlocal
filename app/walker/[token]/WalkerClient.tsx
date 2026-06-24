@@ -123,6 +123,15 @@ interface WalkerClientProps {
   ownerFirstName: string
   walkerName: string
   ownerPhone: string | null
+  careFocus: string | null
+}
+
+const CARE_FOCUS_CONFIG: Record<string, { emoji: string; label: string; bg: string; border: string; color: string; walkerNote: string }> = {
+  stomach: { emoji: '💩', label: 'Stomach monitoring', bg: '#FEF9C3', border: '#FDE047', color: '#854D0E', walkerNote: 'Poop photo is especially important today. Please photograph every time.' },
+  recovery: { emoji: '🩹', label: 'Recovery mode', bg: '#FEE2E2', border: '#FECACA', color: '#991B1B', walkerNote: 'Gentle walk only. No running. Watch for limping or discomfort.' },
+  anxiety: { emoji: '😰', label: 'Anxiety watch', bg: '#EFF6FF', border: '#BFDBFE', color: '#1D4ED8', walkerNote: 'Stay calm. Avoid busy roads and loud areas. Short walk is fine.' },
+  senior: { emoji: '🐕', label: 'Senior dog', bg: '#F3E8FF', border: '#E9D5FF', color: '#7C3AED', walkerNote: 'Easy pace. Rest often. Do not push distance today.' },
+  puppy: { emoji: '🐶', label: 'Puppy', bg: '#F0FDF4', border: '#86EFAC', color: '#166534', walkerNote: 'Short walk. Lots of praise. Watch for tiredness.' },
 }
 
 interface WalkLog {
@@ -195,6 +204,7 @@ export default function WalkerClient({
   ownerFirstName,
   walkerName,
   ownerPhone,
+  careFocus,
 }: WalkerClientProps) {
   const [phase, setPhase] = useState<WalkPhase>('idle')
   const [logs, setLogs] = useState<WalkLog[]>([])
@@ -1118,6 +1128,19 @@ export default function WalkerClient({
                   </div>
                 </div>
               )}
+              {careFocus && careFocus !== 'normal' && CARE_FOCUS_CONFIG[careFocus] && (() => {
+                const cfg = CARE_FOCUS_CONFIG[careFocus]
+                return (
+                  <div style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 14, padding: '12px 14px', marginBottom: 8 }}>
+                    <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: cfg.color, margin: '0 0 4px' }}>
+                      {cfg.emoji} {cfg.label}
+                    </p>
+                    <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: cfg.color, margin: 0, lineHeight: 1.5 }}>
+                      {cfg.walkerNote}
+                    </p>
+                  </div>
+                )
+              })()}
               <button
                 onClick={() => { setIsDemoWalk(false); startWalk() }}
                 className="w-full py-5 rounded-2xl font-bold text-2xl text-white shadow-lg active:scale-[0.97] transition-transform"
@@ -1276,6 +1299,21 @@ export default function WalkerClient({
 
               {/* ── Controls — bottom section ── */}
               <div className="flex-1 flex flex-col px-5 pt-4 pb-6 gap-3" style={{ background: '#FFFBEB' }}>
+                {/* Care Focus banner — walking phase */}
+                {careFocus && careFocus !== 'normal' && CARE_FOCUS_CONFIG[careFocus] && (() => {
+                  const cfg = CARE_FOCUS_CONFIG[careFocus]
+                  return (
+                    <div style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 14, padding: '12px 14px', marginBottom: 8 }}>
+                      <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: cfg.color, margin: '0 0 4px' }}>
+                        {cfg.emoji} {cfg.label}
+                      </p>
+                      <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: cfg.color, margin: 0, lineHeight: 1.5 }}>
+                        {cfg.walkerNote}
+                      </p>
+                    </div>
+                  )
+                })()}
+
                 {/* FEATURE 2: Health notes pinned during walk */}
                 {healthNotes && (
                   <div style={{
@@ -1398,23 +1436,28 @@ export default function WalkerClient({
                   </button>
 
                   {/* Potty button */}
-                  <button
-                    type="button"
-                    onClick={handlePoopTap}
-                    className="rounded-2xl border-2 border-amber-200 bg-amber-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform"
-                    style={{ minHeight: 80 }}
-                  >
-                    <span className="text-3xl">💩</span>
-                    <span className="text-sm font-bold text-amber-700" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                      Potty + Photo 💩
-                    </span>
-                    {livePoopCount > 0 && (
-                      <span className="text-xs font-bold text-amber-600 bg-amber-100 rounded-full px-2 py-0.5">
-                        💩 {livePoopCount}
-                        {poopPhotoUploading && ' ⏳'}
-                      </span>
+                  <div className="flex flex-col gap-1">
+                    {(careFocus === 'stomach' || careFocus === 'recovery') && (
+                      <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, color: '#854D0E', textAlign: 'center', margin: 0 }}>📸 Photo important today</p>
                     )}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={handlePoopTap}
+                      className="rounded-2xl border-2 border-amber-200 bg-amber-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform"
+                      style={{ minHeight: 80, boxShadow: (careFocus === 'stomach' || careFocus === 'recovery') ? '0 0 0 3px rgba(255,140,82,0.4)' : undefined }}
+                    >
+                      <span className="text-3xl">💩</span>
+                      <span className="text-sm font-bold text-amber-700" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                        Potty + Photo 💩
+                      </span>
+                      {livePoopCount > 0 && (
+                        <span className="text-xs font-bold text-amber-600 bg-amber-100 rounded-full px-2 py-0.5">
+                          💩 {livePoopCount}
+                          {poopPhotoUploading && ' ⏳'}
+                        </span>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Poop photo thumbnails strip */}

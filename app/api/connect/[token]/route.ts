@@ -26,7 +26,8 @@ export async function GET(
         breed,
         photo_url,
         health_notes,
-        owner_id
+        owner_id,
+        care_focus
       )
     `)
     .eq('token', token)
@@ -57,5 +58,6 @@ export async function GET(
     ownerFirstName,
     walkerName: connection.walker_name ?? null,
     ownerPhone: connection.owner_phone ?? null,
+    careFocus: connection.dogs?.care_focus ?? 'normal',
   })
 }

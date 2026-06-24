@@ -950,40 +950,71 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
           </div>
         )}
 
-        {/* Activation checklist */}
+        {/* Activation checklist — no walker connected, no walks yet */}
         {showActivationChecklist && (
-          <div style={{ background: '#ffffff', border: '1.5px solid oklch(0.48 0.17 196 / 0.25)', borderRadius: '16px', padding: '16px' }}>
-            <p style={{ fontFamily: 'var(--font-fredoka), sans-serif', fontSize: '16px', fontWeight: 700, color: '#0A2F35', margin: '0 0 12px' }}>Get started 🐾</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ background: '#ffffff', border: '1.5px solid oklch(0.48 0.17 196 / 0.25)', borderRadius: '16px', padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+            <span style={{ fontSize: 48 }}>🐕</span>
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ fontFamily: 'var(--font-fredoka), sans-serif', fontSize: '20px', fontWeight: 700, color: '#0A2F35', margin: '0 0 4px' }}>Your dog&apos;s care diary is ready.</p>
+              <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', color: '#6B7280', margin: 0 }}>Your first walk report will appear here after your walker logs a walk.</p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, background: firstDog ? 'oklch(0.48 0.17 196)' : 'transparent', border: firstDog ? 'none' : '2px solid #D1D5DB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {firstDog && <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: 700 }}>✓</span>}
+                  {firstDog ? <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: 700 }}>✓</span> : <span style={{ color: '#D1D5DB', fontSize: '11px' }}>○</span>}
                 </div>
-                <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: firstDog ? 600 : 500, color: firstDog ? '#0A2F35' : '#6B7280', flex: 1 }}>Add your dog</span>
+                <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: firstDog ? 600 : 500, color: firstDog ? '#0A2F35' : '#6B7280', flex: 1 }}>Dog profile created</span>
                 {!firstDog && <Link href="/setup" style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', color: 'oklch(0.48 0.17 196)', textDecoration: 'none' }}>Start →</Link>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, background: walkerConnections.length > 0 ? 'oklch(0.48 0.17 196)' : 'transparent', border: walkerConnections.length > 0 ? 'none' : '2px solid #D1D5DB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {walkerConnections.length > 0 && <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: 700 }}>✓</span>}
+                  {walkerConnections.length > 0 ? <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: 700 }}>✓</span> : <span style={{ color: '#D1D5DB', fontSize: '11px' }}>○</span>}
                 </div>
                 <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: walkerConnections.length > 0 ? 600 : 500, color: walkerConnections.length > 0 ? '#0A2F35' : '#6B7280', flex: 1 }}>Connect your walker</span>
-                {walkerConnections.length === 0 && <Link href="/setup" style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', color: 'oklch(0.48 0.17 196)', textDecoration: 'none' }}>Start →</Link>}
+                {walkerConnections.length === 0 && <Link href="/setup" style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', color: 'oklch(0.48 0.17 196)', textDecoration: 'none' }}>Connect walker →</Link>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, background: 'transparent', border: '2px solid #D1D5DB', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
-                <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 500, color: '#6B7280', flex: 1 }}>Receive your first walk report</span>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, background: 'transparent', border: '2px solid #D1D5DB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ color: '#D1D5DB', fontSize: '11px' }}>○</span>
+                </div>
+                <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 500, color: '#6B7280', flex: 1 }}>First walk report</span>
               </div>
             </div>
+            <Link href="/walker-guide" style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', fontWeight: 600, color: '#9CA3AF', textDecoration: 'none', textAlign: 'center' }}>
+              See how it works for your walker →
+            </Link>
           </div>
         )}
 
-        {/* Walker nudge */}
-        {showWalkerNudge && (
-          <div style={{ background: '#ffffff', border: '1.5px solid oklch(0.48 0.17 196 / 0.2)', borderRadius: '14px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-            <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 600, color: '#0A2F35', margin: 0, flex: 1 }}>🐕 Your walker is connected but hasn&apos;t sent a report yet.</p>
-            <a href="https://wa.me/?text=Hey! You can log walks on PupStep — pupstep.in/pro" target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0, backgroundColor: 'oklch(0.48 0.17 196)', color: '#ffffff', borderRadius: '100px', padding: '7px 14px', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Remind them on WhatsApp →</a>
-          </div>
-        )}
+        {/* Walker nudge — walker connected but no walks yet */}
+        {showWalkerNudge && (() => {
+          const firstConn = walkerConnections[0]
+          const walkerName = firstConn?.walker_name ?? 'your walker'
+          const dogName = firstDog?.name ?? 'your dog'
+          const walkerToken = firstConn?.connection_token ?? ''
+          const waText = encodeURIComponent(`Hi ${walkerName}, please use PupStep for today's walk with ${dogName}. Here's your dashboard link: pupstep.in/walker/${walkerToken}`)
+          return (
+            <div style={{ background: '#ffffff', border: '1.5px solid oklch(0.48 0.17 196 / 0.2)', borderRadius: '16px', padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+              <span style={{ fontSize: 48 }}>🐾</span>
+              <div style={{ textAlign: 'center' }}>
+                <p style={{ fontFamily: 'var(--font-fredoka), sans-serif', fontSize: '18px', fontWeight: 700, color: '#0A2F35', margin: '0 0 6px' }}>{walkerName} is connected. Waiting for the first walk.</p>
+                <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', color: '#6B7280', margin: '0 0 4px' }}>Your first walk report will appear here after your walker logs a walk.</p>
+                <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', color: '#6B7280', margin: 0 }}>Send them a reminder to use PupStep today.</p>
+              </div>
+              <a
+                href={`https://wa.me/?text=${waText}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', background: '#25D366', color: '#ffffff', borderRadius: '12px', padding: '13px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', boxSizing: 'border-box' }}
+              >
+                💬 Ask {walkerName} to log a walk →
+              </a>
+              <Link href="/walker-guide" style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', fontWeight: 600, color: '#9CA3AF', textDecoration: 'none' }}>
+                View walker guide →
+              </Link>
+            </div>
+          )
+        })()}
 
         {activeWalk ? (
           <StateA walk={activeWalk} displayName={displayName} firstDog={firstDog} onOpenTeam={() => setTeamSheetOpen(true)} onAddDog={() => setAddDogOpen(true)} />

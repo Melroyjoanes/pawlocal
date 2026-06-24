@@ -9,28 +9,65 @@ interface Props {
   recover?: boolean
 }
 
+interface DraftData {
+  name: string
+  careFocus: string
+  healthNotes: string
+  walkingInstructions: string
+  photoUrl: string | null
+  parentName: string
+  ownerPhone: string
+}
+
 const HEALTH_CHIPS = [
   'No chicken 🍗',
-  'Pulls on leash 🦮',
   'Scared of traffic 🚗',
-  'Scared of loud noises 🔊',
-  'Aggressive with dogs 🐕',
-  'Epilepsy ⚠️',
-  'Heart condition ❤️',
-  'Friendly with strangers 🤝',
+  'Pulls on leash 🦮',
+  'Stomach upset ⚠️',
+  'Senior dog 🐕',
+  'No treats',
 ]
+
+const CARE_FOCUS_OPTIONS = [
+  { key: 'normal', emoji: '🐾', label: 'Normal walk' },
+  { key: 'stomach', emoji: '💩', label: 'Stomach monitoring' },
+  { key: 'recovery', emoji: '🩹', label: 'Recovery / injury' },
+  { key: 'anxiety', emoji: '😰', label: 'Anxiety / fear' },
+  { key: 'senior', emoji: '🐕', label: 'Senior dog' },
+  { key: 'puppy', emoji: '🐶', label: 'Puppy training' },
+]
+
+// Teal brand color
+const TEAL = 'oklch(0.48 0.17 196)'
+const TEAL_LIGHT = 'oklch(0.95 0.04 196)'
 
 export default function SetupClient({ user, justPaid, recover }: Props) {
   const router = useRouter()
+
+  // Step state
+  const [step, setStep] = useState(0)
+
+  // Dog details
   const [name, setName] = useState('')
+  const [careFocus, setCareFocus] = useState('normal')
   const [healthNotes, setHealthNotes] = useState('')
-  const [ownerPhone, setOwnerPhone] = useState('')
+  const [walkingInstructions, setWalkingInstructions] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+
+  // Contact details
+  const [parentName, setParentName] = useState('')
+  const [ownerPhone, setOwnerPhone] = useState('')
+
+  // UI state
   const [uploading, setUploading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [savingDraft, setSavingDraft] = useState(false)
+
   const photoInputRef = useRef<HTMLInputElement>(null)
   const autoSubmittedRef = useRef(false)
+
+  const dogFirstName = name.trim().split(' ')[0] || 'your dog'
 
   // Recover draft after Google OAuth redirect
   useEffect(() => {
@@ -38,25 +75,32 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
     const raw = sessionStorage.getItem('pup-setup-draft')
     if (!raw) return
     try {
-      const draft = JSON.parse(raw) as { name: string; healthNotes: string; ownerPhone: string }
+      const draft = JSON.parse(raw) as DraftData
       setName(draft.name || '')
+      setCareFocus(draft.careFocus || 'normal')
       setHealthNotes(draft.healthNotes || '')
+      setWalkingInstructions(draft.walkingInstructions || '')
+      setPhotoUrl(draft.photoUrl || null)
+      setParentName(draft.parentName || '')
       setOwnerPhone(draft.ownerPhone || '')
       sessionStorage.removeItem('pup-setup-draft')
       autoSubmittedRef.current = true
-      // Small delay so state settles before submit
-      setTimeout(() => submitDog(user.id, draft.name, draft.healthNotes, draft.ownerPhone, null), 400)
+      setSavingDraft(true)
+      setTimeout(() => submitDog(user.id, draft), 300)
     } catch {
       sessionStorage.removeItem('pup-setup-draft')
     }
   }, [recover, user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleChip(chip: string) {
+    const plain = chip.replace(/\s[\u{1F300}-\u{1FFFF}⚠️❤️🤝🦮🍗🚗🐕]/gu, '').trim()
     setHealthNotes(prev => {
-      const plain = chip.replace(/\s[\u{1F300}-\u{1FFFF}⚠️❤️🤝🦮]/gu, '').trim()
-      // Check if already in notes (by the text part)
       if (prev.includes(plain)) {
-        return prev.replace(plain, '').replace(/\s*·\s*·\s*/g, ' · ').replace(/^[\s·]+|[\s·]+$/g, '').trim()
+        return prev
+          .replace(plain, '')
+          .replace(/\s*·\s*·\s*/g, ' · ')
+          .replace(/^[\s·]+|[\s·]+$/g, '')
+          .trim()
       }
       return prev ? `${prev} · ${plain}` : plain
     })
@@ -81,45 +125,62 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
     }
   }
 
-  async function submitDog(
-    userId: string,
-    dogName: string,
-    notes: string,
-    phone: string,
-    photo: string | null
-  ) {
+  async function submitDog(userId: string, data?: DraftData) {
+    const d = data ?? { name, careFocus, healthNotes, walkingInstructions, photoUrl, parentName, ownerPhone }
     setLoading(true)
     setError(null)
     try {
+      const combinedNotes = [d.healthNotes, d.walkingInstructions].filter(Boolean).join('\n\n') || null
       const res = await fetch('/api/dogs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: dogName.trim(),
-          health_notes: notes.trim() || null,
-          owner_phone: phone.trim() || null,
-          photo_url: photo,
+          name: d.name.trim(),
+          health_notes: combinedNotes,
+          care_focus: d.careFocus || 'normal',
+          owner_phone: d.ownerPhone.trim() || null,
+          photo_url: d.photoUrl || null,
         }),
       })
       if (!res.ok) {
-        const d = await res.json()
-        throw new Error(d.error ?? 'Something went wrong')
+        const json = await res.json()
+        throw new Error((json as { error?: string }).error ?? 'Something went wrong')
       }
-      const dog = await res.json()
-      router.push(`/setup/qr?dog=${dog.id}&phone=${encodeURIComponent(phone.trim())}`)
+      const dog = await res.json() as { id: string }
+
+      // Update parent name if provided
+      if (d.parentName?.trim()) {
+        try {
+          await fetch('/api/profile/name', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ full_name: d.parentName.trim() }),
+          })
+        } catch {
+          // Non-critical — ignore if endpoint doesn't exist
+        }
+      }
+
+      router.push(`/setup/qr?dog=${dog.id}&phone=${encodeURIComponent(d.ownerPhone.trim())}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setLoading(false)
+      setSavingDraft(false)
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!name.trim()) { setError("What's your dog's name?"); return }
+  async function handleCreateWalkerLink() {
+    setError(null)
+    const digits = ownerPhone.replace(/\D/g, '')
+    if (digits.length !== 10) {
+      setError('Please enter a valid 10-digit WhatsApp number')
+      return
+    }
 
     if (!user) {
-      // Save draft → trigger Google Sign-In → come back with ?recover=1
-      sessionStorage.setItem('pup-setup-draft', JSON.stringify({ name, healthNotes, ownerPhone }))
+      // Save draft → trigger Google Sign-In
+      const draft: DraftData = { name, careFocus, healthNotes, walkingInstructions, photoUrl, parentName, ownerPhone }
+      sessionStorage.setItem('pup-setup-draft', JSON.stringify(draft))
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
       await supabase.auth.signInWithOAuth({
@@ -129,140 +190,514 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
       return
     }
 
-    await submitDog(user.id, name, healthNotes, ownerPhone, photoUrl)
+    await submitDog(user.id)
   }
 
-  const dogFirstName = name.trim().split(' ')[0] || 'your dog'
+  function handleStep1Continue() {
+    setError(null)
+    if (!name.trim()) {
+      setError("What's your dog's name?")
+      return
+    }
+    setStep(2)
+  }
 
-  return (
-    <div style={{
-      minHeight: '100dvh',
-      backgroundColor: '#FFFBEB',
-      fontFamily: 'var(--font-nunito), sans-serif',
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'center',
-      padding: '32px 16px 48px',
-    }}>
-      <div style={{ width: '100%', maxWidth: 420 }}>
+  // Step indicator dots (shown on steps 1 and 2)
+  function StepDots({ current }: { current: number }) {
+    return (
+      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 24 }}>
+        {[1, 2].map(i => (
+          <div
+            key={i}
+            style={{
+              height: 6,
+              width: current >= i ? 32 : 20,
+              borderRadius: 100,
+              background: current >= i ? TEAL : '#D1D5DB',
+              transition: 'all 0.25s',
+            }}
+          />
+        ))}
+      </div>
+    )
+  }
 
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+  // Saving draft / loading screen
+  if (savingDraft || (loading && autoSubmittedRef.current)) {
+    return (
+      <div style={{
+        minHeight: '100dvh',
+        backgroundColor: '#FFFBEB',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'var(--font-nunito), sans-serif',
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: 48, height: 48,
+            border: `4px solid ${TEAL}33`,
+            borderTopColor: TEAL,
+            borderRadius: '50%',
+            animation: 'spin 0.7s linear infinite',
+            margin: '0 auto 20px',
+          }} />
           <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color: '#0A2F35', margin: '0 0 6px' }}>
-            PupStep 🐾
+            Saving {name || 'your dog'}&apos;s profile...
           </p>
-          <h1 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 26, fontWeight: 700, color: '#0A2F35', margin: '0 0 6px', lineHeight: 1.25 }}>
-            {user?.fullName ? `Hi ${user.fullName.split(' ')[0]}! Tell us about your dog` : "Tell us about your dog"}
-          </h1>
           <p style={{ fontSize: 14, color: '#6B7280', margin: 0 }}>
-            Your walker will see these details. Takes 30 seconds.
+            Just a moment ✨
           </p>
         </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    )
+  }
 
-        {justPaid && (
-          <div style={{ background: 'rgba(13,148,136,0.1)', border: '1.5px solid rgba(13,148,136,0.3)', borderRadius: 14, padding: '12px 16px', marginBottom: 20, textAlign: 'center', fontSize: 14, color: '#0A2F35' }}>
-            🎉 <strong>Payment successful!</strong> Now set up your dog.
+  const containerStyle: React.CSSProperties = {
+    minHeight: '100dvh',
+    backgroundColor: '#FFFBEB',
+    fontFamily: 'var(--font-nunito), sans-serif',
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    padding: '32px 16px 48px',
+  }
+
+  const cardStyle: React.CSSProperties = {
+    width: '100%',
+    maxWidth: 420,
+  }
+
+  const inputStyle: React.CSSProperties = {
+    padding: '13px 16px',
+    borderRadius: 12,
+    border: '2px solid #E5E7EB',
+    fontSize: 16,
+    fontFamily: 'var(--font-nunito)',
+    color: '#0A2F35',
+    outline: 'none',
+    background: '#fff',
+    width: '100%',
+    boxSizing: 'border-box',
+  }
+
+  const labelStyle: React.CSSProperties = {
+    fontSize: 14,
+    fontWeight: 700,
+    color: '#0A2F35',
+  }
+
+  const ctaStyle: React.CSSProperties = {
+    background: '#FF8C52',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 14,
+    padding: '16px 24px',
+    fontSize: 17,
+    fontWeight: 700,
+    fontFamily: 'var(--font-fredoka)',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: 56,
+    width: '100%',
+    transition: 'background 0.15s',
+  }
+
+  // ─── SCREEN 0: Welcome ───────────────────────────────────────────────────
+  if (step === 0) {
+    return (
+      <div style={containerStyle}>
+        <div style={{ ...cardStyle, paddingTop: 24 }}>
+          {/* Logo */}
+          <div style={{ textAlign: 'center', marginBottom: 36 }}>
+            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 24, fontWeight: 700, color: TEAL, margin: '0 0 24px' }}>
+              PupStep 🐾
+            </p>
+            <h1 style={{
+              fontFamily: 'var(--font-fredoka)',
+              fontSize: 30,
+              fontWeight: 700,
+              color: '#0A2F35',
+              margin: '0 0 12px',
+              lineHeight: 1.2,
+            }}>
+              Set up your dog&apos;s walk report
+            </h1>
+            <p style={{ fontSize: 15, color: '#6B7280', margin: '0 auto', maxWidth: 320, lineHeight: 1.5 }}>
+              Create a private walker link. Your walker logs walks. You get GPS reports on WhatsApp.
+            </p>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Three promise bullets */}
+          <div style={{
+            background: '#fff',
+            borderRadius: 18,
+            border: '1.5px solid #F3F4F6',
+            padding: '20px 24px',
+            marginBottom: 32,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+          }}>
+            {[
+              { emoji: '🐕', text: "Add your dog's details" },
+              { emoji: '📱', text: 'Share a link with your walker' },
+              { emoji: '📊', text: 'Get walk reports on WhatsApp' },
+            ].map(item => (
+              <div key={item.emoji} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <span style={{ fontSize: 28, flexShrink: 0 }}>{item.emoji}</span>
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#0A2F35' }}>{item.text}</p>
+              </div>
+            ))}
+          </div>
 
-          {/* Dog photo — only when logged in (Supabase Storage needs auth) */}
-          {user && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-              <button
-                type="button"
-                onClick={() => photoInputRef.current?.click()}
-                disabled={uploading}
-                style={{
-                  width: 88, height: 88, borderRadius: '50%',
-                  background: photoUrl ? 'transparent' : '#FFFBEB',
-                  border: '2.5px dashed #FF8C52',
-                  cursor: uploading ? 'not-allowed' : 'pointer',
-                  overflow: 'hidden',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 34, position: 'relative',
-                }}
-              >
-                {photoUrl
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={photoUrl} alt="dog" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
-                  : <span>🐕</span>}
-                {uploading && (
-                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>
-                    <span style={{ fontSize: 12 }}>⏳</span>
-                  </div>
-                )}
-              </button>
-              <input ref={photoInputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }} onChange={handlePhotoChange} />
-              <p style={{ fontSize: 12, color: '#9CA3AF', margin: 0 }}>
-                {photoUrl ? 'Tap to change photo' : 'Add a photo (optional)'}
-              </p>
+          {justPaid && (
+            <div style={{
+              background: 'rgba(13,148,136,0.1)',
+              border: '1.5px solid rgba(13,148,136,0.3)',
+              borderRadius: 14,
+              padding: '12px 16px',
+              marginBottom: 20,
+              textAlign: 'center',
+              fontSize: 14,
+              color: '#0A2F35',
+            }}>
+              🎉 <strong>Payment successful!</strong> Now set up your dog.
             </div>
           )}
 
-          {/* Dog Name */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label htmlFor="dog-name" style={{ fontSize: 14, fontWeight: 700, color: '#0A2F35' }}>
-              What&apos;s your dog&apos;s name? <span style={{ color: '#FF8C52' }}>*</span>
-            </label>
-            <input
-              id="dog-name"
-              type="text"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Bruno, Coco, Max..."
-              autoFocus
+          <button
+            type="button"
+            onClick={() => setStep(1)}
+            style={ctaStyle}
+            onMouseEnter={e => { e.currentTarget.style.background = '#e87a40' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#FF8C52' }}
+          >
+            Start setup →
+          </button>
+
+          <p style={{ textAlign: 'center', fontSize: 12, color: '#9CA3AF', marginTop: 14 }}>
+            Takes about 60 seconds
+          </p>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    )
+  }
+
+  // ─── SCREEN 1: Dog Details ───────────────────────────────────────────────
+  if (step === 1) {
+    return (
+      <div style={containerStyle}>
+        <div style={cardStyle}>
+          {/* Back + progress */}
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 20 }}>
+            <button
+              type="button"
+              onClick={() => { setStep(0); setError(null) }}
               style={{
-                padding: '13px 16px', borderRadius: 12, border: '2px solid #E5E7EB',
-                fontSize: 16, fontFamily: 'var(--font-nunito)', color: '#0A2F35',
-                outline: 'none', background: '#fff',
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 22, color: '#6B7280', padding: '4px 8px 4px 0',
+                display: 'flex', alignItems: 'center',
               }}
-              onFocus={e => (e.target.style.borderColor = '#FF8C52')}
-              onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
-            />
+              aria-label="Back"
+            >
+              ←
+            </button>
+            <div style={{ flex: 1 }}>
+              <StepDots current={1} />
+            </div>
           </div>
 
-          {/* Health notes — chips + optional textarea */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <label style={{ fontSize: 14, fontWeight: 700, color: '#0A2F35' }}>
-              Anything the walker should know?{' '}
-              <span style={{ fontWeight: 400, color: '#9CA3AF' }}>(optional)</span>
-            </label>
-            {/* Quick chips */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {HEALTH_CHIPS.map(chip => {
-                const plain = chip.replace(/\s[\u{1F300}-\u{1FFFF}⚠️❤️🤝🦮]/gu, '').trim()
-                const active = healthNotes.includes(plain)
-                return (
+          {/* Header */}
+          <div style={{ marginBottom: 24 }}>
+            <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 24, fontWeight: 700, color: '#0A2F35', margin: '0 0 4px' }}>
+              Tell us about your dog
+            </h2>
+            <p style={{ fontSize: 14, color: '#6B7280', margin: 0 }}>
+              Your walker will see these details before every walk.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+
+            {/* Dog photo */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+              {user ? (
+                <>
                   <button
-                    key={chip}
                     type="button"
-                    onClick={() => toggleChip(chip)}
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={uploading}
                     style={{
-                      padding: '6px 12px', borderRadius: 100, fontSize: 12, fontWeight: 600,
-                      border: `1.5px solid ${active ? '#FF8C52' : '#E5E7EB'}`,
-                      background: active ? '#FFF0E8' : '#fff',
-                      color: active ? '#C05A20' : '#6B7280',
-                      cursor: 'pointer', fontFamily: 'var(--font-nunito)',
-                      transition: 'all 0.15s',
+                      width: 88, height: 88, borderRadius: '50%',
+                      background: photoUrl ? 'transparent' : '#FFFBEB',
+                      border: '2.5px dashed #FF8C52',
+                      cursor: uploading ? 'not-allowed' : 'pointer',
+                      overflow: 'hidden',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 34, position: 'relative',
                     }}
                   >
-                    {chip}
+                    {photoUrl
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={photoUrl} alt="dog" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                      : <span>🐕</span>}
+                    {uploading && (
+                      <div style={{
+                        position: 'absolute', inset: 0,
+                        background: 'rgba(255,255,255,0.75)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        borderRadius: '50%',
+                      }}>
+                        <span style={{ fontSize: 12 }}>⏳</span>
+                      </div>
+                    )}
                   </button>
-                )
-              })}
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    style={{ display: 'none' }}
+                    onChange={handlePhotoChange}
+                  />
+                  <p style={{ fontSize: 12, color: '#9CA3AF', margin: 0 }}>
+                    {photoUrl
+                      ? `Tap to change ${dogFirstName}'s photo`
+                      : `Add ${dogFirstName === 'your dog' ? "Bruno's" : `${dogFirstName}'s`} photo`}
+                  </p>
+                </>
+              ) : (
+                <div style={{
+                  width: 88, height: 88, borderRadius: '50%',
+                  background: '#F3F4F6',
+                  border: '2.5px dashed #D1D5DB',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexDirection: 'column', gap: 2,
+                }}>
+                  <span style={{ fontSize: 24 }}>📷</span>
+                </div>
+              )}
+              {!user && (
+                <p style={{ fontSize: 11, color: '#9CA3AF', margin: 0, textAlign: 'center' }}>
+                  Add photo after sign-in
+                </p>
+              )}
             </div>
-            <textarea
-              value={healthNotes}
-              onChange={e => setHealthNotes(e.target.value)}
-              placeholder="Or type anything else — allergies, medications, fears..."
-              rows={2}
-              style={{
-                padding: '12px 14px', borderRadius: 12, border: '2px solid #E5E7EB',
-                fontSize: 14, fontFamily: 'var(--font-nunito)', color: '#0A2F35',
-                outline: 'none', resize: 'none', background: '#fff',
-              }}
+
+            {/* Dog name */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label htmlFor="dog-name" style={labelStyle}>
+                Dog&apos;s name <span style={{ color: '#FF8C52' }}>*</span>
+              </label>
+              <input
+                id="dog-name"
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Bruno, Max, Coco..."
+                autoFocus
+                style={inputStyle}
+                onFocus={e => (e.target.style.borderColor = '#FF8C52')}
+                onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+              />
+            </div>
+
+            {/* Care focus */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={labelStyle}>Care focus</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {CARE_FOCUS_OPTIONS.map(opt => {
+                  const selected = careFocus === opt.key
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setCareFocus(opt.key)}
+                      style={{
+                        padding: '12px 10px',
+                        borderRadius: 12,
+                        border: `2px solid ${selected ? TEAL : '#E5E7EB'}`,
+                        background: selected ? TEAL_LIGHT : '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 6,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <span style={{ fontSize: 28 }}>{opt.emoji}</span>
+                      <span style={{
+                        fontFamily: 'var(--font-fredoka)',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: selected ? '#0A2F35' : '#6B7280',
+                        textAlign: 'center',
+                        lineHeight: 1.2,
+                      }}>
+                        {opt.label}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Health notes */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={labelStyle}>Health notes for your walker</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {HEALTH_CHIPS.map(chip => {
+                  const plain = chip.replace(/\s[\u{1F300}-\u{1FFFF}⚠️❤️🤝🦮🍗🚗🐕]/gu, '').trim()
+                  const active = healthNotes.includes(plain)
+                  return (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => toggleChip(chip)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: 100,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        border: `1.5px solid ${active ? '#FF8C52' : '#E5E7EB'}`,
+                        background: active ? '#FFF0E8' : '#fff',
+                        color: active ? '#C05A20' : '#6B7280',
+                        cursor: 'pointer',
+                        fontFamily: 'var(--font-nunito)',
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {chip}
+                    </button>
+                  )
+                })}
+              </div>
+              <textarea
+                value={healthNotes}
+                onChange={e => setHealthNotes(e.target.value)}
+                placeholder="Anything else your walker should know..."
+                rows={2}
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: 12,
+                  border: '2px solid #E5E7EB',
+                  fontSize: 14,
+                  fontFamily: 'var(--font-nunito)',
+                  color: '#0A2F35',
+                  outline: 'none',
+                  resize: 'none',
+                  background: '#fff',
+                  boxSizing: 'border-box',
+                  width: '100%',
+                }}
+                onFocus={e => (e.target.style.borderColor = '#FF8C52')}
+                onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+              />
+            </div>
+
+            {/* Walking instructions */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={labelStyle}>
+                Walking instructions{' '}
+                <span style={{ fontWeight: 400, color: '#9CA3AF' }}>(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={walkingInstructions}
+                onChange={e => setWalkingInstructions(e.target.value)}
+                placeholder="e.g. Offer water after walk · Stay in Juhu lanes · Max 30 min"
+                style={inputStyle}
+                onFocus={e => (e.target.style.borderColor = '#FF8C52')}
+                onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+              />
+            </div>
+
+            {/* Error */}
+            {error && (
+              <div style={{
+                background: '#FEF2F2',
+                border: '1px solid #FECACA',
+                color: '#DC2626',
+                padding: '12px 16px',
+                borderRadius: 10,
+                fontSize: 14,
+              }}>
+                {error}
+              </div>
+            )}
+
+            {/* CTA */}
+            <button
+              type="button"
+              onClick={handleStep1Continue}
+              style={ctaStyle}
+              onMouseEnter={e => { e.currentTarget.style.background = '#e87a40' }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#FF8C52' }}
+            >
+              Continue →
+            </button>
+          </div>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    )
+  }
+
+  // ─── SCREEN 2: Contact Details ───────────────────────────────────────────
+  return (
+    <div style={containerStyle}>
+      <div style={cardStyle}>
+        {/* Back + progress */}
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 20 }}>
+          <button
+            type="button"
+            onClick={() => { setStep(1); setError(null) }}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 22, color: '#6B7280', padding: '4px 8px 4px 0',
+              display: 'flex', alignItems: 'center',
+            }}
+            aria-label="Back"
+          >
+            ←
+          </button>
+          <div style={{ flex: 1 }}>
+            <StepDots current={2} />
+          </div>
+        </div>
+
+        {/* Header */}
+        <div style={{ marginBottom: 28 }}>
+          <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 24, fontWeight: 700, color: '#0A2F35', margin: '0 0 4px' }}>
+            Where should walk reports go?
+          </h2>
+          <p style={{ fontSize: 14, color: '#6B7280', margin: 0 }}>
+            Your walker will send GPS reports to your WhatsApp.
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+          {/* Parent name */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label htmlFor="parent-name" style={labelStyle}>
+              What&apos;s your name?
+            </label>
+            <input
+              id="parent-name"
+              type="text"
+              value={parentName}
+              onChange={e => setParentName(e.target.value)}
+              placeholder="Priya, Rohit, Ananya..."
+              autoFocus
+              style={inputStyle}
               onFocus={e => (e.target.style.borderColor = '#FF8C52')}
               onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
             />
@@ -270,13 +705,34 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
 
           {/* WhatsApp number */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label htmlFor="owner-phone" style={{ fontSize: 14, fontWeight: 700, color: '#0A2F35' }}>
-              Your WhatsApp number{' '}
-              <span style={{ fontWeight: 400, color: '#9CA3AF' }}>(for walk reports)</span>
+            <label htmlFor="owner-phone" style={labelStyle}>
+              Your WhatsApp number <span style={{ color: '#FF8C52' }}>*</span>
             </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '2px solid #E5E7EB', borderRadius: 12, overflow: 'hidden', background: '#fff', transition: 'border-color 0.15s' }}
-              onFocus={() => {}} onBlur={() => {}}>
-              <span style={{ padding: '13px 10px 13px 14px', fontSize: 15, color: '#6B7280', fontWeight: 700, fontFamily: 'var(--font-nunito)', userSelect: 'none' }}>+91</span>
+            <p style={{ fontSize: 12, color: '#9CA3AF', margin: '0 0 6px' }}>
+              Your walker&apos;s reports arrive here.
+            </p>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              border: '2px solid #E5E7EB',
+              borderRadius: 12,
+              overflow: 'hidden',
+              background: '#fff',
+            }}
+              onFocus={() => {}}
+              onBlur={() => {}}
+            >
+              <span style={{
+                padding: '13px 10px 13px 14px',
+                fontSize: 15,
+                color: '#6B7280',
+                fontWeight: 700,
+                fontFamily: 'var(--font-nunito)',
+                userSelect: 'none',
+                flexShrink: 0,
+              }}>
+                +91
+              </span>
               <input
                 id="owner-phone"
                 type="tel"
@@ -285,8 +741,14 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
                 onChange={e => setOwnerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 placeholder="9876543210"
                 style={{
-                  flex: 1, padding: '13px 14px 13px 0', border: 'none', outline: 'none',
-                  fontSize: 15, fontFamily: 'var(--font-nunito)', color: '#0A2F35', background: 'transparent',
+                  flex: 1,
+                  padding: '13px 14px 13px 0',
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: 15,
+                  fontFamily: 'var(--font-nunito)',
+                  color: '#0A2F35',
+                  background: 'transparent',
                 }}
               />
             </div>
@@ -294,47 +756,55 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
 
           {/* Error */}
           {error && (
-            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', padding: '12px 16px', borderRadius: 10, fontSize: 14 }}>
+            <div style={{
+              background: '#FEF2F2',
+              border: '1px solid #FECACA',
+              color: '#DC2626',
+              padding: '12px 16px',
+              borderRadius: 10,
+              fontSize: 14,
+            }}>
               {error}
             </div>
           )}
 
-          {/* Submit */}
+          {/* CTA */}
           <button
-            type="submit"
-            disabled={loading || uploading}
+            type="button"
+            onClick={handleCreateWalkerLink}
+            disabled={loading}
             style={{
+              ...ctaStyle,
               background: loading ? '#FDB896' : '#FF8C52',
-              color: '#fff', border: 'none', borderRadius: 14,
-              padding: '16px 24px', fontSize: 17, fontWeight: 700,
-              fontFamily: 'var(--font-fredoka)', cursor: loading ? 'not-allowed' : 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              minHeight: 56, transition: 'background 0.15s, transform 0.1s',
+              cursor: loading ? 'not-allowed' : 'pointer',
             }}
             onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#e87a40' }}
-            onMouseLeave={e => { if (!loading) e.currentTarget.style.background = '#FF8C52' }}
+            onMouseLeave={e => { if (!loading) e.currentTarget.style.background = loading ? '#FDB896' : '#FF8C52' }}
           >
             {loading ? (
               <>
-                <span style={{ display: 'inline-block', width: 16, height: 16, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-                Setting up {dogFirstName}...
+                <span style={{
+                  display: 'inline-block',
+                  width: 16, height: 16,
+                  border: '2px solid rgba(255,255,255,0.4)',
+                  borderTopColor: '#fff',
+                  borderRadius: '50%',
+                  animation: 'spin 0.7s linear infinite',
+                }} />
+                Creating link...
               </>
-            ) : user ? (
-              `Set up ${dogFirstName}'s profile →`
             ) : (
-              `Continue with Google to save ${dogFirstName}'s profile →`
+              'Create walker link →'
             )}
           </button>
 
           {!user && (
             <p style={{ textAlign: 'center', fontSize: 12, color: '#9CA3AF', margin: '-8px 0 0' }}>
-              We&apos;ll save your details after you sign in
+              You&apos;ll sign in with Google to save — feels like saving, not a wall 🔐
             </p>
           )}
-
-        </form>
+        </div>
       </div>
-
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   )
