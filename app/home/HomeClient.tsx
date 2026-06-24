@@ -137,7 +137,7 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports }: { trialStat
       <div style={{ flex: 1 }}>
         <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#0A2F35', margin: '0 0 2px' }}>🔓 Start your free trial — 14 days free, then ₹249/month</p>
       </div>
-      <Link href="/setup" style={{ flexShrink: 0, color: 'oklch(0.44 0.16 196)', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Set up your dog →</Link>
+      <Link href="/setup?go=1" style={{ flexShrink: 0, color: 'oklch(0.44 0.16 196)', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Set up your dog →</Link>
     </div>
   )
 }
@@ -296,7 +296,7 @@ function QuickActions({ onOpenTeam, firstDog, onAddDog }: { onOpenTeam: () => vo
             <span className="text-[10px] font-semibold text-gray-600 text-center leading-tight">Add Dog</span>
           </button>
         ) : (
-          <Link href="/setup" className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors">
+          <Link href="/setup?go=1" className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors">
             <span className="text-2xl">🐕</span>
             <span className="text-[10px] font-semibold text-gray-600 text-center leading-tight">Add Dog</span>
           </Link>
@@ -469,7 +469,7 @@ function TeamSheet({ open, onClose, connections, dogName }: {
           {connections.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '24px 0' }}>
               <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#9CA3AF', marginBottom: 12 }}>No walkers connected yet</p>
-              <Link href="/setup" style={{ color: 'oklch(0.48 0.17 196)', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>Connect a walker →</Link>
+              <Link href="/setup?go=1" style={{ color: 'oklch(0.48 0.17 196)', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>Connect a walker →</Link>
             </div>
           ) : connections.map((c) => (
             <div key={c.id} style={{ border: '1.5px solid #E5E7EB', borderRadius: 16, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -505,7 +505,7 @@ function TeamSheet({ open, onClose, connections, dogName }: {
                       ) : (
                         <div style={{ textAlign: 'center' }}>
                           <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: 'rgba(255,255,255,0.9)', margin: '0 0 10px' }}>Generate a QR from the Setup page</p>
-                          <Link href="/setup" style={{ color: '#fff', fontWeight: 700, fontSize: 13, fontFamily: 'var(--font-nunito)', textDecoration: 'underline' }}>Go to Setup →</Link>
+                          <Link href="/setup?go=1" style={{ color: '#fff', fontWeight: 700, fontSize: 13, fontFamily: 'var(--font-nunito)', textDecoration: 'underline' }}>Go to Setup →</Link>
                         </div>
                       )}
                     </div>
@@ -964,14 +964,14 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
                   {firstDog ? <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: 700 }}>✓</span> : <span style={{ color: '#D1D5DB', fontSize: '11px' }}>○</span>}
                 </div>
                 <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: firstDog ? 600 : 500, color: firstDog ? '#0A2F35' : '#6B7280', flex: 1 }}>Dog profile created</span>
-                {!firstDog && <Link href="/setup" style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', color: 'oklch(0.48 0.17 196)', textDecoration: 'none' }}>Start →</Link>}
+                {!firstDog && <Link href="/setup?go=1" style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', color: 'oklch(0.48 0.17 196)', textDecoration: 'none' }}>Start →</Link>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, background: walkerConnections.length > 0 ? 'oklch(0.48 0.17 196)' : 'transparent', border: walkerConnections.length > 0 ? 'none' : '2px solid #D1D5DB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {walkerConnections.length > 0 ? <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: 700 }}>✓</span> : <span style={{ color: '#D1D5DB', fontSize: '11px' }}>○</span>}
                 </div>
                 <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: walkerConnections.length > 0 ? 600 : 500, color: walkerConnections.length > 0 ? '#0A2F35' : '#6B7280', flex: 1 }}>Connect your walker</span>
-                {walkerConnections.length === 0 && <Link href="/setup" style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', color: 'oklch(0.48 0.17 196)', textDecoration: 'none' }}>Connect walker →</Link>}
+                {walkerConnections.length === 0 && <Link href="/setup?go=1" style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', color: 'oklch(0.48 0.17 196)', textDecoration: 'none' }}>Connect walker →</Link>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, background: 'transparent', border: '2px solid #D1D5DB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

@@ -44,8 +44,13 @@ const TEAL_LIGHT = 'oklch(0.95 0.04 196)'
 export default function SetupClient({ user, justPaid, recover }: Props) {
   const router = useRouter()
 
-  // Step state
-  const [step, setStep] = useState(0)
+  // Skip welcome screen if coming from homepage CTA (?go=1) or recovering after OAuth
+  const skipWelcome = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('go') === '1' || recover
+    : recover
+
+  // Step state — start at 1 if coming directly from homepage
+  const [step, setStep] = useState(skipWelcome ? 1 : 0)
 
   // Dog details
   const [name, setName] = useState('')
@@ -171,9 +176,10 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
 
   async function handleCreateWalkerLink() {
     setError(null)
+    // WhatsApp is optional — validate only if something was entered
     const digits = ownerPhone.replace(/\D/g, '')
-    if (digits.length !== 10) {
-      setError('Please enter a valid 10-digit WhatsApp number')
+    if (ownerPhone.trim() && digits.length !== 10) {
+      setError('WhatsApp number must be 10 digits (or leave blank)')
       return
     }
 

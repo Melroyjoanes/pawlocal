@@ -611,6 +611,10 @@ export default function WalkerClient({
       setWalkEvents([])
       setPhase('success')
       fetchLogs()
+      // Auto-open WhatsApp to owner with report link — walker just taps Send
+      if (data.wa_link) {
+        setTimeout(() => window.open(data.wa_link, '_blank', 'noopener'), 700)
+      }
     } catch {
       setSubmitError('Network error. Please try again.')
     } finally {

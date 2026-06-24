@@ -476,7 +476,7 @@ export default function LandingPage() {
                 className="flex flex-wrap gap-3 justify-center lg:justify-start mb-4">
                 {/* Primary CTA */}
                 <motion.div whileHover={rm ? {} : { y: -3, scale: 1.03 }} whileTap={rm ? {} : { y: 3, scale: 0.98 }} transition={SPRING} className="inline-block">
-                  <Link href="/setup"
+                  <Link href="/setup?go=1"
                     className="inline-flex items-center gap-2 rounded-full font-bold px-8 py-4 text-base"
                     style={{ background: 'linear-gradient(155deg,#FF8C52 0%,#F56B22 100%)', boxShadow: '0 4px 0 rgba(175,65,10,0.30),0 10px 24px rgba(245,107,34,0.42),inset 0 1.5px 0 rgba(255,255,255,0.38)', border: '1px solid rgba(255,255,255,0.18)', color: '#451A03', fontFamily: 'var(--font-nunito,sans-serif)' }}>
                     Set up your dog <ArrowRight size={16} />
@@ -641,7 +641,7 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <motion.div whileHover={rm ? {} : { y: -2, scale: 1.02 }} whileTap={rm ? {} : { y: 2, scale: 0.98 }} transition={SPRING}>
-                  <Link href="/setup"
+                  <Link href="/setup?go=1"
                     className="w-full flex items-center justify-center gap-2 rounded-full font-bold py-3.5 text-sm"
                     style={{ background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.2)', color: 'white', fontFamily: 'var(--font-nunito,sans-serif)' }}>
                     Start free <ArrowRight size={14} />
@@ -763,7 +763,7 @@ export default function LandingPage() {
         className="lg:hidden fixed bottom-0 inset-x-0 z-50"
         style={{ background: 'rgba(255,251,235,0.97)', borderTop: '1px solid #FDE68A', paddingBottom: 'env(safe-area-inset-bottom,12px)' }}>
         <div className="flex gap-3 px-4 pt-3 pb-3">
-          <Link href="/setup"
+          <Link href="/setup?go=1"
             className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold"
             style={{ background: 'linear-gradient(155deg,#FF8C52 0%,#F56B22 100%)', boxShadow: '0 4px 0 rgba(175,65,10,0.30),0 8px 20px rgba(245,107,34,0.32)', color: '#451A03', fontFamily: 'var(--font-nunito,sans-serif)' }}>
             Set up your dog

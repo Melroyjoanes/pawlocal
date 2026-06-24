@@ -143,6 +143,11 @@ export default function ConnectClient({
 
       setStep('success')
       setLoading(false)
+      // Auto-open WhatsApp so walker saves their dashboard link immediately
+      // They just tap Send — no hunting for a button later
+      if (walkerDashWaUrl) {
+        setTimeout(() => window.open(walkerDashWaUrl, '_blank', 'noopener'), 600)
+      }
       return
     } catch {
       setError('Network error. Please check your connection and try again.')
