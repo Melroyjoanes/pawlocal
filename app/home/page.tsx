@@ -80,94 +80,57 @@ export default async function HomePage() {
   const db = admin()
   const todayMidnight = todayMidnightIST()
 
+  // Fetch all data with individual error handling so one failing query
+  // never crashes the entire page
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const safe = async (q: any) => { try { return await q } catch { return { data: null, count: null } } }
+
   const [
     { data: profileData },
     { data: dogsRaw },
-    { data: activeWalkRaw },
-    { data: completedWalkRaw },
     { data: walkerConnectionsRaw },
-    { data: lastWalkRaw },
     { data: subData },
     { data: trialProfileData },
     { data: walkLogsRaw },
     { count: reportCount },
   ] = await Promise.all([
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (db.from('profiles') as any)
+    safe((db.from('profiles') as any)
       .select('id, full_name, avatar_url')
       .eq('id', user.id)
-      .maybeSingle(),
+      .maybeSingle()),
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (db.from('dogs') as any)
+    safe((db.from('dogs') as any)
       .select('id, name, breed, photo_url, health_notes')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: true })
-      .limit(1),
+      .limit(1)),
 
-    // Active walk session
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (db.from('walk_sessions') as any)
-      .select('id, share_token, pet_name, started_at, provider_id, providers(name)')
-      .eq('parent_user_id', user.id)
-      .eq('status', 'active')
-      .maybeSingle(),
-
-    // Completed walk today (IST)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (db.from('walk_sessions') as any)
-      .select('id, share_token, pet_name, started_at, ended_at, distance_meters, provider_id, providers(name)')
-      .eq('parent_user_id', user.id)
-      .eq('status', 'ended')
-      .gte('started_at', todayMidnight)
-      .order('started_at', { ascending: false })
-      .limit(1),
-
-    // Walker connections
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (db.from('walker_connections') as any)
+    safe((db.from('walker_connections') as any)
       .select('id, walker_name, walker_phone, walker_role, status, dog_id, dogs(name)')
       .eq('owner_id', user.id)
-      .order('created_at', { ascending: false }),
+      .order('created_at', { ascending: false })),
 
-    // Most recent walk session (any status) for "last walked" display
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (db.from('walk_sessions') as any)
-      .select('id, started_at, ended_at, status')
-      .eq('parent_user_id', user.id)
-      .order('started_at', { ascending: false })
-      .limit(1),
-
-    // Active subscription check
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (db.from('subscriptions') as any)
+    safe((db.from('subscriptions') as any)
       .select('plan, status, expires_at')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .gt('expires_at', new Date().toISOString())
-      .maybeSingle(),
+      .maybeSingle()),
 
-    // Trial status from profiles
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (db.from('profiles') as any)
+    safe((db.from('profiles') as any)
       .select('trial_started_at')
       .eq('id', user.id)
-      .maybeSingle(),
+      .maybeSingle()),
 
-    // Walk logs last 14 days — covers streak, week grid, last walk, AND today (derived below)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (db.from('walk_logs') as any)
+    safe((db.from('walk_logs') as any)
       .select('id, started_at, ended_at, duration_mins, distance_km, poop_count, pee_count, mood, walker_name')
       .eq('owner_id', user.id)
       .gte('started_at', fourteenDaysAgoIST())
-      .order('started_at', { ascending: false }),
+      .order('started_at', { ascending: false })),
 
-    // Total walk logs count for trial conversion banner
-    // Using walk_logs (not walk_reports) — walk_logs.owner_id has always existed
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (db.from('walk_logs') as any)
+    safe((db.from('walk_logs') as any)
       .select('id', { count: 'exact', head: true })
-      .eq('owner_id', user.id),
+      .eq('owner_id', user.id)),
   ])
 
   const userMeta = user.user_metadata ?? {}
@@ -179,10 +142,7 @@ export default async function HomePage() {
     'there'
 
   const firstDog = dogsRaw?.[0] ?? null
-  const activeWalk = activeWalkRaw ?? null
-  const completedWalk = completedWalkRaw?.[0] ?? null
   const walkerConnections = walkerConnectionsRaw ?? []
-  const lastWalk = lastWalkRaw?.[0] ?? null
   const isPro = !!subData
 
   // Compute trial status from profiles.trial_started_at
@@ -219,16 +179,12 @@ export default async function HomePage() {
       displayName={displayName}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       firstDog={firstDog as any}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      activeWalk={activeWalk as any}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      completedWalk={completedWalk as any}
+      activeWalk={null}
+      completedWalk={null}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       walkerConnections={walkerConnections as any}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      lastWalk={lastWalk as any}
+      lastWalk={null}
       isPro={isPro}
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       walkStreak={walkStreak}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       weekData={weekData as any}
