@@ -184,7 +184,7 @@ export default function MyReportsClient({ walkReports, userName }: Props) {
   )
 
   return (
-    <div className="min-h-dvh">
+    <div className="min-h-dvh" style={{ background: '#FFFBEB' }}>
 
       {/* Sticky header */}
       <header
