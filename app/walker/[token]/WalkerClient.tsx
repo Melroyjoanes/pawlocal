@@ -2021,54 +2021,60 @@ export default function WalkerClient({
           {phase === 'idle' && (
             <div className="px-5 mt-6">
               <h2 className="text-base font-bold text-[#0A2F35] mb-3" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                Recent Walks
+                Recent Walks{logs.length > 0 ? ` (${logs.length})` : ''}
               </h2>
 
               {logsLoading ? (
                 <div className="space-y-3">
                   {[1, 2].map((i) => (
-                    <div key={i} className="bg-white rounded-2xl border border-slate-100 p-4 animate-pulse h-20" />
+                    <div key={i} className="bg-white rounded-2xl p-4 animate-pulse h-20" style={{ border: '1px solid rgba(226,220,200,0.6)' }} />
                   ))}
                 </div>
               ) : logs.length === 0 ? (
-                <div className="bg-white rounded-2xl border border-slate-100 px-5 py-8 text-center">
+                <div className="bg-white rounded-2xl px-5 py-8 text-center" style={{ border: '1px solid rgba(226,220,200,0.6)' }}>
                   <p className="text-3xl mb-2">🐾</p>
-                  <p className="text-sm text-slate-500">No walks logged yet. Start your first walk above!</p>
+                  <p className="text-sm text-slate-500" style={{ fontFamily: 'var(--font-nunito)' }}>
+                    No walks logged yet. Tap Start Walk to begin your first walk with {dogName}.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {logs.map((log) => (
-                    <div key={log.id} className="bg-white rounded-2xl border border-slate-100 px-4 py-4 shadow-sm">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2">
-                          {log.mood && (
-                            <span className="text-xl">
-                              {MOOD_OPTIONS.find((m) => m.value === log.mood)?.emoji ?? '🐕'}
-                            </span>
-                          )}
-                          <div>
-                            <p className="font-bold text-[#0A2F35] text-base leading-tight"
-                              style={{ fontFamily: 'var(--font-fredoka)' }}>
-                              {log.duration_mins ? `${log.duration_mins} min walk` : 'Walk'}
-                            </p>
-                            {log.distance_km != null && log.distance_km > 0 && (
-                              <p className="text-xs text-slate-400">{log.distance_km} km</p>
-                            )}
-                          </div>
+                  {logs.map((log) => {
+                    const moodOption = MOOD_OPTIONS.find((m) => m.value === log.mood)
+                    const statParts: string[] = []
+                    if (log.distance_km != null && log.distance_km > 0) statParts.push(`${log.distance_km} km`)
+                    if (log.poop_count > 0) statParts.push(`💩 ${log.poop_count} potty`)
+                    if (log.pee_count > 0) statParts.push(`💧 ${log.pee_count} toilet`)
+                    return (
+                      <div key={log.id} className="bg-white rounded-2xl px-4 py-4" style={{ border: '1px solid rgba(226,220,200,0.6)' }}>
+                        {/* Title row: duration left, date right */}
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: '#0A2F35', margin: 0 }}>
+                            {log.duration_mins ? `${log.duration_mins} min walk` : 'Walk'}
+                          </p>
+                          <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#94A3B8', flexShrink: 0 }}>
+                            {formatDate(log.created_at)}
+                          </span>
                         </div>
-                        <span className="text-xs text-slate-400 flex-shrink-0 pt-0.5">{formatDate(log.created_at)}</span>
+                        {/* Stats line — only non-zero values */}
+                        {statParts.length > 0 && (
+                          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#94A3B8', margin: '0 0 4px' }}>
+                            {statParts.join(' · ')}
+                          </p>
+                        )}
+                        {/* Mood */}
+                        {moodOption && (
+                          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#94A3B8', margin: '0 0 4px' }}>
+                            {moodOption.emoji} {moodOption.label}
+                          </p>
+                        )}
+                        {/* Report confirmation */}
+                        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#CBD5E1', margin: 0 }}>
+                          ✅ Report sent to {ownerFirstName}
+                        </p>
                       </div>
-                      <div className="flex gap-4 text-sm text-slate-500">
-                        <span>💩 Potty: {log.poop_count}</span>
-                        <span>💧 Toilet: {log.pee_count}</span>
-                        {log.mood && <span className="capitalize text-slate-400">{log.mood}</span>}
-                      </div>
-                      {log.notes && (
-                        <p className="text-xs text-slate-400 mt-2 italic">&ldquo;{log.notes}&rdquo;</p>
-                      )}
-                      <p className="text-xs text-slate-300 mt-2">✅ Report sent to owner</p>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
 
