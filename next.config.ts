@@ -6,46 +6,27 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react'],
   },
 
-  // ── V1 route kills ── all old directory/provider routes redirect permanently ──
+  // ── Route redirects ──────────────────────────────────────────────────────────
+  // NOTE: /pro/*, /join/*, /become-a-provider, /review/*, /live/* are NOT
+  // redirected here — they are protected in middleware.ts (admin-only access).
+  // This lets the owner access V1 provider tools while blocking the public.
   async redirects() {
     return [
-      // Pro provider dashboard (V1)
-      { source: '/pro',                     destination: '/', permanent: true },
-      { source: '/pro/dashboard',           destination: '/', permanent: true },
-      { source: '/pro/reports',             destination: '/', permanent: true },
-      { source: '/pro/reports/live',        destination: '/', permanent: true },
-      { source: '/pro/bookings',            destination: '/', permanent: true },
-      { source: '/pro/clients',             destination: '/', permanent: true },
-      { source: '/pro/grooming',            destination: '/', permanent: true },
-      { source: '/pro/profile',             destination: '/', permanent: true },
-      { source: '/pro/leads',               destination: '/', permanent: true },
-      { source: '/pro/fitness',             destination: '/', permanent: true },
-      { source: '/pro/:path*',              destination: '/', permanent: true },
-      // Provider directory listings (V1)
+      // Dead V1 directory/marketplace routes — public never needs these
       { source: '/provider/:path*',         destination: '/', permanent: true },
-      // Directory categories (V1)
       { source: '/dog-walking',             destination: '/', permanent: true },
       { source: '/grooming',                destination: '/', permanent: true },
       { source: '/pet-store',               destination: '/', permanent: true },
       { source: '/dog-training',            destination: '/', permanent: true },
       { source: '/veterinary',              destination: '/', permanent: true },
       { source: '/boarding',                destination: '/', permanent: true },
-      // V1 features
       { source: '/broadcast',               destination: '/', permanent: true },
-      { source: '/join',                    destination: '/', permanent: true },
-      { source: '/join/success',            destination: '/', permanent: true },
-      { source: '/join/pro/:path*',         destination: '/', permanent: true },
-      { source: '/join-as-provider/:path*', destination: '/', permanent: true },
-      { source: '/join-reports/:path*',     destination: '/', permanent: true },
-      { source: '/become-a-provider',       destination: '/', permanent: true },
       { source: '/my-listing',              destination: '/my-account', permanent: true },
       { source: '/dashboard',               destination: '/home',       permanent: true },
       { source: '/onboarding',              destination: '/setup',      permanent: true },
       { source: '/search',                  destination: '/', permanent: true },
       { source: '/map',                     destination: '/', permanent: true },
       { source: '/insurance',               destination: '/', permanent: true },
-      { source: '/review/:path*',           destination: '/', permanent: true },
-      { source: '/live/:path*',             destination: '/', permanent: true },
     ]
   },
 
