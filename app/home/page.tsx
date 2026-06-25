@@ -70,13 +70,40 @@ function computeWeekData(logs: Array<{ started_at: string; distance_km?: number 
 }
 
 export default async function HomePage() {
+  // Auth check
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/?auth_required=1&next=/home')
 
-  if (!user) {
-    redirect('/?auth_required=1&next=/home')
+  // Wrap everything in try-catch — if any query or env var is missing,
+  // still render the page with defaults rather than showing a blank crash screen
+  try {
+    return await renderHome(user)
+  } catch (err) {
+    console.error('[home] render error:', err)
+    return (
+      <HomeClient
+        displayName={user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? 'there'}
+        firstDog={null}
+        activeWalk={null}
+        completedWalk={null}
+        walkerConnections={[]}
+        lastWalk={null}
+        isPro={false}
+        walkStreak={0}
+        weekData={{ days: [], totalKm: 0, totalPoops: 0, totalWalks: 0 }}
+        lastWalkLog={null}
+        todayWalked={false}
+        todayLogs={[]}
+        trialStatus="no_trial"
+        trialDaysRemaining={null}
+        totalReports={0}
+      />
+    )
   }
+}
 
+async function renderHome(user: { id: string; user_metadata?: Record<string, string> | null; email?: string | null }) {
   const db = admin()
   const todayMidnight = todayMidnightIST()
 
@@ -199,3 +226,4 @@ export default async function HomePage() {
     />
   )
 }
+
