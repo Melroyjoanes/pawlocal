@@ -19,6 +19,8 @@ export async function GET(
       token,
       status,
       walker_name,
+      walker_phone,
+      walker_role,
       owner_phone,
       claimed_at,
       dogs!walker_connections_dog_id_fkey (
@@ -57,6 +59,8 @@ export async function GET(
     healthNotes: connection.dogs?.health_notes ?? null,
     ownerFirstName,
     walkerName: connection.walker_name ?? null,
+    walkerPhone: connection.walker_phone ?? null,
+    walkerRole: connection.walker_role ?? null,
     ownerPhone: connection.owner_phone ?? null,
     careFocus: connection.dogs?.care_focus ?? 'normal',
   })

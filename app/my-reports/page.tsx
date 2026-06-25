@@ -55,7 +55,6 @@ export default async function MyReportsPage() {
   return (
     <MyReportsClient
       walkReports={Array.from(walkMap.values())}
-      groomingReports={[]}
       isSubscribed={true}
       subscriptionPlan={(sub as any)?.plan ?? null}
       userName={user.user_metadata?.full_name ?? user.email ?? ''}

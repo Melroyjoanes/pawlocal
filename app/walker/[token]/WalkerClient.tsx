@@ -122,6 +122,8 @@ interface WalkerClientProps {
   healthNotes: string | null
   ownerFirstName: string
   walkerName: string
+  walkerPhone: string | null
+  walkerRole: string | null
   ownerPhone: string | null
   careFocus: string | null
 }
@@ -160,7 +162,7 @@ interface WalkEvent {
 }
 
 type WalkPhase = 'idle' | 'walking' | 'logging' | 'success'
-type WalkerTab = 'walk' | 'grooming' | 'settings'
+type WalkerTab = 'walk' | 'settings'
 
 const MOOD_OPTIONS = [
   { value: 'great', emoji: '😊', label: 'Great' },
@@ -205,6 +207,8 @@ const ROLE_OPTIONS = [
 function SettingsTab({
   token,
   walkerName,
+  walkerPhone,
+  walkerRole,
   dogName,
   dogBreed,
   dogPhotoUrl,
@@ -216,6 +220,8 @@ function SettingsTab({
 }: {
   token: string
   walkerName: string
+  walkerPhone: string | null
+  walkerRole: string | null
   dogName: string
   dogBreed: string | null
   dogPhotoUrl: string | null
@@ -226,7 +232,7 @@ function SettingsTab({
   showToast: (msg: string) => void
 }) {
   const [profileName, setProfileName] = useState(walkerName)
-  const [profileRole, setProfileRole] = useState('')
+  const [profileRole, setProfileRole] = useState(walkerRole ?? '')
   const [saving, setSaving] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
 
@@ -293,6 +299,19 @@ function SettingsTab({
               style={{ fontFamily: 'var(--font-nunito)', outlineColor: 'oklch(0.48 0.17 196)' }}
             />
           </div>
+          {walkerPhone && (
+            <div>
+              <label style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 6 }}>
+                Phone
+              </label>
+              <div
+                className="w-full rounded-xl border border-slate-100 px-3 py-3 text-sm bg-slate-50"
+                style={{ fontFamily: 'var(--font-nunito)', color: '#64748B' }}
+              >
+                {walkerPhone}
+              </div>
+            </div>
+          )}
           <div>
             <label style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 6 }}>
               Role
@@ -517,6 +536,8 @@ export default function WalkerClient({
   healthNotes,
   ownerFirstName,
   walkerName,
+  walkerPhone,
+  walkerRole,
   ownerPhone,
   careFocus,
 }: WalkerClientProps) {
@@ -2087,24 +2108,13 @@ export default function WalkerClient({
         </>
       )}
 
-      {/* ─── GROOMING TAB ─── */}
-      {activeTab === 'grooming' && (
-        <div className="px-5 pt-2">
-          <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-8 text-center">
-            <span className="text-4xl">✂️</span>
-            <h2 className="font-bold text-[#0A2F35] text-xl mt-3 mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
-              Grooming Log
-            </h2>
-            <p className="text-sm text-slate-400">Grooming log coming soon</p>
-          </div>
-        </div>
-      )}
-
       {/* ─── SETTINGS TAB ─── */}
       {activeTab === 'settings' && (
         <SettingsTab
           token={token}
           walkerName={walkerName}
+          walkerPhone={walkerPhone}
+          walkerRole={walkerRole}
           dogName={dogName}
           dogBreed={dogBreed}
           dogPhotoUrl={dogPhotoUrl}
@@ -2131,7 +2141,6 @@ export default function WalkerClient({
         {(
           [
             { tab: 'walk' as WalkerTab, icon: '🐾', label: 'Walk' },
-            { tab: 'grooming' as WalkerTab, icon: '✂️', label: 'Grooming' },
             { tab: 'settings' as WalkerTab, icon: '⚙️', label: 'Settings' },
           ] as const
         ).map(({ tab, icon, label }) => (

@@ -54,7 +54,11 @@ export default function UserMenu() {
         >
           👤
         </button>
-        <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} />
+        <AuthModal
+          open={authOpen}
+          onClose={() => setAuthOpen(false)}
+          message="Sign in to manage your dog's walk reports"
+        />
       </>
     )
   }

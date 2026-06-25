@@ -15,6 +15,8 @@ const STRINGS = {
     codeLabel: 'Enter the 4-digit code shown by the owner *',
     nameLabel: 'Your name *',
     phoneLabel: 'Your phone number *',
+    emailLabel: 'Your email',
+    optional: 'optional',
     roleLabel: 'I am the...',
     submitBtn: 'Connect & Start Logging →',
     roleDogWalker: '🐕 Dog Walker',
@@ -29,6 +31,8 @@ const STRINGS = {
     codeLabel: 'मालिक द्वारा दिखाया गया 4-अंकीय कोड दर्ज करें *',
     nameLabel: 'आपका नाम *',
     phoneLabel: 'आपका फोन नंबर *',
+    emailLabel: 'आपका ईमेल',
+    optional: 'वैकल्पिक',
     roleLabel: 'मैं हूँ...',
     submitBtn: 'जोड़ें और शुरू करें →',
     roleDogWalker: '🐕 कुत्ता वॉकर',
@@ -43,6 +47,8 @@ const STRINGS = {
     codeLabel: 'मालकाने दाखवलेला 4-अंकी कोड टाका *',
     nameLabel: 'तुमचे नाव *',
     phoneLabel: 'तुमचा फोन नंबर *',
+    emailLabel: 'तुमचा ईमेल',
+    optional: 'ऐच्छिक',
     roleLabel: 'मी आहे...',
     submitBtn: 'कनेक्ट करा आणि सुरू करा →',
     roleDogWalker: '🐕 कुत्रा वॉकर',
@@ -76,6 +82,7 @@ export default function ConnectClient({
   const [otp, setOtp] = useState('')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
   const [role, setRole] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -124,6 +131,7 @@ export default function ConnectClient({
         body: JSON.stringify({
           walker_name: name.trim(),
           walker_phone: phone.trim() || null,
+          walker_email: email.trim() || null,
           walker_role: role || null,
           otp,
         }),
@@ -345,6 +353,25 @@ export default function ConnectClient({
           />
           <p className="text-xs text-slate-400 mt-1 ml-1" style={{ fontFamily: 'var(--font-nunito)' }}>
             {t.dashboardHint}
+          </p>
+        </div>
+
+        {/* Email — optional */}
+        <div>
+          <label className="block text-sm font-bold text-[#0A2F35] mb-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+            {t.emailLabel}{' '}
+            <span style={{ fontWeight: 400, color: '#9CA3AF' }}>({t.optional})</span>
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF8C52] min-h-[52px]"
+            style={{ fontFamily: 'var(--font-nunito)' }}
+          />
+          <p className="text-xs text-slate-400 mt-1 ml-1" style={{ fontFamily: 'var(--font-nunito)' }}>
+            {"We'll email your dashboard link so you can always find it"}
           </p>
         </div>
 

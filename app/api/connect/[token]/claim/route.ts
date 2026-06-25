@@ -12,7 +12,7 @@ export async function POST(
 ) {
   const { token } = await params
   const body = await req.json()
-  const { walker_name, walker_phone, walker_role, otp } = body
+  const { walker_name, walker_phone, walker_email, walker_role, otp } = body
 
   if (!walker_name?.trim()) {
     return NextResponse.json({ error: 'walker_name is required' }, { status: 400 })
@@ -79,6 +79,38 @@ export async function POST(
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 })
+  }
+
+  // Fire-and-forget: email the walker their dashboard link if they provided an email
+  if (walker_email) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
+    const dashUrl = `${siteUrl}/walker/${token}`
+
+    // Fetch dog name for the email
+    let dogName = 'the dog'
+    try {
+      const { data: conn } = await (db.from('walker_connections') as any)
+        .select('dogs!walker_connections_dog_id_fkey(name)')
+        .eq('token', token)
+        .single()
+      if (conn?.dogs?.name) dogName = conn.dogs.name
+    } catch {
+      // ignore — fall back to default
+    }
+
+    fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: 'PupStep <hello@pupstep.in>',
+        to: [walker_email],
+        subject: `Your PupStep walker dashboard 🐾`,
+        html: `<p>Hi ${walker_name ?? 'there'}!</p><p>You're now connected to ${dogName} on PupStep. Here's your private dashboard link:</p><p><a href="${dashUrl}" style="background:#FF8C52;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;">Open my dashboard →</a></p><p>Bookmark this link — you'll use it to log every walk.</p><p>The PupStep Team · <a href="https://pupstep.in">pupstep.in</a></p>`,
+      }),
+    }).catch(() => {})
   }
 
   return NextResponse.json({ ok: true }, { status: 200 })

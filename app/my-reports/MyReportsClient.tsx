@@ -21,7 +21,6 @@ interface WalkReport {
 
 interface Props {
   walkReports: WalkReport[]
-  groomingReports: unknown[]
   isSubscribed: boolean
   subscriptionPlan: string | null
   userName: string
