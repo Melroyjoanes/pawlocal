@@ -7,81 +7,57 @@ function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const safe = async (q: any) => { try { return await q } catch { return { data: [] } } }
+
 export default async function MyReportsPage() {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/') // send to home, they'll see the claim prompt
+  if (!user) redirect('/?auth_required=1&next=/my-reports')
 
-  // Check subscription status
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: sub } = await (admin().from('subscriptions') as any)
-    .select('status, plan, expires_at')
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .gt('expires_at', new Date().toISOString())
-    .maybeSingle()
+  const db = admin()
 
-  const isSubscribed = !!sub
+  const [
+    { data: sub },
+    { data: ownerReports },
+    { data: claimedReports },
+  ] = await Promise.all([
+    safe(db.from('subscriptions' as any)
+      .select('status, plan, expires_at')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle()),
 
-  // Fetch all walk reports for this user (via claimed reports OR linked client)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: walkReports } = await (admin().from('walk_reports') as any)
-    .select('id, token, dog_name, duration_mins, poop_count, pee_count, distance_meters, walk_date, created_at, photo_url, notes, provider_id, providers(name)')
-    .eq('customer_id', user.id)
-    .order('walk_date', { ascending: false })
+    // QR-walker reports (V2 primary flow)
+    safe((db.from('walk_reports') as any)
+      .select('id, token, dog_name, duration_mins, poop_count, pee_count, distance_meters, walk_date, created_at, photo_url, notes, walker_name')
+      .eq('owner_id', user.id)
+      .order('walk_date', { ascending: false })),
 
-  // Also fetch via provider_clients linkage (new system)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: linkedClients } = await (admin().from('provider_clients') as any)
-    .select('id, pet_name')
-    .eq('owner_user_id', user.id)
+    // Legacy claimed reports (parent clicked "Save to account" on old report)
+    safe((db.from('walk_reports') as any)
+      .select('id, token, dog_name, duration_mins, poop_count, pee_count, distance_meters, walk_date, created_at, photo_url, notes, walker_name')
+      .eq('customer_id', user.id)
+      .order('walk_date', { ascending: false })),
+  ])
 
-  const clientIds = (linkedClients ?? []).map((c: { id: string }) => c.id)
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: linkedWalkReports } = clientIds.length > 0 ? await (admin().from('walk_reports') as any)
-    .select('id, token, dog_name, duration_mins, poop_count, pee_count, distance_meters, walk_date, created_at, photo_url, notes, provider_id, providers(name)')
-    .in('client_id', clientIds)
-    .order('walk_date', { ascending: false }) : { data: [] }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: linkedGroomingReports } = clientIds.length > 0 ? await (admin().from('grooming_reports') as any)
-    .select('id, token, dog_name, grooming_date, services_done, ticks_found, after_photo_url, created_at, provider_id, providers(name)')
-    .in('client_id', clientIds)
-    .order('grooming_date', { ascending: false }) : { data: [] }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: claimedGroomingReports } = await (admin().from('grooming_reports') as any)
-    .select('id, token, dog_name, grooming_date, services_done, ticks_found, after_photo_url, created_at, provider_id, providers(name)')
-    .eq('customer_id', user.id)
-    .order('grooming_date', { ascending: false })
-
-  // Also fetch QR-walker reports where owner_id = user.id (new flow from walk-logs API)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: ownerWalkReports } = await (admin().from('walk_reports') as any)
-    .select('id, token, dog_name, duration_mins, poop_count, pee_count, distance_meters, walk_date, created_at, photo_url, notes, provider_id, walker_name, providers(name)')
-    .eq('owner_id', user.id)
-    .order('walk_date', { ascending: false })
-
-  // Merge and dedupe
+  // Merge and dedupe by id, normalise walker name
   const walkMap = new Map()
-  for (const r of [...(walkReports ?? []), ...(linkedWalkReports ?? []), ...(ownerWalkReports ?? [])]) {
-    // Normalise provider name: use walker_name if no provider row
-    if (!r.providers?.name && r.walker_name) r.providers = { name: r.walker_name }
-    walkMap.set(r.id, r)
+  for (const r of [...(ownerReports ?? []), ...(claimedReports ?? [])]) {
+    if (r && !walkMap.has(r.id)) {
+      // Attach providers shape MyReportsClient expects
+      r.providers = r.walker_name ? { name: r.walker_name } : null
+      walkMap.set(r.id, r)
+    }
   }
-  const groomMap = new Map()
-  for (const r of [...(claimedGroomingReports ?? []), ...(linkedGroomingReports ?? [])]) groomMap.set(r.id, r)
-
-  const allWalk = Array.from(walkMap.values())
-  const allGroom = Array.from(groomMap.values())
 
   return (
     <MyReportsClient
-      walkReports={allWalk}
-      groomingReports={allGroom}
-      isSubscribed={true} // free for all during launch — lock enabled when billing goes live
-      subscriptionPlan={sub?.plan ?? null}
+      walkReports={Array.from(walkMap.values())}
+      groomingReports={[]}
+      isSubscribed={true}
+      subscriptionPlan={(sub as any)?.plan ?? null}
       userName={user.user_metadata?.full_name ?? user.email ?? ''}
     />
   )

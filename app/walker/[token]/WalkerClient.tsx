@@ -824,8 +824,7 @@ export default function WalkerClient({
       watchIdRef.current = null
     }
     setPhase('logging')
-    // Auto-open camera after form renders (skip in demo)
-    if (!isDemoWalk) setTimeout(() => photoInputRef.current?.click(), 400)
+    // Camera is optional — walker taps the photo button themselves
   }
 
   function handlePeeTap() {
