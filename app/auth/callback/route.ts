@@ -104,45 +104,10 @@ export async function GET(request: NextRequest) {
     metadata: { next, provider: 'google' },
   })
 
-  if (user.email) {
-    // Check if they have a provider account (by email OR by user_id)
-    const { data: providerRows } = await (admin.from('providers') as any)
-      .select('id, status, user_id')
-      .or(`email.eq.${user.email},user_id.eq.${user.id}`)
-      .limit(10)
-
-    const provider = (providerRows as any[])?.find((p: any) => p.status === 'approved')
-      ?? (providerRows as any[])?.find((p: any) => p.status === 'pending')
-      ?? providerRows?.[0]
-      ?? null
-
-    if (provider) {
-      // Link user_id to provider if not already linked (backfill)
-      if (!provider.user_id) {
-        await (admin.from('providers') as any)
-          .update({ user_id: user.id })
-          .eq('id', provider.id)
-      }
-
-      if (provider.status === 'approved') {
-        // Let any non-pro destination through (e.g. /setup, /my-account)
-        const goToDashboard = next === '/' || next.startsWith('/pro')
-        if (!goToDashboard) {
-          return NextResponse.redirect(`${base}${next}`)
-        }
-        return NextResponse.redirect(`${base}/pro/dashboard`)
-      }
-      if (provider.status === 'pending') {
-        return NextResponse.redirect(`${base}/pro?status=pending`)
-      }
-      // rejected — fall through to customer/owner routing
-    } else if (next === '/pro/register') {
-      const name  = encodeURIComponent(user.user_metadata?.full_name ?? user.user_metadata?.name ?? '')
-      const email = encodeURIComponent(user.email)
-      return NextResponse.redirect(`${base}/join?from=google&name=${name}&email=${email}`)
-    } else if (next.startsWith('/pro')) {
-      return NextResponse.redirect(`${base}/pro?status=no_account`)
-    }
+  // V1 provider routing removed — all users are treated as pet parents in V2.
+  // If next points to a dead /pro route, redirect to /home instead.
+  if (next.startsWith('/pro')) {
+    return NextResponse.redirect(`${base}/home`)
   }
 
   // Going to a walker invite link — let that route handle linking

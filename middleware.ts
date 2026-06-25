@@ -41,18 +41,12 @@ export async function middleware(request: NextRequest) {
       }
     )
     const { data: { user } } = await supabase.auth.getUser()
+    // V2: all logged-in users go to /home — no V1 provider check
     if (user) {
-      const { data: providerRow } = await supabase
-        .from('providers')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle()
-      if (!providerRow) {
-        const homeUrl = request.nextUrl.clone()
-        homeUrl.pathname = '/home'
-        homeUrl.search = ''
-        return NextResponse.redirect(homeUrl)
-      }
+      const homeUrl = request.nextUrl.clone()
+      homeUrl.pathname = '/home'
+      homeUrl.search = ''
+      return NextResponse.redirect(homeUrl)
     }
     return response
   }
