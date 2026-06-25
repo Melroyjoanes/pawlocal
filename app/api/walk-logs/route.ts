@@ -206,16 +206,19 @@ export async function POST(req: NextRequest) {
               finalPeeCount > 0 ? `💧 ${finalPeeCount}` : null,
             ].filter(Boolean).join('  ·  ')
 
-            const { sendEmail, emailTemplate } = await import('@/lib/email')
+            const { sendEmail, walkReportEmail } = await import('@/lib/email')
             sendEmail({
               to: ownerEmail,
               subject: `🐾 ${dogName}'s walk report is ready`,
-              html: emailTemplate(
-                `${dogName}'s walk is done`,
-                `${connection.walker_name ?? 'Your walker'} just completed a walk with ${dogName}.${stats ? `\n\n${stats}` : ''}`,
-                'View full report →',
+              html: walkReportEmail({
+                dogName,
+                walkerName: connection.walker_name ?? 'Your walker',
+                durationMins: duration_mins ?? null,
+                distanceKm: distance_km ?? null,
+                poopCount: finalPoopCount,
+                peeCount: finalPeeCount,
                 reportUrl,
-              ),
+              }),
             }).catch(() => {})
 
             // Track email sent
