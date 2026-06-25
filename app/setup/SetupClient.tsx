@@ -12,7 +12,7 @@ interface Props {
 
 interface DraftData {
   name: string
-  careFocus: string
+  careFocuses: string[]
   healthNotes: string
   walkingInstructions: string
   photoUrl: string | null
@@ -45,17 +45,12 @@ const TEAL_LIGHT = 'oklch(0.95 0.04 196)'
 export default function SetupClient({ user, justPaid, recover }: Props) {
   const router = useRouter()
 
-  // Skip welcome screen if coming from homepage CTA (?go=1) or recovering after OAuth
-  const skipWelcome = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search).get('go') === '1' || recover
-    : recover
-
-  // Step state — start at 1 if coming directly from homepage
-  const [step, setStep] = useState(skipWelcome ? 1 : 0)
+  // Always start at step 1 — welcome screen removed entirely
+  const [step, setStep] = useState(1)
 
   // Dog details
   const [name, setName] = useState('')
-  const [careFocus, setCareFocus] = useState('normal')
+  const [careFocuses, setCareFocuses] = useState<string[]>(['normal'])
   const [healthNotes, setHealthNotes] = useState('')
   const [walkingInstructions, setWalkingInstructions] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
@@ -84,7 +79,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
     try {
       const draft = JSON.parse(raw) as DraftData
       setName(draft.name || '')
-      setCareFocus(draft.careFocus || 'normal')
+      setCareFocuses(draft.careFocuses?.length ? draft.careFocuses : ['normal'])
       setHealthNotes(draft.healthNotes || '')
       setWalkingInstructions(draft.walkingInstructions || '')
       setPhotoUrl(draft.photoUrl || null)
@@ -133,7 +128,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
   }
 
   async function submitDog(userId: string, data?: DraftData) {
-    const d = data ?? { name, careFocus, healthNotes, walkingInstructions, photoUrl, parentName, ownerPhone }
+    const d = data ?? { name, careFocuses, healthNotes, walkingInstructions, photoUrl, parentName, ownerPhone }
     setLoading(true)
     setError(null)
     try {
@@ -144,7 +139,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
         body: JSON.stringify({
           name: d.name.trim(),
           health_notes: combinedNotes,
-          care_focus: d.careFocus || 'normal',
+          care_focus: (d.careFocuses ?? ['normal']).join(','),
           owner_phone: d.ownerPhone.trim() || null,
           photo_url: d.photoUrl || null,
         }),
@@ -514,12 +509,18 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
               <label style={labelStyle}>Care focus</label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {CARE_FOCUS_OPTIONS.map(opt => {
-                  const selected = careFocus === opt.key
+                  const selected = careFocuses.includes(opt.key)
                   return (
                     <button
                       key={opt.key}
                       type="button"
-                      onClick={() => setCareFocus(opt.key)}
+                      onClick={() => setCareFocuses(prev => {
+                        if (opt.key === 'normal') return ['normal']
+                        const without = prev.filter(k => k !== 'normal')
+                        return without.includes(opt.key)
+                          ? without.filter(k => k !== opt.key).length ? without.filter(k => k !== opt.key) : ['normal']
+                          : [...without, opt.key]
+                      })}
                       style={{
                         padding: '12px 10px',
                         borderRadius: 12,
