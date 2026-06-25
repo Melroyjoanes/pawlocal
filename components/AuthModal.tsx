@@ -81,7 +81,7 @@ export default function AuthModal({ open, onClose, redirectTo, message, onSigned
       setLoading(false)
       return
     }
-    // User is now signed in — same browser context, sessionStorage still intact
+    // User is now signed in — same browser context, localStorage draft still intact
     const { data: { user } } = await supabase.auth.getUser()
     setLoading(false)
     onClose()

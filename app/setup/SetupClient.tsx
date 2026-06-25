@@ -79,7 +79,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
   // Recover draft after Google OAuth redirect
   useEffect(() => {
     if (!recover || !user || autoSubmittedRef.current) return
-    const raw = sessionStorage.getItem('pup-setup-draft')
+    const raw = localStorage.getItem('pup-setup-draft')
     if (!raw) return
     try {
       const draft = JSON.parse(raw) as DraftData
@@ -90,12 +90,12 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
       setPhotoUrl(draft.photoUrl || null)
       setParentName(draft.parentName || '')
       setOwnerPhone(draft.ownerPhone || '')
-      sessionStorage.removeItem('pup-setup-draft')
+      localStorage.removeItem('pup-setup-draft')
       autoSubmittedRef.current = true
       setSavingDraft(true)
       setTimeout(() => submitDog(user.id, draft), 300)
     } catch {
-      sessionStorage.removeItem('pup-setup-draft')
+      localStorage.removeItem('pup-setup-draft')
     }
   }, [recover, user]) // eslint-disable-line react-hooks/exhaustive-deps
 
