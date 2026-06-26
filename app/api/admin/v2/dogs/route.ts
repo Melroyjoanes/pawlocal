@@ -14,10 +14,10 @@ export async function GET() {
       id,
       name,
       breed,
-      care_focus,
+
       photo_url,
       health_notes,
-      walking_instructions,
+
       owner_id,
       created_at
     `)

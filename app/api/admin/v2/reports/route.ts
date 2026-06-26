@@ -39,9 +39,9 @@ export async function GET() {
       photo_url,
       gps_path,
       notes,
-      quality_score,
+
       customer_id,
-      email_sent_at
+
     `)
     .order('created_at', { ascending: false })
     .limit(100)

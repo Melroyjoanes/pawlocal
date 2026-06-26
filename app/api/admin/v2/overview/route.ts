@@ -67,7 +67,7 @@ export async function GET() {
     // expiredTrials: trial_started_at + 7 days < now, no active sub — approximate via profiles with trial but not active sub
     (client.from('profiles') as any).select('id, trial_started_at').not('trial_started_at', 'is', null),
     // Quality: fetch all quality scores
-    (client.from('walk_reports') as any).select('quality_score'),
+    (client.from('walk_reports') as any).select('id'),
   ])
 
   // Compute funnel distinct counts (approximate via count queries above)
