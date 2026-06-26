@@ -1962,27 +1962,19 @@ export default function WalkerClient({
                 <span className="text-4xl">✅</span>
               </div>
               <h2 className="text-3xl font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                Report ready!
+                Walk done!
               </h2>
-              <p className="text-sm text-slate-500 mb-2 leading-relaxed px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
+              <p className="text-sm text-slate-500 mb-1 leading-relaxed px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
                 {ownerFirstName
-                  ? `Walk report sent! Opening WhatsApp to notify ${ownerFirstName}.`
-                  : 'Walk report sent!'}
+                  ? `Report sent to ${ownerFirstName}. WhatsApp is opening now.`
+                  : 'Report sent to the owner.'}
               </p>
-              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF', marginTop: 4, marginBottom: 16 }}>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF', marginTop: 4, marginBottom: 24 }}>
                 PupStep has also emailed the report to the owner.
               </p>
 
-              {/* Report link card */}
-              {reportUrl && (
-                <div className="w-full max-w-sm bg-white rounded-2xl border border-slate-100 px-4 py-3 mb-5 shadow-sm text-left">
-                  <p className="text-xs text-slate-400 mb-0.5 font-semibold uppercase tracking-wide">Walk report link</p>
-                  <p className="text-sm font-medium text-[#0A2F35] break-all leading-snug">{reportUrl}</p>
-                </div>
-              )}
-
               <div className="w-full max-w-sm space-y-3">
-                {/* Send to owner via WhatsApp (includes report URL) */}
+                {/* Primary: send to owner WhatsApp */}
                 {parentWaLink && (
                   <a
                     href={parentWaLink}
@@ -1995,18 +1987,14 @@ export default function WalkerClient({
                   </a>
                 )}
 
-                {/* View the report */}
-                {reportUrl && (
-                  <a
-                    href={reportUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-base border-2"
-                    style={{ borderColor: 'oklch(0.48 0.17 196)', color: 'oklch(0.48 0.17 196)', fontFamily: 'var(--font-fredoka)' }}
-                  >
-                    👁 View report →
-                  </a>
-                )}
+                {/* Primary action: go back to dashboard to log another walk */}
+                <button
+                  onClick={() => { setPhase('idle'); setReportUrl(null); setParentWaLink(null) }}
+                  className="w-full py-4 rounded-2xl font-bold text-lg text-white active:scale-[0.97] transition-transform"
+                  style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)' }}
+                >
+                  🐕 Log another walk
+                </button>
 
                 {/* Save dashboard link to WhatsApp */}
                 {(() => {
