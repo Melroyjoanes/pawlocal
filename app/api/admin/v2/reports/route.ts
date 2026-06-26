@@ -26,6 +26,7 @@ export async function GET() {
   // Use only guaranteed columns (those in original migration 026 + migration 043)
   const { data: reports, error } = await (client.from('walk_reports') as any)
     .select('id, token, dog_name, walker_name, walk_date, created_at, duration_mins, distance_meters, poop_count, pee_count, photo_url, route_points, notes, customer_id')
+    .not('connection_id', 'is', null)
     .order('created_at', { ascending: false })
     .limit(100)
 

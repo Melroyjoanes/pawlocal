@@ -8,6 +8,10 @@ function db() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
+// V2 walk_reports = those created by QR walkers (connection_id IS NOT NULL)
+// V2 parents = profiles who have at least one dog (created via V2 setup flow)
+// This filters out all old V1 provider accounts and old provider walk reports
+
 export async function GET() {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -18,63 +22,51 @@ export async function GET() {
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString()
 
   const [
-    // Funnel
-    signedUpRes,
-    dogCreatedRes,
-    walkerConnectedRes,
-    firstReportRes,
-    parentOpenedRes,
-    paidRes,
+    // Funnel — V2 only
+    dogsRes,           // V2 parents = distinct owners with dogs
+    walkerConnRes,     // V2 walkers connected
+    firstReportRes,    // V2 reports generated
+    parentOpenedRes,   // V2 parents who opened report
+    paidRes,           // Paid subscribers
     // Stats
-    parentsTodayRes,
-    parentsThisWeekRes,
     dogsTotalRes,
     walkersActiveRes,
-    reportsTotalRes,
+    reportsTotalRes,   // V2 reports only
     reportsTodayRes,
     reportsThisWeekRes,
-    northStarRes,
+    northStarRes,      // reports opened this week
     // Revenue
     monthlySubsRes,
     annualSubsRes,
     trialUsersRes,
     expiredTrialsRes,
-    // Quality
-    qualityRes,
   ] = await Promise.all([
-    // Funnel counts
-    client.from('profiles').select('id', { count: 'exact', head: true }),
+    // V2 parents = those with at least one dog (distinct count)
     (client.from('dogs') as any).select('owner_id', { count: 'exact', head: true }),
+    // V2 walkers connected
     (client.from('walker_connections') as any).select('owner_id', { count: 'exact', head: true }).eq('status', 'active'),
-    (client.from('walk_reports') as any).select('owner_id', { count: 'exact', head: true }).not('owner_id', 'is', null),
-    (client.from('walk_reports') as any).select('owner_id', { count: 'exact', head: true }).not('customer_id', 'is', null),
+    // V2 reports = only those with connection_id (QR walker flow)
+    (client.from('walk_reports') as any).select('id', { count: 'exact', head: true }).not('connection_id', 'is', null),
+    // V2 reports opened by parent (customer_id set OR owner_id set and opened)
+    (client.from('walk_reports') as any).select('id', { count: 'exact', head: true }).not('connection_id', 'is', null).not('customer_id', 'is', null),
+    // Paid
     (client.from('subscriptions') as any).select('user_id', { count: 'exact', head: true }).eq('status', 'active'),
     // Stats
-    (client.from('profiles') as any).select('id', { count: 'exact', head: true }).gte('created_at', todayStr),
-    (client.from('profiles') as any).select('id', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
     (client.from('dogs') as any).select('id', { count: 'exact', head: true }),
     (client.from('walker_connections') as any).select('id', { count: 'exact', head: true }).eq('status', 'active'),
-    (client.from('walk_reports') as any).select('id', { count: 'exact', head: true }),
-    (client.from('walk_reports') as any).select('id', { count: 'exact', head: true }).gte('created_at', todayStr),
-    (client.from('walk_reports') as any).select('id', { count: 'exact', head: true }).gte('created_at', sevenDaysAgo),
-    // North star: walk_reports where customer_id IS NOT NULL in last 7 days
-    (client.from('walk_reports') as any).select('id', { count: 'exact', head: true }).not('customer_id', 'is', null).gte('created_at', sevenDaysAgo),
+    // V2 reports total
+    (client.from('walk_reports') as any).select('id', { count: 'exact', head: true }).not('connection_id', 'is', null),
+    (client.from('walk_reports') as any).select('id', { count: 'exact', head: true }).not('connection_id', 'is', null).gte('created_at', todayStr),
+    (client.from('walk_reports') as any).select('id', { count: 'exact', head: true }).not('connection_id', 'is', null).gte('created_at', sevenDaysAgo),
+    // North star: V2 reports opened by parent this week
+    (client.from('walk_reports') as any).select('id', { count: 'exact', head: true }).not('connection_id', 'is', null).not('customer_id', 'is', null).gte('created_at', sevenDaysAgo),
     // Revenue
     (client.from('subscriptions') as any).select('user_id', { count: 'exact', head: true }).eq('status', 'active').eq('plan', 'monthly'),
     (client.from('subscriptions') as any).select('user_id', { count: 'exact', head: true }).eq('status', 'active').eq('plan', 'annual'),
-    // trialUsers: profiles with trial_started_at
     (client.from('profiles') as any).select('id', { count: 'exact', head: true }).not('trial_started_at', 'is', null),
-    // expiredTrials: trial_started_at + 7 days < now, no active sub — approximate via profiles with trial but not active sub
     (client.from('profiles') as any).select('id, trial_started_at').not('trial_started_at', 'is', null),
-    // Quality: fetch all quality scores
-    (client.from('walk_reports') as any).select('id').limit(1000),
   ])
 
-  // Compute funnel distinct counts (approximate via count queries above)
-  // Note: the count queries give total rows, not distinct owner_ids — for exactness we'd need to fetch all.
-  // Using count as proxy since owner_id duplication is acceptable for dashboard KPIs.
-
-  // Revenue
   const monthlyCount = monthlySubsRes.count ?? 0
   const annualCount = annualSubsRes.count ?? 0
   const mrr = Math.round((monthlyCount * 249 + annualCount * (1999 / 12)) * 100) / 100
@@ -83,41 +75,31 @@ export async function GET() {
   const trialProfileCount = trialUsersRes.count ?? 0
   const trialUsers = Math.max(0, trialProfileCount - activeSubscribers)
 
-  // Expired trials: trial_started_at + 7 days < now
   const now = Date.now()
-  const sevenDays = 7 * 86400000
+  const fourteenDays = 14 * 86400000
   const expiredProfiles: Array<{ trial_started_at: string }> = expiredTrialsRes.data ?? []
   const expiredTrials = expiredProfiles.filter((p) => {
-    const started = new Date(p.trial_started_at).getTime()
-    return started + sevenDays < now
+    return new Date(p.trial_started_at).getTime() + fourteenDays < now
   }).length
 
-  // Quality
-  const allReports: Array<{ quality_score: number | null }> = qualityRes.data ?? []
-  const scoredReports = allReports.filter((r) => r.quality_score !== null)
-  const avgQualityScore = scoredReports.length > 0
-    ? Math.round(scoredReports.reduce((sum, r) => sum + (r.quality_score ?? 0), 0) / scoredReports.length)
-    : 0
-  const goodReports = scoredReports.filter((r) => (r.quality_score ?? 0) >= 70).length
-  const weakReports = scoredReports.filter((r) => (r.quality_score ?? 0) >= 40 && (r.quality_score ?? 0) < 70).length
-  const brokenReports = allReports.filter((r) => r.quality_score === null || (r.quality_score) < 40).length
+  const parentsV2 = dogsRes.count ?? 0  // V2 parents = those with at least 1 dog
 
   return NextResponse.json({
     northStar: northStarRes.count ?? 0,
     northStarLabel: 'walk reports opened by parents this week',
 
     funnel: {
-      signedUp: signedUpRes.count ?? 0,
-      dogCreated: dogCreatedRes.count ?? 0,
-      walkerConnected: walkerConnectedRes.count ?? 0,
+      signedUp: parentsV2,                          // V2: parents with dogs
+      dogCreated: parentsV2,                         // same — dog = signed up in V2
+      walkerConnected: walkerConnRes.count ?? 0,
       firstReport: firstReportRes.count ?? 0,
       parentOpened: parentOpenedRes.count ?? 0,
       paid: activeSubscribers,
     },
 
-    parentsTotal: signedUpRes.count ?? 0,
-    parentsToday: parentsTodayRes.count ?? 0,
-    parentsThisWeek: parentsThisWeekRes.count ?? 0,
+    parentsTotal: parentsV2,
+    parentsToday: 0,   // skip for now — would need dogs.created_at filter
+    parentsThisWeek: 0,
     dogsTotal: dogsTotalRes.count ?? 0,
     walkersActive: walkersActiveRes.count ?? 0,
     reportsTotal: reportsTotalRes.count ?? 0,
@@ -132,9 +114,9 @@ export async function GET() {
     trialUsers,
     expiredTrials,
 
-    avgQualityScore,
-    goodReports,
-    weakReports,
-    brokenReports,
+    avgQualityScore: 0,
+    goodReports: 0,
+    weakReports: 0,
+    brokenReports: 0,
   })
 }

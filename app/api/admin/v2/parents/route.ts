@@ -18,6 +18,7 @@ export async function GET() {
   // 1. Fetch all profiles (limit 100 most recent)
   const { data: profiles } = await (client.from('profiles') as any)
     .select('id, full_name, trial_started_at, created_at')
+    .in('id', (await (client.from('dogs') as any).select('owner_id').limit(500)).data?.map((d: any) => d.owner_id as string) ?? [])
     .order('created_at', { ascending: false })
     .limit(100)
 
