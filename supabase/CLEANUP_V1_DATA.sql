@@ -1,38 +1,74 @@
 -- ============================================================
--- CLEAN OLD V1 DATA — Run in Supabase SQL Editor
--- This removes old V1 provider reports and junk data so the
--- admin dashboard only shows clean V2 data going forward.
---
--- SAFE: does NOT delete user accounts or V2 walk reports.
+-- STEP 1: BACKUP V1 DATA FIRST
+-- Creates backup_ tables so you can recover email IDs anytime
 -- ============================================================
 
--- 1. Delete old V1 provider walk reports
---    (provider_id set = old professional provider, no V2 connection)
+-- Backup old V1 walk reports (with provider emails via join)
+CREATE TABLE IF NOT EXISTS backup_v1_walk_reports AS
+SELECT
+  wr.*,
+  p.email AS provider_email,
+  p.name  AS provider_name
+FROM walk_reports wr
+LEFT JOIN providers p ON p.id = wr.provider_id
+WHERE wr.provider_id IS NOT NULL
+  AND wr.connection_id IS NULL;
+
+-- Backup provider_clients (has owner email IDs you need)
+CREATE TABLE IF NOT EXISTS backup_v1_provider_clients AS
+SELECT * FROM provider_clients;
+
+-- Backup broadcasts (has poster emails)
+CREATE TABLE IF NOT EXISTS backup_v1_broadcasts AS
+SELECT * FROM broadcasts;
+
+-- Backup walk sessions (old live tracking)
+CREATE TABLE IF NOT EXISTS backup_v1_walk_sessions AS
+SELECT * FROM walk_sessions;
+
+-- Backup grooming reports
+CREATE TABLE IF NOT EXISTS backup_v1_grooming_reports AS
+SELECT * FROM grooming_reports;
+
+-- Backup analytics events
+CREATE TABLE IF NOT EXISTS backup_v1_analytics_events AS
+SELECT * FROM analytics_events;
+
+-- Backup invites
+CREATE TABLE IF NOT EXISTS backup_v1_invites AS
+SELECT * FROM pet_parent_invites;
+
+-- ── Quick view: all unique emails from old V1 data ────────────────────────────
+-- Run this SELECT to see all email IDs before deleting anything:
+/*
+SELECT DISTINCT email, 'provider_clients' AS source FROM provider_clients WHERE email IS NOT NULL
+UNION ALL
+SELECT DISTINCT owner_whatsapp, 'provider_clients whatsapp' FROM provider_clients WHERE owner_whatsapp IS NOT NULL
+UNION ALL
+SELECT DISTINCT poster_name, 'broadcasts' FROM broadcasts
+ORDER BY 1;
+*/
+
+-- ============================================================
+-- STEP 2: DELETE V1 DATA (only after backup tables are created)
+-- ============================================================
+
+-- Delete old V1 provider walk reports
 DELETE FROM walk_reports
 WHERE provider_id IS NOT NULL
   AND connection_id IS NULL;
 
--- 2. Delete old V1 grooming reports (if table exists)
+-- Clear V1-only tables
 TRUNCATE TABLE grooming_reports;
-
--- 3. Clean up old broadcasts (V1 directory feature)
 TRUNCATE TABLE broadcasts;
-
--- 4. Clean up old provider analytics events
 TRUNCATE TABLE provider_analytics;
-
--- 5. Clean up old walk sessions (V1 live tracking, replaced by walk_logs)
 TRUNCATE TABLE walk_sessions;
-
--- 6. Clean up analytics events (old funnel tracking)
 TRUNCATE TABLE analytics_events;
-
--- 7. Remove old provider_clients links (V1 invite system)
 TRUNCATE TABLE provider_clients;
-
--- 8. Remove old invites
 TRUNCATE TABLE pet_parent_invites;
 
 -- ============================================================
--- After running: reload /admin — counts will be clean V2 only.
+-- DONE.
+-- Your backup tables are preserved as backup_v1_* and can be
+-- queried anytime: SELECT * FROM backup_v1_provider_clients;
 -- ============================================================
