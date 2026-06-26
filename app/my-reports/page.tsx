@@ -29,7 +29,8 @@ export default async function MyReportsPage() {
       .gt('expires_at', new Date().toISOString())
       .maybeSingle()),
 
-    // QR-walker reports (V2 primary flow)
+    // QR-walker reports via owner_id (V2 primary — requires migration 047)
+    // If column doesn't exist yet, safe() returns [] and we fall back to claimed reports
     safe((db.from('walk_reports') as any)
       .select('id, token, dog_name, duration_mins, poop_count, pee_count, distance_meters, walk_date, created_at, photo_url, notes, walker_name')
       .eq('owner_id', user.id)
