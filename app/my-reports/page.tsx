@@ -10,6 +10,8 @@ function admin() {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const safe = async (q: any) => { try { return await q } catch { return { data: [] } } }
 
+const REPORT_COLS = 'id, token, dog_name, duration_mins, poop_count, pee_count, distance_meters, walk_date, created_at, photo_url, notes, walker_name'
+
 export default async function MyReportsPage() {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -17,10 +19,19 @@ export default async function MyReportsPage() {
 
   const db = admin()
 
+  // Get this parent's walker connections first (always works, no migration needed)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: connections } = await safe((db.from('walker_connections') as any)
+    .select('id')
+    .eq('owner_id', user.id))
+
+  const connectionIds: string[] = (connections ?? []).map((c: { id: string }) => c.id)
+
   const [
     { data: sub },
-    { data: ownerReports },
-    { data: claimedReports },
+    { data: ownerReports },    // via owner_id (needs migration 047)
+    { data: claimedReports },  // via customer_id (claimed via viral hook)
+    { data: connectionReports }, // via connection_id (always works — V2 primary)
   ] = await Promise.all([
     safe(db.from('subscriptions' as any)
       .select('status, plan, expires_at')
@@ -29,25 +40,37 @@ export default async function MyReportsPage() {
       .gt('expires_at', new Date().toISOString())
       .maybeSingle()),
 
-    // QR-walker reports via owner_id (V2 primary — requires migration 047)
-    // If column doesn't exist yet, safe() returns [] and we fall back to claimed reports
+    // Via owner_id — works after migration 047
     safe((db.from('walk_reports') as any)
-      .select('id, token, dog_name, duration_mins, poop_count, pee_count, distance_meters, walk_date, created_at, photo_url, notes, walker_name')
+      .select(REPORT_COLS)
       .eq('owner_id', user.id)
       .order('walk_date', { ascending: false })),
 
-    // Legacy claimed reports (parent clicked "Save to account" on old report)
+    // Via customer_id — reports the parent claimed via "Save to account"
     safe((db.from('walk_reports') as any)
-      .select('id, token, dog_name, duration_mins, poop_count, pee_count, distance_meters, walk_date, created_at, photo_url, notes, walker_name')
+      .select(REPORT_COLS)
       .eq('customer_id', user.id)
       .order('walk_date', { ascending: false })),
+
+    // Via connection_id — V2 QR walker reports, ALWAYS works regardless of migrations
+    connectionIds.length > 0
+      ? safe((db.from('walk_reports') as any)
+          .select(REPORT_COLS)
+          .in('connection_id', connectionIds)
+          .order('walk_date', { ascending: false }))
+      : { data: [] },
   ])
 
-  // Merge and dedupe by id, normalise walker name
+  // Merge all three sources, dedupe by id
   const walkMap = new Map()
-  for (const r of [...(ownerReports ?? []), ...(claimedReports ?? [])]) {
+  const allReports = [
+    ...(connectionReports ?? []),  // primary: V2 reports via connection
+    ...(ownerReports ?? []),       // secondary: after migration 047
+    ...(claimedReports ?? []),     // tertiary: claimed reports
+  ]
+
+  for (const r of allReports) {
     if (r && !walkMap.has(r.id)) {
-      // Attach providers shape MyReportsClient expects
       r.providers = r.walker_name ? { name: r.walker_name } : null
       walkMap.set(r.id, r)
     }
@@ -57,6 +80,7 @@ export default async function MyReportsPage() {
     <MyReportsClient
       walkReports={Array.from(walkMap.values())}
       isSubscribed={true}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       subscriptionPlan={(sub as any)?.plan ?? null}
       userName={user.user_metadata?.full_name ?? user.email ?? ''}
     />

@@ -126,7 +126,9 @@ export async function POST(req: NextRequest) {
 
   // Also create a public walk report so the pet parent gets the beautiful report card
   const reportToken = require('crypto').randomBytes(16).toString('hex')
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
+  // Always use pupstep.in — ignore env var if it contains the old Vercel domain
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL ?? ''
+  const siteUrl = envUrl.includes('pupstep.in') ? envUrl : 'https://pupstep.in'
   const reportUrl = `${siteUrl}/walk-report/${reportToken}`
 
   // Extract poop_events / pee_events from walk_events (GPS-tagged taps during walk)

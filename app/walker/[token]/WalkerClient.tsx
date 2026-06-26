@@ -935,7 +935,18 @@ export default function WalkerClient({
 
       // Reset walk state, go to success screen
       if (data.wa_link) setParentWaLink(data.wa_link)
-      if (data.report_url) setReportUrl(data.report_url)
+      // Always use relative path so it opens on current domain (not old Vercel URL)
+      if (data.report_token) {
+        setReportUrl(`/walk-report/${data.report_token}`)
+      } else if (data.report_url) {
+        // Fallback: strip domain from URL and use relative path
+        try {
+          const url = new URL(data.report_url)
+          setReportUrl(url.pathname)
+        } catch {
+          setReportUrl(data.report_url)
+        }
+      }
       setMood('')
       setNotes('')
       setPhotoUrl(null)
