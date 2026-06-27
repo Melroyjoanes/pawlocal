@@ -120,6 +120,7 @@ async function renderHome(user: { id: string; user_metadata?: Record<string, str
     { data: trialProfileData },
     { data: walkLogsRaw },
     { count: reportCount },
+    { data: latestReportData },
   ] = await Promise.all([
     safe((db.from('profiles') as any)
       .select('id, full_name, avatar_url')
@@ -158,6 +159,14 @@ async function renderHome(user: { id: string; user_metadata?: Record<string, str
     safe((db.from('walk_logs') as any)
       .select('id', { count: 'exact', head: true })
       .eq('owner_id', user.id)),
+
+    // Latest walk report token — for direct link from last walk card
+    safe((db.from('walk_reports') as any)
+      .select('token')
+      .eq('owner_id', user.id)
+      .order('walk_date', { ascending: false })
+      .limit(1)
+      .maybeSingle()),
   ])
 
   const userMeta = user.user_metadata ?? {}
@@ -223,6 +232,7 @@ async function renderHome(user: { id: string; user_metadata?: Record<string, str
       trialStatus={trialStatus}
       trialDaysRemaining={trialDaysRemaining}
       totalReports={reportCount ?? 0}
+      latestReportToken={(latestReportData as { token?: string } | null)?.token ?? null}
     />
   )
 }

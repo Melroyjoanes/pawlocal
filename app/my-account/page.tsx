@@ -40,7 +40,7 @@ export default async function MyAccountPage() {
       .eq('id', user.id)
       .maybeSingle()),
     safe((db.from('dogs') as any)
-      .select('id, name, breed, photo_url, health_notes, care_focus, walking_instructions')
+      .select('id, name, breed, photo_url, health_notes, care_focus')
       .eq('owner_id', user.id)),
     safe((db.from('walker_connections') as any)
       .select('id, dog_id, walker_name, walker_phone, walker_role, status, claimed_at, connection_token, dogs(name)')

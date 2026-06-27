@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
@@ -73,6 +74,7 @@ interface Props {
   trialStatus: string
   trialDaysRemaining: number | null
   totalReports: number
+  latestReportToken?: string | null
 }
 
 const cardClass = 'rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.08)] bg-white'
@@ -260,7 +262,8 @@ function WeekCalendar({ weekData }: { weekData: WeekData }) {
   )
 }
 
-function LastWalkCard({ log }: { log: WalkLog }) {
+function LastWalkCard({ log, reportToken }: { log: WalkLog; reportToken?: string | null }) {
+  const reportHref = reportToken ? `/walk-report/${reportToken}` : '/my-reports'
   return (
     <motion.div variants={fadeUp} className={cardClass} style={{ padding: '16px' }}>
       <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px' }}>Last walk</p>
@@ -277,7 +280,7 @@ function LastWalkCard({ log }: { log: WalkLog }) {
         {(log.pee_count ?? 0) > 0 && <span style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#166534' }}>🌿 {log.pee_count}</span>}
         {log.mood && <span style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#1D4ED8' }}>😊 {log.mood}</span>}
       </div>
-      <Link href="/my-reports" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, paddingTop: 10, borderTop: '1px solid rgba(226,220,200,0.5)', fontSize: 12, fontWeight: 700, color: 'oklch(0.44 0.16 196)', textDecoration: 'none', fontFamily: 'var(--font-nunito)' }}>
+      <Link href={reportHref} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, paddingTop: 10, borderTop: '1px solid rgba(226,220,200,0.5)', fontSize: 12, fontWeight: 700, color: 'oklch(0.44 0.16 196)', textDecoration: 'none', fontFamily: 'var(--font-nunito)' }}>
         View full report →
       </Link>
     </motion.div>
@@ -302,8 +305,8 @@ function QuickActions({ onOpenTeam, firstDog, onAddDog }: { onOpenTeam: () => vo
           </Link>
         )}
         <button onClick={onOpenTeam} className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors border-0">
-          <span className="text-2xl">👥</span>
-          <span className="text-[10px] font-semibold text-gray-600 text-center leading-tight">My Team</span>
+          <span className="text-2xl">🦮</span>
+          <span className="text-[10px] font-semibold text-gray-600 text-center leading-tight">My Walkers</span>
         </button>
         <Link href="/my-reports" className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors">
           <span className="text-2xl">📋</span>
@@ -319,7 +322,7 @@ function QuickActions({ onOpenTeam, firstDog, onAddDog }: { onOpenTeam: () => vo
 }
 
 // ── AddDogSheet ───────────────────────────────────────────────────────────
-function AddDogSheet({ open, onClose, onSaved }: { open: boolean; onClose: () => void; onSaved: () => void }) {
+function AddDogSheet({ open, onClose, onSaved }: { open: boolean; onClose: () => void; onSaved: (dogId: string) => void }) {
   const [newDogName, setNewDogName] = useState('')
   const [newDogBreed, setNewDogBreed] = useState('')
   const [saving, setSaving] = useState(false)
@@ -330,14 +333,15 @@ function AddDogSheet({ open, onClose, onSaved }: { open: boolean; onClose: () =>
     if (!newDogName.trim()) return
     setSaving(true)
     try {
-      await fetch('/api/dogs', {
+      const res = await fetch('/api/dogs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newDogName.trim(), breed: newDogBreed.trim() || null }),
       })
+      const dog = await res.json()
       setNewDogName('')
       setNewDogBreed('')
-      onSaved()
+      onSaved(dog.id)
     } catch {
       console.error('Failed to add dog')
     } finally {
@@ -765,7 +769,7 @@ function StateB({ walk, connections, firstDog, isPro, onOpenTeam, onEditDog, onA
   )
 }
 
-function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStreak, weekData, lastWalkLog, todayWalked, todayLogs, onOpenTeam, onEditDog, onAddDog }: {
+function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStreak, weekData, lastWalkLog, todayWalked, todayLogs, onOpenTeam, onEditDog, onAddDog, latestReportToken }: {
   displayName: string
   firstDog: Dog | null
   connections: WalkerConnection[]
@@ -779,6 +783,7 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
   onOpenTeam: () => void
   onEditDog: (dog: Dog) => void
   onAddDog: () => void
+  latestReportToken?: string | null
 }) {
   const firstName = displayName.split(' ')[0]
   const lastWalkedDate = lastWalkLog?.started_at ?? lastWalk?.started_at ?? null
@@ -857,7 +862,7 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
       <WeekCalendar weekData={weekData} />
 
       {/* 6. Last walk from walk_logs */}
-      {lastWalkLog && <LastWalkCard log={lastWalkLog} />}
+      {lastWalkLog && <LastWalkCard log={lastWalkLog} reportToken={latestReportToken} />}
 
       {/* 7. Walker team */}
       <WalkerTeam connections={connections} />
@@ -868,7 +873,8 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
   )
 }
 
-export default function HomeClient({ displayName, firstDog, activeWalk, completedWalk, walkerConnections, lastWalk, isPro, walkStreak, weekData, lastWalkLog, todayWalked, todayLogs, trialStatus, trialDaysRemaining, totalReports }: Props) {
+export default function HomeClient({ displayName, firstDog, activeWalk, completedWalk, walkerConnections, lastWalk, isPro, walkStreak, weekData, lastWalkLog, todayWalked, todayLogs, trialStatus, trialDaysRemaining, totalReports, latestReportToken }: Props) {
+  const router = useRouter()
   const [showCelebration, setShowCelebration] = useState(false)
   const [teamSheetOpen, setTeamSheetOpen] = useState(false)
   const [dogEditOpen, setDogEditOpen] = useState(false)
@@ -1035,6 +1041,7 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
             onOpenTeam={() => setTeamSheetOpen(true)}
             onEditDog={handleEditDog}
             onAddDog={() => setAddDogOpen(true)}
+            latestReportToken={latestReportToken}
           />
         )}
       </main>
@@ -1055,7 +1062,7 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
       <AddDogSheet
         open={addDogOpen}
         onClose={() => setAddDogOpen(false)}
-        onSaved={() => { setAddDogOpen(false); showToast('Dog added!'); setTimeout(() => window.location.reload(), 1000) }}
+        onSaved={(dogId) => { setAddDogOpen(false); router.push('/setup/qr?dog=' + dogId) }}
       />
     </div>
   )

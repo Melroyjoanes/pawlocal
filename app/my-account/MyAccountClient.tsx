@@ -21,7 +21,6 @@ interface Dog {
   photo_url: string | null
   health_notes: string | null
   care_focus: string | null
-  walking_instructions: string | null
 }
 interface WalkerConnection {
   id: string
@@ -267,7 +266,7 @@ export default function MyAccountClient({
     setDogBreed(dog.breed ?? '')
     setDogCareFocus(dog.care_focus ?? 'normal')
     setDogHealthNotes(dog.health_notes ?? '')
-    setDogWalkingInstructions(dog.walking_instructions ?? '')
+    // walking_instructions stored in health_notes
   }
 
   async function handleSaveDog() {
@@ -282,7 +281,7 @@ export default function MyAccountClient({
           breed: dogBreed.trim() || null,
           care_focus: dogCareFocus,
           health_notes: dogHealthNotes.trim() || null,
-          walking_instructions: dogWalkingInstructions.trim() || null,
+          // walking_instructions stored in health_notes
         }),
       })
       // Update local dogs list optimistically — page will refresh on next navigation
@@ -626,6 +625,21 @@ export default function MyAccountClient({
                         {focus.emoji} {focus.label}
                       </span>
                     )}
+                    {/* Walker status */}
+                    {(() => {
+                      const hasWalker = walkerConnections.some(c => c.dog_id === dog.id && c.status === 'active')
+                      return (
+                        <div className="mt-1">
+                          {hasWalker ? (
+                            <span style={{ fontSize: 10, fontWeight: 700, color: '#166534', fontFamily: 'var(--font-nunito)' }}>✅ Walker connected</span>
+                          ) : (
+                            <a href={`/setup/qr?dog=${dog.id}`} style={{ fontSize: 10, fontWeight: 700, color: '#FF8C52', fontFamily: 'var(--font-nunito)', textDecoration: 'none' }}>
+                              ⚠️ No walker · Connect one →
+                            </a>
+                          )}
+                        </div>
+                      )
+                    })()}
                   </div>
 
                   {/* Action buttons */}
@@ -672,9 +686,16 @@ export default function MyAccountClient({
         {walkerConnections.length === 0 ? (
           <Card>
             <div className="text-center py-6">
-              <p className="text-3xl mb-2">👥</p>
-              <p className="font-semibold text-slate-700 mb-1" style={{ fontFamily: 'var(--font-fredoka)' }}>No walkers connected</p>
-              <p className="text-xs text-slate-400">Share your dog&apos;s QR code with whoever walks your dog.</p>
+              <p className="text-3xl mb-2">🦮</p>
+              <p className="font-semibold text-slate-700 mb-1" style={{ fontFamily: 'var(--font-fredoka)' }}>No walkers connected yet</p>
+              <p className="text-xs text-slate-400 mb-4">Share your QR code with your dog walker to start getting GPS reports.</p>
+              <a
+                href={dogs.length > 0 ? `/setup/qr?dog=${dogs[0].id}` : '/setup?go=1'}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm"
+                style={{ background: 'oklch(0.48 0.17 196)', color: '#fff', textDecoration: 'none', minHeight: 44, fontFamily: 'var(--font-nunito)' }}
+              >
+                Connect a walker →
+              </a>
             </div>
           </Card>
         ) : (
