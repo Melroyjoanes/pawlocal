@@ -4,7 +4,6 @@ import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRef, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 type WalkReport = {
   id: string
@@ -252,7 +251,6 @@ export default function WalkReportCard({
   const [copied, setCopied] = useState(false)
   const [burst, setBurst] = useState(false)
   const [shareUrl, setShareUrl] = useState('')
-  const [justSaved, setJustSaved] = useState(false)
   const prefersReduced = useReducedMotion()
 
   // Track parent view on mount — both systems
@@ -274,16 +272,6 @@ export default function WalkReportCard({
   // Set share URL client-side only
   useEffect(() => {
     setShareUrl(window.location.href.split('?')[0])
-  }, [])
-
-  // Detect ?saved=1 after OAuth claim redirect
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('saved') === '1') {
-      setJustSaved(true)
-      // Clean the URL without reloading
-      window.history.replaceState({}, '', window.location.pathname)
-    }
   }, [])
 
   // Trigger paw burst shortly after mount
@@ -678,71 +666,24 @@ export default function WalkReportCard({
           </div>
         </motion.div>
 
-        {/* ── Owner confirmation OR viral hook (never both) ──── */}
-        {isOwner ? (
-          /* Owner: show a reassuring confirmation strip */
-          <motion.div
-            className="mt-3 rounded-2xl px-4 py-3 flex items-center gap-3"
-            style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: EASE }}
-          >
-            <span className="text-xl">{justSaved ? '🎉' : '✓'}</span>
-            <div>
-              <p className="text-sm font-semibold text-green-800">
-                {justSaved ? 'Saved to your account!' : 'Reports arrive automatically'}
-              </p>
-              <p className="text-xs text-green-600 leading-snug">
-                {justSaved
-                  ? `Every walk report for ${report.dog_name} will be here — no action needed.`
-                  : 'Every walk gets delivered to your PupStep account'}
-              </p>
-            </div>
-          </motion.div>
-        ) : (
-          /* Stranger: save prompt */
-          <motion.div
-            className="mt-3 rounded-2xl overflow-hidden"
-            style={{
-              background: 'linear-gradient(135deg, oklch(0.94 0.06 196) 0%, oklch(0.90 0.08 196) 100%)',
-              border: '1.5px solid oklch(0.82 0.10 196)',
-            }}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.5, ease: EASE }}
-          >
-            <div className="p-5">
-              <p className="text-sm font-semibold text-stone-700 mb-3">
-                Save {report.dog_name}&apos;s reports to your account — every walk, automatically.
-              </p>
-              <motion.button
-                onClick={async () => {
-                  fetch('/api/track', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ event_type: 'viral_hook_tapped', report_token: report.token }),
-                  }).catch(() => {})
-                  const supabase = createClient()
-                  const { data: { user } } = await supabase.auth.getUser()
-                  const claimPath = `/api/claim-report/${report.token}`
-                  if (user) {
-                    window.location.href = claimPath
-                  } else {
-                    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(claimPath)}`
-                    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } })
-                  }
-                }}
-                className="w-full py-3.5 rounded-xl font-bold text-white text-sm"
-                style={{ background: 'oklch(0.48 0.17 196)', boxShadow: '0 3px 0 oklch(0.35 0.14 196)' }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ duration: 0.12 }}
-              >
-                Save to my account →
-              </motion.button>
-            </div>
-          </motion.div>
-        )}
+        {/* ── Delivery confirmation — shown to everyone ──────── */}
+        <motion.div
+          className="mt-3 rounded-2xl px-4 py-3 flex items-center gap-3"
+          style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: EASE }}
+        >
+          <span className="text-xl">✓</span>
+          <div>
+            <p className="text-sm font-semibold text-green-800">
+              Report delivered to {report.dog_name}&apos;s owner
+            </p>
+            <p className="text-xs text-green-600 leading-snug">
+              Share this link with your vet or family using the buttons above.
+            </p>
+          </div>
+        </motion.div>
 
         {/* ── Footer ─────────────────────────────────────────── */}
         <motion.div

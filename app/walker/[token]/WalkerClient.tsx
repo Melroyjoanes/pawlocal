@@ -128,6 +128,28 @@ interface WalkerClientProps {
   careFocus: string | null
 }
 
+interface ClientConnection {
+  token: string
+  dogId: string | null
+  dogName: string
+  dogBreed: string | null
+  dogPhoto: string | null
+  healthNotes: string | null
+  careFocus: string
+  ownerFirstName: string
+  lastWalkDate: string | null
+}
+
+function relativeTime(iso: string): string {
+  const d = new Date(iso), now = new Date()
+  const diff = now.getTime() - d.getTime()
+  const hours = Math.floor(diff / 3600000)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(diff / 86400000)
+  if (days === 1) return 'yesterday'
+  return `${days}d ago`
+}
+
 const CARE_FOCUS_CONFIG: Record<string, { emoji: string; label: string; bg: string; border: string; color: string; walkerNote: string }> = {
   stomach: { emoji: '💩', label: 'Stomach monitoring', bg: '#FEF9C3', border: '#FDE047', color: '#854D0E', walkerNote: 'Poop photo is especially important today. Please photograph every time.' },
   recovery: { emoji: '🩹', label: 'Recovery mode', bg: '#FEE2E2', border: '#FECACA', color: '#991B1B', walkerNote: 'Gentle walk only. No running. Watch for limping or discomfort.' },
@@ -217,6 +239,14 @@ function SettingsTab({
   ownerPhone,
   careFocus,
   showToast,
+  addClientOtp,
+  setAddClientOtp,
+  addClientLoading,
+  setAddClientLoading,
+  addClientSuccess,
+  setAddClientSuccess,
+  addClientError,
+  setAddClientError,
 }: {
   token: string
   walkerName: string
@@ -230,6 +260,14 @@ function SettingsTab({
   ownerPhone: string | null
   careFocus: string | null
   showToast: (msg: string) => void
+  addClientOtp: string
+  setAddClientOtp: (v: string) => void
+  addClientLoading: boolean
+  setAddClientLoading: (v: boolean) => void
+  addClientSuccess: string | null
+  setAddClientSuccess: (v: string | null) => void
+  addClientError: string | null
+  setAddClientError: (v: string | null) => void
 }) {
   const [profileName, setProfileName] = useState(walkerName)
   const [profileRole, setProfileRole] = useState(walkerRole ?? '')
@@ -524,6 +562,74 @@ function SettingsTab({
         </div>
       </div>
 
+      {/* ── Section 6: Add another client ── */}
+      <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #E5E7EB', padding: '16px' }}>
+        <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#0A2F35', margin: '0 0 4px' }}>
+          Add another client
+        </p>
+        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#64748B', margin: '0 0 12px' }}>
+          Ask your new client to show you their 4-digit code
+        </p>
+
+        {addClientSuccess ? (
+          <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '12px 14px' }}>
+            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, color: '#166534', margin: 0 }}>
+              ✅ {addClientSuccess}
+            </p>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#166534', margin: '4px 0 0' }}>
+              Go back to the Walk tab to see your new client.
+            </p>
+          </div>
+        ) : (
+          <>
+            <input
+              type="number"
+              inputMode="numeric"
+              maxLength={4}
+              placeholder="1 2 3 4"
+              value={addClientOtp}
+              onChange={e => { setAddClientOtp(e.target.value.slice(0, 4)); setAddClientError(null) }}
+              style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: '2px solid #E5E7EB',
+                fontSize: 24, fontWeight: 700, textAlign: 'center', letterSpacing: '0.3em',
+                fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', marginBottom: 10 }}
+            />
+            {addClientError && (
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#DC2626', margin: '0 0 8px' }}>
+                {addClientError}
+              </p>
+            )}
+            <button
+              disabled={addClientOtp.length !== 4 || addClientLoading}
+              onClick={async () => {
+                setAddClientLoading(true)
+                setAddClientError(null)
+                try {
+                  const res = await fetch(`/api/walker/${token}/add-client`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ otp: addClientOtp }),
+                  })
+                  const data = await res.json()
+                  if (!res.ok) { setAddClientError(data.error ?? 'Something went wrong'); return }
+                  setAddClientSuccess(data.message ?? `Connected to ${data.dogName}!`)
+                  setAddClientOtp('')
+                  // Refresh connections
+                  setTimeout(() => window.location.reload(), 2000)
+                } catch { setAddClientError('Network error. Try again.') }
+                finally { setAddClientLoading(false) }
+              }}
+              style={{ width: '100%', minHeight: 52, borderRadius: 12, border: 'none',
+                background: addClientOtp.length === 4 ? 'oklch(0.48 0.17 196)' : '#E5E7EB',
+                color: addClientOtp.length === 4 ? '#fff' : '#9CA3AF',
+                fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700,
+                cursor: addClientOtp.length === 4 ? 'pointer' : 'not-allowed' }}
+            >
+              {addClientLoading ? 'Connecting…' : 'Connect →'}
+            </button>
+          </>
+        )}
+      </div>
+
     </div>
   )
 }
@@ -548,6 +654,15 @@ export default function WalkerClient({
   const [activeTab, setActiveTab] = useState<WalkerTab>('walk')
   const [showSaveNotice, setShowSaveNotice] = useState(false)
 
+  // Multi-client state
+  const [connections, setConnections] = useState<ClientConnection[]>([])
+  const [selectedToken, setSelectedToken] = useState<string>(token)
+  const [showPicker, setShowPicker] = useState(false)
+  const [addClientOtp, setAddClientOtp] = useState('')
+  const [addClientLoading, setAddClientLoading] = useState(false)
+  const [addClientSuccess, setAddClientSuccess] = useState<string | null>(null)
+  const [addClientError, setAddClientError] = useState<string | null>(null)
+
   // Demo walk state
   const [isDemoWalk, setIsDemoWalk] = useState(false)
   const [showDemoConfirm, setShowDemoConfirm] = useState(false)
@@ -562,6 +677,18 @@ export default function WalkerClient({
   useEffect(() => {
     const dismissed = localStorage.getItem(`pup-saved-${token}`)
     if (!dismissed) setShowSaveNotice(true)
+  }, [token])
+
+  useEffect(() => {
+    fetch(`/api/walker/${token}/connections`)
+      .then(r => r.json())
+      .then((data: ClientConnection[]) => {
+        if (Array.isArray(data) && data.length > 1) {
+          setConnections(data)
+          setShowPicker(true)  // show picker if multiple dogs
+        }
+      })
+      .catch(() => {})
   }, [token])
 
   function dismissSaveNotice() {
@@ -1417,8 +1544,62 @@ export default function WalkerClient({
           )}
 
           {/* ─── IDLE PHASE ─── */}
-          {phase === 'idle' && (
+          {phase === 'idle' && showPicker && (
+            <div className="px-5 pt-6 pb-24">
+              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 24, fontWeight: 700, color: '#0A2F35', marginBottom: 6 }}>
+                Who are you walking today? 🐕
+              </p>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', marginBottom: 24 }}>
+                Choose the dog for this walk
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {connections.map(c => (
+                  <button
+                    key={c.token}
+                    onClick={() => {
+                      setSelectedToken(c.token)
+                      setShowPicker(false)
+                    }}
+                    style={{
+                      background: '#fff', borderRadius: 18, padding: '16px',
+                      border: `2px solid ${selectedToken === c.token ? 'oklch(0.48 0.17 196)' : '#E5E7EB'}`,
+                      display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left', cursor: 'pointer',
+                    }}
+                  >
+                    {/* Dog photo */}
+                    <div style={{ width: 56, height: 56, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+                      background: 'oklch(0.94 0.06 196)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {c.dogPhoto
+                        ? <img src={c.dogPhoto} alt={c.dogName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <span style={{ fontSize: 24 }}>🐕</span>}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 18, fontWeight: 700, color: '#0A2F35', margin: 0 }}>
+                        {c.dogName}
+                      </p>
+                      <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#64748B', margin: '2px 0 0' }}>
+                        {c.ownerFirstName}&apos;s dog
+                        {c.lastWalkDate ? ` · Last walked ${relativeTime(c.lastWalkDate)}` : ' · Never walked'}
+                      </p>
+                    </div>
+                    <span style={{ fontSize: 20, color: 'oklch(0.48 0.17 196)' }}>→</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {phase === 'idle' && !showPicker && (
             <div className="px-5 space-y-4">
+              {/* Change dog button — shown when walker has multiple clients */}
+              {connections.length > 1 && (
+                <button
+                  onClick={() => setShowPicker(true)}
+                  style={{ background: 'none', border: 'none', fontFamily: 'var(--font-nunito)', fontSize: 13,
+                    color: 'oklch(0.48 0.17 196)', fontWeight: 600, cursor: 'pointer', padding: '8px 0', minHeight: 44 }}>
+                  ← Change dog
+                </button>
+              )}
               {/* First-time save notice */}
               {showSaveNotice && (
                 <div
@@ -2125,6 +2306,14 @@ export default function WalkerClient({
             setToast(msg)
             setTimeout(() => setToast(null), 3000)
           }}
+          addClientOtp={addClientOtp}
+          setAddClientOtp={setAddClientOtp}
+          addClientLoading={addClientLoading}
+          setAddClientLoading={setAddClientLoading}
+          addClientSuccess={addClientSuccess}
+          setAddClientSuccess={setAddClientSuccess}
+          addClientError={addClientError}
+          setAddClientError={setAddClientError}
         />
       )}
 
