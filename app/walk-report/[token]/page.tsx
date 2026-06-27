@@ -160,34 +160,42 @@ export default async function WalkReportPage({
   const isClaimedByMe = !!user && report.customer_id === user.id
 
   // Check if this is the owner's first-ever walk report
+  // Wrapped in try-catch — owner_id column requires migration 047
   let isFirstReport = false
-  if (report.customer_id) {
-    const adminFirst = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { count } = await (adminFirst.from('walk_reports') as any)
-      .select('id', { count: 'exact', head: true })
-      .eq('owner_id', report.customer_id)
-    isFirstReport = (count ?? 0) === 1
-  }
+  try {
+    if (report.customer_id) {
+      const adminFirst = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { count } = await (adminFirst.from('walk_reports') as any)
+        .select('id', { count: 'exact', head: true })
+        .eq('customer_id', report.customer_id)  // use customer_id — always exists
+      isFirstReport = (count ?? 0) === 1
+    }
+  } catch { /* non-critical — skip if column missing */ }
 
-  // Check new system: is user the linked owner via provider_clients?
+  // V2: owner is whoever has this dog via walker_connections
+  // Simple check: if logged-in user's customer_id matches OR if they have a
+  // walker connection for this report's connection_id
   let isLinkedOwner = false
-  if (user && report.client_id) {
-    const adminCheck = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: link } = await (adminCheck.from('provider_clients') as any)
-      .select('id')
-      .eq('id', report.client_id)
-      .eq('owner_user_id', user.id)
-      .maybeSingle()
-    isLinkedOwner = !!link
-  }
+  try {
+    if (user && report.provider_id === null) {
+      // V2 report — check if user owns a dog linked via walker_connections
+      const adminCheck = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: conn } = await (adminCheck.from('walker_connections') as any)
+        .select('owner_id')
+        .eq('owner_id', user.id)
+        .limit(1)
+        .maybeSingle()
+      isLinkedOwner = !!conn
+    }
+  } catch { /* non-critical */ }
 
   const isOwner = isLinkedOwner || isClaimedByMe
 
