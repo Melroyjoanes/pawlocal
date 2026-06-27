@@ -912,7 +912,7 @@ export default function WalkerClient({
       fetch('/api/walks/notify-start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ connection_token: token }),
+        body: JSON.stringify({ connection_token: selectedToken }),
       }).catch(() => {})
     }
 
@@ -1038,7 +1038,7 @@ export default function WalkerClient({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          connection_token: token,
+          connection_token: selectedToken,
           duration_mins: durationMins,
           distance_km: distanceKm > 0 ? +distanceKm.toFixed(2) : null,
           gps_route: gpsRoute.length > 0 ? gpsRoute : null,
