@@ -23,6 +23,7 @@ export async function GET(
       walker_role,
       owner_phone,
       claimed_at,
+      expected_walker_phone,
       dogs!walker_connections_dog_id_fkey (
         name,
         breed,
@@ -63,5 +64,6 @@ export async function GET(
     walkerRole: connection.walker_role ?? null,
     ownerPhone: connection.owner_phone ?? null,
     careFocus: connection.dogs?.care_focus ?? 'normal',
+    expectedWalkerPhone: connection.expected_walker_phone ?? null,
   })
 }

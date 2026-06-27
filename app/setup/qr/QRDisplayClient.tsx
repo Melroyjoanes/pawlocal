@@ -27,13 +27,12 @@ export default function QRDisplayClient({
   const [shareUrl, setShareUrl] = useState('')
   const [walkerDashUrl, setWalkerDashUrl] = useState('')
   const [walkerDashWaUrl, setWalkerDashWaUrl] = useState('')
-  const [hindiScript, setHindiScript] = useState('')
   const [walkerName, setWalkerName] = useState(initialWalkerName)
   const [walkerPhone, setWalkerPhone] = useState(initialWalkerPhone)
   const [status, setStatus] = useState(initialStatus)
   const [justConnected, setJustConnected] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [walkerGuideOpen, setWalkerGuideOpen] = useState(false)
+  const [walkerDirectPhone, setWalkerDirectPhone] = useState('')
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Build connect URL and WhatsApp share URL using window.location.origin (client-side only)
@@ -41,11 +40,10 @@ export default function QRDisplayClient({
     const origin = window.location.origin
     const url = origin + '/connect/' + token
     setConnectUrl(url)
-    const msg = `Hi! I use PupStep to track ${dogName}'s walks. Scan this QR code and enter code: ${otp ?? ''} 🐾\n${url}`
+    const msg = `Hi! Open this link to connect to ${dogName} on PupStep.\n\nEnter code *${otp ?? ''}* when asked.\n\n${url}`
     setShareUrl('https://wa.me/?text=' + encodeURIComponent(msg))
     const dashUrl = origin + '/walker/' + token
     setWalkerDashUrl(dashUrl)
-    setHindiScript(`Hi! PupStep se apne kutte ki walk track karo.\n\n1. Yeh link kholo\n2. Code daalo jo main dikhata/dikhati hun\n3. Apna naam aur number daalo\n4. "Walk shuru karo" dabao\n5. Chalne ke waqt 💧 Toilet aur 💩 Potty button dabao\n6. Walk khatam hone pe kutte ki photo lo\n7. "Send karo" dabao\n\nBas! Owner ko report mil jayegi. 🐾\n\n${url}`)
   }, [token, dogName, otp])
 
   // Build walker dashboard WhatsApp URL (depends on walkerName which may update after poll)
@@ -55,6 +53,22 @@ export default function QRDisplayClient({
     const msg = `Hi ${displayName}! Here's your PupStep dashboard for ${dogName} 🐾\nTap this link anytime to log walks:\n${walkerDashUrl}`
     setWalkerDashWaUrl('https://wa.me/?text=' + encodeURIComponent(msg))
   }, [walkerDashUrl, walkerName, dogName])
+
+  function buildDirectWaLink(phone: string): string {
+    const fullPhone = phone.startsWith('91') ? phone : `91${phone}`
+    const msg = `Hi! Please open this link to connect to ${dogName} on PupStep.\n\nEnter code *${otp ?? ''}* when asked.\n\n${connectUrl}`
+    return `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`
+  }
+
+  async function saveExpectedPhone(phone: string) {
+    // Fire-and-forget: save the walker's expected phone to the connection
+    if (!dogId) return
+    fetch(`/api/dogs/${dogId}/qr/expected-phone`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: phone.replace(/\D/g, '') }),
+    }).catch(() => {})
+  }
 
   function handleCopyLink() {
     if (!walkerDashUrl) return
@@ -434,25 +448,48 @@ export default function QRDisplayClient({
           </div>
         )}
 
-        {/* How to share with your walker — shown only when pending */}
+        {/* Share section — shown only when pending */}
         {!isActive && (
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Divider */}
             <div style={{ borderTop: '1px solid #E5E7EB', width: '100%' }} />
 
-            {/* Section heading */}
-            <p
-              style={{
-                fontFamily: 'var(--font-fredoka), sans-serif',
-                fontSize: '17px',
-                fontWeight: 700,
-                color: '#0A2F35',
-                margin: 0,
-                textAlign: 'center',
-              }}
-            >
-              How to share with your walker
-            </p>
+            {/* Direct send to walker — primary action */}
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, color: '#0A2F35', margin: 0 }}>
+                Send to your walker
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', border: '2px solid #E5E7EB', borderRadius: 12, overflow: 'hidden', background: '#fff' }}>
+                  <span style={{ padding: '12px 8px 12px 12px', fontSize: 14, color: '#6B7280', fontWeight: 700, fontFamily: 'var(--font-nunito)', userSelect: 'none', flexShrink: 0 }}>+91</span>
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    value={walkerDirectPhone}
+                    onChange={e => setWalkerDirectPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="Walker's number"
+                    style={{ flex: 1, padding: '12px 12px 12px 4px', border: 'none', outline: 'none', fontSize: 14, fontFamily: 'var(--font-nunito)', color: '#0A2F35', background: 'transparent', minWidth: 0 }}
+                  />
+                </div>
+                <a
+                  href={walkerDirectPhone.length === 10 ? buildDirectWaLink(walkerDirectPhone) : '#'}
+                  onClick={walkerDirectPhone.length === 10 ? () => saveExpectedPhone(walkerDirectPhone) : (e: React.MouseEvent<HTMLAnchorElement>) => e.preventDefault()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: walkerDirectPhone.length === 10 ? '#25D366' : '#E5E7EB',
+                    color: walkerDirectPhone.length === 10 ? '#fff' : '#9CA3AF',
+                    borderRadius: 12, padding: '0 16px', minHeight: 48, fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, textDecoration: 'none', flexShrink: 0, whiteSpace: 'nowrap',
+                  }}
+                >
+                  Send →
+                </a>
+              </div>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#9CA3AF', margin: 0 }}>
+                We&apos;ll include the link and code in the message
+              </p>
+            </div>
 
             {/* Teal info card */}
             <div
@@ -492,7 +529,7 @@ export default function QRDisplayClient({
               </div>
             </div>
 
-            {/* WhatsApp share button */}
+            {/* Share link button — secondary */}
             <a
               href={shareUrl || '#'}
               target="_blank"
@@ -501,8 +538,8 @@ export default function QRDisplayClient({
                 display: 'block',
                 width: '100%',
                 textAlign: 'center',
-                backgroundColor: '#25D366',
-                color: '#ffffff',
+                backgroundColor: '#F3F4F6',
+                color: '#374151',
                 textDecoration: 'none',
                 borderRadius: '16px',
                 padding: '14px 24px',
@@ -510,83 +547,13 @@ export default function QRDisplayClient({
                 fontWeight: 700,
                 fontFamily: 'var(--font-fredoka), sans-serif',
                 boxSizing: 'border-box',
+                border: '1px solid #E5E7EB',
               }}
             >
-              📲 Share via WhatsApp
-            </a>
-
-            {/* Hindi walker instructions button */}
-            <a
-              href={hindiScript ? `https://wa.me/?text=${encodeURIComponent(hindiScript)}` : '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 10,
-                width: '100%',
-                minHeight: 52,
-                borderRadius: 14,
-                background: '#25D366',
-                color: '#fff',
-                fontFamily: 'var(--font-fredoka)',
-                fontSize: 16,
-                fontWeight: 700,
-                textDecoration: 'none',
-                padding: '0 16px',
-                boxSizing: 'border-box',
-              }}
-            >
-              📋 Send walker instructions (Hindi)
+              🔗 Share link
             </a>
           </div>
         )}
-
-        {/* What your walker will see — collapsible parent guide */}
-        {(() => {
-          const walkerSteps = [
-            { icon: '📱', title: 'Connect screen', desc: 'Walker opens the link → enters 4-digit OTP → types their name and phone' },
-            { icon: '🏠', title: 'Walker dashboard', desc: `They see a big "Start Walk" button with ${dogName}'s health notes below it` },
-            { icon: '🗺️', title: 'During the walk', desc: 'Live GPS map + two big buttons: 💧 Toilet and 💩 Potty. They tap when it happens.' },
-            { icon: '📸', title: 'After the walk', desc: 'They take a photo of your dog, then tap "Send report" — you get the WhatsApp link instantly' },
-          ]
-          return (
-            <div style={{ width: '100%', background: '#F8F7F4', borderRadius: 16, overflow: 'hidden', border: '1.5px solid rgba(226,220,200,0.7)' }}>
-              <button
-                onClick={() => setWalkerGuideOpen(o => !o)}
-                style={{ width: '100%', background: 'none', border: 'none', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', minHeight: 48 }}
-              >
-                <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: '#0A2F35', margin: 0 }}>
-                  👁 What will my walker see?
-                </p>
-                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: 'oklch(0.48 0.17 196)', fontWeight: 700 }}>
-                  {walkerGuideOpen ? 'Hide ↑' : 'Show ↓'}
-                </span>
-              </button>
-              {walkerGuideOpen && (
-                <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {walkerSteps.map((s, i) => (
-                    <div key={i} style={{ background: '#fff', borderRadius: 12, padding: '10px 14px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: 22, flexShrink: 0 }}>{s.icon}</span>
-                      <div>
-                        <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 13, fontWeight: 700, color: '#0A2F35', margin: '0 0 2px' }}>
-                          Step {i + 1}: {s.title}
-                        </p>
-                        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#64748B', margin: 0, lineHeight: 1.5 }}>
-                          {s.desc}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#94A3B8', textAlign: 'center', margin: 0 }}>
-                    Your walker can also try a practice walk on their dashboard before the first real walk
-                  </p>
-                </div>
-              )}
-            </div>
-          )
-        })()}
 
         {/* Navigation links */}
         <div

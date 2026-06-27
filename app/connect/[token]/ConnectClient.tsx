@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react'
 
 type Lang = 'en' | 'hi' | 'mr'
 type Step = 'form' | 'success'
+type ViewState = 'phone-first' | 'returning' | 'new-walker'
 
 const STRINGS = {
   en: {
@@ -68,6 +69,7 @@ interface ConnectClientProps {
   healthNotes: string | null
   ownerFirstName: string
   isClaimed: boolean
+  expectedWalkerPhone: string | null
 }
 
 export default function ConnectClient({
@@ -77,6 +79,7 @@ export default function ConnectClient({
   healthNotes,
   ownerFirstName,
   dogBreed,
+  expectedWalkerPhone,
 }: ConnectClientProps) {
   const [lang, setLang] = useState<Lang>('en')
   const [otp, setOtp] = useState('')
@@ -90,12 +93,28 @@ export default function ConnectClient({
   const [walkerDashWaUrl, setWalkerDashWaUrl] = useState('')
   const [walkerDashUrl, setWalkerDashUrl] = useState('')
 
+  // Phone-first state machine
+  const [viewState, setViewState] = useState<ViewState>('phone-first')
+  const [phoneInput, setPhoneInput] = useState('')
+  const [lookingUp, setLookingUp] = useState(false)
+  const [recognisedName, setRecognisedName] = useState<string | null>(null)
+  const [recognisedRole, setRecognisedRole] = useState<string | null>(null)
+
   useEffect(() => {
     const dashUrl = `${window.location.origin}/walker/${token}`
     setWalkerDashUrl(dashUrl)
     const msg = `My PupStep dashboard for ${dogName} 🐾\nTap to start logging walks:\n${dashUrl}`
     setWalkerDashWaUrl('https://wa.me/?text=' + encodeURIComponent(msg))
   }, [token, dogName])
+
+  // If parent pre-set the walker's phone, auto-lookup on mount
+  useEffect(() => {
+    if (expectedWalkerPhone) {
+      const digits = expectedWalkerPhone.replace(/\D/g, '')
+      setPhoneInput(digits)
+      lookupPhone(digits)
+    }
+  }, [expectedWalkerPhone]) // eslint-disable-line
 
   const t = STRINGS[lang]
 
@@ -106,33 +125,64 @@ export default function ConnectClient({
     { value: 'other', label: t.roleOther },
   ]
 
+  async function lookupPhone(digits: string) {
+    if (digits.length !== 10) return
+    setLookingUp(true)
+    try {
+      const res = await fetch(`/api/walker/lookup?phone=${digits}`)
+      const data = await res.json()
+      if (data.found) {
+        setRecognisedName(data.name as string)
+        setRecognisedRole(data.role as string | null)
+        setViewState('returning')
+      } else {
+        setViewState('new-walker')
+      }
+    } catch {
+      setViewState('new-walker')
+    } finally {
+      setLookingUp(false)
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!otp || otp.length !== 4) {
       setError('Please enter the 4-digit code.')
       return
     }
-    if (!name.trim()) {
-      setError('Please enter your name.')
-      return
+
+    // For new-walker view, validate name + phone
+    if (viewState === 'new-walker') {
+      if (!name.trim()) {
+        setError('Please enter your name.')
+        return
+      }
+      const digitsOnly = phone.replace(/\D/g, '')
+      if (digitsOnly.length !== 10) {
+        setError('Please enter a valid 10-digit phone number.')
+        return
+      }
     }
-    const digitsOnly = phone.replace(/\D/g, '')
-    if (digitsOnly.length !== 10) {
-      setError('Please enter a valid 10-digit phone number.')
-      return
-    }
+
     setLoading(true)
     setError(null)
+
+    const submittedPhone =
+      viewState === 'returning'
+        ? phoneInput
+        : phone.trim() || phoneInput || null
 
     try {
       const res = await fetch(`/api/connect/${token}/claim`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          walker_name: name.trim(),
-          walker_phone: phone.trim() || null,
+          walker_name: viewState === 'returning' ? recognisedName : name.trim(),
+          walker_phone: submittedPhone || null,
           walker_email: email.trim() || null,
-          walker_role: role || null,
+          walker_role:
+            viewState === 'returning' ? (recognisedRole ?? null) : (role || null),
           otp,
         }),
       })
@@ -152,7 +202,6 @@ export default function ConnectClient({
       setStep('success')
       setLoading(false)
       // Auto-open WhatsApp so walker saves their dashboard link immediately
-      // They just tap Send — no hunting for a button later
       if (walkerDashWaUrl) {
         setTimeout(() => window.open(walkerDashWaUrl, '_blank', 'noopener'), 600)
       }
@@ -215,8 +264,9 @@ export default function ConnectClient({
     )
   }
 
-  return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#FFFBEB' }}>
+  // ── Dog context header (shared across views) ─────────────────────────────
+  const DogHeader = () => (
+    <>
       {/* Language toggle */}
       <div className="flex items-center justify-center pt-4 px-6 gap-2">
         {(['en', 'hi', 'mr'] as Lang[]).map((l) => (
@@ -241,27 +291,6 @@ export default function ConnectClient({
         <span className="text-2xl font-bold text-[#0A2F35]" style={{ fontFamily: 'var(--font-fredoka)' }}>
           {t.brand}
         </span>
-      </div>
-
-      {/* Step progress indicator */}
-      <div className="flex items-center justify-center mb-5" style={{ fontFamily: 'var(--font-nunito)' }}>
-        <div className="flex items-center gap-0" style={{ maxWidth: 200 }}>
-          <div
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white"
-            style={{ background: '#FF8C52', whiteSpace: 'nowrap' }}
-          >
-            <span className="w-4 h-4 rounded-full bg-white flex items-center justify-center text-[10px] font-bold" style={{ color: '#FF8C52' }}>1</span>
-            Enter code
-          </div>
-          <div className="h-0.5 w-6 flex-shrink-0" style={{ background: '#D1D5DB' }} />
-          <div
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2"
-            style={{ border: '2px solid #D1D5DB', color: '#9CA3AF', whiteSpace: 'nowrap', background: 'transparent' }}
-          >
-            <span className="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-400">2</span>
-            Get dashboard
-          </div>
-        </div>
       </div>
 
       {/* Dog avatar section */}
@@ -300,6 +329,188 @@ export default function ConnectClient({
       <p className="text-center text-xs text-slate-500 px-8 mb-6" style={{ fontFamily: 'var(--font-nunito)' }}>
         Every walk you take will be automatically reported to the owner.
       </p>
+    </>
+  )
+
+  // ── VIEW: phone-first ─────────────────────────────────────────────────────
+  if (viewState === 'phone-first') {
+    return (
+      <div className="min-h-screen flex flex-col" style={{ background: '#FFFBEB' }}>
+        <DogHeader />
+
+        <div style={{ padding: '0 20px 40px' }}>
+          <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#0A2F35', marginBottom: 6 }}>
+            What&apos;s your mobile number?
+          </p>
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', marginBottom: 20 }}>
+            We&apos;ll check if you&apos;ve used PupStep before
+          </p>
+
+          <div style={{ display: 'flex', alignItems: 'center', border: '2px solid #E5E7EB', borderRadius: 12, overflow: 'hidden', marginBottom: 16, background: '#fff' }}>
+            <span style={{ padding: '13px 10px 13px 14px', fontSize: 15, color: '#6B7280', fontWeight: 700, fontFamily: 'var(--font-nunito)', userSelect: 'none' }}>+91</span>
+            <input
+              type="tel"
+              inputMode="numeric"
+              value={phoneInput}
+              onChange={e => setPhoneInput(e.target.value.replace(/\D/g, '').slice(0, 10))}
+              onKeyDown={e => { if (e.key === 'Enter' && phoneInput.length === 10) lookupPhone(phoneInput) }}
+              placeholder="9876543210"
+              autoFocus
+              style={{ flex: 1, padding: '13px 14px 13px 0', border: 'none', outline: 'none', fontSize: 15, fontFamily: 'var(--font-nunito)', color: '#0A2F35', background: 'transparent' }}
+            />
+          </div>
+
+          <button
+            disabled={phoneInput.length !== 10 || lookingUp}
+            onClick={() => lookupPhone(phoneInput)}
+            style={{
+              width: '100%',
+              minHeight: 56,
+              borderRadius: 14,
+              border: 'none',
+              background: phoneInput.length === 10 ? '#FF8C52' : '#E5E7EB',
+              color: phoneInput.length === 10 ? '#fff' : '#9CA3AF',
+              fontFamily: 'var(--font-fredoka)',
+              fontSize: 17,
+              fontWeight: 700,
+              cursor: phoneInput.length === 10 ? 'pointer' : 'not-allowed',
+            }}
+          >
+            {lookingUp ? 'Checking…' : 'Continue →'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── VIEW: returning walker — OTP only ────────────────────────────────────
+  if (viewState === 'returning') {
+    return (
+      <div className="min-h-screen flex flex-col" style={{ background: '#FFFBEB' }}>
+        <DogHeader />
+
+        <form onSubmit={handleSubmit} style={{ padding: '0 20px 40px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <div style={{
+              width: 64, height: 64, borderRadius: '50%',
+              background: 'oklch(0.94 0.06 196)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 30, margin: '0 auto 12px',
+            }}>
+              👋
+            </div>
+            <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color: '#0A2F35', margin: '0 0 6px' }}>
+              Welcome back, {recognisedName}!
+            </h2>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', margin: 0 }}>
+              Look at your client&apos;s screen and enter the 4-digit code shown below their QR.
+            </p>
+          </div>
+
+          {/* OTP field */}
+          <label style={{ display: 'block', fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: '#0A2F35', marginBottom: 8 }}>
+            4-digit code
+          </label>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={otp}
+            onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            placeholder="1 2 3 4"
+            autoFocus
+            style={{
+              width: '100%',
+              padding: '16px',
+              borderRadius: 12,
+              border: '2px solid #E5E7EB',
+              fontSize: 28,
+              fontWeight: 700,
+              letterSpacing: '0.3em',
+              textAlign: 'center',
+              fontFamily: 'monospace',
+              outline: 'none',
+              boxSizing: 'border-box',
+              marginBottom: 8,
+            }}
+          />
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#9CA3AF', marginBottom: 20, textAlign: 'center' }}>
+            The code is shown on your client&apos;s phone screen
+          </p>
+
+          {error && (
+            <p style={{ color: '#DC2626', fontSize: 13, fontFamily: 'var(--font-nunito)', marginBottom: 12, textAlign: 'center' }}>
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || otp.length !== 4}
+            style={{
+              width: '100%',
+              minHeight: 56,
+              borderRadius: 14,
+              border: 'none',
+              background: otp.length === 4 ? 'oklch(0.48 0.17 196)' : '#E5E7EB',
+              color: otp.length === 4 ? '#fff' : '#9CA3AF',
+              fontFamily: 'var(--font-fredoka)',
+              fontSize: 17,
+              fontWeight: 700,
+              cursor: otp.length === 4 ? 'pointer' : 'not-allowed',
+            }}
+          >
+            {loading ? 'Connecting…' : 'Connect →'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setViewState('phone-first'); setOtp(''); setError(null) }}
+            style={{
+              width: '100%',
+              background: 'none',
+              border: 'none',
+              marginTop: 12,
+              fontFamily: 'var(--font-nunito)',
+              fontSize: 13,
+              color: '#94A3B8',
+              cursor: 'pointer',
+              padding: '8px',
+              minHeight: 44,
+            }}
+          >
+            ← Use a different number
+          </button>
+        </form>
+      </div>
+    )
+  }
+
+  // ── VIEW: new-walker — full form ─────────────────────────────────────────
+  // (viewState === 'new-walker')
+  return (
+    <div className="min-h-screen flex flex-col" style={{ background: '#FFFBEB' }}>
+      <DogHeader />
+
+      {/* Step progress indicator */}
+      <div className="flex items-center justify-center mb-5" style={{ fontFamily: 'var(--font-nunito)' }}>
+        <div className="flex items-center gap-0" style={{ maxWidth: 200 }}>
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white"
+            style={{ background: '#FF8C52', whiteSpace: 'nowrap' }}
+          >
+            <span className="w-4 h-4 rounded-full bg-white flex items-center justify-center text-[10px] font-bold" style={{ color: '#FF8C52' }}>1</span>
+            Enter code
+          </div>
+          <div className="h-0.5 w-6 flex-shrink-0" style={{ background: '#D1D5DB' }} />
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border-2"
+            style={{ border: '2px solid #D1D5DB', color: '#9CA3AF', whiteSpace: 'nowrap', background: 'transparent' }}
+          >
+            <span className="w-4 h-4 rounded-full border-2 border-gray-300 flex items-center justify-center text-[10px] font-bold text-gray-400">2</span>
+            Get dashboard
+          </div>
+        </div>
+      </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex-1 px-5 space-y-4">
@@ -336,24 +547,43 @@ export default function ConnectClient({
           />
         </div>
 
+        {/* Phone — pre-filled from phone-first step, read-only with change link */}
         <div>
           <label className="block text-sm font-bold text-[#0A2F35] mb-1.5" style={{ fontFamily: 'var(--font-nunito)' }}>
             {t.phoneLabel}
           </label>
-          <input
-            type="tel"
-            required
-            inputMode="numeric"
-            maxLength={10}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-            placeholder={t.phonePlaceholder}
-            className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF8C52] min-h-[52px]"
-            style={{ fontFamily: 'var(--font-nunito)' }}
-          />
-          <p className="text-xs text-slate-400 mt-1 ml-1" style={{ fontFamily: 'var(--font-nunito)' }}>
-            {t.dashboardHint}
-          </p>
+          {phoneInput ? (
+            <div className="flex items-center gap-2">
+              <div className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-base text-slate-800 min-h-[52px] flex items-center" style={{ fontFamily: 'var(--font-nunito)' }}>
+                +91 {phoneInput}
+              </div>
+              <button
+                type="button"
+                onClick={() => { setViewState('phone-first'); setError(null) }}
+                className="text-sm text-slate-400 hover:text-slate-600 px-2 py-1 rounded"
+                style={{ fontFamily: 'var(--font-nunito)', whiteSpace: 'nowrap' }}
+              >
+                Change
+              </button>
+            </div>
+          ) : (
+            <>
+              <input
+                type="tel"
+                required
+                inputMode="numeric"
+                maxLength={10}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                placeholder={t.phonePlaceholder}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-base text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF8C52] min-h-[52px]"
+                style={{ fontFamily: 'var(--font-nunito)' }}
+              />
+              <p className="text-xs text-slate-400 mt-1 ml-1" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {t.dashboardHint}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Email — optional */}

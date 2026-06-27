@@ -41,6 +41,7 @@ export default async function ConnectPage({ params }: ConnectPageProps) {
       healthNotes={data.healthNotes}
       ownerFirstName={data.ownerFirstName}
       isClaimed={data.status === 'active'}
+      expectedWalkerPhone={data.expectedWalkerPhone ?? null}
     />
   )
 }
