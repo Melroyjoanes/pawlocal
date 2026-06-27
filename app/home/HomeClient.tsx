@@ -77,7 +77,7 @@ interface Props {
 
 const cardClass = 'rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.08)] bg-white'
 
-function UpgradeBanner({ trialStatus, daysRemaining, totalReports }: { trialStatus: string; daysRemaining: number | null; totalReports: number }) {
+function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName }: { trialStatus: string; daysRemaining: number | null; totalReports: number; dogName: string }) {
   if (trialStatus === 'trial' && daysRemaining !== null && daysRemaining <= 3) {
     if (totalReports > 0) {
       return (
@@ -125,7 +125,7 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports }: { trialStat
       <div style={{ borderRadius: '16px', background: '#0A2F35', border: '1.5px solid rgba(255,255,255,0.08)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#FCA5A5', margin: 0 }}>
           {totalReports > 0
-            ? `🔒 ${totalReports} ${totalReports === 1 ? 'report is' : 'reports are'} locked. Upgrade to access Bruno's full care diary.`
+            ? `🔒 ${totalReports} ${totalReports === 1 ? 'report is' : 'reports are'} locked. Upgrade to access ${dogName}'s full care diary.`
             : '⛔ Your trial has ended. Upgrade to start receiving walk reports.'}
         </p>
         <Link href="/upgrade" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>Unlock for ₹249/month</Link>
@@ -937,7 +937,7 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
 
       {/* ── Content ────────────────────────────────────────────────────────── */}
       <main className="max-w-lg mx-auto px-4 pt-5 pb-28 flex flex-col gap-4">
-        {!isPro && <UpgradeBanner trialStatus={trialStatus} daysRemaining={trialDaysRemaining} totalReports={totalReports} />}
+        {!isPro && <UpgradeBanner trialStatus={trialStatus} daysRemaining={trialDaysRemaining} totalReports={totalReports} dogName={firstDog?.name ?? "your dog"} />}
 
         {/* First-report celebration */}
         {showCelebration && lastWalkLog && (

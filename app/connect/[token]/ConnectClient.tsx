@@ -136,7 +136,7 @@ export default function ConnectClient({
         setRecognisedRole(data.role as string | null)
         setViewState('returning')
       } else {
-        setViewState('new-walker')
+        setViewState('new-walker'); setPhone(digits)
       }
     } catch {
       setViewState('new-walker')
