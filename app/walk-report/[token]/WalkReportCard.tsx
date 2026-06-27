@@ -1,9 +1,9 @@
 'use client'
 
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
-import Image from 'next/image'
 import Link from 'next/link'
 import { useRef, useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 type WalkReport = {
   id: string
@@ -41,18 +41,25 @@ function formatWalkDate(isoDate: string): string {
   }
 }
 
-// ── Count-up from 0 to target on mount ────────────────────────
+function formatDateShort(isoDate: string): string {
+  try {
+    const d = new Date(isoDate)
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' · ' +
+      d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
+  } catch { return '' }
+}
+
+// Count-up from 0 to target
 function useCountUp(target: number, duration = 700, startDelay = 400) {
   const [value, setValue] = useState(0)
   const prefersReduced = useReducedMotion()
-
   useEffect(() => {
     if (prefersReduced || target === 0) { setValue(target); return }
     const timer = setTimeout(() => {
       const start = performance.now()
       const tick = (now: number) => {
         const t = Math.min((now - start) / duration, 1)
-        const eased = 1 - Math.pow(1 - t, 4) // ease-out-quart
+        const eased = 1 - Math.pow(1 - t, 4)
         setValue(Math.round(eased * target))
         if (t < 1) requestAnimationFrame(tick)
       }
@@ -60,11 +67,10 @@ function useCountUp(target: number, duration = 700, startDelay = 400) {
     }, startDelay)
     return () => clearTimeout(timer)
   }, [target, duration, startDelay, prefersReduced])
-
   return value
 }
 
-// ── Paw prints that burst from center on load ─────────────────
+// Paw burst
 function PawBurst() {
   const paws = [
     { x: 0,   y: -75, r: -10, delay: 0,    size: 22 },
@@ -75,24 +81,13 @@ function PawBurst() {
     { x: -74, y: 14,  r: -32, delay: 0.10, size: 17 },
     { x: -54, y: -50, r: 26,  delay: 0.06, size: 21 },
   ]
-
   return (
-    <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center overflow-hidden">
+    <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center overflow-hidden" style={{ top: '25%' }}>
       {paws.map((paw, i) => (
-        <motion.span
-          key={i}
-          className="absolute select-none"
-          style={{ fontSize: paw.size, top: '28%' }}
+        <motion.span key={i} className="absolute select-none" style={{ fontSize: paw.size }}
           initial={{ opacity: 0, x: 0, y: 0, scale: 0.2, rotate: 0 }}
-          animate={{
-            opacity: [0, 1, 1, 0],
-            x: paw.x,
-            y: paw.y,
-            scale: [0.2, 1.1, 1, 0.75],
-            rotate: paw.r,
-          }}
-          transition={{ duration: 1.05, delay: paw.delay, ease: [0.25, 0.46, 0.45, 0.94] }}
-        >
+          animate={{ opacity: [0, 1, 1, 0], x: paw.x, y: paw.y, scale: [0.2, 1.1, 1, 0.75], rotate: paw.r }}
+          transition={{ duration: 1.05, delay: paw.delay, ease: [0.25, 0.46, 0.45, 0.94] }}>
           🐾
         </motion.span>
       ))}
@@ -100,35 +95,26 @@ function PawBurst() {
   )
 }
 
-// ── Animated stat pill with count-up and finish wiggle ────────
-function StatPill({
-  emoji, count, singular, plural, unit,
-  bg, color, delay,
-}: {
+// Animated stat pill
+function StatPill({ emoji, count, singular, plural, unit, bg, color, delay }: {
   emoji: string; count: number; singular?: string; plural?: string; unit?: string
   bg: string; color: string; delay: number
 }) {
   const animated = useCountUp(count, 680, delay)
   const finished = animated === count && count > 0
   const prefersReduced = useReducedMotion()
-
-  const label = unit
-    ? `${animated} ${unit}`
-    : `${animated} ${animated === 1 ? singular : plural}`
-
+  const label = unit ? `${animated} ${unit}` : `${animated} ${animated === 1 ? singular : plural}`
   return (
     <motion.span
       className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold select-none"
       style={{ background: bg, color }}
       initial={{ opacity: 0, scale: 0.6 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.38, delay: delay / 1000, ease: [0.25, 0.46, 0.45, 0.94] }}
-    >
+      transition={{ duration: 0.38, delay: delay / 1000, ease: [0.25, 0.46, 0.45, 0.94] }}>
       <motion.span
         animate={finished && !prefersReduced ? { rotate: [0, -8, 8, -5, 3, 0] } : {}}
-        transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
-        style={{ display: 'inline-block' }}
-      >
+        transition={{ duration: 0.45 }}
+        style={{ display: 'inline-block' }}>
         {emoji}
       </motion.span>
       {label}
@@ -136,17 +122,7 @@ function StatPill({
   )
 }
 
-// ── WhatsApp SVG icon ──────────────────────────────────────────
-function WAIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.845L.057 23.428a.5.5 0 00.609.61l5.64-1.476A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.91 0-3.698-.5-5.244-1.373l-.375-.217-3.888 1.018 1.034-3.774-.237-.389A9.937 9.937 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
-    </svg>
-  )
-}
-
-// ── Walk map (unchanged functionality, added motion wrapper) ───
+// Full-width GPS map — edge to edge, 320px tall
 function WalkMap({ routePoints, poopEvents, peeEvents }: {
   routePoints: { lat: number; lng: number }[]
   poopEvents: { lat: number; lng: number; time: string }[]
@@ -158,65 +134,81 @@ function WalkMap({ routePoints, poopEvents, peeEvents }: {
     if (!routePoints?.length || !mapRef.current) return
 
     function initMap() {
-      const map = new (window as any).google.maps.Map(mapRef.current, {
+      if (!mapRef.current) return
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const gm = (window as any).google.maps
+      const map = new gm.Map(mapRef.current, {
         zoom: 15,
         center: routePoints[0],
         disableDefaultUI: true,
+        gestureHandling: 'cooperative',
         styles: [
           { featureType: 'poi', stylers: [{ visibility: 'off' }] },
           { featureType: 'transit', stylers: [{ visibility: 'off' }] },
           { elementType: 'geometry', stylers: [{ color: '#f5f0e8' }] },
           { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+          { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9CA3AF' }] },
           { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9e8e0' }] },
+          { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f5f0e8' }] },
         ],
       })
 
-      new (window as any).google.maps.Polyline({
+      // Teal route polyline
+      new gm.Polyline({
         path: routePoints,
-        strokeColor: '#0f766e',
-        strokeWeight: 5,
-        strokeOpacity: 0.85,
+        strokeColor: 'oklch(0.48 0.17 196)',
+        strokeWeight: 6,
+        strokeOpacity: 0.9,
         geodesic: true,
       }).setMap(map)
 
-      new (window as any).google.maps.Marker({
+      // Start marker (green)
+      new gm.Marker({
         position: routePoints[0], map,
-        icon: { path: (window as any).google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: '#22c55e', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3 },
+        icon: { path: gm.SymbolPath.CIRCLE, scale: 11, fillColor: '#22c55e', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3 },
         title: 'Start',
-      })
-      new (window as any).google.maps.Marker({
-        position: routePoints[routePoints.length - 1], map,
-        icon: { path: (window as any).google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: '#0f766e', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3 },
-        title: 'End',
+        zIndex: 10,
       })
 
+      // End marker (teal)
+      new gm.Marker({
+        position: routePoints[routePoints.length - 1], map,
+        icon: { path: gm.SymbolPath.CIRCLE, scale: 11, fillColor: '#0f766e', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3 },
+        title: 'End',
+        zIndex: 10,
+      })
+
+      // Poop/pee emoji markers
       poopEvents?.forEach((e, i) => {
-        new (window as any).google.maps.Marker({
+        new gm.Marker({
           position: { lat: e.lat, lng: e.lng }, map,
           label: { text: '💩', fontSize: '18px' },
-          icon: { path: (window as any).google.maps.SymbolPath.CIRCLE, scale: 0 },
-          title: `Poop ${i + 1}`,
+          icon: { path: gm.SymbolPath.CIRCLE, scale: 0 },
+          title: `Poop ${i + 1}`, zIndex: 5,
         })
       })
       peeEvents?.forEach((e, i) => {
-        new (window as any).google.maps.Marker({
+        new gm.Marker({
           position: { lat: e.lat, lng: e.lng }, map,
           label: { text: '💧', fontSize: '18px' },
-          icon: { path: (window as any).google.maps.SymbolPath.CIRCLE, scale: 0 },
-          title: `Pee ${i + 1}`,
+          icon: { path: gm.SymbolPath.CIRCLE, scale: 0 },
+          title: `Pee ${i + 1}`, zIndex: 5,
         })
       })
 
-      const bounds = new (window as any).google.maps.LatLngBounds()
+      // Fit all route points in view with padding
+      const bounds = new gm.LatLngBounds()
       routePoints.forEach(p => bounds.extend(p))
-      map.fitBounds(bounds, { top: 20, bottom: 20, left: 20, right: 20 })
+      map.fitBounds(bounds, { top: 40, bottom: 40, left: 40, right: 40 })
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((window as any).google?.maps) {
       initMap()
     } else {
       if (document.querySelector('script[data-gm]')) {
         const check = setInterval(() => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           if ((window as any).google?.maps) { clearInterval(check); initMap() }
         }, 100)
         return
@@ -224,20 +216,16 @@ function WalkMap({ routePoints, poopEvents, peeEvents }: {
       const script = document.createElement('script')
       script.setAttribute('data-gm', '1')
       script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
+      script.async = true
       script.onload = initMap
       document.head.appendChild(script)
     }
   }, [routePoints, poopEvents, peeEvents])
 
-  return <div ref={mapRef} className="w-full rounded-2xl overflow-hidden" style={{ height: 260 }} />
+  return <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 }
 
 const EASE = [0.25, 0.46, 0.45, 0.94] as const
-const CLAY_CARD = {
-  background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
-  boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), inset 0 -2px 0 rgba(0,0,0,0.05), 0 6px 20px rgba(15,45,50,0.07)',
-  border: '1px solid rgba(226,220,200,0.7)',
-}
 
 export default function WalkReportCard({
   report,
@@ -253,31 +241,16 @@ export default function WalkReportCard({
   const [shareUrl, setShareUrl] = useState('')
   const prefersReduced = useReducedMotion()
 
-  // Track parent view on mount — both systems
   useEffect(() => {
-    // Old: fires push notification to provider
-    fetch('/api/care-card-view', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: report.token, type: 'walk' }),
-    }).catch(() => {})
-    // New: funnel analytics
-    fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_type: 'report_viewed', report_token: report.token }),
-    }).catch(() => {})
+    fetch('/api/care-card-view', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: report.token, type: 'walk' }) }).catch(() => {})
+    fetch('/api/track', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ event_type: 'report_viewed', report_token: report.token }) }).catch(() => {})
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Set share URL client-side only
-  useEffect(() => {
-    setShareUrl(window.location.href.split('?')[0])
-  }, [])
+  useEffect(() => { setShareUrl(window.location.href.split('?')[0]) }, [])
 
-  // Trigger paw burst shortly after mount
   useEffect(() => {
     if (prefersReduced) return
-    const t = setTimeout(() => setBurst(true), 180)
+    const t = setTimeout(() => setBurst(true), 300)
     return () => clearTimeout(t)
   }, [prefersReduced])
 
@@ -288,413 +261,279 @@ export default function WalkReportCard({
     })
   }
 
-  const waFamilyText = encodeURIComponent(
-    `${report.dog_name} just had an amazing walk! 🐾\nFull report here:\n${shareUrl}`
-  )
-  const waVetText = encodeURIComponent(
-    `Hi Doctor, here is ${report.dog_name}'s recent walk report from PupStep 🏥\n${shareUrl}`
-  )
+  // Extract mood from notes
+  const notes = report.notes ?? ''
+  const moodMatch = notes.match(/\[Mood:\s*([\S]+)\s+(\w+)\]/)
+  const mood = moodMatch ? { emoji: moodMatch[1], label: moodMatch[2] } : null
+  const cleanNotes = notes.replace(/\[Mood:[^\]]+\]\s*/g, '').trim()
+
+  const moodConfig: Record<string, { bg: string; color: string; border: string }> = {
+    great:   { bg: '#F0FDF4', color: '#166534', border: '#BBF7D0' },
+    good:    { bg: '#F0FDF4', color: '#166534', border: '#BBF7D0' },
+    okay:    { bg: '#FEF3C7', color: '#92400E', border: '#FDE68A' },
+    tired:   { bg: '#F8FAFC', color: '#475569', border: '#E2E8F0' },
+    anxious: { bg: '#FFF1F2', color: '#9F1239', border: '#FECDD3' },
+    issue:   { bg: '#FFF1F2', color: '#9F1239', border: '#FECDD3' },
+  }
+  const mc = moodConfig[mood?.label?.toLowerCase() ?? ''] ?? moodConfig.okay
+
+  const waFamilyText = encodeURIComponent(`${report.dog_name} just had a walk! 🐾\nFull GPS report:\n${shareUrl}`)
+  const waVetText = encodeURIComponent(`Hi Doctor, here is ${report.dog_name}'s recent walk report:\n${shareUrl}`)
+
+  const hasMap = report.route_points && report.route_points.length >= 2
 
   return (
-    <div
-      className="min-h-dvh flex flex-col items-center px-4 py-8"
-      style={{ background: 'oklch(0.975 0.006 85)' }}
-    >
-      {/* Paw burst celebration */}
-      <AnimatePresence>
-        {burst && <PawBurst />}
-      </AnimatePresence>
+    <div style={{ minHeight: '100dvh', background: '#FFFBEB' }}>
+      <AnimatePresence>{burst && <PawBurst />}</AnimatePresence>
 
-      <div className="w-full max-w-lg">
+      {/* ── FIRST REPORT CELEBRATION ──────────────────────────── */}
+      {isFirstReport && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          style={{ background: 'linear-gradient(135deg, oklch(0.48 0.17 196) 0%, oklch(0.38 0.15 196) 100%)', padding: '20px 20px 16px', textAlign: 'center' }}>
+          <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>🎉 First walk report!</p>
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: 'rgba(255,255,255,0.85)', margin: '0 0 14px', lineHeight: 1.5 }}>
+            {report.dog_name}&apos;s care diary has started.
+          </p>
+          <a href={`https://wa.me/?text=${encodeURIComponent(`Hi! Please use PupStep after every walk with ${report.dog_name}. It only takes 2 minutes! 🐾`)}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#25D366', color: '#fff', borderRadius: 100, padding: '8px 20px', fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+            📲 Ask walker to do this daily
+          </a>
+        </motion.div>
+      )}
 
-        {/* ── First report celebration banner ─────────────────── */}
-        {isFirstReport && (
+      {/* ── HERO: Dog photo fills the screen ─────────────────── */}
+      <div style={{ position: 'relative', width: '100%', height: report.photo_url ? '45vh' : 120, minHeight: report.photo_url ? 280 : 0, maxHeight: report.photo_url ? 420 : 120, overflow: 'hidden' }}>
+        {report.photo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={report.photo_url} alt={report.dog_name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 25%' }} />
+        ) : (
+          <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #0A2F35 0%, oklch(0.35 0.12 196) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 64 }}>🐾</span>
+          </div>
+        )}
+        {/* Gradient overlay */}
+        {report.photo_url && (
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, transparent 40%, rgba(10,47,53,0.8) 100%)' }} />
+        )}
+        {/* Logo top-left */}
+        <div style={{ position: 'absolute', top: 14, left: 16 }}>
+          <Link href="/">
+            <span style={{ fontFamily: 'var(--font-fredoka)', fontSize: 17, fontWeight: 700, color: 'rgba(255,255,255,0.9)', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>PupStep 🐾</span>
+          </Link>
+        </div>
+        {/* Walk Report label top-right */}
+        <span style={{ position: 'absolute', top: 16, right: 16, fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: 'var(--font-nunito)', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+          Walk Report
+        </span>
+        {/* Dog name + date over photo */}
+        {report.photo_url && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            style={{ position: 'absolute', bottom: 16, left: 20, right: 20 }}
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-            style={{
-              background: 'linear-gradient(135deg, oklch(0.48 0.17 196) 0%, oklch(0.38 0.15 196) 100%)',
-              padding: '20px 16px',
-              textAlign: 'center',
-              marginBottom: 24,
-              borderRadius: 20,
-            }}
-          >
-            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>
-              🎉 First walk report!
+            transition={{ duration: 0.5, delay: 0.2, ease: EASE }}>
+            <h1 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 38, fontWeight: 700, color: '#ffffff', margin: '0 0 2px', lineHeight: 1.1, textShadow: '0 2px 12px rgba(0,0,0,0.35)' }}>
+              {report.dog_name}
+            </h1>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: 'rgba(255,255,255,0.85)', margin: 0, textShadow: '0 1px 6px rgba(0,0,0,0.35)' }}>
+              {formatDateShort(report.walk_date)} · by {report.provider_name}
             </p>
-            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: 'rgba(255,255,255,0.85)', margin: '0 0 16px', lineHeight: 1.5 }}>
-              {report.dog_name}&apos;s care diary has started. Every walk will be saved here.
+          </motion.div>
+        )}
+      </div>
+
+      {/* ── DOG NAME (when no photo) ──────────────────────────── */}
+      {!report.photo_url && (
+        <motion.div style={{ padding: '20px 20px 0' }}
+          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1, ease: EASE }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            <motion.span style={{ fontSize: 32, display: 'inline-block' }}
+              animate={!prefersReduced ? { rotate: [0, -10, 10, -6, 0] } : {}}
+              transition={{ duration: 0.6, delay: 0.5, ease: EASE }}>
+              🐕
+            </motion.span>
+            <h1 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 32, fontWeight: 700, color: '#0A2F35', margin: 0 }}>
+              {report.dog_name}
+            </h1>
+            {report.is_verified && (
+              <span style={{ fontSize: 11, fontWeight: 700, background: 'oklch(0.94 0.06 196)', color: 'oklch(0.44 0.16 196)', padding: '3px 10px', borderRadius: 100, fontFamily: 'var(--font-nunito)' }}>
+                ✓ Verified
+              </span>
+            )}
+          </div>
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#9CA3AF', margin: 0 }}>
+            {formatWalkDate(report.walk_date)} · {report.provider_name}
+          </p>
+        </motion.div>
+      )}
+
+      {/* ── STAT PILLS ────────────────────────────────────────── */}
+      <motion.div
+        style={{ padding: '16px 20px', display: 'flex', flexWrap: 'wrap', gap: 8 }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.25, ease: EASE }}>
+        <StatPill emoji="💩" count={report.poop_count} singular="poop" plural="poops" bg="#FEF3C7" color="#92400E" delay={400} />
+        <StatPill emoji="💧" count={report.pee_count} singular="pee" plural="pees" bg="#EFF6FF" color="#1E40AF" delay={520} />
+        {report.duration_mins > 0 && (
+          <StatPill emoji="⏱" count={report.duration_mins} unit="mins" bg="#F0FDF4" color="#166534" delay={640} />
+        )}
+        {report.distance_meters && report.distance_meters > 0 && (
+          <motion.span
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 100, fontSize: 13, fontWeight: 600, background: '#F5F3FF', color: '#6B21A8', fontFamily: 'var(--font-nunito)', userSelect: 'none' }}
+            initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.35, delay: 0.75, ease: EASE }}>
+            📏 {report.distance_meters >= 1000 ? `${(report.distance_meters / 1000).toFixed(2)} km` : `${Math.round(report.distance_meters)} m`}
+          </motion.span>
+        )}
+      </motion.div>
+
+      {/* ── GPS MAP — full width, edge to edge, 320px ─────────── */}
+      {hasMap ? (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.35, ease: EASE }}>
+          {/* Map label */}
+          <div style={{ padding: '4px 20px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, color: '#0A2F35' }}>GPS Route</span>
+            <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'var(--font-nunito)', fontWeight: 600 }}>
+              · {(report.poop_events?.length ?? 0) + (report.pee_events?.length ?? 0)} events mapped
+            </span>
+          </div>
+          {/* Map: full width, no border-radius, edge to edge */}
+          <div style={{ width: '100%', height: 320, position: 'relative', background: '#f5f0e8' }}>
+            <WalkMap
+              routePoints={report.route_points!}
+              poopEvents={report.poop_events ?? []}
+              peeEvents={report.pee_events ?? []}
+            />
+            {/* Legend overlay */}
+            <div style={{ position: 'absolute', bottom: 12, right: 12, background: 'rgba(255,255,255,0.92)', borderRadius: 10, padding: '6px 10px', display: 'flex', gap: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+              <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 700, fontFamily: 'var(--font-nunito)' }}>● Start</span>
+              <span style={{ fontSize: 11, color: '#0f766e', fontWeight: 700, fontFamily: 'var(--font-nunito)' }}>● End</span>
+              {(report.poop_events?.length ?? 0) > 0 && <span style={{ fontSize: 11 }}>💩 ×{report.poop_events!.length}</span>}
+              {(report.pee_events?.length ?? 0) > 0 && <span style={{ fontSize: 11 }}>💧 ×{report.pee_events!.length}</span>}
+            </div>
+          </div>
+        </motion.div>
+      ) : (
+        <div style={{ padding: '0 20px 4px' }}>
+          <div style={{ background: '#F1F5F9', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 20 }}>📍</span>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', margin: 0 }}>
+              GPS route not available for this walk
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 320, margin: '0 auto' }}>
-              <a
-                href={`https://wa.me/?text=${encodeURIComponent(`Hi! Please use PupStep after every walk with ${report.dog_name}. It only takes 2 minutes and I can see exactly where you went. Thank you! 🐾`)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  background: '#25D366', color: '#fff', borderRadius: 12, padding: '12px 20px',
-                  fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, textDecoration: 'none',
-                  minHeight: 48,
-                }}
-              >
-                📲 Ask walker to do this daily
-              </a>
-              <a
-                href="/upgrade"
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'rgba(255,255,255,0.15)', color: '#fff', borderRadius: 12, padding: '10px 20px',
-                  fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 600, textDecoration: 'none',
-                  minHeight: 44,
-                }}
-              >
-                Upgrade to keep all reports →
-              </a>
+          </div>
+        </div>
+      )}
+
+      {/* ── MOOD + NOTES ──────────────────────────────────────── */}
+      <div style={{ padding: '16px 20px 8px' }}>
+        {mood && (
+          <motion.div
+            style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: mc.bg, borderRadius: 16, marginBottom: 12, border: `1px solid ${mc.border}` }}
+            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.45, ease: EASE }}>
+            <span style={{ fontSize: 32 }}>{mood.emoji}</span>
+            <div>
+              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 17, fontWeight: 700, color: mc.color, margin: 0 }}>
+                {mood.label.charAt(0).toUpperCase() + mood.label.slice(1)}
+              </p>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: mc.color, margin: '2px 0 0', opacity: 0.7 }}>
+                {report.dog_name}&apos;s mood today
+              </p>
             </div>
           </motion.div>
         )}
 
-        {/* ── Header ─────────────────────────────────────────── */}
-        <motion.div
-          className="flex items-center justify-between mb-6"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: EASE }}
-        >
-          <Link href="/" className="flex items-center">
-            <Image src="/logo.webp" alt="PupStep" width={140} height={52} className="h-10 w-auto" />
-          </Link>
-          <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: 'oklch(0.48 0.17 196)' }}>
-            Walk Report
-          </span>
-        </motion.div>
+        {cleanNotes && (
+          <motion.div
+            style={{ padding: '14px 18px', background: 'oklch(0.995 0.005 85)', borderRadius: 16, border: '1px solid rgba(10,47,53,0.06)' }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            transition={{ duration: 0.35, delay: 0.5, ease: EASE }}>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#374151', fontStyle: 'italic', lineHeight: 1.65, margin: '0 0 6px' }}>
+              &ldquo;{cleanNotes}&rdquo;
+            </p>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#9CA3AF', margin: 0, textAlign: 'right' }}>
+              — {report.provider_name}
+            </p>
+          </motion.div>
+        )}
+      </div>
 
-        {/* ── Walker info ─────────────────────────────────────── */}
-        <motion.div
-          className="mb-5 flex items-center gap-2.5"
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.07, ease: EASE }}
-        >
-          <div>
-            <p className="text-xs text-stone-400 mb-0.5">Walker</p>
-            <h1 className="font-display text-2xl text-stone-900 leading-tight">
-              {report.provider_name}
-            </h1>
-          </div>
-          {report.is_verified && (
-            <motion.span
-              className="ml-auto flex-shrink-0 flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full"
-              style={{
-                background: 'oklch(0.48 0.17 196 / 0.1)',
-                color: 'oklch(0.48 0.17 196)',
-                border: '1px solid oklch(0.48 0.17 196 / 0.25)',
-              }}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3, delay: 0.2, ease: EASE }}
-            >
-              ✓ Verified
-            </motion.span>
-          )}
-        </motion.div>
+      {/* ── SHARE SECTION ─────────────────────────────────────── */}
+      <motion.div
+        style={{ margin: '8px 20px 16px', background: 'oklch(0.995 0.005 85)', borderRadius: 20, padding: 16, boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), 0 4px 16px rgba(15,45,50,0.07)', border: '1px solid rgba(226,220,200,0.7)' }}
+        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.28, ease: EASE }}>
+        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', margin: '0 0 12px' }}>
+          Share this report
+        </p>
 
-        {/* ── Main card ───────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.12, ease: EASE }}
-          className="rounded-3xl overflow-hidden"
-          style={CLAY_CARD}
-        >
-          <div className="p-6">
+        {/* WhatsApp family — primary */}
+        <motion.a
+          href={`https://wa.me/?text=${waFamilyText}`} target="_blank" rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-2xl text-sm font-bold text-white mb-2.5"
+          style={{ background: 'linear-gradient(160deg, #25D366 0%, #1aad54 100%)', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.22), inset 0 -4px 0 rgba(14,100,55,0.50), 0 8px 20px rgba(37,211,102,0.28)', textDecoration: 'none', fontFamily: 'var(--font-fredoka)', fontSize: 16 }}
+          whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
+          <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.845L.057 23.428a.5.5 0 00.609.61l5.64-1.476A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.91 0-3.698-.5-5.244-1.373l-.375-.217-3.888 1.018 1.034-3.774-.237-.389A9.937 9.937 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+          </svg>
+          Send to family
+        </motion.a>
 
-            {/* Dog name */}
-            <motion.div
-              className="flex items-center gap-2 mb-5"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.35, delay: 0.2, ease: EASE }}
-            >
-              <motion.span
-                className="text-3xl"
-                animate={!prefersReduced ? { rotate: [0, -10, 10, -6, 0] } : {}}
-                transition={{ duration: 0.6, delay: 0.5, ease: EASE }}
-                style={{ display: 'inline-block' }}
-              >
-                🐕
-              </motion.span>
-              <h2 className="font-display text-3xl text-stone-900 leading-tight">
-                {report.dog_name}
-              </h2>
-            </motion.div>
-
-            {/* Date + Duration */}
-            <motion.div
-              className="flex flex-wrap gap-x-6 gap-y-2 mb-5 text-sm text-stone-500"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.35, delay: 0.25, ease: EASE }}
-            >
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-0.5">Date & Time</p>
-                <p className="font-medium text-stone-700">{formatWalkDate(report.walk_date)}</p>
-              </div>
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 mb-0.5">Duration</p>
-                <p className="font-medium text-stone-700">{report.duration_mins} mins</p>
-              </div>
-            </motion.div>
-
-            {/* Activity pills — count up on load */}
-            <div className="flex flex-wrap gap-2.5 mb-5">
-              <StatPill
-                emoji="💩" count={report.poop_count}
-                singular="poop" plural="poops"
-                bg="#FEF3C7" color="#92400E" delay={450}
-              />
-              <StatPill
-                emoji="💧" count={report.pee_count}
-                singular="pee" plural="pees"
-                bg="#EFF6FF" color="#1E40AF" delay={560}
-              />
-              {report.duration_mins > 0 && (
-                <StatPill
-                  emoji="⏱" count={report.duration_mins}
-                  unit="mins"
-                  bg="#F0FDF4" color="#166534" delay={660}
-                />
-              )}
-              {report.distance_meters && report.distance_meters > 0 && !report.route_points?.length && (
-                <motion.span
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold"
-                  style={{ background: '#FDF4FF', color: '#6B21A8' }}
-                  initial={{ opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.38, delay: 0.75, ease: EASE }}
-                >
-                  📏 {(report.distance_meters / 1000).toFixed(2)} km
-                </motion.span>
-              )}
-            </div>
-
-            {/* GPS route map */}
-            {report.route_points && report.route_points.length >= 2 && (
-              <motion.div
-                className="mb-5"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.35, ease: EASE }}
-              >
-                <WalkMap
-                  routePoints={report.route_points}
-                  poopEvents={report.poop_events ?? []}
-                  peeEvents={report.pee_events ?? []}
-                />
-                {report.distance_meters && report.distance_meters > 0 && (
-                  <div className="flex items-center justify-center gap-1.5 mt-2">
-                    <span className="text-xs text-stone-400">📏</span>
-                    <span className="text-xs font-semibold text-stone-500">
-                      {report.distance_meters >= 1000
-                        ? `${(report.distance_meters / 1000).toFixed(2)} km`
-                        : `${Math.round(report.distance_meters)} m`}
-                    </span>
-                    <span className="text-stone-200">·</span>
-                    <span className="text-xs text-stone-400">GPS tracked</span>
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {/* Static route map (start/end text) */}
-            {report.start_location && report.end_location && (
-              <motion.div
-                className="rounded-2xl overflow-hidden border border-amber-100/60 mb-5"
-                style={{ background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)' }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.38, ease: EASE }}
-              >
-                <img
-                  src={`https://maps.googleapis.com/maps/api/staticmap?size=600x200&scale=2&maptype=roadmap&markers=color:0x0f766e|label:S|${encodeURIComponent(report.start_location + ', Juhu, Mumbai')}&markers=color:0xF59E0B|label:F|${encodeURIComponent(report.end_location + ', Juhu, Mumbai')}&style=feature:all|element:labels.text.fill|color:0x64748b&style=feature:road|element:geometry|color:0xfef3c7&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
-                  alt="Walk route map"
-                  className="w-full object-cover"
-                  style={{ height: 140 }}
-                />
-                <div className="px-4 py-3 flex items-center gap-3">
-                  <span className="text-xl">📍</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-0.5">Route</p>
-                    <p className="text-sm font-semibold text-stone-800 truncate">{report.start_location}</p>
-                  </div>
-                  <span className="text-amber-400 font-bold text-lg flex-shrink-0">→</span>
-                  <div className="flex-1 min-w-0 text-right">
-                    <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-0.5">&nbsp;</p>
-                    <p className="text-sm font-semibold text-stone-800 truncate">{report.end_location}</p>
-                  </div>
-                  <span className="text-xl">🏁</span>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Walker notes */}
-            {report.notes && (
-              <motion.div
-                className="rounded-xl px-4 py-3 mb-5"
-                style={{ background: 'rgba(15,45,50,0.04)', border: '1px solid rgba(15,45,50,0.06)' }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.35, delay: 0.42, ease: EASE }}
-              >
-                <p className="text-sm text-stone-600 italic leading-relaxed">
-                  &ldquo;{report.notes}&rdquo;
-                </p>
-              </motion.div>
-            )}
-          </div>
-
-          {/* Dog photo — full bleed */}
-          {report.photo_url && (
-            <motion.div
-              className="relative w-full aspect-[4/3] bg-stone-100"
-              initial={{ opacity: 0, scale: 1.02 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.55, delay: 0.3, ease: EASE }}
-            >
-              <Image
-                src={report.photo_url}
-                alt={`${report.dog_name} on their walk`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 512px) 100vw, 512px"
-              />
-            </motion.div>
-          )}
-        </motion.div>
-
-        {/* ── Share section ───────────────────────────────────── */}
-        <motion.div
-          className="mt-4 rounded-2xl p-4"
-          style={CLAY_CARD}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.28, ease: EASE }}
-        >
-          <p className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-3">
-            Share this report
-          </p>
-
-          {/* WhatsApp — send to family */}
+        {/* Vet + Copy link */}
+        <div className="grid grid-cols-2 gap-2">
           <motion.a
-            href={`https://wa.me/?text=${waFamilyText}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-2xl text-sm font-bold text-white mb-2.5"
-            style={{
-              background: 'linear-gradient(160deg, #25D366 0%, #1aad54 100%)',
-              boxShadow:
-                'inset 0 1.5px 0 rgba(255,255,255,0.22), inset 0 -4px 0 rgba(14,100,55,0.50), 0 10px 24px rgba(37,211,102,0.32)',
-            }}
-            whileTap={{ scale: 0.96 }}
-            transition={{ duration: 0.12 }}
-          >
-            <WAIcon className="w-5 h-5 flex-shrink-0" />
-            Send to family
+            href={`https://wa.me/?text=${waVetText}`} target="_blank" rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold"
+            style={{ background: 'oklch(0.995 0.005 85)', border: '1px solid rgba(226,220,200,0.7)', color: '#0A2F35', textDecoration: 'none', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.95), 0 3px 8px rgba(0,0,0,0.05)', fontFamily: 'var(--font-nunito)', fontWeight: 700 }}
+            whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
+            🏥 Send to vet
           </motion.a>
+          <motion.button
+            onClick={handleCopy}
+            className="flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold transition-colors"
+            style={{ background: copied ? '#ECFDF5' : 'oklch(0.995 0.005 85)', border: copied ? '1px solid #BBF7D0' : '1px solid rgba(226,220,200,0.7)', color: copied ? '#15803D' : '#0A2F35', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.95), 0 3px 8px rgba(0,0,0,0.05)', fontFamily: 'var(--font-nunito)', fontWeight: 700, cursor: 'pointer' }}
+            whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
+            <AnimatePresence mode="wait">
+              {copied ? (
+                <motion.span key="copied" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.18 }}>✓ Copied!</motion.span>
+              ) : (
+                <motion.span key="copy" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.18 }}>🔗 Copy link</motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        </div>
+      </motion.div>
 
-          {/* Row: vet + copy link */}
-          <div className="grid grid-cols-2 gap-2">
-            <motion.a
-              href={`https://wa.me/?text=${waVetText}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold"
-              style={{
-                background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
-                boxShadow:
-                  'inset 0 1.5px 0 rgba(255,255,255,0.95), inset 0 -2.5px 0 rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.06)',
-                border: '1px solid rgba(226,220,200,0.7)',
-                color: '#1a2233',
-              }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ duration: 0.12 }}
-            >
-              🏥 Send to vet
-            </motion.a>
+      {/* ── DELIVERY CONFIRMATION ─────────────────────────────── */}
+      <motion.div
+        className="mx-5 mb-4 rounded-2xl px-4 py-3 flex items-center gap-3"
+        style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}
+        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: EASE }}>
+        <span style={{ fontSize: 18 }}>✓</span>
+        <div>
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: '#166534', margin: 0 }}>
+            Report delivered to {report.dog_name}&apos;s owner
+          </p>
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#16a34a', margin: '2px 0 0' }}>
+            Share the buttons above with family or your vet
+          </p>
+        </div>
+      </motion.div>
 
-            <motion.button
-              onClick={handleCopy}
-              className="flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold transition-colors"
-              style={{
-                background: copied
-                  ? 'linear-gradient(160deg, #ECFDF5 0%, #D1FAE5 100%)'
-                  : 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
-                boxShadow:
-                  'inset 0 1.5px 0 rgba(255,255,255,0.95), inset 0 -2.5px 0 rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.06)',
-                border: copied ? '1px solid #BBF7D0' : '1px solid rgba(226,220,200,0.7)',
-                color: copied ? '#15803D' : '#1a2233',
-              }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ duration: 0.12 }}
-            >
-              <AnimatePresence mode="wait">
-                {copied ? (
-                  <motion.span
-                    key="copied"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.18, ease: EASE }}
-                  >
-                    ✓ Copied!
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="copy"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.18, ease: EASE }}
-                  >
-                    🔗 Copy link
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.button>
-          </div>
-        </motion.div>
-
-        {/* ── Delivery confirmation — shown to everyone ──────── */}
-        <motion.div
-          className="mt-3 rounded-2xl px-4 py-3 flex items-center gap-3"
-          style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: EASE }}
-        >
-          <span className="text-xl">✓</span>
-          <div>
-            <p className="text-sm font-semibold text-green-800">
-              Report delivered to {report.dog_name}&apos;s owner
-            </p>
-            <p className="text-xs text-green-600 leading-snug">
-              Share this link with your vet or family using the buttons above.
-            </p>
-          </div>
-        </motion.div>
-
-        {/* ── Footer ─────────────────────────────────────────── */}
-        <motion.div
-          className="mt-6 pb-2 text-center"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.45, ease: EASE }}
-        >
-          <p className="text-xs text-stone-400">Shared via PupStep · Juhu, Mumbai</p>
-        </motion.div>
-
+      {/* ── FOOTER ────────────────────────────────────────────── */}
+      <div style={{ padding: '8px 20px 40px', textAlign: 'center' }}>
+        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#9CA3AF', margin: 0 }}>
+          Shared via PupStep · Juhu, Mumbai 🐾
+        </p>
       </div>
     </div>
   )
