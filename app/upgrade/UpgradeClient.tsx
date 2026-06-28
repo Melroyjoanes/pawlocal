@@ -198,7 +198,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn }: Pr
             className="text-2xl font-bold mb-2"
             style={{ fontFamily: 'var(--font-fredoka)', color: '#FFFBEB' }}
           >
-            You&apos;re on the {currentPlan === 'annual' ? 'Annual' : 'Monthly'} plan
+            You&apos;re on the Monthly plan
           </h1>
           {expiry && (
             <p className="mb-6 text-sm" style={{ fontFamily: 'var(--font-nunito)', color: '#FFFBEB', opacity: 0.65 }}>
