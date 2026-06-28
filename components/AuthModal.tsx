@@ -62,7 +62,7 @@ export default function AuthModal({ open, onClose, redirectTo, message, onSigned
       },
     })
     if (error) {
-      setError('Could not send the code — please try again in a minute.')
+      setError(error.message)
       setLoading(false)
       return
     }
