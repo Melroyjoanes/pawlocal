@@ -1,780 +1,588 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import {
-  motion, useMotionValue, useSpring, useInView,
+  motion, useScroll, useTransform, useInView,
 } from 'framer-motion'
 import {
   MapPin, Check, Timer, Ruler, Navigation,
-  Droplets, ArrowRight, ChevronDown,
+  ArrowRight, ChevronDown, QrCode, Camera,
+  FileText, Share2, MessageCircle, Zap, Shield,
   PawPrint as LucidePaw,
 } from 'lucide-react'
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const EASE_EXP  = [0.16, 1, 0.3, 1] as const
-const SPRING    = { type: 'spring', duration: 0.45, bounce: 0 } as const
-
-// ─── Hooks ────────────────────────────────────────────────────────────────────
-function useReducedMotion() {
-  const [v, setV] = useState(false)
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion:reduce)')
-    setV(mq.matches)
-    const h = (e: MediaQueryListEvent) => setV(e.matches)
-    mq.addEventListener('change', h)
-    return () => mq.removeEventListener('change', h)
-  }, [])
-  return v
-}
-
-function useHasHover() {
-  const [v, setV] = useState(false)
-  useEffect(() => setV(window.matchMedia('(hover:hover) and (pointer:fine)').matches), [])
-  return v
-}
-
-// ─── Color system ─────────────────────────────────────────────────────────────
+// ─── Tokens ──────────────────────────────────────────────────────────────────
+const EASE_EXP = [0.16, 1, 0.3, 1] as const
+const SPRING   = { type: 'spring', duration: 0.45, bounce: 0 } as const
 const C = {
-  pageBg: '#FFFBEB',
-  teal: 'oklch(0.48 0.17 196)',
-  orange: '#FF8C52',
-  dark: '#0A2F35',
-  white: '#FFFFFF',
+  pageBg:    '#FFFBEB',
+  dark:      '#0A2F35',
+  teal:      'oklch(0.48 0.17 196)',
+  orange:    '#FF8C52',
+  orangeDeep:'#F56B22',
 }
 
 const BLEED: React.CSSProperties = {
-  width: '100vw',
-  marginLeft: 'calc(50% - 50vw)',
-  marginRight: 'calc(50% - 50vw)',
+  marginLeft:   'calc(50% - 50vw)',
+  marginRight:  'calc(50% - 50vw)',
+  paddingLeft:  'calc(50vw - 50%)',
+  paddingRight: 'calc(50vw - 50%)',
 }
 
-// ─── Decorative: PawPrint SVG ─────────────────────────────────────────────────
-function Paw({ size = 28, color = '#F07030', opacity = 0.35 }: {
-  size?: number; color?: string; opacity?: number
+// ─── Hooks ───────────────────────────────────────────────────────────────────
+function useReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+// ─── Scroll reveal ───────────────────────────────────────────────────────────
+function Reveal({
+  children, delay = 0, className = '', style = {},
+}: {
+  children: React.ReactNode
+  delay?: number
+  className?: string
+  style?: React.CSSProperties
 }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: true, margin: '-50px 0px' })
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill={color} style={{ opacity }} aria-hidden>
-      <ellipse cx="20" cy="28" rx="9" ry="7.5" />
-      <ellipse cx="10" cy="19" rx="4.5" ry="5.5" />
-      <ellipse cx="20" cy="15" rx="4.5" ry="5.5" />
-      <ellipse cx="30" cy="19" rx="4.5" ry="5.5" />
-    </svg>
-  )
-}
-
-// ─── Teal sphere decorative ───────────────────────────────────────────────────
-function TealSphere({ size = 120, style = {} }: { size?: number; style?: React.CSSProperties }) {
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%',
-      background: 'radial-gradient(circle at 30% 28%,#B2F5F8,#17C8CC 52%,#0A8A96)',
-      boxShadow: `0 ${Math.round(size * 0.12)}px ${Math.round(size * 0.28)}px rgba(10,138,150,0.30)`,
-      overflow: 'hidden', position: 'relative', flexShrink: 0, ...style,
-    }}>
-      <div style={{ position: 'absolute', top: '16%', left: '20%', width: '40%', height: '28%', borderRadius: '50%', background: 'rgba(255,255,255,0.42)' }} />
+    <div
+      ref={ref}
+      className={className}
+      style={{
+        opacity: inView ? 1 : 0,
+        transform: inView ? 'translateY(0)' : 'translateY(26px)',
+        transition: `opacity 0.55s cubic-bezier(0.16,1,0.3,1) ${delay}s, transform 0.55s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
+        ...style,
+      }}
+    >
+      {children}
     </div>
   )
 }
 
-// ─── Custom paw cursor with footstep trail (desktop only) ────────────────────
-const PAW_BROWN = '#78350F'
-interface TrailStep { id: number; x: number; y: number; rot: number; side: number }
-
-function PawCursor() {
-  const hasHover  = useHasHover()
-  const reduced   = useReducedMotion()
-  const x         = useMotionValue(-120)
-  const y         = useMotionValue(-120)
-  const springX   = useSpring(x, { stiffness: 180, damping: 22 })
-  const springY   = useSpring(y, { stiffness: 180, damping: 22 })
-  const [on, setOn]       = useState(false)
-  const [trail, setTrail] = useState<TrailStep[]>([])
-  const lastPos = useRef({ x: -999, y: -999 })
-  const idRef   = useRef(0)
-  const sideRef = useRef(0)
-
-  useEffect(() => {
-    if (!hasHover) return
-    const el = document.createElement('style')
-    el.id = '__paw'
-    el.textContent = '*{cursor:none!important}'
-    document.head.appendChild(el)
-    return () => document.getElementById('__paw')?.remove()
-  }, [hasHover])
-
-  useEffect(() => {
-    if (!hasHover || reduced) return
-    const mv = (e: MouseEvent) => {
-      const cx = e.clientX - 16
-      const cy = e.clientY - 16
-      x.set(cx); y.set(cy); setOn(true)
-
-      const dx = cx - lastPos.current.x
-      const dy = cy - lastPos.current.y
-      const dist = Math.sqrt(dx * dx + dy * dy)
-      if (dist > 56) {
-        lastPos.current = { x: cx, y: cy }
-        const side = sideRef.current % 2 === 0 ? -1 : 1
-        sideRef.current++
-        const angle = Math.atan2(dy, dx) * (180 / Math.PI)
-        const step: TrailStep = {
-          id: ++idRef.current,
-          x: cx + side * 10,
-          y: cy + 4,
-          rot: angle - 90 + side * 18,
-          side,
-        }
-        setTrail(t => [...t.slice(-8), step])
-        setTimeout(() => setTrail(t => t.filter(s => s.id !== step.id)), 900)
-      }
-    }
-    const ml = () => setOn(false)
-    window.addEventListener('mousemove', mv, { passive: true })
-    document.addEventListener('mouseleave', ml)
-    return () => { window.removeEventListener('mousemove', mv); document.removeEventListener('mouseleave', ml) }
-  }, [hasHover, reduced, x, y])
-
-  if (!hasHover || reduced) return null
-
+// ─── Walk report mock ────────────────────────────────────────────────────────
+function WalkReportMock() {
   return (
-    <>
-      {trail.map((step, i) => (
-        <motion.div
-          key={step.id}
-          className="pointer-events-none fixed top-0 left-0 z-[9998]"
-          initial={{ opacity: 0.65, scale: 0.85 }}
-          animate={{ opacity: 0, scale: 0.6 }}
-          transition={{ duration: 0.85, ease: 'easeOut' }}
-          style={{
-            x: step.x, y: step.y,
-            rotate: step.rot,
-            filter: `drop-shadow(0 2px 6px rgba(120,53,15,${0.55 - i * 0.04}))`,
-          }}
-        >
-          <Paw size={20} color={PAW_BROWN} opacity={1} />
-        </motion.div>
-      ))}
-      <motion.div
-        className="pointer-events-none fixed top-0 left-0 z-[9999]"
-        style={{
-          x: springX, y: springY,
-          opacity: on ? 1 : 0,
-          filter: 'drop-shadow(0 3px 10px rgba(120,53,15,0.65)) drop-shadow(0 0 18px rgba(120,53,15,0.25))',
-        }}
-      >
-        <Paw size={32} color={PAW_BROWN} opacity={1} />
-      </motion.div>
-    </>
+    <div style={{
+      background: '#fff',
+      borderRadius: 24,
+      boxShadow: '0 8px 0 rgba(0,0,0,0.09), 0 24px 64px rgba(10,47,53,0.16), inset 0 2px 0 rgba(255,255,255,0.9)',
+      border: '1px solid rgba(226,232,240,0.5)',
+      overflow: 'hidden',
+      width: '100%',
+      maxWidth: 340,
+    }}>
+      {/* Header */}
+      <div style={{ background: C.dark, padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <LucidePaw size={16} color={C.orange} />
+          </div>
+          <div>
+            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.2 }}>Bruno&apos;s Walk</p>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: 'rgba(255,255,255,0.5)', margin: 0 }}>Ramesh · Today 8:24 AM</p>
+          </div>
+        </div>
+        <span style={{ background: '#25D366', color: '#fff', borderRadius: 100, padding: '3px 8px', fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-nunito)' }}>LIVE</span>
+      </div>
+
+      {/* Dog photo */}
+      <div style={{ position: 'relative', height: 148, overflow: 'hidden', background: '#e5e7eb' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=600&q=80&auto=format&fit=crop"
+          alt="Bruno the dog on his walk"
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+        <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(10,47,53,0.82)', borderRadius: 8, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <Camera size={10} color="rgba(255,255,255,0.7)" />
+          <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, color: 'rgba(255,255,255,0.8)' }}>Walk photo</span>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', borderBottom: '1px solid #f3f4f6' }}>
+        {[
+          { icon: <Timer size={13} />, label: 'Duration', value: '32 min' },
+          { icon: <Ruler size={13} />, label: 'Distance', value: '2.1 km' },
+          { icon: <Navigation size={13} />, label: 'Poop + Pee', value: '2 + 3' },
+        ].map(({ icon, label, value }, i) => (
+          <div key={label} style={{ padding: '10px 8px', textAlign: 'center', borderRight: i < 2 ? '1px solid #f3f4f6' : 'none' }}>
+            <div style={{ color: C.teal, display: 'flex', justifyContent: 'center', marginBottom: 3 }}>{icon}</div>
+            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: C.dark, margin: 0 }}>{value}</p>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 9, color: '#9CA3AF', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* GPS map preview */}
+      <div style={{ height: 76, background: 'linear-gradient(135deg, #e8f5f8, #d0ebf1)', position: 'relative', overflow: 'hidden' }}>
+        <svg viewBox="0 0 340 76" width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
+          <polyline points="16,58 55,44 100,48 145,32 190,38 230,22 275,28 324,16"
+            fill="none" stroke="oklch(0.48 0.17 196)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="16" cy="58" r="4" fill={C.orange} />
+          <circle cx="324" cy="16" r="4" fill="oklch(0.48 0.17 196)" />
+        </svg>
+        <span style={{ position: 'absolute', top: 6, left: 8, background: 'rgba(255,255,255,0.88)', borderRadius: 6, padding: '2px 7px', fontFamily: 'var(--font-nunito)', fontSize: 9, fontWeight: 700, color: C.dark }}>GPS Route</span>
+      </div>
+
+      {/* Footer */}
+      <div style={{ padding: '10px 14px', background: '#FAFAFA', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#9CA3AF', margin: 0 }}>Delivered via WhatsApp</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <MessageCircle size={10} color="#fff" />
+          </div>
+          <span style={{ fontSize: 10, fontWeight: 700, color: '#25D366', fontFamily: 'var(--font-nunito)' }}>Sent</span>
+        </div>
+      </div>
+    </div>
   )
 }
 
-// ─── Walking dog GPS map ──────────────────────────────────────────────────────
-const ROUTE: Array<[number, number]> = [
-  [14,74],[36,66],[58,56],[80,46],[104,38],[126,34],
-  [150,38],[174,30],[198,26],[222,32],[246,40],[272,46],[280,48],
+// ─── FAQ ─────────────────────────────────────────────────────────────────────
+const FAQ_ITEMS = [
+  { q: 'Does my walker need to download an app?', a: 'No. They open a link from WhatsApp. No App Store, no signup, no account.' },
+  { q: 'How does the QR code work?', a: 'You show the QR on your phone. Your walker scans it and enters a 4-digit code to connect. One-time setup, takes under a minute.' },
+  { q: 'What is in the walk report?', a: 'GPS route, pee and poop count with map markers, a dog photo, walk duration and distance, and walker notes — delivered on WhatsApp.' },
+  { q: 'How much does it cost?', a: '3-day free trial with no credit card needed. After that, ₹199/month for full walk history and unlimited walkers.' },
+  { q: 'Can I share the report with my vet?', a: 'Yes. Every report has a shareable link you can forward to anyone — family, vets, or groomers.' },
 ]
-const ROUTE_PATH = ROUTE.map(([x, y], i) => `${i === 0 ? 'M' : 'L'} ${x} ${y}`).join(' ')
 
-function WalkingDogMap({ dark = false }: { dark?: boolean }) {
-  const reduced = useReducedMotion()
-  const containerRef = useRef<HTMLDivElement>(null)
-  const inView = useInView(containerRef)
-  const dogX = useMotionValue(ROUTE[0][0] - 10)
-  const dogY = useMotionValue(ROUTE[0][1] - 10)
-  const sDX  = useSpring(dogX, { stiffness: 40, damping: 10 })
-  const sDY  = useSpring(dogY, { stiffness: 40, damping: 10 })
-  const [dir, setDir] = useState<1 | -1>(1)
-  const idx  = useRef(0)
-
-  const tick = useCallback(() => {
-    idx.current += dir
-    if (idx.current >= ROUTE.length - 1) setDir(-1)
-    if (idx.current <= 0) setDir(1)
-    dogX.set(ROUTE[idx.current][0] - 10)
-    dogY.set(ROUTE[idx.current][1] - 10)
-  }, [dir, dogX, dogY])
-
-  useEffect(() => {
-    if (reduced || !inView) return
-    const id = setInterval(tick, 620)
-    return () => clearInterval(id)
-  }, [reduced, inView, tick])
-
-  const bg       = dark ? 'rgba(255,255,255,0.03)' : '#E6F7F8'
-  const border   = dark ? '1px solid rgba(255,255,255,0.09)' : '1.5px solid rgba(10,138,150,0.18)'
-  const routeClr = dark ? 'rgba(23,200,204,0.85)' : '#0A8A96'
-  const grid     = dark ? 'rgba(255,255,255,0.05)' : 'rgba(10,138,150,0.07)'
-
+function AccordionItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false)
   return (
-    <div ref={containerRef} style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', background: bg, border }}>
-      <svg viewBox="0 0 294 100" xmlns="http://www.w3.org/2000/svg"
-        style={{ width: '100%', height: 100, display: 'block' }} aria-hidden>
-        <line x1="0" y1="50" x2="294" y2="50" stroke={grid} strokeWidth="10" />
-        {[75, 150, 225].map(x => (
-          <line key={x} x1={x} y1="0" x2={x} y2="100" stroke={grid} strokeWidth="8" />
-        ))}
-        <path d={ROUTE_PATH} stroke={routeClr} strokeWidth="2" strokeDasharray="5 3" opacity="0.25" strokeLinecap="round" fill="none" />
-        <path d={ROUTE_PATH} stroke={routeClr} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-        <circle cx={ROUTE[0][0]} cy={ROUTE[0][1]} r="5.5" fill={routeClr} />
-        <circle cx="150" cy="38" r="8.5" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.5" />
-        <text x="150" y="41.5" textAnchor="middle" fontSize="9">💩</text>
-        <circle cx="108" cy="38" r="7" fill="#EFF6FF" stroke="#BAE6FD" strokeWidth="1.5" />
-        <text x="108" y="41.5" textAnchor="middle" fontSize="8">💧</text>
-        <circle cx={ROUTE[ROUTE.length-1][0]} cy={ROUTE[ROUTE.length-1][1]} r="5.5" fill="#F07030" />
-      </svg>
-      {!reduced && (
-        <motion.span
-          aria-hidden
-          style={{
-            position: 'absolute', top: 0, left: 0,
-            x: sDX, y: sDY,
-            fontSize: 18, lineHeight: 1,
-            filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.22))',
-            pointerEvents: 'none',
-            scaleX: dir,
-            transformOrigin: 'center',
-          }}
-        >
-          🐕
-        </motion.span>
+    <div style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', gap: 12 }}
+      >
+        <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 15, fontWeight: 600, color: C.dark }}>{q}</span>
+        <ChevronDown size={18} style={{ flexShrink: 0, color: C.teal, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.25s ease' }} />
+      </button>
+      {open && (
+        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#64748B', lineHeight: 1.7, paddingBottom: 18, margin: 0 }}>{a}</p>
       )}
     </div>
   )
 }
 
-// ─── Fade-up scroll reveal ────────────────────────────────────────────────────
-function FadeUp({ children, delay = 0, className = '' }: {
-  children: React.ReactNode; delay?: number; className?: string
-}) {
-  const ref    = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once: true, margin: '-48px' })
-  const rm     = useReducedMotion()
-  return (
-    <motion.div ref={ref} className={className}
-      initial={rm ? {} : { opacity: 0, y: 10, filter: 'blur(4px)' }}
-      animate={inView ? { opacity: 1, y: 0, filter: 'blur(0px)' } : {}}
-      transition={{ ...SPRING, delay }}>
-      {children}
-    </motion.div>
-  )
-}
-
-// ─── Walk report card (hero right) ───────────────────────────────────────────
-function WalkReportCard() {
-  const rm = useReducedMotion()
-  return (
-    <motion.div
-      initial={rm ? {} : { opacity: 0, y: 24, rotate: -1 }}
-      animate={{ opacity: 1, y: 0, rotate: 0 }}
-      transition={{ duration: 0.65, ease: EASE_EXP, delay: 0.2 }}
-      style={{
-        borderRadius: 28, width: '100%', maxWidth: 420,
-        background: 'linear-gradient(155deg,#FFFDF5 0%,#FFF8E1 100%)',
-        boxShadow: '0 8px 0 rgba(120,53,15,0.14),0 28px 72px rgba(0,0,0,0.18),inset 0 1.5px 0 rgba(255,255,255,0.95)',
-        border: '1.5px solid rgba(253,230,138,0.7)',
-        padding: 20,
-      }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2.5">
-          <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'linear-gradient(135deg,#FF8C52,#F56B22)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, boxShadow: '0 3px 8px rgba(175,65,10,0.28)' }}>
-            🐕
-          </div>
-          <div>
-            <p className="font-bold text-base text-slate-900 leading-tight" style={{ fontFamily: 'var(--font-fredoka,sans-serif)' }}>
-              Bruno&apos;s Walk
-            </p>
-            <p className="text-xs" style={{ color: '#92400E' }}>logged by Bruno&apos;s walker</p>
-          </div>
-        </div>
-        <div style={{ background: 'linear-gradient(135deg,#0A8A96,#087585)', borderRadius: 100, padding: '4px 10px', fontSize: 10, fontWeight: 700, color: '#F0FDFA', display: 'flex', alignItems: 'center', gap: 3 }}>
-          <Check size={9} strokeWidth={3} /> GPS verified
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div className="grid grid-cols-4 gap-2 mb-4">
-        {([
-          { icon: <Timer size={12} strokeWidth={2} />, v: '32', s: 'MINS', bg: '#BBF7D0', fg: '#065F46' },
-          { icon: <Ruler size={12} strokeWidth={2} />, v: '2.1', s: 'KM',   bg: '#BAE6FD', fg: '#075985' },
-          { icon: <span style={{ fontSize: 12 }}>💩</span>, v: '1', s: 'POOP', bg: '#FED7AA', fg: '#9A3412' },
-          { icon: <Droplets size={12} strokeWidth={2} />, v: '2', s: 'PEES',  bg: '#BAE6FD', fg: '#075985' },
-        ] as const).map(({ icon, v, s, bg, fg }) => (
-          <div key={s} style={{ background: bg, borderRadius: 13, padding: '7px 4px', textAlign: 'center', border: '1.5px solid rgba(255,255,255,0.9)' }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 2, color: fg }}>{icon}</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: fg, lineHeight: 1.1 }}>{v}</div>
-            <div style={{ fontSize: 7.5, color: `${fg}99`, fontWeight: 700, letterSpacing: '0.05em' }}>{s}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Animated GPS map */}
-      <div className="mb-3">
-        <p style={{ fontSize: 9, fontWeight: 700, color: '#0A8A96', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 5 }}>
-          Route · Juhu Beach Road
-        </p>
-        <WalkingDogMap />
-        <div className="flex justify-between mt-1.5 px-0.5">
-          <span style={{ fontSize: 9, color: '#0A8A96', fontWeight: 600 }}>Start: Home</span>
-          <span style={{ fontSize: 9, color: '#F07030', fontWeight: 600 }}>End: Beach Rd</span>
-        </div>
-      </div>
-
-      {/* Quote */}
-      <div style={{ background: 'linear-gradient(135deg,#FEF3C7,#FDE68A)', borderRadius: 15, padding: '9px 12px', border: '1px solid rgba(253,230,138,0.8)' }}>
-        <p style={{ fontSize: 12, fontWeight: 600, color: '#78350F', lineHeight: 1.45 }}>&ldquo;Now I actually know Bruno gets walked every single day.&rdquo;</p>
-        <p style={{ fontSize: 10.5, color: '#92400E', marginTop: 2, opacity: 0.8 }}>— Bruno&apos;s mom, Juhu</p>
-      </div>
-
-      <div className="flex items-center justify-end gap-1.5 mt-2.5">
-        <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#25D366' }} />
-        <span style={{ fontSize: 9.5, fontWeight: 700, color: '#064E3B' }}>Sent to WhatsApp</span>
-      </div>
-    </motion.div>
-  )
-}
-
-// ─── FAQ Accordion ────────────────────────────────────────────────────────────
-const FAQ_ITEMS = [
-  {
-    q: 'Does the walker need to download an app?',
-    a: 'No. They open a link on WhatsApp. No App Store, no signup.',
-  },
-  {
-    q: 'How does the walker connect?',
-    a: 'You share a QR code or WhatsApp link. They enter a 4-digit code you show them. Done.',
-  },
-  {
-    q: 'What happens after my free trial?',
-    a: 'Reports from the last 3 days stay visible. Older history is locked until you upgrade for ₹199/month.',
-  },
-  {
-    q: 'Who pays?',
-    a: 'You (the dog parent) pay for the subscription. Your walker uses PupStep for free.',
-  },
-]
-
-function AccordionItem({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false)
-  const rm = useReducedMotion()
-  return (
-    <div style={{ borderBottom: '1px solid rgba(10,47,53,0.08)' }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between py-5 text-left"
-        aria-expanded={open}
-      >
-        <span className="font-semibold text-base" style={{ color: C.dark, fontFamily: 'var(--font-nunito,sans-serif)' }}>{q}</span>
-        <motion.span
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={rm ? {} : SPRING}
-          className="flex-shrink-0 ml-4"
-        >
-          <ChevronDown size={18} style={{ color: C.teal }} />
-        </motion.span>
-      </button>
-      <motion.div
-        initial={false}
-        animate={{ height: open ? 'auto' : 0, opacity: open ? 1 : 0 }}
-        transition={rm ? {} : { ...SPRING }}
-        style={{ overflow: 'hidden' }}
-      >
-        <p className="pb-5 text-sm leading-relaxed" style={{ color: '#4A5568', fontFamily: 'var(--font-nunito,sans-serif)' }}>{a}</p>
-      </motion.div>
-    </div>
-  )
-}
-
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Landing page ─────────────────────────────────────────────────────────────
 export default function LandingPage() {
   const rm = useReducedMotion()
-  const heroRef = useRef<HTMLElement>(null)
-  const heroInView = useInView(heroRef)
+  const { scrollY } = useScroll()
+  const cardY      = useTransform(scrollY, [0, 600], [0, rm ? 0 : -38])
+  const cardRotate = useTransform(scrollY, [0, 600], [0, rm ? 0 :  2])
 
   return (
     <div style={{ background: C.pageBg }} className="-mt-8">
-      <PawCursor />
 
-      {/* ══ SECTION 1: HERO ═══════════════════════════════════════════════════ */}
+      {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section
         id="hero"
-        ref={heroRef}
-        style={{ ...BLEED, background: '#FFFBEB', position: 'relative', overflow: 'hidden' }}
+        style={{ ...BLEED, background: C.pageBg, position: 'relative', overflow: 'hidden' }}
         className="min-h-[100svh] flex flex-col justify-center"
       >
-        {/* Dot grid bg */}
+        {/* Dot grid */}
         <div className="absolute inset-0 pointer-events-none" aria-hidden
-          style={{ backgroundImage: 'radial-gradient(circle,rgba(180,83,9,0.045) 1px,transparent 1px)', backgroundSize: '28px 28px' }} />
+          style={{ backgroundImage: 'radial-gradient(circle,rgba(180,83,9,0.04) 1px,transparent 1px)', backgroundSize: '30px 30px' }} />
 
-        {/* Decorative spheres */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-          <motion.div style={{ position: 'absolute', top: -70, right: -55 }}
-            animate={rm || !heroInView ? {} : { y: [0, -18, 0] }}
-            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}>
-            <TealSphere size={300} />
-          </motion.div>
-          <motion.div style={{ position: 'absolute', bottom: -30, left: 80 }}
-            animate={rm || !heroInView ? {} : { y: [0, -12, 0] }}
-            transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}>
-            <TealSphere size={160} />
-          </motion.div>
-          {/* Floating paw prints */}
-          {([
-            { top: '19%', left: '14%' as string | undefined, right: undefined as string | undefined, size: 22, rotate: -15, d: 0 },
-            { top: '27%', left: '22%', right: undefined, size: 17, rotate: -10, d: 0.15 },
-            { top: '23%', left: '30%', right: undefined, size: 20, rotate: -18, d: 0.3 },
-            { top: '68%', left: undefined, right: '6%', size: 20, rotate: 20,  d: 0 },
-            { top: '76%', left: undefined, right: '13%', size: 16, rotate: 15, d: 0.2 },
-          ]).map(({ top, left, right, size, rotate, d }, i) => (
-            <motion.div key={i} style={{ position: 'absolute', top, left, right, transform: `rotate(${rotate}deg)` }}
-              animate={rm || !heroInView ? {} : { opacity: [0.28, 0.5, 0.28] }}
-              transition={{ duration: 3.2 + i * 0.4, repeat: Infinity, ease: 'easeInOut', delay: d }}>
-              <Paw size={size} color="#F07030" opacity={1} />
-            </motion.div>
-          ))}
-        </div>
+        {/* Teal glow blob */}
+        <motion.div className="absolute pointer-events-none" aria-hidden
+          style={{ top: -120, right: -100, width: 480, height: 480, borderRadius: '50%', background: 'oklch(0.48 0.17 196 / 0.07)', filter: 'blur(70px)' }}
+          animate={rm ? {} : { y: [0, -22, 0] }}
+          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }} />
 
-        <div className="relative max-w-7xl mx-auto px-5 sm:px-8 py-16 lg:py-20 w-full">
-          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+        {/* Orange glow blob */}
+        <motion.div className="absolute pointer-events-none" aria-hidden
+          style={{ bottom: -80, left: -60, width: 320, height: 320, borderRadius: '50%', background: C.orange, opacity: 0.055, filter: 'blur(55px)' }}
+          animate={rm ? {} : { y: [0, -15, 0] }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1.8 }} />
+
+        <div className="relative max-w-7xl mx-auto px-5 sm:px-8 py-20 lg:py-16 w-full">
+          <div className="flex flex-col lg:flex-row items-center gap-14 lg:gap-20">
+
             {/* Text */}
             <div className="flex-1 text-center lg:text-left w-full">
-              <motion.div
-                initial={rm ? {} : { opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.42, ease: EASE_EXP }}>
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase px-4 py-1.5 mb-6"
-                  style={{ background: 'linear-gradient(155deg,#FEF3C7 0%,#FDE68A 100%)', boxShadow: '0 4px 0 rgba(180,83,9,0.18),0 12px 36px rgba(253,230,138,0.55),inset 0 1.5px 0 rgba(255,255,255,0.95)', border: '1px solid rgba(253,230,138,0.7)', borderRadius: 100, color: '#78350F' }}>
-                  <MapPin size={11} strokeWidth={2.5} /> Mumbai · For dog parents
+
+              {/* Badge */}
+              <motion.div initial={rm ? {} : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: EASE_EXP }}>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase px-4 py-1.5 mb-7"
+                  style={{ background: 'linear-gradient(155deg,#FEF3C7,#FDE68A)', boxShadow: '0 4px 0 rgba(180,83,9,0.14),0 10px 28px rgba(253,230,138,0.48),inset 0 1.5px 0 rgba(255,255,255,0.95)', border: '1px solid rgba(253,230,138,0.6)', borderRadius: 100, color: '#78350F', display: 'inline-flex' }}>
+                  <MapPin size={11} strokeWidth={2.5} />
+                  Mumbai · For dog parents
                 </span>
               </motion.div>
 
+              {/* Headline */}
               <motion.h1
-                initial={rm ? {} : { opacity: 0, y: 26 }}
+                initial={rm ? {} : { opacity: 0, y: 28 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.55, ease: EASE_EXP, delay: 0.07 }}
-                className="text-slate-900 mb-5"
-                style={{ fontFamily: 'var(--font-fredoka,sans-serif)', fontSize: 'clamp(2.4rem,6vw,4.8rem)', lineHeight: 1.05, letterSpacing: '-0.02em' }}>
+                transition={{ duration: 0.6, ease: EASE_EXP, delay: 0.07 }}
+                style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(2.6rem,6.5vw,5rem)', lineHeight: 1.04, letterSpacing: '-0.02em', color: C.dark, marginBottom: 20 }}>
                 Your dog gets walked.<br />
-                <span style={{ color: '#F07030' }}>Now prove it.</span>
+                <span style={{ color: C.orange }}>Now prove it.</span>
               </motion.h1>
 
+              {/* Sub */}
               <motion.p
-                initial={rm ? {} : { opacity: 0, y: 14 }}
+                initial={rm ? {} : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, ease: EASE_EXP, delay: 0.16 }}
-                className="text-lg sm:text-xl text-slate-500 mb-8 max-w-lg mx-auto lg:mx-0"
-                style={{ fontFamily: 'var(--font-nunito,sans-serif)', lineHeight: 1.65 }}>
-                GPS route, pee/poop map, dog photo — sent to you on WhatsApp after every walk.
+                transition={{ duration: 0.5, ease: EASE_EXP, delay: 0.16 }}
+                style={{ fontFamily: 'var(--font-nunito)', fontSize: 'clamp(1rem,2vw,1.15rem)', lineHeight: 1.7, color: '#64748B', maxWidth: 460, marginBottom: 32, marginLeft: 'auto', marginRight: 'auto' }}
+                className="lg:mx-0">
+                GPS route, pee and poop map, dog photo — delivered to your WhatsApp after every single walk.
               </motion.p>
 
+              {/* CTAs */}
               <motion.div
-                initial={rm ? {} : { opacity: 0, y: 10 }}
+                initial={rm ? {} : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, ease: EASE_EXP, delay: 0.24 }}
-                className="flex flex-wrap gap-3 justify-center lg:justify-start mb-4">
-                {/* Primary CTA */}
-                <motion.div whileHover={rm ? {} : { y: -3, scale: 1.03 }} whileTap={rm ? {} : { y: 3, scale: 0.98 }} transition={SPRING} className="inline-block">
+                transition={{ duration: 0.45, ease: EASE_EXP, delay: 0.24 }}
+                className="flex flex-wrap gap-3 justify-center lg:justify-start mb-6">
+                <motion.div whileHover={rm ? {} : { y: -3, scale: 1.02 }} whileTap={rm ? {} : { y: 2, scale: 0.97 }} transition={SPRING}>
                   <Link href="/setup?go=1"
-                    className="inline-flex items-center gap-2 rounded-full font-bold px-8 py-4 text-base"
-                    style={{ background: 'linear-gradient(155deg,#FF8C52 0%,#F56B22 100%)', boxShadow: '0 4px 0 rgba(175,65,10,0.30),0 10px 24px rgba(245,107,34,0.42),inset 0 1.5px 0 rgba(255,255,255,0.38)', border: '1px solid rgba(255,255,255,0.18)', color: '#451A03', fontFamily: 'var(--font-nunito,sans-serif)' }}>
+                    className="inline-flex items-center gap-2 rounded-full font-bold px-8 py-4"
+                    style={{ background: `linear-gradient(155deg,${C.orange},${C.orangeDeep})`, boxShadow: '0 4px 0 rgba(175,65,10,0.28),0 12px 28px rgba(245,107,34,0.36),inset 0 1.5px 0 rgba(255,255,255,0.36)', color: '#451A03', fontFamily: 'var(--font-nunito)', fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
                     Set up your dog <ArrowRight size={16} />
                   </Link>
                 </motion.div>
-                {/* Secondary CTA */}
-                <motion.div whileHover={rm ? {} : { y: -3, scale: 1.03 }} whileTap={rm ? {} : { y: 3, scale: 0.98 }} transition={SPRING} className="inline-block">
-                  <a href="#how-it-works"
-                    className="inline-flex items-center gap-2 rounded-full font-bold px-6 py-3.5 text-sm"
-                    style={{ background: 'transparent', border: `2px solid oklch(0.48 0.17 196)`, color: 'oklch(0.48 0.17 196)', fontFamily: 'var(--font-nunito,sans-serif)' }}>
-                    See how it works ↓
-                  </a>
-                </motion.div>
+                <a href="#how-it-works"
+                  className="inline-flex items-center gap-2 rounded-full font-bold px-6 py-4"
+                  style={{ background: 'transparent', border: `2px solid ${C.teal}`, color: C.teal, fontFamily: 'var(--font-nunito)', fontSize: 14 }}>
+                  How it works <ChevronDown size={15} />
+                </a>
               </motion.div>
 
-              <motion.p
+              {/* Trust chips */}
+              <motion.div
                 initial={rm ? {} : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.4, delay: 0.38 }}
-                className="text-xs text-slate-400 text-center lg:text-left"
-                style={{ fontFamily: 'var(--font-nunito,sans-serif)' }}>
-                3-day free trial · No App Store needed
-              </motion.p>
+                className="flex items-center gap-5 justify-center lg:justify-start flex-wrap">
+                {['3-day free trial', 'No app download', 'Walker uses WhatsApp'].map(t => (
+                  <span key={t} className="flex items-center gap-1.5"
+                    style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 600, color: '#94A3B8' }}>
+                    <Check size={12} style={{ color: C.teal }} strokeWidth={3} /> {t}
+                  </span>
+                ))}
+              </motion.div>
             </div>
 
-            {/* Walk report card */}
-            <div className="flex-shrink-0 w-full max-w-sm lg:max-w-[460px] flex flex-col">
-              <div className="flex justify-center lg:justify-end">
-                <WalkReportCard />
-              </div>
+            {/* Report card with parallax */}
+            <div className="flex-shrink-0 w-full max-w-[340px] lg:max-w-[380px] flex justify-center lg:justify-end">
+              <motion.div
+                initial={rm ? {} : { opacity: 0, y: 32 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, ease: EASE_EXP, delay: 0.2 }}
+                style={{ y: cardY, rotate: cardRotate, width: '100%' }}>
+                <WalkReportMock />
+              </motion.div>
             </div>
+
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-7 left-1/2 -translate-x-1/2" aria-hidden>
-          <motion.div animate={rm ? {} : { y: [0, 6, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            className="w-6 h-9 rounded-full flex justify-center pt-2"
-            style={{ border: '2px solid rgba(180,83,9,0.2)', background: 'rgba(253,230,138,0.32)' }}>
-            <div className="w-1 h-2 rounded-full bg-amber-400" />
+        {/* Scroll cue */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2" aria-hidden>
+          <motion.div
+            animate={rm ? {} : { y: [0, 7, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            style={{ width: 24, height: 38, borderRadius: 100, border: '2px solid rgba(180,83,9,0.18)', background: 'rgba(253,230,138,0.22)', display: 'flex', justifyContent: 'center', paddingTop: 8 }}>
+            <div style={{ width: 4, height: 8, borderRadius: 2, background: C.orange, opacity: 0.5 }} />
           </motion.div>
         </div>
       </section>
 
-      {/* ══ SECTION 2: HOW IT WORKS ══════════════════════════════════════════ */}
-      <section
-        id="how-it-works"
-        style={{ ...BLEED, background: 'linear-gradient(120deg,#FEF9ED 0%,#FEF3C7 55%,#FEF9ED 100%)', borderTop: '1.5px solid rgba(253,230,138,0.9)', borderBottom: '1.5px solid rgba(253,230,138,0.9)' }}
-        className="py-14 sm:py-20 lg:py-28"
-      >
+      {/* ── TRUST STRIP ───────────────────────────────────────────────────── */}
+      <div style={{ ...BLEED, background: C.dark, padding: '13px 0' }}>
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <FadeUp className="text-center mb-14">
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#F07030', fontFamily: 'var(--font-nunito,sans-serif)' }}>3 steps · zero friction</p>
-            <h2 className="text-slate-900 mb-3" style={{ fontFamily: 'var(--font-fredoka,sans-serif)', fontSize: 'clamp(1.8rem,4vw,2.8rem)' }}>How it works</h2>
-            <p className="text-slate-500 text-base max-w-xs mx-auto" style={{ fontFamily: 'var(--font-nunito,sans-serif)' }}>Set it up once. Reports arrive automatically after every walk.</p>
-          </FadeUp>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
             {[
-              {
-                icon: '🐕',
-                step: 'Step 1',
-                title: 'Add your dog',
-                body: 'Create your dog\'s profile with health notes. Takes 2 minutes.',
-                delay: 0,
-              },
-              {
-                icon: '📱',
-                step: 'Step 2',
-                title: 'Walker scans QR',
-                body: 'Share a QR code or WhatsApp link. Your walker connects with a 4-digit code. No app download needed.',
-                delay: 0.08,
-              },
-              {
-                icon: '📊',
-                step: 'Step 3',
-                title: 'Report on WhatsApp',
-                body: 'After every walk, you get a GPS route, pee/poop count, dog photo, and walker notes.',
-                delay: 0.16,
-              },
-            ].map(({ icon, step, title, body, delay }) => (
-              <FadeUp key={title} delay={delay}>
-                <div className="flex flex-col items-center text-center p-8"
-                  style={{ borderRadius: 24, background: 'rgba(255,255,255,0.72)', boxShadow: '0 4px 0 rgba(0,0,0,0.06),0 12px 36px rgba(0,0,0,0.05),inset 0 1.5px 0 rgba(255,255,255,1)', border: '1px solid rgba(226,232,240,0.7)' }}>
-                  <div className="text-5xl mb-5" style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.12))' }}>{icon}</div>
-                  <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#F07030', fontFamily: 'var(--font-nunito,sans-serif)' }}>{step}</p>
-                  <h3 className="text-xl font-bold text-slate-900 mb-3" style={{ fontFamily: 'var(--font-fredoka,sans-serif)' }}>{title}</h3>
-                  <p className="text-slate-500 text-sm leading-relaxed" style={{ fontFamily: 'var(--font-nunito,sans-serif)' }}>{body}</p>
-                </div>
-              </FadeUp>
+              { icon: <Shield size={14} />, text: 'GPS-verified every walk' },
+              { icon: <LucidePaw size={14} />, text: 'Mumbai dog parents trust PupStep' },
+              { icon: <MessageCircle size={14} />, text: 'Reports on WhatsApp in seconds' },
+              { icon: <Zap size={14} />, text: 'Walker needs no app download' },
+            ].map(({ icon, text }) => (
+              <div key={text} className="flex items-center gap-2">
+                <span style={{ color: C.orange }}>{icon}</span>
+                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.6)' }}>{text}</span>
+              </div>
             ))}
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* ══ SECTION 3: WHAT'S IN THE REPORT ═════════════════════════════════ */}
-      <section
-        style={{ ...BLEED, background: C.pageBg }}
-        className="py-14 sm:py-20 lg:py-28"
-      >
-        <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <FadeUp className="text-center mb-12">
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#F07030', fontFamily: 'var(--font-nunito,sans-serif)' }}>Every walk, every time</p>
-            <h2 className="text-slate-900 mb-3" style={{ fontFamily: 'var(--font-fredoka,sans-serif)', fontSize: 'clamp(1.8rem,4vw,2.8rem)' }}>What&apos;s in the report</h2>
-            <p className="text-slate-500 text-base max-w-sm mx-auto" style={{ fontFamily: 'var(--font-nunito,sans-serif)' }}>Everything you need to know — delivered to WhatsApp in seconds.</p>
-          </FadeUp>
+      {/* ── HOW IT WORKS ──────────────────────────────────────────────────── */}
+      <section id="how-it-works"
+        style={{ ...BLEED, background: 'linear-gradient(120deg,#FEF9ED,#FEF3C7 50%,#FEF9ED)', borderTop: '1.5px solid rgba(253,230,138,0.8)', borderBottom: '1.5px solid rgba(253,230,138,0.8)' }}
+        className="py-16 sm:py-20 lg:py-28">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Reveal className="text-center mb-16">
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.orange, marginBottom: 12 }}>3 steps, zero friction</p>
+            <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(1.9rem,4vw,3rem)', color: C.dark, marginBottom: 10 }}>How it works</h2>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 16, color: '#64748B', maxWidth: 340, margin: '0 auto' }}>Set it up once. Reports arrive automatically after every walk.</p>
+          </Reveal>
+
+          {/* Desktop timeline */}
+          <div className="hidden md:grid" style={{ gridTemplateColumns: 'repeat(3,1fr)', gap: 0, position: 'relative' }}>
+            {/* Connecting line */}
+            <div style={{ position: 'absolute', top: 36, left: '16.66%', right: '16.66%', height: 2, background: 'linear-gradient(90deg,rgba(255,140,82,0.25),rgba(255,140,82,0.6),rgba(255,140,82,0.25))', zIndex: 0 }} />
+
             {[
-              { icon: '📍', title: 'GPS Route', body: 'See the exact path your dog walked', delay: 0 },
-              { icon: '💩', title: 'Pee & Poop Log', body: 'Every event marked on the map with GPS coordinates', delay: 0.05 },
-              { icon: '📸', title: 'Dog Photo', body: 'Walker takes a photo after the walk', delay: 0.1 },
-              { icon: '⏱', title: 'Duration & Distance', body: 'How long and how far', delay: 0.15 },
-              { icon: '📝', title: 'Walker Notes', body: 'Mood, behaviour, anything unusual', delay: 0.2 },
-              { icon: '🔗', title: 'Shareable Link', body: 'Forward to family or vet in one tap', delay: 0.25 },
-            ].map(({ icon, title, body, delay }) => (
-              <FadeUp key={title} delay={delay}>
-                <div className="flex items-start gap-4 p-5"
-                  style={{ borderRadius: 20, background: 'white', boxShadow: '0 2px 0 rgba(0,0,0,0.04),0 8px 24px rgba(0,0,0,0.04)', border: '1px solid rgba(226,232,240,0.8)' }}>
-                  <div className="text-3xl flex-shrink-0 mt-0.5">{icon}</div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 mb-1" style={{ fontFamily: 'var(--font-fredoka,sans-serif)', fontSize: '1.05rem' }}>{title}</h3>
-                    <p className="text-slate-500 text-sm leading-relaxed" style={{ fontFamily: 'var(--font-nunito,sans-serif)' }}>{body}</p>
+              { num: 1, icon: <LucidePaw size={26} strokeWidth={1.5} />, title: 'Add your dog', body: 'Create your dog\'s profile with name, breed, and health notes. Takes 2 minutes.', delay: 0 },
+              { num: 2, icon: <QrCode size={26} strokeWidth={1.5} />, title: 'Walker scans QR', body: 'Share a QR code or WhatsApp link. Walker connects with a 4-digit code — no app needed.', delay: 0.12 },
+              { num: 3, icon: <MessageCircle size={26} strokeWidth={1.5} />, title: 'Report on WhatsApp', body: 'GPS route, pee and poop count, dog photo, and walker notes — straight to your phone.', delay: 0.24 },
+            ].map(({ num, icon, title, body, delay }) => (
+              <Reveal key={title} delay={delay} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '0 28px', position: 'relative', zIndex: 1 }}>
+                <div style={{ position: 'relative', marginBottom: 20 }}>
+                  <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#fff', boxShadow: '0 4px 0 rgba(0,0,0,0.06),0 12px 32px rgba(0,0,0,0.07),inset 0 2px 0 rgba(255,255,255,1)', border: '1.5px solid rgba(226,232,240,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.teal }}>
+                    {icon}
                   </div>
+                  <span style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: C.orange, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-fredoka)', fontSize: 12, fontWeight: 700, color: '#fff' }}>
+                    {num}
+                  </span>
                 </div>
-              </FadeUp>
+                <h3 style={{ fontFamily: 'var(--font-fredoka)', fontSize: '1.25rem', fontWeight: 700, color: C.dark, marginBottom: 8 }}>{title}</h3>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#64748B', lineHeight: 1.65 }}>{body}</p>
+              </Reveal>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* ══ SECTION 4: PRICING ═══════════════════════════════════════════════ */}
-      <section
-        style={{ ...BLEED, background: 'linear-gradient(135deg,#0A2F35 0%,#0D3D45 50%,#0A2F35 100%)', position: 'relative', overflow: 'hidden' }}
-        className="py-14 sm:py-20 lg:py-28"
-      >
-        <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden>
-          <motion.div style={{ position: 'absolute', top: -40, right: -30, opacity: 0.07 }}
-            animate={rm ? {} : { y: [0,-15,0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}>
-            <TealSphere size={300} />
-          </motion.div>
-        </div>
-        <div className="relative max-w-5xl mx-auto px-5 sm:px-8">
-          <FadeUp className="text-center mb-12">
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#FF8C52', fontFamily: 'var(--font-nunito,sans-serif)' }}>Simple pricing</p>
-            <h2 className="text-white mb-3" style={{ fontFamily: 'var(--font-fredoka,sans-serif)', fontSize: 'clamp(1.8rem,4vw,2.8rem)' }}>Start free. Upgrade when ready.</h2>
-          </FadeUp>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Free card */}
-            <FadeUp delay={0.06}>
-              <div className="p-8 h-full flex flex-col"
-                style={{ borderRadius: 24, background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)' }}>
-                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#17C8CC', fontFamily: 'var(--font-nunito,sans-serif)' }}>Free trial</p>
-                <h3 className="text-white text-2xl font-bold mb-1" style={{ fontFamily: 'var(--font-fredoka,sans-serif)' }}>Free for 3 days</h3>
-                <p className="text-stone-400 text-sm mb-6" style={{ fontFamily: 'var(--font-nunito,sans-serif)' }}>Full access. No credit card needed.</p>
-                <ul className="space-y-3 mb-8 flex-1">
-                  {['Unlimited walks', 'GPS reports', 'Dog photo'].map(item => (
-                    <li key={item} className="flex items-center gap-2.5 text-sm text-stone-300" style={{ fontFamily: 'var(--font-nunito,sans-serif)' }}>
-                      <Check size={14} style={{ color: '#17C8CC', flexShrink: 0 }} strokeWidth={2.5} /> {item}
-                    </li>
-                  ))}
-                </ul>
-                <motion.div whileHover={rm ? {} : { y: -2, scale: 1.02 }} whileTap={rm ? {} : { y: 2, scale: 0.98 }} transition={SPRING}>
-                  <Link href="/setup?go=1"
-                    className="w-full flex items-center justify-center gap-2 rounded-full font-bold py-3.5 text-sm"
-                    style={{ background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.2)', color: 'white', fontFamily: 'var(--font-nunito,sans-serif)' }}>
-                    Start free <ArrowRight size={14} />
-                  </Link>
-                </motion.div>
-              </div>
-            </FadeUp>
-
-            {/* Pro card */}
-            <FadeUp delay={0.12}>
-              <div className="p-8 h-full flex flex-col relative overflow-hidden"
-                style={{ borderRadius: 24, background: 'linear-gradient(155deg,#FF8C52 0%,#F56B22 40%,#E05A18 100%)', boxShadow: '0 8px 0 rgba(175,65,10,0.32),0 24px 64px rgba(245,107,34,0.38)', border: '1.5px solid rgba(255,255,255,0.18)' }}>
-                <div className="absolute top-5 right-5">
-                  <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.22)', color: '#451A03', fontFamily: 'var(--font-nunito,sans-serif)' }}>Most popular</span>
+          {/* Mobile vertical steps */}
+          <div className="md:hidden flex flex-col">
+            {[
+              { num: 1, icon: <LucidePaw size={20} strokeWidth={1.5} />, title: 'Add your dog', body: 'Create your dog\'s profile with health notes. 2 minutes.', delay: 0, last: false },
+              { num: 2, icon: <QrCode size={20} strokeWidth={1.5} />, title: 'Walker scans QR', body: 'Share a QR code or WhatsApp link. Walker connects with a 4-digit code.', delay: 0.1, last: false },
+              { num: 3, icon: <MessageCircle size={20} strokeWidth={1.5} />, title: 'Report on WhatsApp', body: 'GPS, photos, pee and poop count — straight to your phone.', delay: 0.2, last: true },
+            ].map(({ num, icon, title, body, delay, last }) => (
+              <div key={title} className="flex gap-4">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 0 rgba(0,0,0,0.05),0 8px 20px rgba(0,0,0,0.07)', border: '1.5px solid rgba(226,232,240,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.teal, position: 'relative' }}>
+                    {icon}
+                    <span style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: C.orange, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-fredoka)', fontSize: 10, fontWeight: 700, color: '#fff' }}>{num}</span>
+                  </div>
+                  {!last && <div style={{ width: 2, flex: 1, minHeight: 28, background: 'linear-gradient(180deg,rgba(255,140,82,0.35),rgba(255,140,82,0.1))', margin: '6px 0' }} />}
                 </div>
-                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#451A03', opacity: 0.7, fontFamily: 'var(--font-nunito,sans-serif)' }}>Pro</p>
-                <h3 className="font-bold mb-1" style={{ fontFamily: 'var(--font-fredoka,sans-serif)', fontSize: '1.7rem', color: '#2D0A00' }}>₹199/month</h3>
-                <p className="text-sm mb-6" style={{ color: '#451A03', fontFamily: 'var(--font-nunito,sans-serif)' }}>Full walk history, unlimited walkers.</p>
-                <ul className="space-y-3 mb-8 flex-1">
-                  {['Everything in free', 'Full report history', 'Multiple walkers', 'Vet-ready health PDFs'].map(item => (
-                    <li key={item} className="flex items-center gap-2.5 text-sm" style={{ color: '#451A03', fontFamily: 'var(--font-nunito,sans-serif)' }}>
-                      <Check size={14} style={{ color: '#451A03', flexShrink: 0 }} strokeWidth={2.5} /> {item}
-                    </li>
-                  ))}
-                </ul>
-                <motion.div whileHover={rm ? {} : { y: -2, scale: 1.02 }} whileTap={rm ? {} : { y: 2, scale: 0.98 }} transition={SPRING}>
-                  <Link href="/upgrade"
-                    className="w-full flex items-center justify-center gap-2 rounded-full font-bold py-3.5 text-sm"
-                    style={{ background: '#0A2F35', color: '#F0FDFA', fontFamily: 'var(--font-nunito,sans-serif)' }}>
-                    See pricing <ArrowRight size={14} />
-                  </Link>
-                </motion.div>
+                <Reveal delay={delay} style={{ paddingBottom: last ? 0 : 28 }}>
+                  <h3 style={{ fontFamily: 'var(--font-fredoka)', fontSize: '1.1rem', fontWeight: 700, color: C.dark, marginBottom: 4, marginTop: 10 }}>{title}</h3>
+                  <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#64748B', lineHeight: 1.6, margin: 0 }}>{body}</p>
+                </Reveal>
               </div>
-            </FadeUp>
+            ))}
           </div>
+
         </div>
       </section>
 
-      {/* ══ SECTION 5: FAQ ═══════════════════════════════════════════════════ */}
-      <section
-        style={{ ...BLEED, background: C.pageBg }}
-        className="py-14 sm:py-20 lg:py-28"
-      >
-        <div className="max-w-2xl mx-auto px-5 sm:px-8">
-          <FadeUp className="text-center mb-10">
-            <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#F07030', fontFamily: 'var(--font-nunito,sans-serif)' }}>Questions</p>
-            <h2 className="text-slate-900 mb-3" style={{ fontFamily: 'var(--font-fredoka,sans-serif)', fontSize: 'clamp(1.8rem,4vw,2.8rem)' }}>Common questions</h2>
-          </FadeUp>
+      {/* ── WHAT'S IN THE REPORT ──────────────────────────────────────────── */}
+      <section style={{ ...BLEED, background: C.pageBg }} className="py-16 sm:py-20 lg:py-28">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8">
+          <div className="flex flex-col lg:flex-row items-center gap-14 lg:gap-20">
 
-          <FadeUp delay={0.06}>
-            <div style={{ borderRadius: 24, background: 'white', boxShadow: '0 4px 0 rgba(0,0,0,0.04),0 12px 36px rgba(0,0,0,0.05)', border: '1px solid rgba(226,232,240,0.8)', padding: '4px 28px' }}>
-              {FAQ_ITEMS.map((item) => (
-                <AccordionItem key={item.q} q={item.q} a={item.a} />
-              ))}
-            </div>
-          </FadeUp>
+            {/* Card */}
+            <Reveal className="w-full flex justify-center lg:flex-shrink-0 lg:w-auto">
+              <WalkReportMock />
+            </Reveal>
 
-          <FadeUp delay={0.1} className="text-center mt-7">
-            <Link href="/faq"
-              className="text-sm font-semibold"
-              style={{ color: 'oklch(0.48 0.17 196)', fontFamily: 'var(--font-nunito,sans-serif)' }}>
-              See all FAQs →
-            </Link>
-          </FadeUp>
-        </div>
-      </section>
+            {/* Features */}
+            <div className="flex-1 w-full">
+              <Reveal>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.orange, marginBottom: 12 }}>Every walk, every time</p>
+                <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(1.9rem,4vw,2.8rem)', color: C.dark, marginBottom: 8 }}>What&apos;s in the report</h2>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 15, color: '#64748B', marginBottom: 28, lineHeight: 1.65, maxWidth: 380 }}>Everything you need to know, delivered to WhatsApp in seconds after every walk.</p>
+              </Reveal>
 
-      {/* ══ SECTION 6: FOOTER ════════════════════════════════════════════════ */}
-      <footer
-        style={{ ...BLEED, background: C.dark, borderTop: `2px solid oklch(0.48 0.17 196)` }}
-        className="py-12 pb-28 lg:pb-12"
-      >
-        <div className="max-w-7xl mx-auto px-5 sm:px-8">
-          <div className="flex flex-col md:flex-row items-start justify-between gap-10 mb-10">
-            {/* Brand */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <LucidePaw size={24} style={{ color: '#FF8C52' }} />
-                <span className="font-bold text-xl text-white" style={{ fontFamily: 'var(--font-fredoka,sans-serif)' }}>PupStep</span>
-              </div>
-              <p className="text-stone-400 text-sm max-w-xs" style={{ fontFamily: 'var(--font-nunito,sans-serif)' }}>GPS walk reports for Mumbai dogs</p>
-            </div>
-
-            {/* Links */}
-            <nav>
-              <div className="flex flex-wrap gap-x-6 gap-y-3">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {[
-                  { label: 'Home', href: '/' },
-                  { label: 'Pricing', href: '/upgrade' },
-                  { label: 'FAQ', href: '/faq' },
-                  { label: 'Walker Guide', href: '/walker-guide' },
-                  { label: 'Privacy', href: '/privacy' },
-                  { label: 'Terms', href: '/terms' },
-                  { label: 'Refund Policy', href: '/refunds' },
-                ].map(({ label, href }) => (
-                  <Link key={label} href={href}
-                    className="text-sm text-stone-400 hover:text-white transition-colors"
-                    style={{ fontFamily: 'var(--font-nunito,sans-serif)' }}>
-                    {label}
-                  </Link>
+                  { icon: <Navigation size={17} strokeWidth={1.8} />, title: 'GPS Route', body: 'See the exact path your dog walked with start and end points.' },
+                  { icon: <MapPin size={17} strokeWidth={1.8} />, title: 'Pee and Poop Log', body: 'Every event marked on the map with GPS coordinates.' },
+                  { icon: <Camera size={17} strokeWidth={1.8} />, title: 'Dog Photo', body: 'Walker takes a photo after the walk, saved permanently.' },
+                  { icon: <Timer size={17} strokeWidth={1.8} />, title: 'Duration and Distance', body: 'How long the walk lasted and exactly how far your dog went.' },
+                  { icon: <FileText size={17} strokeWidth={1.8} />, title: 'Walker Notes', body: 'Mood, behaviour, and anything unusual from the walk.' },
+                  { icon: <Share2 size={17} strokeWidth={1.8} />, title: 'Shareable Link', body: 'Forward the full report to family, vets, or groomers in one tap.' },
+                ].map(({ icon, title, body }, i) => (
+                  <Reveal key={title} delay={i * 0.055}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 12, background: 'oklch(0.48 0.17 196 / 0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.teal, flexShrink: 0 }}>
+                        {icon}
+                      </div>
+                      <div>
+                        <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: '1rem', fontWeight: 700, color: C.dark, margin: '0 0 2px' }}>{title}</p>
+                        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', margin: 0, lineHeight: 1.6 }}>{body}</p>
+                      </div>
+                    </div>
+                  </Reveal>
                 ))}
               </div>
-            </nav>
-          </div>
+            </div>
 
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: 20 }}>
-            <p className="text-xs text-stone-500 text-center" style={{ fontFamily: 'var(--font-nunito,sans-serif)' }}>
-              © 2026 PupStep · Made in Mumbai 🐶
-            </p>
           </div>
         </div>
-      </footer>
+      </section>
 
-      {/* ══ MOBILE STICKY BAR ════════════════════════════════════════════════ */}
+      {/* ── TESTIMONIALS (CSS scroll-snap carousel) ───────────────────────── */}
+      <section
+        style={{ ...BLEED, background: 'linear-gradient(120deg,#FEF9ED,#FEF3C7 50%,#FEF9ED)', borderTop: '1.5px solid rgba(253,230,138,0.8)', borderBottom: '1.5px solid rgba(253,230,138,0.8)' }}
+        className="py-16 sm:py-20">
+        <div className="max-w-6xl mx-auto">
+          <Reveal className="text-center mb-10 px-5 sm:px-8">
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.orange, marginBottom: 10 }}>Mumbai dog parents</p>
+            <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(1.9rem,4vw,2.8rem)', color: C.dark }}>Peace of mind, every day</h2>
+          </Reveal>
+
+          <div style={{ overflowX: 'auto', scrollSnapType: 'x mandatory', display: 'flex', gap: 16, padding: '8px 20px 20px', WebkitOverflowScrolling: 'touch' as unknown as undefined }}
+            className="sm:px-8 hide-scrollbar">
+            {[
+              { quote: 'I used to call Ramesh three times a day. Now I just check the report — GPS, photo, everything.', name: 'Priya S.', area: 'Juhu', dog: 'Bruno, Labrador', img: 'https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=120&q=80&auto=format&fit=crop' },
+              { quote: 'The GPS map shows the exact route. I can see they actually go to the garden and not just outside the gate.', name: 'Rahul M.', area: 'Andheri West', dog: 'Coco, Beagle', img: 'https://images.unsplash.com/photo-1544568100-847a948585b9?w=120&q=80&auto=format&fit=crop' },
+              { quote: 'Our maid has low tech literacy. The QR took under 5 minutes. She sends reports every single day now.', name: 'Sunita K.', area: 'Versova', dog: 'Mango, Indie', img: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=120&q=80&auto=format&fit=crop' },
+              { quote: 'My vet asked about bathroom habits. I shared 3 months of poop reports instantly. He was surprised.', name: 'Deepa N.', area: 'Bandra West', dog: 'Bruno, Golden Retriever', img: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?w=120&q=80&auto=format&fit=crop' },
+            ].map(({ quote, name, area, dog, img }) => (
+              <div key={name} style={{ flexShrink: 0, width: 300, scrollSnapAlign: 'start', background: '#fff', borderRadius: 20, padding: 24, boxShadow: '0 2px 0 rgba(0,0,0,0.04),0 8px 24px rgba(0,0,0,0.05)', border: '1px solid rgba(226,232,240,0.7)' }}>
+                <svg width="22" height="17" viewBox="0 0 22 17" fill="none" style={{ marginBottom: 10, opacity: 0.15 }}>
+                  <path d="M0 17V9.93C0 4.43 3.03 1.13 9.17 0l1.38 2.27C7.44 3 5.79 4.73 5.5 7.5H9V17H0zm13 0V9.93C13 4.43 16.03 1.13 22.17 0l1.38 2.27C20.44 3 18.79 4.73 18.5 7.5H22V17H13z" fill={C.dark} />
+                </svg>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#374151', lineHeight: 1.72, marginBottom: 16 }}>{quote}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 14, borderTop: '1px solid #F3F4F6' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img} alt={name} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                  <div>
+                    <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: C.dark, margin: 0 }}>{name} · {area}</p>
+                    <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#94A3B8', margin: 0 }}>{dog}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="md:hidden text-center mt-2" style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#CBD5E1' }}>Swipe to read more</p>
+        </div>
+      </section>
+
+      {/* ── PRICING ───────────────────────────────────────────────────────── */}
+      <section id="pricing"
+        style={{ ...BLEED, background: `linear-gradient(135deg,${C.dark} 0%,#0D3D45 50%,${C.dark} 100%)`, position: 'relative', overflow: 'hidden' }}
+        className="py-16 sm:py-20 lg:py-28">
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse at 70% 40%,rgba(255,140,82,0.07) 0%,transparent 60%)' }} />
+
+        <div className="relative max-w-4xl mx-auto px-5 sm:px-8">
+          <Reveal className="text-center mb-14">
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.orange, marginBottom: 12 }}>Simple pricing</p>
+            <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(1.9rem,4vw,3rem)', color: '#FFFBEB', marginBottom: 10 }}>Start free. Upgrade when ready.</h2>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 15, color: 'rgba(255,255,255,0.45)', maxWidth: 320, margin: '0 auto' }}>Your walker is always free. Pro is for parents who want the full history.</p>
+          </Reveal>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-2xl mx-auto">
+            {/* Free */}
+            <Reveal delay={0.06}>
+              <div style={{ borderRadius: 24, background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.1)', padding: 32, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'oklch(0.75 0.12 196)', marginBottom: 8 }}>Free trial</p>
+                <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 28, fontWeight: 700, color: '#FFFBEB', marginBottom: 4 }}>3 days free</p>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: 'rgba(255,255,255,0.38)', marginBottom: 20 }}>No credit card needed</p>
+                <ul style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, marginBottom: 24, listStyle: 'none', padding: 0 }}>
+                  {['Unlimited walks', 'GPS reports', 'Dog photo', 'WhatsApp delivery'].map(f => (
+                    <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-nunito)', fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
+                      <Check size={13} style={{ color: 'oklch(0.75 0.12 196)', flexShrink: 0 }} strokeWidth={2.5} /> {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/setup?go=1"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 100, padding: '12px 24px', background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.18)', color: '#FFFBEB', fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                  Start free <ArrowRight size={14} />
+                </Link>
+              </div>
+            </Reveal>
+
+            {/* Pro */}
+            <Reveal delay={0.14}>
+              <div style={{ borderRadius: 24, background: `linear-gradient(155deg,${C.orange},${C.orangeDeep})`, boxShadow: '0 8px 0 rgba(175,65,10,0.28),0 24px 60px rgba(245,107,34,0.32)', border: '1.5px solid rgba(255,255,255,0.18)', padding: 32, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+                <span style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(255,255,255,0.2)', borderRadius: 100, padding: '3px 10px', fontFamily: 'var(--font-nunito)', fontSize: 10, fontWeight: 700, color: '#451A03' }}>Most popular</span>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(45,10,0,0.55)', marginBottom: 8 }}>Pro plan</p>
+                <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 36, fontWeight: 700, color: '#2D0A00', marginBottom: 2 }}>
+                  ₹199<span style={{ fontSize: 16, fontWeight: 600 }}>/month</span>
+                </p>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: 'rgba(45,10,0,0.52)', marginBottom: 20 }}>Full walk history, unlimited walkers</p>
+                <ul style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, marginBottom: 24, listStyle: 'none', padding: 0 }}>
+                  {['Everything in free', 'Full report history', 'Multiple walkers', 'Vet-ready health PDFs'].map(f => (
+                    <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#2D0A00' }}>
+                      <Check size={13} style={{ color: '#2D0A00', flexShrink: 0 }} strokeWidth={2.5} /> {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link href="/upgrade"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: 100, padding: '12px 24px', background: C.dark, color: '#FFFBEB', fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+                  Get reports delivered <ArrowRight size={14} />
+                </Link>
+              </div>
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ ───────────────────────────────────────────────────────────── */}
+      <section style={{ ...BLEED, background: C.pageBg }} className="py-16 sm:py-20 lg:py-24">
+        <div className="max-w-2xl mx-auto px-5 sm:px-8">
+          <Reveal className="text-center mb-10">
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.orange, marginBottom: 12 }}>Questions</p>
+            <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(1.9rem,4vw,2.8rem)', color: C.dark }}>Common questions</h2>
+          </Reveal>
+          <Reveal delay={0.06}>
+            <div style={{ background: '#fff', borderRadius: 24, boxShadow: '0 4px 0 rgba(0,0,0,0.04),0 12px 36px rgba(0,0,0,0.05)', border: '1px solid rgba(226,232,240,0.7)', padding: '4px 24px' }}>
+              {FAQ_ITEMS.map(item => <AccordionItem key={item.q} q={item.q} a={item.a} />)}
+            </div>
+          </Reveal>
+          <Reveal delay={0.1} className="text-center mt-6">
+            <Link href="/faq" style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: C.teal, textDecoration: 'none' }}>See all FAQs →</Link>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── CLOSING CTA ───────────────────────────────────────────────────── */}
+      <section style={{ ...BLEED, background: C.orange, position: 'relative', overflow: 'hidden' }} className="py-16 sm:py-20">
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle,rgba(255,255,255,0.06) 1px,transparent 1px)', backgroundSize: '24px 24px' }} />
+        <div className="relative max-w-2xl mx-auto px-5 sm:px-8 text-center">
+          <Reveal>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'rgba(69,26,3,0.55)', marginBottom: 14 }}>Ready to try?</p>
+            <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(2rem,5vw,3.2rem)', color: '#451A03', marginBottom: 12, lineHeight: 1.1 }}>
+              Your dog&apos;s first report,<br />in under 10 minutes.
+            </h2>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 15, color: 'rgba(69,26,3,0.6)', marginBottom: 28, lineHeight: 1.65 }}>
+              Add your dog, share a QR with your walker, and wait for the first report on WhatsApp.
+            </p>
+            <motion.div whileHover={rm ? {} : { y: -3, scale: 1.03 }} whileTap={rm ? {} : { scale: 0.97 }} transition={SPRING} style={{ display: 'inline-block' }}>
+              <Link href="/setup?go=1"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 100, padding: '16px 36px', background: C.dark, color: '#FFFBEB', fontFamily: 'var(--font-nunito)', fontSize: 15, fontWeight: 700, textDecoration: 'none', boxShadow: '0 6px 0 rgba(0,0,0,0.18),0 16px 40px rgba(10,47,53,0.32)' }}>
+                Set up your dog <ArrowRight size={16} />
+              </Link>
+            </motion.div>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: 'rgba(69,26,3,0.42)', marginTop: 14 }}>3-day free trial · No app download · Cancel anytime</p>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ── MOBILE STICKY BAR ─────────────────────────────────────────────── */}
       <motion.div
         initial={rm ? {} : { y: 80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: EASE_EXP, delay: 1.6 }}
         className="lg:hidden fixed bottom-0 inset-x-0 z-50"
-        style={{ background: 'rgba(255,251,235,0.97)', borderTop: '1px solid #FDE68A', paddingBottom: 'env(safe-area-inset-bottom,12px)' }}>
-        <div className="flex gap-3 px-4 pt-3 pb-3">
+        style={{ background: 'rgba(255,251,235,0.97)', borderTop: '1px solid #FDE68A', backdropFilter: 'blur(10px)', paddingBottom: 'env(safe-area-inset-bottom,12px)' }}>
+        <div style={{ display: 'flex', gap: 10, padding: '10px 16px' }}>
           <Link href="/setup?go=1"
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold"
-            style={{ background: 'linear-gradient(155deg,#FF8C52 0%,#F56B22 100%)', boxShadow: '0 4px 0 rgba(175,65,10,0.30),0 8px 20px rgba(245,107,34,0.32)', color: '#451A03', fontFamily: 'var(--font-nunito,sans-serif)' }}>
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '13px', borderRadius: 16, background: `linear-gradient(155deg,${C.orange},${C.orangeDeep})`, boxShadow: '0 4px 0 rgba(175,65,10,0.26),0 8px 20px rgba(245,107,34,0.28)', color: '#451A03', fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
             Set up your dog
           </Link>
           <Link href="/upgrade"
-            className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold"
-            style={{ background: 'linear-gradient(155deg,#FFEDD5 0%,#FED7AA 100%)', boxShadow: '0 4px 0 rgba(194,65,12,0.12)', color: '#7C2D12', fontFamily: 'var(--font-nunito,sans-serif)' }}>
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '13px', borderRadius: 16, background: 'rgba(10,47,53,0.08)', color: C.dark, fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
             See pricing
           </Link>
         </div>
       </motion.div>
+
     </div>
   )
 }

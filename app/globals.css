@@ -395,3 +395,7 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Hide scrollbar for carousel — keeps scroll behaviour on all browsers */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
