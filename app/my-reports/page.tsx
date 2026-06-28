@@ -78,6 +78,20 @@ export default async function MyReportsPage() {
 
   const isSubscribed = !!(sub as { status?: string } | null)?.status
 
+  // Fetch trial status
+  const { data: trialProfile } = await safe((db.from('profiles') as any)
+    .select('trial_started_at')
+    .eq('id', user.id)
+    .maybeSingle())
+
+  const trialStartedAt: string | null = (trialProfile as any)?.trial_started_at ?? null
+  const TRIAL_DAYS = 3
+  let trialExpired = false
+  if (!isSubscribed && trialStartedAt) {
+    const msRemaining = new Date(trialStartedAt).getTime() + TRIAL_DAYS * 86400 * 1000 - Date.now()
+    trialExpired = msRemaining <= 0
+  }
+
   return (
     <MyReportsClient
       walkReports={Array.from(walkMap.values())}
@@ -85,6 +99,8 @@ export default async function MyReportsPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       subscriptionPlan={(sub as any)?.plan ?? null}
       userName={user.user_metadata?.full_name ?? user.email ?? ''}
+      trialExpired={trialExpired}
+      totalReports={Array.from(walkMap.values()).length}
     />
   )
 }

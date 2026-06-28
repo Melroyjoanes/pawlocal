@@ -24,6 +24,8 @@ interface Props {
   isSubscribed: boolean
   subscriptionPlan: string | null
   userName: string
+  trialExpired: boolean
+  totalReports: number
 }
 
 // ─── Framer Motion variants ───────────────────────────────────────────────────
@@ -171,8 +173,56 @@ function EmptyState() {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function MyReportsClient({ walkReports, userName }: Props) {
+export default function MyReportsClient({ walkReports, userName, isSubscribed, trialExpired, totalReports }: Props) {
   const router = useRouter()
+
+  if (trialExpired && !isSubscribed) {
+    return (
+      <div style={{ minHeight: '100dvh', background: '#FFFBEB', display: 'flex', flexDirection: 'column' }}>
+        {/* header */}
+        <header style={{
+          position: 'sticky', top: 0, zIndex: 40, background: 'rgba(255,251,235,0.95)',
+          borderBottom: '1px solid oklch(0.906 0.06 88)', backdropFilter: 'blur(8px)',
+          padding: '0 16px', height: 56, display: 'flex', alignItems: 'center'
+        }}>
+          <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#0A2F35', margin: 0 }}>
+            Walk Reports
+          </p>
+        </header>
+
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', textAlign: 'center', gap: 20 }}>
+          <div style={{ fontSize: 56 }}>🔒</div>
+          <div>
+            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 24, fontWeight: 700, color: '#0A2F35', margin: '0 0 8px' }}>
+              {totalReports > 0 ? `${totalReports} walk ${totalReports === 1 ? 'report' : 'reports'} on record` : 'Your trial has ended'}
+            </p>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#6B7280', margin: 0, lineHeight: 1.6, maxWidth: 280 }}>
+              {totalReports > 0
+                ? "Your walker keeps logging walks. Upgrade to receive new reports on WhatsApp and view your full history."
+                : "Your walker can still log walks. Upgrade to start receiving reports on WhatsApp after every walk."}
+            </p>
+          </div>
+          <a
+            href="/upgrade"
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              background: '#FF8C52', color: '#fff', borderRadius: 100,
+              padding: '14px 32px', fontSize: 15, fontWeight: 700,
+              fontFamily: 'var(--font-nunito)', textDecoration: 'none',
+              boxShadow: 'inset 0 2px 0 rgba(255,200,120,0.6), inset 0 -3px 0 rgba(180,60,0,0.25), 0 4px 14px rgba(255,140,82,0.45)'
+            }}
+          >
+            Get reports delivered → ₹199/month
+          </a>
+          <a href="/home" style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#9CA3AF', textDecoration: 'none' }}>
+            ← Back to home
+          </a>
+        </div>
+
+        <ParentBottomNav />
+      </div>
+    )
+  }
 
   const dogName = walkReports.length > 0 ? walkReports[0].dog_name : null
   const summary = walkReports.length > 0 ? computeSummary(walkReports) : null

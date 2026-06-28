@@ -109,7 +109,7 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName }: { 
       return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(251,191,36,0.10)', border: '1.5px solid rgba(251,191,36,0.35)', borderRadius: '100px', padding: '7px 14px' }}>
           <span style={{ fontSize: '14px' }}>📋</span>
-          <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#92400E', flex: 1 }}>{totalReports} walk {totalReports === 1 ? 'report' : 'reports'} saved. Older ones lock after {daysRemaining} days.</span>
+          <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#92400E', flex: 1 }}>{totalReports} walk {totalReports === 1 ? 'report' : 'reports'} saved. {daysRemaining} days left to keep them coming.</span>
           <Link href="/upgrade" style={{ color: 'oklch(0.44 0.16 196)', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Keep full history →</Link>
         </div>
       )
@@ -127,10 +127,10 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName }: { 
       <div style={{ borderRadius: '16px', background: '#0A2F35', border: '1.5px solid rgba(255,255,255,0.08)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#FCA5A5', margin: 0 }}>
           {totalReports > 0
-            ? `🔒 ${totalReports} ${totalReports === 1 ? 'report is' : 'reports are'} locked. Upgrade to access ${dogName}'s full care diary.`
-            : '⛔ Your trial has ended. Upgrade to start receiving walk reports.'}
+            ? `🔒 ${totalReports} walk ${totalReports === 1 ? 'report' : 'reports'} saved. New reports won't be delivered until you upgrade.`
+            : `⛔ Your trial has ended. Upgrade to keep receiving ${dogName}'s walk reports on WhatsApp.`}
         </p>
-        <Link href="/upgrade" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>Unlock for ₹199/month</Link>
+        <Link href="/upgrade" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>Get reports delivered → ₹199/month</Link>
       </div>
     )
   }
@@ -283,40 +283,6 @@ function LastWalkCard({ log, reportToken }: { log: WalkLog; reportToken?: string
       <Link href={reportHref} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, paddingTop: 10, borderTop: '1px solid rgba(226,220,200,0.5)', fontSize: 12, fontWeight: 700, color: 'oklch(0.44 0.16 196)', textDecoration: 'none', fontFamily: 'var(--font-nunito)' }}>
         View full report →
       </Link>
-    </motion.div>
-  )
-}
-
-// ── Feature 1: QuickActions with onOpenTeam + onAddDog props ─────────────
-function QuickActions({ onOpenTeam, firstDog, onAddDog }: { onOpenTeam: () => void; firstDog: Dog | null; onAddDog: () => void }) {
-  return (
-    <motion.div variants={fadeUp} className={`${cardClass} p-4`}>
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Quick Actions</p>
-      <div className="grid grid-cols-4 gap-2">
-        {firstDog ? (
-          <button onClick={onAddDog} className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors border-0">
-            <span className="text-2xl">🐕</span>
-            <span className="text-[10px] font-semibold text-gray-600 text-center leading-tight">Add Dog</span>
-          </button>
-        ) : (
-          <Link href="/setup?go=1" className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors">
-            <span className="text-2xl">🐕</span>
-            <span className="text-[10px] font-semibold text-gray-600 text-center leading-tight">Add Dog</span>
-          </Link>
-        )}
-        <button onClick={onOpenTeam} className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors border-0">
-          <span className="text-2xl">🦮</span>
-          <span className="text-[10px] font-semibold text-gray-600 text-center leading-tight">My Walkers</span>
-        </button>
-        <Link href="/my-reports" className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors">
-          <span className="text-2xl">📋</span>
-          <span className="text-[10px] font-semibold text-gray-600 text-center leading-tight">Reports</span>
-        </Link>
-        <Link href="/upgrade" className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 transition-colors">
-          <span className="text-2xl">⭐</span>
-          <span className="text-[10px] font-semibold text-gray-600 text-center leading-tight">Upgrade</span>
-        </Link>
-      </div>
     </motion.div>
   )
 }
@@ -681,7 +647,7 @@ function SettingsSheet({ open, onClose, displayName }: { open: boolean; onClose:
   )
 }
 
-function StateA({ walk, displayName, firstDog, onOpenTeam, onAddDog }: { walk: WalkSession; displayName: string; firstDog: Dog | null; onOpenTeam: () => void; onAddDog: () => void }) {
+function StateA({ walk, displayName, firstDog }: { walk: WalkSession; displayName: string; firstDog: Dog | null }) {
   const dogName = walk.pet_name ?? displayName
   const walkerName = (walk.providers as { name: string } | null)?.name ?? 'your walker'
   const trackHref = walk.share_token ? `/track/${walk.share_token}` : `/my-reports`
@@ -717,19 +683,16 @@ function StateA({ walk, displayName, firstDog, onOpenTeam, onAddDog }: { walk: W
         <Link href="/my-dogs" className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 border-2 border-[#0A2F35] text-[#0A2F35] font-semibold text-sm hover:bg-[#0A2F35] hover:text-white transition-colors">+ Add Dog</Link>
         <Link href="/my-account" className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors">⚙ Settings</Link>
       </motion.div>
-      <QuickActions onOpenTeam={onOpenTeam} firstDog={firstDog} onAddDog={onAddDog} />
     </motion.div>
   )
 }
 
-function StateB({ walk, connections, firstDog, isPro, onOpenTeam, onEditDog, onAddDog }: {
+function StateB({ walk, connections, firstDog, isPro, onEditDog }: {
   walk: WalkSession
   connections: WalkerConnection[]
   firstDog: Dog | null
   isPro: boolean
-  onOpenTeam: () => void
   onEditDog: (dog: Dog) => void
-  onAddDog: () => void
 }) {
   const walkerName = (walk.providers as { name: string } | null)?.name ?? 'Your walker'
   const durationSec = walk.started_at && walk.ended_at ? Math.floor((new Date(walk.ended_at).getTime() - new Date(walk.started_at).getTime()) / 1000) : null
@@ -764,12 +727,11 @@ function StateB({ walk, connections, firstDog, isPro, onOpenTeam, onEditDog, onA
         <Link href={trackHref} className="mt-4 flex items-center justify-center gap-2 w-full rounded-xl py-2.5 border-2 border-[#0A2F35] text-[#0A2F35] font-semibold text-sm hover:bg-[#0A2F35] hover:text-white transition-colors">View Route →</Link>
       </motion.div>
       <WalkerTeam connections={connections} />
-      <QuickActions onOpenTeam={onOpenTeam} firstDog={firstDog} onAddDog={onAddDog} />
     </motion.div>
   )
 }
 
-function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStreak, weekData, lastWalkLog, todayWalked, todayLogs, onOpenTeam, onEditDog, onAddDog, latestReportToken }: {
+function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStreak, weekData, lastWalkLog, todayWalked, todayLogs, onEditDog, latestReportToken }: {
   displayName: string
   firstDog: Dog | null
   connections: WalkerConnection[]
@@ -780,9 +742,7 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
   lastWalkLog: WalkLog | null
   todayWalked: boolean
   todayLogs: WalkLog[]
-  onOpenTeam: () => void
   onEditDog: (dog: Dog) => void
-  onAddDog: () => void
   latestReportToken?: string | null
 }) {
   const firstName = displayName.split(' ')[0]
@@ -866,9 +826,6 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
 
       {/* 7. Walker team */}
       <WalkerTeam connections={connections} />
-
-      {/* 8. Quick actions */}
-      <QuickActions onOpenTeam={onOpenTeam} firstDog={firstDog} onAddDog={onAddDog} />
     </motion.div>
   )
 }
@@ -1013,9 +970,9 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
         })()}
 
         {activeWalk ? (
-          <StateA walk={activeWalk} displayName={displayName} firstDog={firstDog} onOpenTeam={() => setTeamSheetOpen(true)} onAddDog={() => setAddDogOpen(true)} />
+          <StateA walk={activeWalk} displayName={displayName} firstDog={firstDog} />
         ) : completedWalk ? (
-          <StateB walk={completedWalk} connections={walkerConnections} firstDog={firstDog} isPro={isPro} onOpenTeam={() => setTeamSheetOpen(true)} onEditDog={handleEditDog} onAddDog={() => setAddDogOpen(true)} />
+          <StateB walk={completedWalk} connections={walkerConnections} firstDog={firstDog} isPro={isPro} onEditDog={handleEditDog} />
         ) : (
           <StateC
             displayName={displayName}
@@ -1028,9 +985,7 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
             lastWalkLog={lastWalkLog}
             todayWalked={todayWalked}
             todayLogs={todayLogs}
-            onOpenTeam={() => setTeamSheetOpen(true)}
             onEditDog={handleEditDog}
-            onAddDog={() => setAddDogOpen(true)}
             latestReportToken={latestReportToken}
           />
         )}

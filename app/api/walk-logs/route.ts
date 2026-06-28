@@ -161,6 +161,39 @@ export async function POST(req: NextRequest) {
     ((duration_mins ?? 0) >= 5 ? 15 : 0) +                // Duration
     (notes?.trim() ? 10 : 0)                               // Notes
 
+  // --- Paywall delivery gate ---
+  // Fetch owner trial + subscription status synchronously so both the fire-and-forget
+  // email block and the wa_link build below can use the same result.
+  const [{ data: ownerProfile }, { data: ownerSub }] = await Promise.all([
+    (db.from('profiles') as any)
+      .select('trial_started_at, notification_preferences')
+      .eq('id', connection.owner_id)
+      .maybeSingle(),
+    (db.from('subscriptions') as any)
+      .select('id')
+      .eq('user_id', connection.owner_id)
+      .eq('status', 'active')
+      .gt('expires_at', new Date().toISOString())
+      .maybeSingle(),
+  ])
+
+  const TRIAL_DAYS = 3
+  const trialStart: string | null = ownerProfile?.trial_started_at ?? null
+  const trialActive = trialStart
+    ? (Date.now() - new Date(trialStart).getTime()) < TRIAL_DAYS * 86400 * 1000
+    : true // no trial started yet = first report = allow delivery
+  const isPro = !!ownerSub
+  const deliveryAllowed = isPro || trialActive
+
+  // Set trial_started_at if this is the first report (fire-and-forget — non-blocking)
+  if (!trialStart) {
+    ;(db.from('profiles') as any)
+      .update({ trial_started_at: new Date().toISOString() })
+      .eq('id', connection.owner_id)
+      .catch(() => {})
+  }
+  // --- End paywall gate setup ---
+
   // Fire-and-forget — don't block the response on report creation
   ;(async () => {
     try {
@@ -184,64 +217,60 @@ export async function POST(req: NextRequest) {
         quality_score: qualityScore,
       })
 
-      // Check notification preference and send email to parent
-      try {
-        // Get parent email + notification preferences
-        const { data: { user: ownerUser } } = await db.auth.admin.getUserById(connection.owner_id)
-        const ownerEmail = ownerUser?.email
+      // Only send email delivery if the owner is within their trial or has an active subscription
+      if (deliveryAllowed) {
+        // Check notification preference and send email to parent
+        try {
+          // Get parent email
+          const { data: { user: ownerUser } } = await db.auth.admin.getUserById(connection.owner_id)
+          const ownerEmail = ownerUser?.email
 
-        if (ownerEmail) {
-          // Check notification_preferences — default to ON if column missing or not set
-          const { data: profileData } = await (db.from('profiles') as any)
-            .select('notification_preferences')
-            .eq('id', connection.owner_id)
-            .single()
+          if (ownerEmail) {
+            // Use already-fetched notification_preferences from ownerProfile
+            const prefs = (ownerProfile?.notification_preferences ?? {}) as Record<string, boolean>
+            const reportEmailEnabled = prefs.report_email !== false // default true
 
-          const prefs = (profileData?.notification_preferences ?? {}) as Record<string, boolean>
-          const reportEmailEnabled = prefs.report_email !== false // default true
+            if (reportEmailEnabled) {
+              const { sendEmail, walkReportEmail } = await import('@/lib/email')
+              sendEmail({
+                to: ownerEmail,
+                subject: `🐾 ${dogName}'s walk report is ready`,
+                html: walkReportEmail({
+                  dogName,
+                  walkerName: connection.walker_name ?? 'Your walker',
+                  durationMins: duration_mins ?? null,
+                  distanceKm: distance_km ?? null,
+                  poopCount: finalPoopCount,
+                  peeCount: finalPeeCount,
+                  reportUrl,
+                }),
+              }).catch(() => {})
 
-          if (reportEmailEnabled) {
-            const stats = [
-              duration_mins ? `⏱ ${duration_mins} min` : null,
-              distance_km ? `📍 ${distance_km.toFixed(1)} km` : null,
-              finalPoopCount > 0 ? `💩 ${finalPoopCount}` : null,
-              finalPeeCount > 0 ? `💧 ${finalPeeCount}` : null,
-            ].filter(Boolean).join('  ·  ')
-
-            const { sendEmail, walkReportEmail } = await import('@/lib/email')
-            sendEmail({
-              to: ownerEmail,
-              subject: `🐾 ${dogName}'s walk report is ready`,
-              html: walkReportEmail({
-                dogName,
-                walkerName: connection.walker_name ?? 'Your walker',
-                durationMins: duration_mins ?? null,
-                distanceKm: distance_km ?? null,
-                poopCount: finalPoopCount,
-                peeCount: finalPeeCount,
-                reportUrl,
-              }),
-            }).catch(() => {})
-
-            // Track email sent
-            await (db.from('walk_reports') as any)
-              .update({ email_sent_at: new Date().toISOString() })
-              .eq('token', reportToken)
-              .catch(() => {})
+              // Track email sent
+              await (db.from('walk_reports') as any)
+                .update({ email_sent_at: new Date().toISOString() })
+                .eq('token', reportToken)
+                .catch(() => {})
+            }
           }
-        }
-      } catch { /* non-critical */ }
+        } catch { /* non-critical */ }
+      }
     } catch (err) {
       console.error('[walk-logs] report creation failed:', err)
     }
   })()
 
-  // Build WhatsApp link — override the plain-text one with the report URL
+  // Build WhatsApp link — report URL for active subscribers/trial, upgrade prompt otherwise
   if (connWithPhone?.owner_phone) {
     const phone = connWithPhone.owner_phone.replace(/\D/g, '')
     const fullPhone = phone.startsWith('91') ? phone : `91${phone}`
-    const msg = `🐾 *${dogName}'s walk report is ready!*\n\nTap to view: ${reportUrl}\n\nLogged by ${connection.walker_name ?? 'your walker'} via PupStep`
-    wa_link = `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`
+    if (deliveryAllowed) {
+      const msg = `🐾 *${dogName}'s walk report is ready!*\n\nTap to view: ${reportUrl}\n\nLogged by ${connection.walker_name ?? 'your walker'} via PupStep`
+      wa_link = `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`
+    } else {
+      const msg = `🐾 ${dogName} went for a walk today! Upgrade PupStep to receive the full report: https://pupstep.in/upgrade`
+      wa_link = `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`
+    }
   }
 
   return NextResponse.json({ ok: true, log_id: log.id, wa_link, report_token: reportToken, report_url: reportUrl }, { status: 201 })
