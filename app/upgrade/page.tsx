@@ -13,7 +13,7 @@ export default async function UpgradePage() {
   )
   const { data: { user } } = await supabase.auth.getUser()
 
-  let currentPlan: 'monthly' | 'annual' | null = null
+  let currentPlan: 'monthly' | null = null
   let expiresAt: string | null = null
 
   if (user) {
@@ -25,7 +25,8 @@ export default async function UpgradePage() {
       .gt('expires_at', new Date().toISOString())
       .maybeSingle()
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    currentPlan = (sub as any)?.plan ?? null
+    const plan = (sub as any)?.plan ?? null
+    currentPlan = plan === 'monthly' || plan === 'annual' ? 'monthly' : null
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expiresAt = (sub as any)?.expires_at ?? null
   }
