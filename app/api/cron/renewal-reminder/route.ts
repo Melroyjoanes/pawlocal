@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     if (!email) continue
 
     const expiryLabel = new Date(sub.expires_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })
-    const planLabel = sub.plan === 'annual' ? '₹1,999/year' : '₹249/month'
+    const planLabel = '₹199/month'
 
     sendEmail({
       to: email,

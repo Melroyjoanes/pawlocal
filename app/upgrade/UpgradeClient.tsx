@@ -12,32 +12,32 @@ declare global {
 }
 
 interface Props {
-  currentPlan: 'monthly' | 'annual' | null
+  currentPlan: 'monthly' | null
   expiresAt: string | null
   isLoggedIn: boolean
 }
 
 const FEATURES = [
-  { icon: '📍', label: 'GPS-tagged walk logs' },
-  { icon: '📸', label: 'Photo & health diary' },
-  { icon: '✂️', label: 'Grooming records' },
-  { icon: '🩺', label: 'Vet visit history' },
-  { icon: '🍖', label: 'Feeding & medication tracker' },
-  { icon: '📋', label: 'Vet-ready health PDF', annual: true },
+  { icon: '📍', label: 'GPS proof after every walk' },
+  { icon: '📸', label: 'Photos from the walk saved' },
+  { icon: '💩', label: 'Pee, poop and mood logged' },
+  { icon: '📋', label: 'Full walk report history' },
+  { icon: '💬', label: 'Report delivered on WhatsApp' },
+  { icon: '🔒', label: 'Reports saved to your account forever' },
 ]
 
 const FAQ = [
   {
     q: 'What happens after my free trial?',
-    a: 'Your trial converts to the plan you chose. Nothing changes for your walker — they keep logging as usual.',
+    a: 'After 3 days your trial ends. To keep receiving walk reports, you pay ₹199/month. Your walker never needs to do anything different.',
   },
   {
     q: 'Will my walker see any difference?',
-    a: 'No. Walkers and groomers use PupStep for free, always. Pro is only for dog parents like you.',
+    a: 'No. Walkers use PupStep for free, always. Pro is only for dog parents.',
   },
   {
     q: 'Can I cancel anytime?',
-    a: 'Monthly plans cancel anytime before the next billing date. Annual plans get a full refund within 7 days, pro-rated after that.',
+    a: 'Yes — cancel before your next billing date and you will not be charged again.',
   },
 ]
 
@@ -88,12 +88,12 @@ function Spinner() {
 }
 
 export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn }: Props) {
-  const [loading, setLoading] = useState<'monthly' | 'annual' | null>(null)
+  const [loading, setLoading] = useState<'monthly' | null>(null)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
 
-  async function handleCheckout(plan: 'monthly' | 'annual') {
+  async function handleCheckout(plan: 'monthly') {
     setLoading(plan)
     setError(null)
     try {
@@ -119,7 +119,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn }: Pr
         currency: 'INR',
         order_id: data.order_id,
         name: 'PupStep Pro',
-        description: plan === 'annual' ? '₹1,999/year' : '₹249/month',
+        description: '₹199/month',
         theme: { color: '#FF8C52' },
         handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
           try {
@@ -254,13 +254,13 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn }: Pr
             className="text-4xl md:text-5xl font-bold leading-tight mb-4"
             style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}
           >
-            Your dog deserves a<br />care diary 🐾
+            Proof after every walk 🐾
           </h1>
           <p
             className="text-base max-w-xs mx-auto leading-relaxed"
             style={{ fontFamily: 'var(--font-nunito)', color: '#0A2F35', opacity: 0.65 }}
           >
-            Every walk. Every vet visit. Every meal. Always in your hands.
+            Your walker logs every walk. You get a report on WhatsApp. Peace of mind, every day.
           </p>
         </div>
 
@@ -274,54 +274,38 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn }: Pr
           </div>
         )}
 
-        {/* Pricing cards */}
-        <div className="space-y-4 mb-10">
-
-          {/* Annual — hero card */}
+        {/* Pricing card — single monthly plan */}
+        <div className="mb-10">
           <div
-            className="relative rounded-[28px] p-7"
+            className="rounded-[28px] p-7"
             style={{ background: '#0A2F35', boxShadow: CLAY_SHADOW_TEAL }}
           >
-            {/* Best value badge */}
-            <div className="absolute -top-3.5 right-6">
-              <span
-                className="inline-block px-4 py-1.5 rounded-full text-xs font-bold text-white"
-                style={{
-                  background: '#FF8C52',
-                  boxShadow: CLAY_SHADOW_ORANGE,
-                  fontFamily: 'var(--font-nunito)',
-                }}
-              >
-                Best value — save ₹990
-              </span>
-            </div>
-
-            <div className="flex items-start justify-between mb-5 mt-1">
+            <div className="flex items-start justify-between mb-5">
               <div>
                 <p
                   className="text-xs font-bold uppercase tracking-widest mb-1.5"
                   style={{ color: 'rgba(255,251,235,0.45)', fontFamily: 'var(--font-nunito)' }}
                 >
-                  Annual plan
+                  Monthly plan
                 </p>
                 <div className="flex items-end gap-2">
                   <span
                     className="text-5xl font-bold leading-none"
                     style={{ fontFamily: 'var(--font-fredoka)', color: '#FFFBEB' }}
                   >
-                    ₹1,999
+                    ₹199
                   </span>
-                  <span className="text-sm pb-1" style={{ color: 'rgba(255,251,235,0.5)', fontFamily: 'var(--font-nunito)' }}>/year</span>
+                  <span className="text-sm pb-1" style={{ color: 'rgba(255,251,235,0.5)', fontFamily: 'var(--font-nunito)' }}>/month</span>
                 </div>
                 <p className="text-xs mt-1.5" style={{ color: 'rgba(255,140,82,0.9)', fontFamily: 'var(--font-nunito)' }}>
-                  ₹166/month — 2 months free
+                  3-day free trial · Cancel anytime
                 </p>
               </div>
               <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
                 style={{ background: 'rgba(255,251,235,0.08)', boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.10), inset 0 -2px 0 rgba(0,0,0,0.20)' }}
               >
-                🏆
+                🐾
               </div>
             </div>
 
@@ -339,86 +323,6 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn }: Pr
                     ✓
                   </span>
                   {f.label}
-                  {f.annual && (
-                    <span
-                      className="text-[10px] font-bold px-2 py-0.5 rounded-full ml-auto"
-                      style={{ background: 'rgba(255,140,82,0.25)', color: '#FF8C52' }}
-                    >
-                      Annual only
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-
-            {isLoggedIn ? (
-              <button
-                onClick={() => handleCheckout('annual')}
-                disabled={loading !== null}
-                className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
-                style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
-              >
-                {loading === 'annual' ? <><Spinner /> Processing…</> : 'Get Annual Plan'}
-              </button>
-            ) : (
-              <Link
-                href="/login?next=/upgrade"
-                className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center"
-                style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
-              >
-                Get started free
-              </Link>
-            )}
-          </div>
-
-          {/* Monthly — secondary card */}
-          <div
-            className="rounded-[28px] p-7"
-            style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}
-          >
-            <div className="flex items-start justify-between mb-5">
-              <div>
-                <p
-                  className="text-xs font-bold uppercase tracking-widest mb-1.5"
-                  style={{ color: 'rgba(10,47,53,0.40)', fontFamily: 'var(--font-nunito)' }}
-                >
-                  Monthly plan
-                </p>
-                <div className="flex items-end gap-2">
-                  <span
-                    className="text-4xl font-bold leading-none"
-                    style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}
-                  >
-                    ₹249
-                  </span>
-                  <span className="text-sm pb-0.5" style={{ color: 'rgba(10,47,53,0.40)', fontFamily: 'var(--font-nunito)' }}>/month</span>
-                </div>
-                <p className="text-xs mt-1.5" style={{ color: 'rgba(10,47,53,0.45)', fontFamily: 'var(--font-nunito)' }}>
-                  Cancel anytime, no questions
-                </p>
-              </div>
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-                style={{ background: 'rgba(255,140,82,0.10)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.8), inset 0 -1px 0 rgba(0,0,0,0.08)' }}
-              >
-                📅
-              </div>
-            </div>
-
-            <ul className="space-y-2 mb-6">
-              {FEATURES.filter(f => !f.annual).map((f) => (
-                <li
-                  key={f.label}
-                  className="flex items-center gap-2.5 text-sm"
-                  style={{ color: '#0A2F35', fontFamily: 'var(--font-nunito)', opacity: 0.8 }}
-                >
-                  <span
-                    className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0"
-                    style={{ background: 'rgba(255,140,82,0.15)', color: '#FF8C52' }}
-                  >
-                    ✓
-                  </span>
-                  {f.label}
                 </li>
               ))}
             </ul>
@@ -427,28 +331,18 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn }: Pr
               <button
                 onClick={() => handleCheckout('monthly')}
                 disabled={loading !== null}
-                className="w-full py-3.5 rounded-[18px] font-bold text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
-                style={{
-                  background: 'rgba(255,140,82,0.12)',
-                  color: '#E07030',
-                  fontFamily: 'var(--font-nunito)',
-                  boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.9), inset 0 -2px 0 rgba(200,80,0,0.12), 0 4px 12px rgba(255,140,82,0.18)',
-                }}
+                className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
+                style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
               >
-                {loading === 'monthly' ? <><Spinner /> Processing…</> : 'Start Monthly'}
+                {loading === 'monthly' ? <><Spinner /> Processing…</> : 'Start 3-day free trial'}
               </button>
             ) : (
               <Link
                 href="/login?next=/upgrade"
-                className="w-full py-3.5 rounded-[18px] font-bold text-sm flex items-center justify-center"
-                style={{
-                  background: 'rgba(255,140,82,0.12)',
-                  color: '#E07030',
-                  fontFamily: 'var(--font-nunito)',
-                  boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.9), inset 0 -2px 0 rgba(200,80,0,0.12), 0 4px 12px rgba(255,140,82,0.18)',
-                }}
+                className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center"
+                style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
               >
-                Start with monthly
+                Get started free
               </Link>
             )}
           </div>

@@ -69,17 +69,17 @@ export async function GET() {
 
   const monthlyCount = monthlySubsRes.count ?? 0
   const annualCount = annualSubsRes.count ?? 0
-  const mrr = Math.round((monthlyCount * 249 + annualCount * (1999 / 12)) * 100) / 100
+  const mrr = Math.round((monthlyCount * 199) * 100) / 100
   const arr = Math.round(mrr * 12 * 100) / 100
   const activeSubscribers = paidRes.count ?? 0
   const trialProfileCount = trialUsersRes.count ?? 0
   const trialUsers = Math.max(0, trialProfileCount - activeSubscribers)
 
   const now = Date.now()
-  const fourteenDays = 14 * 86400000
+  const threeDays = 3 * 86400000
   const expiredProfiles: Array<{ trial_started_at: string }> = expiredTrialsRes.data ?? []
   const expiredTrials = expiredProfiles.filter((p) => {
-    return new Date(p.trial_started_at).getTime() + fourteenDays < now
+    return new Date(p.trial_started_at).getTime() + threeDays < now
   }).length
 
   const parentsV2 = dogsRes.count ?? 0  // V2 parents = those with at least 1 dog

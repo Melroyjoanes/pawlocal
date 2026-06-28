@@ -76,10 +76,12 @@ export default async function MyReportsPage() {
     }
   }
 
+  const isSubscribed = !!(sub as { status?: string } | null)?.status
+
   return (
     <MyReportsClient
       walkReports={Array.from(walkMap.values())}
-      isSubscribed={true}
+      isSubscribed={isSubscribed}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       subscriptionPlan={(sub as any)?.plan ?? null}
       userName={user.user_metadata?.full_name ?? user.email ?? ''}

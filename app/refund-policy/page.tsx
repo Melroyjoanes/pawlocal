@@ -34,59 +34,36 @@ export default function RefundPolicyPage() {
           {/* Quick summary card */}
           <div className="rounded-2xl p-5" style={{ background: '#fff', border: '1px solid #e5e7eb' }}>
             <p className="font-bold text-sm mb-3" style={{ color: '#0A2F35' }}>Quick Summary</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+            <div className="text-sm">
               <div className="rounded-xl p-3" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
-                <p className="font-bold text-green-800 mb-1">Monthly Plan (₹249)</p>
+                <p className="font-bold text-green-800 mb-1">Monthly Plan (₹199)</p>
                 <p className="text-green-700 text-xs leading-relaxed">Full refund within 7 days of first payment. Cancel anytime — no charge for the next cycle.</p>
-              </div>
-              <div className="rounded-xl p-3" style={{ background: '#FFF7ED', border: '1px solid #FED7AA' }}>
-                <p className="font-bold text-orange-800 mb-1">Annual Plan (₹1,999)</p>
-                <p className="text-orange-700 text-xs leading-relaxed">Full refund within 7 days of payment. After 7 days, pro-rated refund for unused full months only.</p>
               </div>
             </div>
           </div>
 
           <Section title="1. What This Policy Covers">
             <p>
-              This policy covers refunds and cancellations for <strong>PupStep Pro</strong> subscriptions (monthly at ₹249
-              and annual at ₹1,999). PupStep itself has no listing fees, booking commissions, or charges for service
+              This policy covers refunds and cancellations for <strong>PupStep Pro</strong> subscriptions (₹199/month). PupStep itself has no listing fees, booking commissions, or charges for service
               providers — only the Pro subscription for dog parents is a paid product.
             </p>
           </Section>
 
           <Section title="2. Cancellation">
-            <SubSection title="Monthly Plan">
-              <ul>
-                <li>You may cancel your monthly subscription at any time from your <Link href="/my-account" style={{ color: 'oklch(0.48 0.17 196)' }}>My Account</Link> page.</li>
-                <li>After cancellation, your Pro access continues until the end of the current billing period.</li>
-                <li>You will not be charged for subsequent billing cycles.</li>
-                <li>No partial refund is issued for unused days within an already-paid month.</li>
-              </ul>
-            </SubSection>
-            <SubSection title="Annual Plan">
-              <ul>
-                <li>You may cancel your annual subscription at any time from your <Link href="/my-account" style={{ color: 'oklch(0.48 0.17 196)' }}>My Account</Link> page.</li>
-                <li>After cancellation, your Pro access continues until the end of the annual period.</li>
-                <li>Cancellation after the 7-day refund window stops renewal but does not trigger a refund for the remaining period (except as described below).</li>
-              </ul>
-            </SubSection>
+            <ul>
+              <li>You may cancel your subscription at any time from your <Link href="/my-account" style={{ color: 'oklch(0.48 0.17 196)' }}>My Account</Link> page.</li>
+              <li>After cancellation, your Pro access continues until the end of the current billing period.</li>
+              <li>You will not be charged for subsequent billing cycles.</li>
+              <li>No partial refund is issued for unused days within an already-paid month.</li>
+            </ul>
           </Section>
 
           <Section title="3. Refund Eligibility">
-            <SubSection title="Monthly Plan">
-              <ul>
-                <li><strong>Within 7 days of the first payment:</strong> Full refund of ₹249, no questions asked.</li>
-                <li><strong>After 7 days:</strong> No refund for the current month. Cancel to stop future charges.</li>
-                <li><strong>Renewal payments:</strong> If you did not intend to renew, contact us within 48 hours of the auto-renewal charge for a full refund.</li>
-              </ul>
-            </SubSection>
-            <SubSection title="Annual Plan">
-              <ul>
-                <li><strong>Within 7 days of payment:</strong> Full refund of ₹1,999, no questions asked.</li>
-                <li><strong>After 7 days and before 6 months:</strong> Pro-rated refund for unused complete months, minus a processing fee of ₹99.</li>
-                <li><strong>After 6 months:</strong> No refund. Access continues until the end of the annual period.</li>
-              </ul>
-            </SubSection>
+            <ul>
+              <li><strong>Within 7 days of the first payment:</strong> Full refund of ₹199, no questions asked.</li>
+              <li><strong>After 7 days:</strong> No refund for the current month. Cancel to stop future charges.</li>
+              <li><strong>Renewal payments:</strong> If you did not intend to renew, contact us within 48 hours of the auto-renewal charge for a full refund.</li>
+            </ul>
             <SubSection title="Non-refundable situations">
               <ul>
                 <li>Refund requests citing reasons within your control (e.g., &quot;my dog passed away&quot; — we are deeply sorry, and will always process a compassionate refund in such cases)</li>

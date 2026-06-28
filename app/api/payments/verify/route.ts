@@ -7,8 +7,8 @@ function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
-const PLAN_DAYS: Record<string, number> = { monthly: 30, annual: 365 }
-const PLAN_PAISE: Record<string, number> = { monthly: 24900, annual: 199900 }
+const PLAN_DAYS: Record<string, number> = { monthly: 30 }
+const PLAN_PAISE: Record<string, number> = { monthly: 19900 }
 
 export async function POST(req: NextRequest) {
   const supabase = await createServerClient()
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         razorpay_order_id,
         razorpay_payment_id,
         razorpay_signature,
-        amount_paise: PLAN_PAISE[plan] ?? 24900,
+        amount_paise: PLAN_PAISE[plan] ?? 19900,
         expires_at: expiresAt,
       },
       { onConflict: 'user_id', ignoreDuplicates: false }
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   ;(async () => {
     const email = user.email
     if (!email || !process.env.RESEND_API_KEY) return
-    const planLabel = plan === 'annual' ? '₹1,999/year' : '₹249/month'
+    const planLabel = '₹199/month'
     const expiryLabel = new Date(expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
     await fetch('https://api.resend.com/emails', {
       method: 'POST',

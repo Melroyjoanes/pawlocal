@@ -60,7 +60,7 @@ export default async function MyAccountPage() {
   } else if (!trialStartedAt) {
     subStatus = { status: 'no_trial', trial_days_remaining: null, expires_at: null }
   } else {
-    const trialEndMs = new Date(trialStartedAt).getTime() + 14 * 24 * 60 * 60 * 1000
+    const trialEndMs = new Date(trialStartedAt).getTime() + 3 * 24 * 60 * 60 * 1000
     const msLeft = trialEndMs - Date.now()
     if (msLeft > 0) {
       subStatus = { status: 'trial', trial_days_remaining: Math.ceil(msLeft / 86400000), expires_at: new Date(trialEndMs).toISOString() }

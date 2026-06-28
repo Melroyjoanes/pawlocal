@@ -348,7 +348,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'What happens after my free trial?',
-    a: 'Reports from the last 3 days stay visible. Older history is locked until you upgrade for ₹249/month.',
+    a: 'Reports from the last 3 days stay visible. Older history is locked until you upgrade for ₹199/month.',
   },
   {
     q: 'Who pays?',
@@ -498,7 +498,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.4, delay: 0.38 }}
                 className="text-xs text-slate-400 text-center lg:text-left"
                 style={{ fontFamily: 'var(--font-nunito,sans-serif)' }}>
-                14-day free trial · No App Store needed
+                3-day free trial · No App Store needed
               </motion.p>
             </div>
 
@@ -631,7 +631,7 @@ export default function LandingPage() {
               <div className="p-8 h-full flex flex-col"
                 style={{ borderRadius: 24, background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(8px)' }}>
                 <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#17C8CC', fontFamily: 'var(--font-nunito,sans-serif)' }}>Free trial</p>
-                <h3 className="text-white text-2xl font-bold mb-1" style={{ fontFamily: 'var(--font-fredoka,sans-serif)' }}>Free for 14 days</h3>
+                <h3 className="text-white text-2xl font-bold mb-1" style={{ fontFamily: 'var(--font-fredoka,sans-serif)' }}>Free for 3 days</h3>
                 <p className="text-stone-400 text-sm mb-6" style={{ fontFamily: 'var(--font-nunito,sans-serif)' }}>Full access. No credit card needed.</p>
                 <ul className="space-y-3 mb-8 flex-1">
                   {['Unlimited walks', 'GPS reports', 'Dog photo'].map(item => (
@@ -658,10 +658,10 @@ export default function LandingPage() {
                   <span className="text-xs font-bold px-3 py-1 rounded-full" style={{ background: 'rgba(255,255,255,0.22)', color: '#451A03', fontFamily: 'var(--font-nunito,sans-serif)' }}>Most popular</span>
                 </div>
                 <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: '#451A03', opacity: 0.7, fontFamily: 'var(--font-nunito,sans-serif)' }}>Pro</p>
-                <h3 className="font-bold mb-1" style={{ fontFamily: 'var(--font-fredoka,sans-serif)', fontSize: '1.7rem', color: '#2D0A00' }}>₹249/month</h3>
+                <h3 className="font-bold mb-1" style={{ fontFamily: 'var(--font-fredoka,sans-serif)', fontSize: '1.7rem', color: '#2D0A00' }}>₹199/month</h3>
                 <p className="text-sm mb-6" style={{ color: '#451A03', fontFamily: 'var(--font-nunito,sans-serif)' }}>Full walk history, unlimited walkers.</p>
                 <ul className="space-y-3 mb-8 flex-1">
-                  {['Everything in free', 'Full report history', 'Multiple walkers', 'Annual plan: ₹1,999/year'].map(item => (
+                  {['Everything in free', 'Full report history', 'Multiple walkers', 'Vet-ready health PDFs'].map(item => (
                     <li key={item} className="flex items-center gap-2.5 text-sm" style={{ color: '#451A03', fontFamily: 'var(--font-nunito,sans-serif)' }}>
                       <Check size={14} style={{ color: '#451A03', flexShrink: 0 }} strokeWidth={2.5} /> {item}
                     </li>

@@ -183,7 +183,7 @@ async function renderHome(user: { id: string; user_metadata?: Record<string, str
 
   // Compute trial status from profiles.trial_started_at
   const trialStartedAt: string | null = (trialProfileData as { trial_started_at?: string | null } | null)?.trial_started_at ?? null
-  const TRIAL_DAYS = 14
+  const TRIAL_DAYS = 3
   let trialStatus = 'no_trial'
   let trialDaysRemaining: number | null = null
   if (!isPro && trialStartedAt) {

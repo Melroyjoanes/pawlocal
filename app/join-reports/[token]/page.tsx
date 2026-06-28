@@ -12,7 +12,7 @@ export default async function JoinReportsPage({ params }: { params: Promise<{ to
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: clientRow } = await (admin().from('provider_clients') as any)
-    .select('id, pet_name, owner_name, owner_whatsapp, linked_at, provider_id')
+    .select('id, pet_name, owner_name, owner_whatsapp, linked_at, provider_id, owner_user_id')
     .eq('invite_token', token)
     .single()
 

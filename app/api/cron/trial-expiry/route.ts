@@ -28,8 +28,8 @@ export async function GET(req: NextRequest) {
     const trialStart = new Date(profile.trial_started_at)
     const daysSinceStart = Math.floor((now.getTime() - trialStart.getTime()) / 86400000)
 
-    const isWarning = daysSinceStart >= 11 && daysSinceStart <= 13
-    const isExpired = daysSinceStart >= 14
+    const isWarning = daysSinceStart >= 1 && daysSinceStart <= 2
+    const isExpired = daysSinceStart >= 3
 
     if (!isWarning && !isExpired) continue
 
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     if (!email) continue
 
     if (isWarning) {
-      const daysLeft = 14 - daysSinceStart
+      const daysLeft = 3 - daysSinceStart
       sendEmail({
         to: email,
         subject: 'Your PupStep trial ends soon',

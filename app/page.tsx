@@ -50,7 +50,7 @@ export default async function HomePage() {
               {
                 "@type": "Question",
                 "name": "What happens after my free trial?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Reports from the last 3 days stay visible. Older history is locked until you upgrade for ₹249/month." }
+                "acceptedAnswer": { "@type": "Answer", "text": "Reports from the last 3 days stay visible. Older history is locked until you upgrade for ₹199/month." }
               },
               {
                 "@type": "Question",

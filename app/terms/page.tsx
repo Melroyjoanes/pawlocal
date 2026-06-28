@@ -67,8 +67,7 @@ export default function TermsPage() {
 
           <Section title="5. PupStep Pro Subscription (Dog Parents)">
             <ul>
-              <li><strong>Monthly plan:</strong> ₹249/month, billed monthly.</li>
-              <li><strong>Annual plan:</strong> ₹1,999/year, billed annually (equivalent to ₹166/month).</li>
+              <li><strong>Monthly plan:</strong> ₹199/month, billed monthly.</li>
               <li>Payments are processed securely by Razorpay. By subscribing, you also agree to Razorpay&apos;s{' '}
                 <a href="https://razorpay.com/terms/" target="_blank" rel="noopener noreferrer" style={{ color: 'oklch(0.48 0.17 196)' }}>
                   Terms of Service

@@ -130,14 +130,14 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName }: { 
             ? `🔒 ${totalReports} ${totalReports === 1 ? 'report is' : 'reports are'} locked. Upgrade to access ${dogName}'s full care diary.`
             : '⛔ Your trial has ended. Upgrade to start receiving walk reports.'}
         </p>
-        <Link href="/upgrade" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>Unlock for ₹249/month</Link>
+        <Link href="/upgrade" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>Unlock for ₹199/month</Link>
       </div>
     )
   }
   return (
     <div style={{ borderRadius: '16px', background: 'rgba(255,140,82,0.08)', border: '1.5px solid rgba(255,140,82,0.3)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
       <div style={{ flex: 1 }}>
-        <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#0A2F35', margin: '0 0 2px' }}>🔓 Start your free trial — 14 days free, then ₹249/month</p>
+        <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#0A2F35', margin: '0 0 2px' }}>🔓 Start your free trial — 3 days free, then ₹199/month</p>
       </div>
       <Link href="/setup?go=1" style={{ flexShrink: 0, color: 'oklch(0.44 0.16 196)', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Set up your dog →</Link>
     </div>
@@ -448,13 +448,13 @@ function TeamSheet({ open, onClose, connections, dogName }: {
 
   async function saveEdit(id: string) {
     try {
-      await fetch(`/api/my-providers/${id}`, {
+      await fetch(`/api/walker-connections/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ walker_name: editName, walker_role: editRole }),
       })
     } catch {
-      console.log('PATCH /api/my-providers — endpoint not yet built')
+      // silently ignore — optimistic UI update is enough
     }
     setSavedId(id)
     setEditingId(null)
@@ -879,7 +879,6 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
   const [teamSheetOpen, setTeamSheetOpen] = useState(false)
   const [dogEditOpen, setDogEditOpen] = useState(false)
   const [editingDog, setEditingDog] = useState<Dog | null>(null)
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const [addDogOpen, setAddDogOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
 
@@ -925,15 +924,6 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
                 Walk live
               </span>
             )}
-            {/* Feature 4: Settings gear */}
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="w-9 h-9 rounded-full flex items-center justify-center text-lg flex-shrink-0"
-              style={{ background: 'oklch(0.52 0.17 196 / 0.10)', color: 'oklch(0.44 0.16 196)', border: 'none', cursor: 'pointer' }}
-              aria-label="Settings"
-            >
-              ⚙️
-            </button>
             <Link href="/my-account" className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: 'oklch(0.52 0.17 196 / 0.12)', color: 'oklch(0.44 0.16 196)' }}>
               {displayName.charAt(0).toUpperCase()}
             </Link>
@@ -1058,7 +1048,6 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
       {/* ── Sheets ─────────────────────────────────────────────────────────── */}
       <TeamSheet open={teamSheetOpen} onClose={() => setTeamSheetOpen(false)} connections={walkerConnections} dogName={firstDog?.name ?? 'your dog'} />
       <DogEditSheet open={dogEditOpen} dog={editingDog} onClose={() => { setDogEditOpen(false); setEditingDog(null) }} />
-      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} displayName={displayName} />
       <AddDogSheet
         open={addDogOpen}
         onClose={() => setAddDogOpen(false)}

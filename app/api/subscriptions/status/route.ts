@@ -6,7 +6,7 @@ function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
-const TRIAL_DAYS = 14
+const TRIAL_DAYS = 3
 
 export async function GET() {
   const supabase = await createServerClient()

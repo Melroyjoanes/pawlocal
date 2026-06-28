@@ -1,3 +1,4 @@
+import { randomBytes, randomInt } from 'crypto'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
@@ -68,27 +69,24 @@ export default async function SetupQRPage({
       .single()
 
     if (insertErr) {
+      console.error('[setup/qr] walker_connections insert failed:', insertErr.message)
       return (
         <div className="min-h-dvh flex flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: '#FFFBEB' }}>
-          <span className="text-5xl">⚙️</span>
+          <span className="text-5xl">🐾</span>
           <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}>
-            One-time setup needed
+            Something went wrong
           </h1>
           <p className="text-sm max-w-xs leading-relaxed" style={{ color: '#0A2F35', opacity: 0.7, fontFamily: 'var(--font-nunito)' }}>
-            A database trigger needs to be removed before QR codes can be generated.
-            Go to <strong>Supabase Dashboard → SQL Editor</strong> and run:
+            We could not generate your QR code right now. Please try again in a moment.
           </p>
-          <pre className="text-left text-xs rounded-xl p-4 max-w-sm w-full overflow-x-auto" style={{ background: '#0A2F35', color: '#FFFBEB', fontFamily: 'monospace' }}>
-{`DROP TRIGGER IF EXISTS sheets_walker_connections
-  ON walker_connections;
-DROP TRIGGER IF EXISTS sheets_dogs ON dogs;
-DROP FUNCTION IF EXISTS public.send_sheets_webhook()
-  CASCADE;`}
-          </pre>
-          <p className="text-xs" style={{ color: '#0A2F35', opacity: 0.5 }}>
-            After running that SQL, come back and try again.
+          <p className="text-sm" style={{ color: '#0A2F35', opacity: 0.55, fontFamily: 'var(--font-nunito)' }}>
+            If this keeps happening, contact us at{' '}
+            <a href="mailto:melroy@verfolia.com" style={{ color: 'oklch(0.48 0.17 196)', fontWeight: 700 }}>melroy@verfolia.com</a>
           </p>
-          <a href="/setup" className="mt-2 text-sm font-semibold" style={{ color: 'oklch(0.48 0.17 196)' }}>← Back to setup</a>
+          <a href="/setup/qr?dog={dogId}" className="mt-2 px-6 py-3 rounded-full font-bold text-white text-sm" style={{ background: '#FF8C52' }}>
+            Try again →
+          </a>
+          <a href="/home" className="text-sm font-semibold" style={{ color: 'oklch(0.48 0.17 196)' }}>← Back to home</a>
         </div>
       )
     }
@@ -115,13 +113,14 @@ DROP FUNCTION IF EXISTS public.send_sheets_webhook()
 
 function generateToken(): string {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  const bytes = randomBytes(16)
   let result = ''
-  for (let i = 0; i < 12; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  for (let i = 0; i < 16; i++) {
+    result += chars[bytes[i] % chars.length]
   }
   return result
 }
 
 function generateOTP(): string {
-  return String(Math.floor(1000 + Math.random() * 9000))
+  return String(randomInt(1000, 10000))
 }

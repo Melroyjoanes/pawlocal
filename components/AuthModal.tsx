@@ -56,10 +56,13 @@ export default function AuthModal({ open, onClose, redirectTo, message, onSigned
     setError('')
     const { error } = await supabase.auth.signInWithOtp({
       email: emailInput.trim(),
-      options: { shouldCreateUser: true },
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo ?? '/home')}`,
+      },
     })
     if (error) {
-      setError(error.message)
+      setError('Could not send the code — please try again in a minute.')
       setLoading(false)
       return
     }
@@ -95,7 +98,10 @@ export default function AuthModal({ open, onClose, redirectTo, message, onSigned
     setOtpCode('')
     await supabase.auth.signInWithOtp({
       email: emailInput.trim(),
-      options: { shouldCreateUser: true },
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo ?? '/home')}`,
+      },
     })
   }
 

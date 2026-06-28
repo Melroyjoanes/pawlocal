@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 
 const PLANS = {
-  monthly: { amount_paise: 24900, label: '₹249/month', days: 30 },
-  annual:  { amount_paise: 199900, label: '₹1,999/year', days: 365 },
+  monthly: { amount_paise: 19900, label: '₹199/month', days: 30 },
 }
 
 export async function POST(req: NextRequest) {

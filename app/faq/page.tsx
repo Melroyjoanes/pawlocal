@@ -23,7 +23,7 @@ const FAQS: { category: string; color: string; textColor: string; icon: string; 
       },
       {
         q: 'Is PupStep free to use?',
-        a: 'Dog walkers use PupStep for free, always. For dog parents, there is a free trial when you sign up, followed by ₹249/month or ₹1,999/year for unlimited walk reports and the full care diary.',
+        a: 'Dog walkers use PupStep for free, always. For dog parents, there is a 3-day free trial when you sign up, then ₹199/month for unlimited walk reports and the full care diary.',
       },
       {
         q: 'Do I need to create an account?',
@@ -87,19 +87,19 @@ const FAQS: { category: string; color: string; textColor: string; icon: string; 
     items: [
       {
         q: 'How much does PupStep cost?',
-        a: '₹249/month (cancel anytime) or ₹1,999/year — that\'s 2 months free, saving you ₹990. Dog walkers are always free.',
+        a: '₹199/month (cancel anytime). Dog walkers are always free.',
       },
       {
         q: 'What is included in the plan?',
-        a: 'All plans include GPS-tagged walk logs, photo diary, grooming records, vet visit history, and feeding and medication tracker. The Annual plan also unlocks vet-ready health PDFs you can download and share.',
+        a: 'Your plan includes GPS-tagged walk logs, photo diary, grooming records, vet visit history, feeding and medication tracker, and vet-ready health PDFs.',
       },
       {
         q: 'Is there a free trial?',
-        a: 'Yes. You get a free trial when you first sign up. You will not be charged anything until the trial period ends, and you can cancel before then with no questions asked.',
+        a: 'Yes. You get a 3-day free trial when you first sign up. You will not be charged until the trial ends, and you can cancel before then with no questions asked.',
       },
       {
         q: 'Can I cancel anytime?',
-        a: 'Monthly plans can be cancelled before the next billing date. Annual plans get a full refund within 7 days of purchase, and a pro-rated refund after that. No hoops to jump through.',
+        a: 'Yes — cancel before your next billing date and you will not be charged again. If you cancel within 7 days of your first payment, you get a full refund.',
       },
     ],
   },
