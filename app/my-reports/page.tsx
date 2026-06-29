@@ -19,19 +19,26 @@ export default async function MyReportsPage() {
 
   const db = admin()
 
-  // Get this parent's walker connections first (always works, no migration needed)
+  // Get this parent's walker connections + dogs (both used for broad report lookup)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: connections } = await safe((db.from('walker_connections') as any)
-    .select('id')
-    .eq('owner_id', user.id))
+  const [{ data: connections }, { data: dogsRaw }] = await Promise.all([
+    safe((db.from('walker_connections') as any)
+      .select('id')
+      .eq('owner_id', user.id)),
+    safe((db.from('dogs') as any)
+      .select('name')
+      .eq('owner_id', user.id)),
+  ])
 
   const connectionIds: string[] = (connections ?? []).map((c: { id: string }) => c.id)
+  const dogNames: string[] = (dogsRaw ?? []).map((d: { name: string }) => d.name).filter(Boolean)
 
   const [
     { data: sub },
-    { data: ownerReports },    // via owner_id (needs migration 047)
-    { data: claimedReports },  // via customer_id (claimed via viral hook)
-    { data: connectionReports }, // via connection_id (always works — V2 primary)
+    { data: ownerReports },       // via owner_id (migration 047)
+    { data: claimedReports },     // via customer_id (old viral hook)
+    { data: connectionReports },  // via connection_id (V2 primary)
+    { data: dogNameReports },     // via dog_name fallback — catches old reports with null owner_id/connection_id
   ] = await Promise.all([
     safe(db.from('subscriptions' as any)
       .select('status, plan, expires_at')
@@ -40,33 +47,39 @@ export default async function MyReportsPage() {
       .gt('expires_at', new Date().toISOString())
       .maybeSingle()),
 
-    // Via owner_id — works after migration 047
     safe((db.from('walk_reports') as any)
       .select(REPORT_COLS)
       .eq('owner_id', user.id)
       .order('walk_date', { ascending: false })),
 
-    // Via customer_id — reports the parent claimed via "Save to account"
     safe((db.from('walk_reports') as any)
       .select(REPORT_COLS)
       .eq('customer_id', user.id)
       .order('walk_date', { ascending: false })),
 
-    // Via connection_id — V2 QR walker reports, ALWAYS works regardless of migrations
     connectionIds.length > 0
       ? safe((db.from('walk_reports') as any)
           .select(REPORT_COLS)
           .in('connection_id', connectionIds)
           .order('walk_date', { ascending: false }))
       : { data: [] },
+
+    // Fallback: match by dog name — catches pre-migration reports that have no owner_id/connection_id
+    dogNames.length > 0
+      ? safe((db.from('walk_reports') as any)
+          .select(REPORT_COLS)
+          .in('dog_name', dogNames)
+          .order('walk_date', { ascending: false }))
+      : { data: [] },
   ])
 
-  // Merge all three sources, dedupe by id
+  // Merge all sources, dedupe by id
   const walkMap = new Map()
   const allReports = [
-    ...(connectionReports ?? []),  // primary: V2 reports via connection
-    ...(ownerReports ?? []),       // secondary: after migration 047
-    ...(claimedReports ?? []),     // tertiary: claimed reports
+    ...(connectionReports ?? []),  // primary: V2 reports via connection_id
+    ...(ownerReports ?? []),       // secondary: reports with owner_id set
+    ...(dogNameReports ?? []),     // tertiary: fallback — old reports matched by dog name
+    ...(claimedReports ?? []),     // quaternary: legacy claimed reports
   ]
 
   for (const r of allReports) {
