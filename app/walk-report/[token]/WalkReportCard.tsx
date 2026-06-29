@@ -29,76 +29,161 @@ type WalkReport = {
   pee_events: { lat: number; lng: number; time: string }[] | null
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Design tokens ────────────────────────────────────────────────────────────
 const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1]
+const CLAY = [
+  'inset 0 2px 0 rgba(255,255,255,0.92)',
+  'inset 0 -3px 0 rgba(0,0,0,0.09)',
+  '0 1px 0 rgba(0,0,0,0.05)',
+  '0 6px 20px -4px rgba(10,47,53,0.12)',
+  '0 24px 48px -8px rgba(10,47,53,0.08)',
+].join(', ')
+const CLAY_ORANGE = [
+  'inset 0 2px 0 rgba(255,200,120,0.6)',
+  'inset 0 -3px 0 rgba(180,60,0,0.22)',
+  '0 4px 14px rgba(255,140,82,0.42)',
+  '0 12px 28px rgba(255,140,82,0.18)',
+].join(', ')
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function formatWalkDate(isoDate: string): string {
+function formatDate(isoDate: string) {
   try {
     const d = new Date(isoDate)
-    const day  = d.toLocaleDateString('en-IN', { weekday: 'long' })
-    const date = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })
-    const time = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
-    return `${day}, ${date} · ${time}`
-  } catch { return isoDate }
-}
-
-function formatDateShort(isoDate: string): string {
-  try {
-    const d = new Date(isoDate)
-    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) +
-      ' · ' + d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
   } catch { return '' }
 }
-
+function formatTime(isoDate: string) {
+  try {
+    const d = new Date(isoDate)
+    return d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
+  } catch { return '' }
+}
 function parseMood(notes: string | null) {
   if (!notes) return null
   const m = notes.match(/\[Mood:\s*([\S]+)\s+(\w+)\]/i)
   if (!m) return null
   return { emoji: m[1], label: m[2] }
 }
-
-function cleanupNotes(notes: string | null): string {
+function cleanupNotes(notes: string | null) {
   if (!notes) return ''
   return notes.replace(/\[Mood:[^\]]*\]/i, '').trim()
 }
 
-// ─── Count-up hook ────────────────────────────────────────────────────────────
-function useCountUp(target: number, duration = 700, startDelay = 400) {
-  const [value, setValue] = useState(0)
-  const prefersReduced = useReducedMotion()
+// ─── Count-up ─────────────────────────────────────────────────────────────────
+function useCountUp(target: number, delay = 400) {
+  const [val, setVal] = useState(0)
+  const rm = useReducedMotion()
   useEffect(() => {
-    if (prefersReduced || target === 0) { setValue(target); return }
-    const timer = setTimeout(() => {
+    if (rm || target === 0) { setVal(target); return }
+    const t = setTimeout(() => {
       const start = performance.now()
       const tick = (now: number) => {
-        const t = Math.min((now - start) / duration, 1)
-        setValue(Math.round((1 - Math.pow(1 - t, 4)) * target))
-        if (t < 1) requestAnimationFrame(tick)
+        const progress = Math.min((now - start) / 650, 1)
+        setVal(Math.round((1 - Math.pow(1 - progress, 4)) * target))
+        if (progress < 1) requestAnimationFrame(tick)
       }
       requestAnimationFrame(tick)
-    }, startDelay)
-    return () => clearTimeout(timer)
-  }, [target, duration, startDelay, prefersReduced])
-  return value
+    }, delay)
+    return () => clearTimeout(t)
+  }, [target, delay, rm])
+  return val
+}
+
+// ─── SVG Icons ────────────────────────────────────────────────────────────────
+function IconClock() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  )
+}
+function IconRoute() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="6" cy="19" r="3" />
+      <path d="M9 19h8.5c1.4 0 2.5-1.1 2.5-2.5S18.9 14 17.5 14H6.5C5.1 14 4 12.9 4 11.5S5.1 9 6.5 9H15" />
+      <circle cx="18" cy="5" r="3" />
+    </svg>
+  )
+}
+function IconDrop() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
+    </svg>
+  )
+}
+function IconPoop() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2c-1.1 0-2 .9-2 2 0 .74.4 1.38 1 1.73V7H9.5C7.6 7 6 8.6 6 10.5c0 .17.01.34.04.5C4.83 11.35 4 12.33 4 13.5 4 15.43 5.57 17 7.5 17h9c1.93 0 3.5-1.57 3.5-3.5 0-1.17-.83-2.15-2.04-2.5.03-.16.04-.33.04-.5C18 8.6 16.4 7 14.5 7H13V5.73c.6-.35 1-.99 1-1.73 0-1.1-.9-2-2-2z" />
+      <rect x="8" y="17" width="8" height="2" rx="1" />
+      <rect x="9" y="19" width="6" height="2" rx="1" />
+    </svg>
+  )
+}
+function IconPaw() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="4.5" cy="6.5" r="2.5" />
+      <circle cx="9" cy="3.5" r="2.5" />
+      <circle cx="15" cy="3.5" r="2.5" />
+      <circle cx="19.5" cy="6.5" r="2.5" />
+      <path d="M17.34 14.86c-.87-1.02-1.6-1.89-2.48-2.91-.46-.54-1.05-1.08-1.75-1.32-.11-.04-.22-.07-.33-.09-.25-.04-.52-.04-.78-.04s-.53 0-.78.04c-.11.02-.22.05-.33.09-.7.24-1.29.78-1.75 1.32-.88 1.02-1.61 1.89-2.48 2.91-1.31 1.31-2.92 2.76-2.62 4.79.29 1.02 1.02 2.03 2.33 2.32.73.15 3.06-.44 5.54-.44h.18c2.48 0 4.81.58 5.54.44 1.31-.29 2.04-1.31 2.33-2.32.29-2.03-1.31-3.48-2.62-4.79z" />
+    </svg>
+  )
+}
+function IconCalendar() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  )
+}
+function IconPerson() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  )
+}
+function IconCheck() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  )
+}
+function IconWA() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z"/>
+      <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.845L.057 23.428a.5.5 0 00.609.61l5.64-1.476A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.91 0-3.698-.5-5.244-1.373l-.375-.217-3.888 1.018 1.034-3.774-.237-.389A9.937 9.937 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/>
+    </svg>
+  )
 }
 
 // ─── Paw burst ────────────────────────────────────────────────────────────────
 function PawBurst() {
   const paws = [
-    { x: 0,   y: -75, r: -10, delay: 0,    size: 22 },
-    { x: 58,  y: -48, r: 22,  delay: 0.05, size: 18 },
-    { x: 72,  y: 18,  r: 38,  delay: 0.08, size: 20 },
-    { x: 32,  y: 74,  r: -18, delay: 0.12, size: 17 },
-    { x: -38, y: 70,  r: 16,  delay: 0.14, size: 19 },
-    { x: -74, y: 14,  r: -32, delay: 0.10, size: 17 },
-    { x: -54, y: -50, r: 26,  delay: 0.06, size: 21 },
+    { x: 0, y: -75, r: -10, delay: 0, size: 22 },
+    { x: 58, y: -48, r: 22, delay: 0.05, size: 18 },
+    { x: 72, y: 18, r: 38, delay: 0.08, size: 20 },
+    { x: 32, y: 74, r: -18, delay: 0.12, size: 17 },
+    { x: -38, y: 70, r: 16, delay: 0.14, size: 19 },
+    { x: -74, y: 14, r: -32, delay: 0.1, size: 17 },
+    { x: -54, y: -50, r: 26, delay: 0.06, size: 21 },
   ]
   return (
     <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center overflow-hidden" style={{ top: '25%' }}>
       {paws.map((p, i) => (
         <motion.span key={i} className="absolute select-none" style={{ fontSize: p.size }}
-          initial={{ opacity: 0, x: 0, y: 0, scale: 0.2, rotate: 0 }}
+          initial={{ opacity: 0, x: 0, y: 0, scale: 0.2 }}
           animate={{ opacity: [0, 1, 1, 0], x: p.x, y: p.y, scale: [0.2, 1.1, 1, 0.75], rotate: p.r }}
           transition={{ duration: 1.05, delay: p.delay, ease: [0.25, 0.46, 0.45, 0.94] }}>
           🐾
@@ -108,34 +193,26 @@ function PawBurst() {
   )
 }
 
-// ─── Stat pill (V1 style — simple, with count-up) ────────────────────────────
-function StatPill({
-  emoji, count, singular, plural, unit, bg, color, delay = 0,
-}: {
-  emoji: string
-  count: number
-  singular?: string
-  plural?: string
-  unit?: string
-  bg: string
-  color: string
-  delay?: number
-}) {
-  const val = useCountUp(count, 650, delay)
-  if (count === 0 && !unit) return null
-  const label = unit ? unit : (val === 1 && singular ? singular : (plural ?? singular ?? ''))
+// ─── Stat box ─────────────────────────────────────────────────────────────────
+function StatBox({ icon, value, label, delay }: { icon: React.ReactNode; value: string | number; label: string; delay: number }) {
   return (
-    <motion.span
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 100, fontSize: 13, fontWeight: 600, background: bg, color, fontFamily: 'var(--font-nunito,sans-serif)', userSelect: 'none', flexShrink: 0 }}
-      initial={{ opacity: 0, scale: 0.7 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.35, delay: delay / 1000, ease: EASE }}>
-      {emoji} {val}{label ? ` ${label}` : ''}
-    </motion.span>
+    <motion.div
+      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay, ease: EASE }}>
+      <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'oklch(0.48 0.17 196)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.20), inset 0 -3px 0 rgba(0,0,0,0.20), 0 4px 12px oklch(0.48 0.17 196 / 0.35)' }}>
+        {icon}
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color: 'oklch(0.48 0.17 196)', margin: 0, lineHeight: 1 }}>{value}</p>
+        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 600, color: '#9CA3AF', margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
+      </div>
+    </motion.div>
   )
 }
 
-// ─── Google Maps — fixed markers ──────────────────────────────────────────────
+// ─── Google Maps ──────────────────────────────────────────────────────────────
 function WalkMap({ routePoints, poopEvents, peeEvents }: {
   routePoints: { lat: number; lng: number }[]
   poopEvents: { lat: number; lng: number; time: string }[]
@@ -158,76 +235,63 @@ function WalkMap({ routePoints, poopEvents, peeEvents }: {
         styles: [
           { featureType: 'poi', stylers: [{ visibility: 'off' }] },
           { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-          { elementType: 'geometry', stylers: [{ color: '#f5f0e8' }] },
+          { elementType: 'geometry', stylers: [{ color: '#f8f4ee' }] },
           { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
           { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9CA3AF' }] },
           { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9e8e0' }] },
-          { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f5f0e8' }] },
+          { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f8f4ee' }] },
         ],
       })
 
-      // Teal route
+      // Route polyline
       new gm.Polyline({
         path: routePoints,
-        strokeColor: '#0A7B8E',
+        strokeColor: 'oklch(0.48 0.17 196)',
         strokeWeight: 5,
-        strokeOpacity: 0.9,
+        strokeOpacity: 0.95,
         geodesic: true,
       }).setMap(map)
 
-      // Start dot — green
+      // Start dot
       new gm.Marker({
         position: routePoints[0], map,
-        icon: { path: gm.SymbolPath.CIRCLE, scale: 9, fillColor: '#22c55e', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
-        title: 'Start', zIndex: 10,
+        icon: { path: gm.SymbolPath.CIRCLE, scale: 8, fillColor: '#22c55e', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
+        zIndex: 10,
       })
-
-      // End dot — teal
+      // End dot
       new gm.Marker({
         position: routePoints[routePoints.length - 1], map,
-        icon: { path: gm.SymbolPath.CIRCLE, scale: 9, fillColor: '#0f766e', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
-        title: 'End', zIndex: 10,
+        icon: { path: gm.SymbolPath.CIRCLE, scale: 8, fillColor: 'oklch(0.48 0.17 196)', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
+        zIndex: 10,
       })
 
-      // Pin-shaped SVG markers — much more visible than circles
+      // Pin-shaped SVG markers
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      function makePinIcon(fill: string, letter: string, gm: any) {
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">
-          <path d="M14 0C7.4 0 2 5.4 2 12c0 9 12 24 12 24s12-15 12-24C26 5.4 20.6 0 14 0z" fill="${fill}" stroke="white" stroke-width="2"/>
-          <circle cx="14" cy="12" r="6" fill="white" opacity="0.9"/>
-          <text x="14" y="16" text-anchor="middle" font-family="sans-serif" font-size="8" fill="${fill}" font-weight="900">${letter}</text>
+      function pin(fill: string, letter: string, gm: any) {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38">
+          <path d="M15 0C8.1 0 2.5 5.6 2.5 12.5c0 9.4 12.5 25.5 12.5 25.5s12.5-16.1 12.5-25.5C27.5 5.6 21.9 0 15 0z" fill="${fill}" stroke="white" stroke-width="2.5"/>
+          <circle cx="15" cy="12.5" r="7" fill="white" opacity="0.92"/>
+          <text x="15" y="17" text-anchor="middle" font-family="sans-serif" font-size="9" fill="${fill}" font-weight="900">${letter}</text>
         </svg>`
         return {
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-          scaledSize: new gm.Size(28, 36),
-          anchor: new gm.Point(14, 36),
+          scaledSize: new gm.Size(30, 38),
+          anchor: new gm.Point(15, 38),
         }
       }
 
-      // Poop — dark brown pin
       poopEvents?.forEach((e, i) => {
-        new gm.Marker({
-          position: { lat: e.lat, lng: e.lng }, map,
-          icon: makePinIcon('#92400E', 'P', gm),
-          title: `Poop ${i + 1}`, zIndex: 8,
-        })
+        new gm.Marker({ position: { lat: e.lat, lng: e.lng }, map, icon: pin('#7C3A18', 'P', gm), title: `Poop ${i + 1}`, zIndex: 8 })
       })
-
-      // Pee — amber/yellow pin (much more visible on light map tiles)
       peeEvents?.forEach((e, i) => {
-        new gm.Marker({
-          position: { lat: e.lat, lng: e.lng }, map,
-          icon: makePinIcon('#B45309', 'W', gm),
-          title: `Pee ${i + 1}`, zIndex: 8,
-        })
+        new gm.Marker({ position: { lat: e.lat, lng: e.lng }, map, icon: pin('#1E6DB5', 'W', gm), title: `Pee ${i + 1}`, zIndex: 8 })
       })
 
-      // Fit all points including events
       const bounds = new gm.LatLngBounds()
       routePoints.forEach(p => bounds.extend(p))
       poopEvents?.forEach(e => bounds.extend({ lat: e.lat, lng: e.lng }))
       peeEvents?.forEach(e => bounds.extend({ lat: e.lat, lng: e.lng }))
-      map.fitBounds(bounds, { top: 40, bottom: 40, left: 40, right: 40 })
+      map.fitBounds(bounds, { top: 36, bottom: 36, left: 36, right: 36 })
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -263,296 +327,291 @@ export default function WalkReportCard({
   shareUrl: string
   isFirstReport: boolean
 }) {
-  const prefersReduced = useReducedMotion()
+  const rm = useReducedMotion()
   const [burst, setBurst] = useState(false)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (isFirstReport && !prefersReduced) {
-      const t = setTimeout(() => setBurst(true), 600)
-      return () => clearTimeout(t)
-    }
-  }, [isFirstReport, prefersReduced])
+    if (isFirstReport && !rm) { const t = setTimeout(() => setBurst(true), 600); return () => clearTimeout(t) }
+  }, [isFirstReport, rm])
   useEffect(() => {
     if (burst) { const t = setTimeout(() => setBurst(false), 1200); return () => clearTimeout(t) }
   }, [burst])
 
   const mood       = parseMood(report.notes)
   const cleanNotes = cleanupNotes(report.notes)
-  const hasMap     = report.route_points && report.route_points.length >= 2
+  const hasMap     = (report.route_points?.length ?? 0) >= 2
+  const durationVal = useCountUp(report.duration_mins, 300)
+  const poopVal    = useCountUp(report.poop_count, 400)
+  const peeVal     = useCountUp(report.pee_count, 500)
   const distKm     = report.distance_meters
     ? report.distance_meters >= 1000
-      ? `${(report.distance_meters / 1000).toFixed(2)} km`
-      : `${Math.round(report.distance_meters)} m`
+      ? `${(report.distance_meters / 1000).toFixed(1)}km`
+      : `${Math.round(report.distance_meters)}m`
     : null
 
-  const moodConfig: Record<string, { bg: string; color: string; border: string }> = {
-    great:   { bg: '#F0FDF4', color: '#166534', border: '#BBF7D0' },
-    good:    { bg: '#F0FDF4', color: '#166534', border: '#BBF7D0' },
-    okay:    { bg: '#FEF3C7', color: '#92400E', border: '#FDE68A' },
-    tired:   { bg: '#F8FAFC', color: '#475569', border: '#E2E8F0' },
-    anxious: { bg: '#FFF1F2', color: '#9F1239', border: '#FECDD3' },
-    issue:   { bg: '#FFF1F2', color: '#9F1239', border: '#FECDD3' },
-  }
-  const mc = moodConfig[mood?.label?.toLowerCase() ?? ''] ?? moodConfig.okay
-
-  const waFamilyText = encodeURIComponent(`${report.dog_name} just had a walk! 🐾\nFull GPS report:\n${shareUrl}`)
-  const waVetText    = encodeURIComponent(`Hi Doctor, here is ${report.dog_name}'s recent walk report:\n${shareUrl}`)
+  const waText    = encodeURIComponent(`${report.dog_name} just had a walk! 🐾\nFull GPS report:\n${shareUrl}`)
+  const waVetText = encodeURIComponent(`Hi Doctor, here is ${report.dog_name}'s recent walk report:\n${shareUrl}`)
 
   async function handleCopy() {
     try { await navigator.clipboard.writeText(shareUrl) } catch { void 0 }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2200)
+    setCopied(true); setTimeout(() => setCopied(false), 2200)
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#FFFBEB' }}>
+    <div style={{ minHeight: '100dvh', background: '#FFFBEB', paddingBottom: 32 }}>
       <AnimatePresence>{burst && <PawBurst />}</AnimatePresence>
 
-      {/* ── FIRST REPORT CELEBRATION ─────────────────────────── */}
-      {isFirstReport && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-          style={{ background: 'linear-gradient(135deg, oklch(0.48 0.17 196) 0%, oklch(0.38 0.15 196) 100%)', padding: '18px 20px 14px', textAlign: 'center' }}>
-          <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#fff', margin: '0 0 4px' }}>
-            First walk report!
-          </p>
-          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: 'rgba(255,255,255,0.85)', margin: 0 }}>
-            {report.dog_name}&apos;s care diary has started.
-          </p>
-        </motion.div>
-      )}
+      {/* ── HEADER ──────────────────────────────────────────── */}
+      <div style={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(255,251,235,0.95)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(10,47,53,0.08)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Link href="/" style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', boxShadow: CLAY, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: '#0A2F35' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </Link>
 
-      {/* ── HERO — dog photo, full bleed ─────────────────────── */}
-      <div style={{
-        position: 'relative',
-        width: '100%',
-        height: report.photo_url ? '45vh' : 100,
-        minHeight: report.photo_url ? 280 : 0,
-        maxHeight: report.photo_url ? 420 : 100,
-        overflow: 'hidden',
-      }}>
-        {report.photo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={report.photo_url} alt={report.dog_name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 25%' }} />
-        ) : (
-          <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #0A2F35 0%, oklch(0.35 0.12 196) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 64 }}>🐾</span>
-          </div>
-        )}
-
-        {/* Gradient overlay */}
-        {report.photo_url && (
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, transparent 40%, rgba(10,47,53,0.82) 100%)' }} />
-        )}
-
-        {/* Logo — dark pill backdrop guarantees visibility on any background */}
-        <div style={{ position: 'absolute', top: 14, left: 14, zIndex: 10 }}>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(0,0,0,0.36)', borderRadius: 8, padding: '5px 10px', backdropFilter: 'blur(4px)' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.webp" alt="PupStep" style={{ height: 22, width: 'auto', filter: 'brightness(0) invert(1)' }} />
-          </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.webp" alt="PupStep" style={{ height: 28, width: 'auto' }} />
         </div>
 
-        {/* Walk Report label */}
-        <span style={{ position: 'absolute', top: 18, right: 16, fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: '0.12em', fontFamily: 'var(--font-nunito)', background: 'rgba(0,0,0,0.25)', borderRadius: 4, padding: '3px 7px', backdropFilter: 'blur(4px)' }}>
-          Walk Report
-        </span>
-
-        {/* Dog name + date (when photo exists) */}
-        {report.photo_url && (
-          <motion.div
-            style={{ position: 'absolute', bottom: 16, left: 20, right: 20 }}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2, ease: EASE }}>
-            <h1 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 38, fontWeight: 700, color: '#ffffff', margin: '0 0 2px', lineHeight: 1.1, textShadow: '0 2px 12px rgba(0,0,0,0.35)' }}>
-              {report.dog_name}
-            </h1>
-            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: 'rgba(255,255,255,0.85)', margin: 0, textShadow: '0 1px 6px rgba(0,0,0,0.35)' }}>
-              {formatDateShort(report.walk_date)} · by {report.provider_name}
-            </p>
-          </motion.div>
-        )}
+        <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', boxShadow: CLAY, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0A2F35' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+        </div>
       </div>
 
-      {/* ── DOG NAME (no photo) ──────────────────────────────── */}
-      {!report.photo_url && (
-        <motion.div style={{ padding: '20px 20px 0' }}
-          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1, ease: EASE }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-            <motion.span style={{ fontSize: 32, display: 'inline-block' }}
-              animate={!prefersReduced ? { rotate: [0, -10, 10, -6, 0] } : {}}
-              transition={{ duration: 0.6, delay: 0.5, ease: EASE }}>
-              🐕
-            </motion.span>
-            <h1 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 32, fontWeight: 700, color: '#0A2F35', margin: 0 }}>
-              {report.dog_name}
-            </h1>
-            {report.is_verified && (
-              <span style={{ fontSize: 11, fontWeight: 700, background: 'oklch(0.94 0.06 196)', color: 'oklch(0.44 0.16 196)', padding: '3px 10px', borderRadius: 100, fontFamily: 'var(--font-nunito)' }}>
-                GPS Verified
-              </span>
-            )}
-          </div>
-          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#9CA3AF', margin: 0 }}>
-            {formatWalkDate(report.walk_date)} · {report.provider_name}
-          </p>
-        </motion.div>
-      )}
+      {/* Sub-header label */}
+      <div style={{ textAlign: 'center', padding: '10px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        <div style={{ width: 24, height: 1, background: 'rgba(255,140,82,0.4)' }} />
+        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 700, color: '#FF8C52', textTransform: 'uppercase', letterSpacing: '0.1em', margin: 0 }}>Walk Report</p>
+        <div style={{ width: 24, height: 1, background: 'rgba(255,140,82,0.4)' }} />
+      </div>
 
-      {/* ── STAT PILLS ───────────────────────────────────────── */}
-      <motion.div
-        style={{ padding: '16px 20px', display: 'flex', flexWrap: 'wrap', gap: 8, overflowX: 'auto' }}
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.25, ease: EASE }}>
-        <StatPill emoji="💩" count={report.poop_count} singular="poop" plural="poops" bg="#FEF3C7" color="#92400E" delay={350} />
-        <StatPill emoji="💧" count={report.pee_count} singular="pee" plural="pees" bg="#EFF6FF" color="#1E40AF" delay={470} />
-        {report.duration_mins > 0 && (
-          <StatPill emoji="⏱" count={report.duration_mins} unit="mins" bg="#F0FDF4" color="#166534" delay={590} />
-        )}
-        {report.distance_meters && report.distance_meters > 0 && (
-          <motion.span
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 100, fontSize: 13, fontWeight: 600, background: '#F5F3FF', color: '#6B21A8', fontFamily: 'var(--font-nunito)', userSelect: 'none', flexShrink: 0 }}
-            initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.35, delay: 0.72, ease: EASE }}>
-            📏 {distKm}
-          </motion.span>
-        )}
-      </motion.div>
+      <div style={{ padding: '8px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-      {/* ── GPS MAP — full width, edge to edge ───────────────── */}
-      {hasMap ? (
+        {/* ── DOG CARD (claymorphism) ──────────────────────── */}
         <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.35, ease: EASE }}>
-          {/* Section label */}
-          <div style={{ padding: '4px 20px 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, color: '#0A2F35' }}>GPS Route</span>
-            {((report.poop_events?.length ?? 0) + (report.pee_events?.length ?? 0)) > 0 && (
-              <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: 'var(--font-nunito)', fontWeight: 600 }}>
-                · {(report.poop_events?.length ?? 0) + (report.pee_events?.length ?? 0)} events mapped
-              </span>
-            )}
-          </div>
-          {/* Map: full width */}
-          <div style={{ width: '100%', height: 320, position: 'relative', background: '#f5f0e8' }}>
-            <WalkMap
-              routePoints={report.route_points!}
-              poopEvents={report.poop_events ?? []}
-              peeEvents={report.pee_events ?? []}
-            />
-            {/* Legend */}
-            <div style={{ position: 'absolute', bottom: 12, right: 12, background: 'rgba(255,255,255,0.92)', borderRadius: 10, padding: '6px 10px', display: 'flex', gap: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.12)', backdropFilter: 'blur(4px)' }}>
-              <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 700, fontFamily: 'var(--font-nunito)' }}>● Start</span>
-              <span style={{ fontSize: 11, color: '#0f766e', fontWeight: 700, fontFamily: 'var(--font-nunito)' }}>● End</span>
-              {(report.poop_events?.length ?? 0) > 0 && <span style={{ fontSize: 11, color: '#92400E', fontWeight: 700, fontFamily: 'var(--font-nunito)' }}>P Poop ×{report.poop_events!.length}</span>}
-              {(report.pee_events?.length ?? 0) > 0 && <span style={{ fontSize: 11, color: '#B45309', fontWeight: 700, fontFamily: 'var(--font-nunito)' }}>W Pee ×{report.pee_events!.length}</span>}
+          style={{ background: '#fff', borderRadius: 24, padding: '18px 18px', boxShadow: CLAY }}
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: EASE }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+            {/* Circular dog photo or placeholder */}
+            <div style={{ flexShrink: 0, width: 72, height: 72, borderRadius: '50%', overflow: 'hidden', boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.7), 0 4px 12px rgba(10,47,53,0.14)', border: '3px solid #fff' }}>
+              {report.photo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={report.photo_url} alt={report.dog_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, oklch(0.48 0.17 196) 0%, oklch(0.38 0.15 196) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
+                  🐾
+                </div>
+              )}
+            </div>
+
+            {/* Dog info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 26, fontWeight: 700, color: '#0A2F35', margin: '0 0 6px', lineHeight: 1 }}>
+                {report.dog_name}
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+                <span style={{ color: 'oklch(0.48 0.17 196)', display: 'flex' }}><IconPerson /></span>
+                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 600, color: '#6B7280' }}>Walker: </span>
+                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: 'oklch(0.48 0.17 196)' }}>{report.provider_name}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ color: '#9CA3AF', display: 'flex' }}><IconCalendar /></span>
+                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF' }}>{formatDate(report.walk_date)}</span>
+                <span style={{ color: '#D1D5DB', fontSize: 10 }}>·</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                </svg>
+                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF' }}>{formatTime(report.walk_date)}</span>
+              </div>
+            </div>
+
+            {/* Completed badge */}
+            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, background: '#F0FDF4', border: '1.5px solid #BBF7D0', borderRadius: 100, padding: '5px 10px' }}>
+              <span style={{ color: '#22c55e', display: 'flex' }}><IconCheck /></span>
+              <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, color: '#166534' }}>Completed</span>
             </div>
           </div>
         </motion.div>
-      ) : (
-        <div style={{ padding: '0 20px 4px' }}>
-          <div style={{ background: '#F1F5F9', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 20 }}>📍</span>
-            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', margin: 0 }}>
-              GPS route not captured for this walk
-            </p>
-          </div>
-        </div>
-      )}
 
-      {/* ── MOOD + NOTES ─────────────────────────────────────── */}
-      <div style={{ padding: '16px 20px 8px' }}>
+        {/* ── MAP (claymorphism card) ──────────────────────── */}
+        {hasMap ? (
+          <motion.div
+            style={{ background: '#fff', borderRadius: 24, overflow: 'hidden', boxShadow: CLAY }}
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1, ease: EASE }}>
+            <div style={{ width: '100%', height: 240 }}>
+              <WalkMap
+                routePoints={report.route_points!}
+                poopEvents={report.poop_events ?? []}
+                peeEvents={report.pee_events ?? []}
+              />
+            </div>
+            {/* Legend */}
+            <div style={{ padding: '10px 16px', display: 'flex', gap: 16, alignItems: 'center', borderTop: '1px solid rgba(10,47,53,0.06)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ color: '#1E6DB5', display: 'flex' }}><IconDrop /></span>
+                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 600, color: '#374151' }}>Pee</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <span style={{ color: '#7C3A18', display: 'flex' }}><IconPoop /></span>
+                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 600, color: '#374151' }}>Poop</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ width: 22, height: 4, borderRadius: 2, background: 'oklch(0.48 0.17 196)' }} />
+                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 600, color: '#374151' }}>Route</span>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            style={{ background: '#fff', borderRadius: 24, padding: '16px 18px', boxShadow: CLAY, display: 'flex', alignItems: 'center', gap: 12 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.1 }}>
+            <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9CA3AF', flexShrink: 0 }}>
+              <IconRoute />
+            </div>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#9CA3AF', margin: 0 }}>GPS route not captured for this walk</p>
+          </motion.div>
+        )}
+
+        {/* ── STATS ROW ────────────────────────────────────── */}
+        <motion.div
+          style={{ background: '#fff', borderRadius: 24, padding: '20px 12px', boxShadow: CLAY, display: 'flex', gap: 4 }}
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15, ease: EASE }}>
+          {report.duration_mins > 0 && (
+            <StatBox icon={<IconClock />} value={`${durationVal} min`} label="Duration" delay={0.25} />
+          )}
+          {distKm && (
+            <StatBox icon={<IconRoute />} value={distKm} label="Distance" delay={0.32} />
+          )}
+          {report.pee_count > 0 && (
+            <StatBox icon={<IconDrop />} value={peeVal} label="Pee" delay={0.39} />
+          )}
+          {report.poop_count > 0 && (
+            <StatBox icon={<IconPoop />} value={poopVal} label="Poop" delay={0.46} />
+          )}
+          {/* Fallback if all zero */}
+          {report.duration_mins === 0 && !distKm && report.pee_count === 0 && report.poop_count === 0 && (
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#9CA3AF', margin: '0 auto', padding: '8px 0' }}>Walk logged — stats not recorded</p>
+          )}
+        </motion.div>
+
+        {/* ── DOG PHOTO (full-width card) ──────────────────── */}
+        {report.photo_url && (
+          <motion.div
+            style={{ borderRadius: 24, overflow: 'hidden', boxShadow: CLAY }}
+            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2, ease: EASE }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={report.photo_url} alt={report.dog_name}
+              style={{ width: '100%', height: 220, objectFit: 'cover', objectPosition: 'center 20%', display: 'block' }} />
+          </motion.div>
+        )}
+
+        {/* ── MOOD CARD ────────────────────────────────────── */}
         {mood && (
           <motion.div
-            style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', background: mc.bg, borderRadius: 16, marginBottom: 12, border: `1px solid ${mc.border}` }}
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.45, ease: EASE }}>
-            <span style={{ fontSize: 32 }}>{mood.emoji}</span>
+            style={{ background: '#fff', borderRadius: 24, padding: '16px 18px', boxShadow: CLAY, display: 'flex', alignItems: 'center', gap: 14 }}
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.25, ease: EASE }}>
+            <span style={{ fontSize: 36 }}>{mood.emoji}</span>
             <div>
-              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 17, fontWeight: 700, color: mc.color, margin: 0 }}>
+              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#0A2F35', margin: '0 0 2px' }}>
                 {mood.label.charAt(0).toUpperCase() + mood.label.slice(1)}
               </p>
-              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: mc.color, margin: '2px 0 0', opacity: 0.7 }}>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#9CA3AF', margin: 0 }}>
                 {report.dog_name}&apos;s mood today
               </p>
             </div>
           </motion.div>
         )}
 
+        {/* ── WALKER'S NOTE ────────────────────────────────── */}
         {cleanNotes && (
           <motion.div
-            style={{ padding: '14px 18px', background: 'oklch(0.995 0.005 85)', borderRadius: 16, border: '1px solid rgba(10,47,53,0.06)' }}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ duration: 0.35, delay: 0.5, ease: EASE }}>
-            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#374151', fontStyle: 'italic', lineHeight: 1.65, margin: '0 0 6px' }}>
-              &ldquo;{cleanNotes}&rdquo;
-            </p>
-            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#9CA3AF', margin: 0, textAlign: 'right' }}>
-              — {report.provider_name}
-            </p>
+            style={{ background: '#fff', borderRadius: 24, padding: '18px 18px', boxShadow: CLAY }}
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.28, ease: EASE }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              {/* Walker avatar */}
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, oklch(0.48 0.17 196) 0%, oklch(0.38 0.15 196) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.2), 0 4px 10px oklch(0.48 0.17 196 / 0.3)' }}>
+                <span style={{ fontFamily: 'var(--font-fredoka)', fontSize: 18, fontWeight: 700, color: '#fff' }}>
+                  {report.provider_name.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, color: 'oklch(0.48 0.17 196)', margin: '0 0 6px' }}>
+                  Walker&apos;s note
+                </p>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#374151', lineHeight: 1.65, margin: 0 }}>
+                  {cleanNotes}
+                </p>
+              </div>
+              <span style={{ color: '#FF8C52', opacity: 0.4, flexShrink: 0, marginTop: 2 }}><IconPaw /></span>
+            </div>
           </motion.div>
         )}
-      </div>
 
-      {/* ── SHARE SECTION ────────────────────────────────────── */}
-      <motion.div
-        style={{ margin: '8px 20px 16px', background: 'oklch(0.995 0.005 85)', borderRadius: 20, padding: 16, boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), 0 4px 16px rgba(15,45,50,0.07)', border: '1px solid rgba(226,220,200,0.7)' }}
-        initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.28, ease: EASE }}>
-        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#9CA3AF', margin: '0 0 12px' }}>
-          Share this report
-        </p>
-
-        {/* WhatsApp family */}
-        <motion.a
-          href={`https://wa.me/?text=${waFamilyText}`} target="_blank" rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2.5 w-full py-3.5 rounded-2xl text-sm font-bold text-white mb-2.5"
-          style={{ background: 'linear-gradient(160deg, #25D366 0%, #1aad54 100%)', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.22), inset 0 -4px 0 rgba(14,100,55,0.50), 0 8px 20px rgba(37,211,102,0.28)', textDecoration: 'none', fontFamily: 'var(--font-fredoka)', fontSize: 16 }}
-          whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
-          <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.555 4.116 1.528 5.845L.057 23.428a.5.5 0 00.609.61l5.64-1.476A11.954 11.954 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.91 0-3.698-.5-5.244-1.373l-.375-.217-3.888 1.018 1.034-3.774-.237-.389A9.937 9.937 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z" />
-          </svg>
-          Send to family
-        </motion.a>
-
-        <div className="grid grid-cols-2 gap-2">
+        {/* ── SHARE CTAs ───────────────────────────────────── */}
+        <motion.div
+          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}
+          initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.32, ease: EASE }}>
+          {/* Send to family — outlined */}
           <motion.a
-            href={`https://wa.me/?text=${waVetText}`} target="_blank" rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold"
-            style={{ background: 'oklch(0.995 0.005 85)', border: '1px solid rgba(226,220,200,0.7)', color: '#0A2F35', textDecoration: 'none', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.95), 0 3px 8px rgba(0,0,0,0.05)', fontFamily: 'var(--font-nunito)', fontWeight: 700 }}
+            href={`https://wa.me/?text=${waText}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px', borderRadius: 18, background: '#fff', border: '2px solid oklch(0.48 0.17 196)', color: 'oklch(0.48 0.17 196)', fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, textDecoration: 'none', boxShadow: CLAY }}
             whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
-            Send to vet
+            <IconWA />
+            Send to family
           </motion.a>
+
+          {/* Copy link / Send to vet — orange filled */}
           <motion.button
             onClick={handleCopy}
-            className="flex items-center justify-center gap-2 py-3 rounded-2xl text-sm font-bold"
-            style={{ background: copied ? '#ECFDF5' : 'oklch(0.995 0.005 85)', border: copied ? '1px solid #BBF7D0' : '1px solid rgba(226,220,200,0.7)', color: copied ? '#15803D' : '#0A2F35', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.95), 0 3px 8px rgba(0,0,0,0.05)', fontFamily: 'var(--font-nunito)', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s ease' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px', borderRadius: 18, background: copied ? '#22c55e' : '#FF8C52', color: '#fff', fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: copied ? '0 4px 12px rgba(34,197,94,0.4)' : CLAY_ORANGE, transition: 'background 0.25s ease, box-shadow 0.25s ease' }}
             whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
             <AnimatePresence mode="wait">
-              {copied
-                ? <motion.span key="copied" initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.15 }}>Copied!</motion.span>
-                : <motion.span key="copy" initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.15 }}>Copy link</motion.span>
-              }
+              {copied ? (
+                <motion.span key="done" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} style={{ display: 'flex', alignItems: 'center', gap: 6 }} transition={{ duration: 0.15 }}>
+                  <IconCheck /> Copied!
+                </motion.span>
+              ) : (
+                <motion.span key="copy" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} style={{ display: 'flex', alignItems: 'center', gap: 6 }} transition={{ duration: 0.15 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                  Save report
+                </motion.span>
+              )}
             </AnimatePresence>
           </motion.button>
-        </div>
-      </motion.div>
+        </motion.div>
 
-      {/* ── FOOTER ───────────────────────────────────────────── */}
-      <div style={{ padding: '12px 20px 40px', textAlign: 'center', borderTop: '1px solid rgba(10,47,53,0.06)' }}>
-        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.webp" alt="PupStep" style={{ height: 18, width: 'auto', opacity: 0.45 }} />
-        </Link>
-        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#CBD5E1', margin: '6px 0 0' }}>
-          GPS-verified walk reports for Mumbai dog parents
-        </p>
+        {/* Send to vet — text link */}
+        <div style={{ textAlign: 'center' }}>
+          <a href={`https://wa.me/?text=${waVetText}`} target="_blank" rel="noopener noreferrer"
+            style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: 'oklch(0.48 0.17 196)', textDecoration: 'none' }}>
+            Send to vet →
+          </a>
+        </div>
+
+        {/* Footer */}
+        <div style={{ textAlign: 'center', paddingTop: 8 }}>
+          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, textDecoration: 'none' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.webp" alt="PupStep" style={{ height: 16, width: 'auto', opacity: 0.35 }} />
+          </Link>
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, color: '#CBD5E1', margin: '5px 0 0' }}>
+            GPS-verified walk reports · Mumbai
+          </p>
+        </div>
+
       </div>
     </div>
   )
