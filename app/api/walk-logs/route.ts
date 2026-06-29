@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
   const events: WalkEvent[] = Array.isArray(walk_events) ? walk_events : []
   const poopEvents = events
     .filter((e) => e.type === 'poop' && e.lat != null && e.lng != null)
-    .map((e) => ({ lat: e.lat!, lng: e.lng!, time: e.ts }))
+    .map((e) => ({ lat: e.lat!, lng: e.lng!, time: e.ts, photo_url: e.photoUrl ?? null }))
   const peeEvents = events
     .filter((e) => e.type === 'pee' && e.lat != null && e.lng != null)
     .map((e) => ({ lat: e.lat!, lng: e.lng!, time: e.ts }))

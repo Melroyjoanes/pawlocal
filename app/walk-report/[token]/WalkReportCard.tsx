@@ -25,7 +25,7 @@ type WalkReport = {
   end_location: string | null
   route_points: { lat: number; lng: number }[] | null
   distance_meters: number | null
-  poop_events: { lat: number; lng: number; time: string }[] | null
+  poop_events: { lat: number; lng: number; time: string; photo_url?: string | null }[] | null
   pee_events: { lat: number; lng: number; time: string }[] | null
 }
 
@@ -69,35 +69,10 @@ function cleanupNotes(notes: string | null) {
   return notes.replace(/\[Mood:[^\]]*\]/i, '').trim()
 }
 
-// ─── Count-up ─────────────────────────────────────────────────────────────────
-function useCountUp(target: number, delay = 400) {
-  const [val, setVal] = useState(0)
-  const rm = useReducedMotion()
-  useEffect(() => {
-    if (rm || target === 0) { setVal(target); return }
-    const t = setTimeout(() => {
-      const start = performance.now()
-      const tick = (now: number) => {
-        const progress = Math.min((now - start) / 650, 1)
-        setVal(Math.round((1 - Math.pow(1 - progress, 4)) * target))
-        if (progress < 1) requestAnimationFrame(tick)
-      }
-      requestAnimationFrame(tick)
-    }, delay)
-    return () => clearTimeout(t)
-  }, [target, delay, rm])
-  return val
-}
+// ─── Count-up (unused after stats refactor but kept for safety) ───────────────
+// function useCountUp removed — stats row now uses raw values directly
 
 // ─── SVG Icons ────────────────────────────────────────────────────────────────
-function IconClock() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  )
-}
 function IconRoute() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -193,25 +168,62 @@ function PawBurst() {
   )
 }
 
-// ─── Stat box ─────────────────────────────────────────────────────────────────
-function StatBox({ icon, value, label, delay, bg, color, glow }: {
-  icon: React.ReactNode; value: string | number; label: string; delay: number
-  bg: string; color: string; glow: string
+// ─── Poop stat with optional photo bottom sheet ───────────────────────────────
+function PoopStat({ count, poopEvents }: {
+  count: number
+  poopEvents: { lat: number; lng: number; time: string; photo_url?: string | null }[]
 }) {
+  const [showPhotos, setShowPhotos] = useState(false)
+  const photosWithImages = poopEvents.filter(e => e.photo_url)
+
   return (
-    <motion.div
-      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, delay, ease: EASE }}>
-      <div style={{ width: 50, height: 50, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: `inset 0 2px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.18), 0 4px 14px ${glow}` }}>
-        {icon}
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+        <button
+          onClick={() => photosWithImages.length > 0 && setShowPhotos(true)}
+          style={{ background: 'none', border: 'none', cursor: photosWithImages.length > 0 ? 'pointer' : 'default', padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <span style={{ fontSize: 26 }}>💩</span>
+          <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#92400E', margin: 0 }}>{count}</p>
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, fontWeight: 600, color: '#9CA3AF', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Poop</p>
+        </button>
+        {photosWithImages.length > 0 && (
+          <button
+            onClick={() => setShowPhotos(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'var(--font-nunito)', fontSize: 10, fontWeight: 700, color: 'oklch(0.48 0.17 196)', textDecoration: 'underline', textUnderlineOffset: 2 }}>
+            View photos
+          </button>
+        )}
       </div>
-      <div style={{ textAlign: 'center' }}>
-        <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color, margin: 0, lineHeight: 1 }}>{value}</p>
-        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 600, color: '#9CA3AF', margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
-      </div>
-    </motion.div>
+
+      {/* Poop photos bottom sheet */}
+      {showPhotos && (
+        <>
+          <div
+            onClick={() => setShowPhotos(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 60, backdropFilter: 'blur(4px)' }}
+          />
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 70, background: '#fff', borderRadius: '24px 24px 0 0', maxHeight: '75vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom, 20px)', boxShadow: '0 -8px 32px rgba(10,47,53,0.18)' }}>
+            <div style={{ padding: '12px 20px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#0A2F35', margin: 0 }}>Poop Photos 💩</h3>
+              <button onClick={() => setShowPhotos(false)} style={{ background: '#F3F4F6', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+            </div>
+            <div style={{ padding: '8px 20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {photosWithImages.map((e, i) => (
+                <div key={i} style={{ borderRadius: 16, overflow: 'hidden', background: '#F9F6EF', border: '1px solid rgba(10,47,53,0.08)' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={e.photo_url!} alt={`Poop ${i + 1}`} style={{ width: '100%', maxHeight: 280, objectFit: 'cover', display: 'block' }} />
+                  <div style={{ padding: '8px 12px' }}>
+                    <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#9CA3AF', margin: 0 }}>
+                      {new Date(e.time).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </>
   )
 }
 
@@ -268,25 +280,24 @@ function WalkMap({ routePoints, poopEvents, peeEvents }: {
         zIndex: 10,
       })
 
-      // Emoji bubble markers — fun and instantly recognisable
+      // Emoji-only markers — minimal, no colored circles
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      function emojiBubble(emoji: string, bg: string, gm: any) {
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 38 38">
-          <circle cx="19" cy="19" r="18" fill="${bg}" stroke="white" stroke-width="2.5"/>
-          <text x="19" y="26" text-anchor="middle" font-size="20">${emoji}</text>
+      function emojiMarker(emoji: string, gm: any) {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+          <text x="16" y="24" text-anchor="middle" font-size="22">${emoji}</text>
         </svg>`
         return {
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-          scaledSize: new gm.Size(38, 38),
-          anchor: new gm.Point(19, 19),
+          scaledSize: new gm.Size(32, 32),
+          anchor: new gm.Point(16, 16),
         }
       }
 
       poopEvents?.forEach((e, i) => {
-        new gm.Marker({ position: { lat: e.lat, lng: e.lng }, map, icon: emojiBubble('💩', '#FEF3C7', gm), title: `Poop ${i + 1}`, zIndex: 8 })
+        new gm.Marker({ position: { lat: e.lat, lng: e.lng }, map, icon: emojiMarker('💩', gm), title: `Poop ${i + 1}`, zIndex: 8 })
       })
       peeEvents?.forEach((e, i) => {
-        new gm.Marker({ position: { lat: e.lat, lng: e.lng }, map, icon: emojiBubble('💧', '#EFF6FF', gm), title: `Pee ${i + 1}`, zIndex: 8 })
+        new gm.Marker({ position: { lat: e.lat, lng: e.lng }, map, icon: emojiMarker('💧', gm), title: `Pee ${i + 1}`, zIndex: 8 })
       })
 
       const bounds = new gm.LatLngBounds()
@@ -332,6 +343,7 @@ export default function WalkReportCard({
   const rm = useReducedMotion()
   const [burst, setBurst] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [photoExpanded, setPhotoExpanded] = useState(false)
 
   useEffect(() => {
     if (isFirstReport && !rm) { const t = setTimeout(() => setBurst(true), 600); return () => clearTimeout(t) }
@@ -343,17 +355,13 @@ export default function WalkReportCard({
   const mood       = parseMood(report.notes)
   const cleanNotes = cleanupNotes(report.notes)
   const hasMap     = (report.route_points?.length ?? 0) >= 2
-  const durationVal = useCountUp(report.duration_mins, 300)
-  const poopVal    = useCountUp(report.poop_count, 400)
-  const peeVal     = useCountUp(report.pee_count, 500)
   const distKm     = report.distance_meters
     ? report.distance_meters >= 1000
       ? `${(report.distance_meters / 1000).toFixed(1)}km`
       : `${Math.round(report.distance_meters)}m`
     : null
 
-  const waText    = encodeURIComponent(`${report.dog_name} just had a walk! 🐾\nFull GPS report:\n${shareUrl}`)
-  const waVetText = encodeURIComponent(`Hi Doctor, here is ${report.dog_name}'s recent walk report:\n${shareUrl}`)
+  const waText = encodeURIComponent(`${report.dog_name} just had a walk! 🐾\nFull GPS report:\n${shareUrl}`)
 
   async function handleCopy() {
     try { await navigator.clipboard.writeText(shareUrl) } catch { void 0 }
@@ -377,12 +385,7 @@ export default function WalkReportCard({
           <img src="/logo.webp" alt="PupStep" style={{ height: 28, width: 'auto' }} />
         </div>
 
-        <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', boxShadow: CLAY, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0A2F35' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-          </svg>
-        </div>
+        <div style={{ width: 36 }} />
       </div>
 
       {/* Sub-header label */}
@@ -480,20 +483,35 @@ export default function WalkReportCard({
 
         {/* ── STATS ROW ────────────────────────────────────── */}
         <motion.div
-          style={{ background: '#fff', borderRadius: 24, padding: '20px 12px', boxShadow: CLAY, display: 'flex', gap: 4 }}
+          style={{ background: '#fff', borderRadius: 24, padding: '18px 16px', boxShadow: CLAY, display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15, ease: EASE }}>
           {report.duration_mins > 0 && (
-            <StatBox icon={<IconClock />} value={`${durationVal} min`} label="Duration" delay={0.25} bg="#FF8C52" color="#FF8C52" glow="rgba(255,140,82,0.35)" />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 26 }}>⏱</span>
+              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#0A2F35', margin: 0 }}>{report.duration_mins} min</p>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, fontWeight: 600, color: '#9CA3AF', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Duration</p>
+            </div>
           )}
           {distKm && (
-            <StatBox icon={<IconRoute />} value={distKm} label="Distance" delay={0.32} bg="oklch(0.48 0.17 196)" color="oklch(0.48 0.17 196)" glow="oklch(0.48 0.17 196 / 0.35)" />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 26 }}>📍</span>
+              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#0A2F35', margin: 0 }}>{distKm}</p>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, fontWeight: 600, color: '#9CA3AF', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Distance</p>
+            </div>
           )}
           {report.pee_count > 0 && (
-            <StatBox icon={<IconDrop />} value={peeVal} label="Pee" delay={0.39} bg="#1E6DB5" color="#1E6DB5" glow="rgba(30,109,181,0.35)" />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 26 }}>💧</span>
+              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#1E6DB5', margin: 0 }}>{report.pee_count}</p>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, fontWeight: 600, color: '#9CA3AF', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pee</p>
+            </div>
           )}
           {report.poop_count > 0 && (
-            <StatBox icon={<IconPoop />} value={poopVal} label="Poop" delay={0.46} bg="#92400E" color="#92400E" glow="rgba(146,64,14,0.30)" />
+            <PoopStat
+              count={report.poop_count}
+              poopEvents={report.poop_events ?? []}
+            />
           )}
           {/* Fallback if all zero */}
           {report.duration_mins === 0 && !distKm && report.pee_count === 0 && report.poop_count === 0 && (
@@ -501,16 +519,31 @@ export default function WalkReportCard({
           )}
         </motion.div>
 
-        {/* ── DOG PHOTO (full-width card) ──────────────────── */}
+        {/* ── DOG PHOTO (full-width card, tap to expand) ──── */}
         {report.photo_url && (
-          <motion.div
-            style={{ borderRadius: 24, overflow: 'hidden', boxShadow: CLAY }}
-            initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2, ease: EASE }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={report.photo_url} alt={report.dog_name}
-              style={{ width: '100%', height: 220, objectFit: 'cover', objectPosition: 'center 20%', display: 'block' }} />
-          </motion.div>
+          <>
+            <motion.div
+              style={{ borderRadius: 24, overflow: 'hidden', boxShadow: CLAY, cursor: 'pointer', position: 'relative' }}
+              onClick={() => setPhotoExpanded(true)}
+              initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2, ease: EASE }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={report.photo_url} alt={report.dog_name}
+                style={{ width: '100%', height: 220, objectFit: 'cover', objectPosition: 'center 20%', display: 'block' }} />
+              <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.4)', borderRadius: 8, padding: '4px 8px' }}>
+                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, color: '#fff', fontWeight: 600 }}>Tap to expand</span>
+              </div>
+            </motion.div>
+
+            {/* Fullscreen lightbox */}
+            {photoExpanded && (
+              <div onClick={() => setPhotoExpanded(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+                <button onClick={() => setPhotoExpanded(false)} style={{ position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', color: '#fff', fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={report.photo_url} alt={report.dog_name} style={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', borderRadius: 12 }} />
+              </div>
+            )}
+          </>
         )}
 
         {/* ── MOOD CARD ────────────────────────────────────── */}
@@ -559,41 +592,28 @@ export default function WalkReportCard({
 
         {/* ── SHARE CTAs ───────────────────────────────────── */}
         <motion.div
-          style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}
+          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.32, ease: EASE }}>
-
-          {/* Primary: Send to family — full-width green WhatsApp */}
           <motion.a
             href={`https://wa.me/?text=${waText}`}
             target="_blank" rel="noopener noreferrer"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '15px', borderRadius: 18, background: 'linear-gradient(160deg, #25D366 0%, #1aad54 100%)', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.22), inset 0 -4px 0 rgba(14,100,55,0.50), 0 8px 20px rgba(37,211,102,0.28)', color: '#fff', fontFamily: 'var(--font-fredoka)', fontSize: 17, fontWeight: 700, textDecoration: 'none' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '15px', borderRadius: 18, background: 'linear-gradient(160deg, #25D366 0%, #1aad54 100%)', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.22), inset 0 -4px 0 rgba(14,100,55,0.5), 0 8px 20px rgba(37,211,102,0.28)', color: '#fff', fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, textDecoration: 'none' }}
             whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
             <IconWA />
             Send to family
           </motion.a>
-
-          {/* Secondary row: Send to vet + Copy link */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <motion.a
-              href={`https://wa.me/?text=${waVetText}`}
-              target="_blank" rel="noopener noreferrer"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '13px', borderRadius: 16, background: '#fff', border: '1.5px solid rgba(10,47,53,0.12)', color: '#0A2F35', fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, textDecoration: 'none', boxShadow: CLAY }}
-              whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
-              Send to vet
-            </motion.a>
-            <motion.button
-              onClick={handleCopy}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '13px', borderRadius: 16, background: copied ? '#ECFDF5' : '#fff', border: copied ? '1.5px solid #BBF7D0' : '1.5px solid rgba(10,47,53,0.12)', color: copied ? '#15803D' : '#0A2F35', fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: CLAY, transition: 'all 0.2s ease' }}
-              whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
-              <AnimatePresence mode="wait">
-                {copied
-                  ? <motion.span key="done" initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.15 }}>Copied!</motion.span>
-                  : <motion.span key="copy" initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.15 }}>Copy link</motion.span>
-                }
-              </AnimatePresence>
-            </motion.button>
-          </div>
+          <motion.button
+            onClick={handleCopy}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '15px', borderRadius: 18, background: copied ? '#22c55e' : '#FF8C52', color: '#fff', fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: copied ? '0 4px 12px rgba(34,197,94,0.4)' : CLAY_ORANGE, transition: 'background 0.25s ease' }}
+            whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
+            <AnimatePresence mode="wait">
+              {copied
+                ? <motion.span key="done" initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.15 }}>Copied!</motion.span>
+                : <motion.span key="copy" initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.15 }}>Copy link</motion.span>
+              }
+            </AnimatePresence>
+          </motion.button>
         </motion.div>
 
         {/* Footer */}

@@ -717,6 +717,8 @@ export default function WalkerClient({
   const [walkEvents, setWalkEvents] = useState<WalkEvent[]>([])
   const poopPhotoInputRef = useRef<HTMLInputElement>(null)
   const [poopPhotoUploading, setPoopPhotoUploading] = useState(false)
+  const [poopPhotoPrompt, setPoopPhotoPrompt] = useState(false)
+  const [pendingPoopEvent, setPendingPoopEvent] = useState<{ lat: number | null; lng: number | null; ts: string } | null>(null)
 
   // Log form state
   const [mood, setMood] = useState('')
@@ -748,31 +750,51 @@ export default function WalkerClient({
     }
   }
 
-  async function handlePoopPhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePoopPhotoTaken(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file || !pendingPoopEvent) return
     setPoopPhotoUploading(true)
     try {
       const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `walk-photos/${token}/poop-${Date.now()}.${ext}`
+      const path = `poop-photos/${token}/${Date.now()}.${ext}`
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
-      const { error } = await supabase.storage.from('provider-photos').upload(path, file)
-      if (!error) {
-        const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
-        const url = data.publicUrl
-        setWalkEvents(prev => {
-          const copy = [...prev]
-          const lastPoop = [...copy].reverse().find(ev => ev.type === 'poop' && !ev.photoUrl)
-          if (lastPoop) lastPoop.photoUrl = url
-          return copy
-        })
-      }
+      await supabase.storage.from('provider-photos').upload(path, file)
+      const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
+      setWalkEvents(prev => [...prev, {
+        type: 'poop' as const,
+        lat: pendingPoopEvent.lat,
+        lng: pendingPoopEvent.lng,
+        ts: pendingPoopEvent.ts,
+        photoUrl: data.publicUrl,
+      }])
+    } catch {
+      // photo failed — still add event without photo
+      setWalkEvents(prev => [...prev, {
+        type: 'poop' as const,
+        lat: pendingPoopEvent.lat,
+        lng: pendingPoopEvent.lng,
+        ts: pendingPoopEvent.ts,
+      }])
     } finally {
       setPoopPhotoUploading(false)
+      setPoopPhotoPrompt(false)
+      setPendingPoopEvent(null)
       // Reset input so same file can be picked again
       if (poopPhotoInputRef.current) poopPhotoInputRef.current.value = ''
     }
+  }
+
+  function handlePoopSkip() {
+    if (!pendingPoopEvent) return
+    setWalkEvents(prev => [...prev, {
+      type: 'poop' as const,
+      lat: pendingPoopEvent.lat,
+      lng: pendingPoopEvent.lng,
+      ts: pendingPoopEvent.ts,
+    }])
+    setPoopPhotoPrompt(false)
+    setPendingPoopEvent(null)
   }
 
   const fetchLogs = useCallback(async () => {
@@ -992,20 +1014,28 @@ export default function WalkerClient({
 
   function handlePoopTap() {
     const loc = lastPointRef.current
-    setWalkEvents(prev => [...prev, {
-      type: 'poop',
+    // In demo mode skip the prompt and add event directly
+    if (isDemoWalk) {
+      setWalkEvents(prev => [...prev, {
+        type: 'poop',
+        lat: loc?.lat ?? null,
+        lng: loc?.lng ?? null,
+        ts: new Date().toISOString(),
+        photoUrl: null,
+      }])
+      if (demoStep === 3) {
+        setDemoPottyDone(true)
+        setDemoNudge('Great! 💩 Potty logged. Now keep walking to 200m →')
+      }
+      return
+    }
+    // Real walk — store pending event and show photo prompt sheet
+    setPendingPoopEvent({
       lat: loc?.lat ?? null,
       lng: loc?.lng ?? null,
       ts: new Date().toISOString(),
-      photoUrl: null,
-    }])
-    // In demo mode skip the camera entirely
-    if (!isDemoWalk) {
-      poopPhotoInputRef.current?.click()
-    } else if (demoStep === 3) {
-      setDemoPottyDone(true)
-      setDemoNudge('Great! 💩 Potty logged. Now keep walking to 200m →')
-    }
+    })
+    setPoopPhotoPrompt(true)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -1493,8 +1523,38 @@ export default function WalkerClient({
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={handlePoopPhotoCapture}
+        onChange={handlePoopPhotoTaken}
       />
+
+      {/* Poop photo prompt bottom sheet */}
+      {poopPhotoPrompt && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 60, backdropFilter: 'blur(4px)' }} />
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 70, background: '#fff', borderRadius: '24px 24px 0 0', padding: '20px 20px', paddingBottom: 'env(safe-area-inset-bottom, 20px)', boxShadow: '0 -8px 32px rgba(10,47,53,0.18)' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+              <div style={{ width: 40, height: 4, borderRadius: 2, background: '#E5E7EB' }} />
+            </div>
+            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#0A2F35', margin: '0 0 6px', textAlign: 'center' }}>
+              💩 Poop marked!
+            </p>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#6B7280', margin: '0 0 20px', textAlign: 'center' }}>
+              Add a photo? The owner can see it in the report.
+            </p>
+            <button
+              onClick={() => poopPhotoInputRef.current?.click()}
+              disabled={poopPhotoUploading}
+              style={{ width: '100%', padding: '14px', borderRadius: 16, background: '#FF8C52', color: '#fff', fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer', marginBottom: 10, opacity: poopPhotoUploading ? 0.6 : 1 }}>
+              {poopPhotoUploading ? 'Uploading...' : '📷 Take photo'}
+            </button>
+            <button
+              onClick={handlePoopSkip}
+              disabled={poopPhotoUploading}
+              style={{ width: '100%', padding: '14px', borderRadius: 16, background: '#F3F4F6', color: '#6B7280', fontFamily: 'var(--font-nunito)', fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+              Skip
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Header */}
       <div className="px-5 pt-8 pb-4 flex items-center justify-between">
