@@ -199,10 +199,12 @@ export default async function WalkReportPage({
 
   const isOwner = isLinkedOwner || isClaimedByMe
 
+  const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/walk-report/${token}`
+
   return (
     <WalkReportCard
       report={report}
-      shareUrl={canonicalUrl}
+      shareUrl={shareUrl}
       isFirstReport={isFirstReport}
     />
   )
