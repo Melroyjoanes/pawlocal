@@ -266,7 +266,6 @@ function WalkStreak({ streak }: { streak: number }) {
 
 // ── Feature 5: WeekCalendar ────────────────────────────────────────────────
 function WeekCalendar({ weekData }: { weekData: WeekData }) {
-  const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   const todayStr = (() => {
     const istOffset = 5.5 * 60 * 60 * 1000
     return new Date(Date.now() + istOffset).toISOString().slice(0, 10)
@@ -281,9 +280,9 @@ function WeekCalendar({ weekData }: { weekData: WeekData }) {
         <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 13, fontWeight: 600, color: '#0A2F35', margin: 0 }}>{monthLabel}</p>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 6 }}>
-        {DAY_LABELS.map((lbl) => (
-          <div key={lbl} style={{ textAlign: 'center' }}>
-            <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, fontWeight: 700, color: '#9CA3AF' }}>{lbl}</span>
+        {weekData.days.map((d, i) => (
+          <div key={i} style={{ textAlign: 'center' }}>
+            <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, fontWeight: 700, color: '#9CA3AF' }}>{d.label}</span>
           </div>
         ))}
       </div>
@@ -1007,7 +1006,9 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
                   {walkerConnections.length > 0 ? <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: 700 }}>✓</span> : <span style={{ color: '#D1D5DB', fontSize: '11px' }}>○</span>}
                 </div>
                 <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: walkerConnections.length > 0 ? 600 : 500, color: walkerConnections.length > 0 ? '#0A2F35' : '#6B7280', flex: 1 }}>Connect your walker</span>
-                {walkerConnections.length === 0 && <Link href="/setup?go=1" style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', color: 'oklch(0.48 0.17 196)', textDecoration: 'none' }}>Connect walker →</Link>}
+                {walkerConnections.length === 0 && (
+                  <Link href={firstDog ? `/setup/qr?dog=${firstDog.id}` : '/setup?go=1'} style={{ fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', color: 'oklch(0.48 0.17 196)', textDecoration: 'none' }}>Connect walker →</Link>
+                )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, background: 'transparent', border: '2px solid #D1D5DB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

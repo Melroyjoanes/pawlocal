@@ -164,7 +164,7 @@ export default function MobileDrawer() {
                       GPS walk reports for Mumbai dogs
                     </p>
                     <a
-                      href="/account"
+                      href="/login?next=/home"
                       onClick={() => setOpen(false)}
                       className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full font-bold text-[13px] transition-opacity hover:opacity-90"
                       style={{ background: 'rgba(255,255,255,0.2)', color: '#fff' }}

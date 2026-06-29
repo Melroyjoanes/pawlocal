@@ -15,6 +15,11 @@ interface Props {
   currentPlan: 'monthly' | null
   expiresAt: string | null
   isLoggedIn: boolean
+  trialStatus?: 'no_trial' | 'trial' | 'expired' | 'active'
+  trialDaysRemaining?: number | null
+  walkerToken?: string | null
+  walkerName?: string | null
+  dogName?: string | null
 }
 
 const FEATURES = [
@@ -99,7 +104,7 @@ function Spinner() {
   )
 }
 
-export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn }: Props) {
+export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, trialStatus = 'no_trial', trialDaysRemaining, walkerToken, walkerName, dogName }: Props) {
   const [loading, setLoading] = useState<'monthly' | null>(null)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -266,7 +271,10 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn }: Pr
             className="text-4xl md:text-5xl font-bold leading-tight mb-4"
             style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}
           >
-            Keep receiving proof after every walk
+            {trialStatus === 'no_trial' && 'Your 3-day free trial is waiting'}
+            {trialStatus === 'trial' && 'Keep receiving reports after your trial'}
+            {trialStatus === 'expired' && 'Unlock your walk reports'}
+            {trialStatus === 'active' && 'You\'re on PupStep Pro'}
           </h1>
           <p
             className="text-base max-w-sm mx-auto leading-relaxed"
@@ -286,78 +294,251 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn }: Pr
           </div>
         )}
 
-        {/* Pricing card — single monthly plan */}
+        {/* Pricing card — state-aware */}
         <div className="mb-10">
-          <div
-            className="rounded-[28px] p-7"
-            style={{ background: '#0A2F35', boxShadow: CLAY_SHADOW_TEAL }}
-          >
-            <div className="flex items-start justify-between mb-5">
-              <div>
-                <p
-                  className="text-xs font-bold uppercase tracking-widest mb-1.5"
-                  style={{ color: 'rgba(255,251,235,0.45)', fontFamily: 'var(--font-nunito)' }}
-                >
-                  Monthly plan
+
+          {/* no_trial: trial hasn't started yet */}
+          {trialStatus === 'no_trial' && (
+            <>
+              <div style={{ background: '#fff', borderRadius: 24, padding: 28, boxShadow: CLAY_SHADOW_CREAM, marginBottom: 16 }}>
+                <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color: '#0A2F35', marginBottom: 8 }}>
+                  Your free trial starts with your first walk report.
                 </p>
-                <div className="flex items-end gap-2">
-                  <span
-                    className="text-5xl font-bold leading-none"
-                    style={{ fontFamily: 'var(--font-fredoka)', color: '#FFFBEB' }}
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#64748B', lineHeight: 1.65, marginBottom: 20 }}>
+                  No payment needed. Once {walkerName ?? 'your walker'} logs {dogName ? `${dogName}'s` : 'a'} first walk, your 3-day trial begins automatically.
+                </p>
+                {walkerToken ? (
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(`Hi${walkerName ? ` ${walkerName}` : ''}, please log today's walk on PupStep and send me the report. Here's your dashboard: https://pupstep.in/walker/${walkerToken}`)}`}
+                    target="_blank" rel="noopener noreferrer"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '14px', borderRadius: 16, background: '#25D366', color: '#fff', fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none', boxSizing: 'border-box' }}
                   >
-                    ₹199
-                  </span>
-                  <span className="text-sm pb-1" style={{ color: 'rgba(255,251,235,0.5)', fontFamily: 'var(--font-nunito)' }}>/month</span>
-                </div>
-                <p className="text-xs mt-1.5" style={{ color: 'rgba(255,140,82,0.9)', fontFamily: 'var(--font-nunito)' }}>
-                  3-day free trial · Cancel anytime
-                </p>
+                    Send dashboard link to {walkerName ?? 'walker'} on WhatsApp
+                  </a>
+                ) : (
+                  <Link href="/setup/qr"
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '14px', borderRadius: 16, background: 'oklch(0.48 0.17 196)', color: '#fff', fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none', boxSizing: 'border-box' }}
+                  >
+                    Connect your walker first →
+                  </Link>
+                )}
               </div>
+
+              {/* Pro features info — no payment button in no_trial state */}
               <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-                style={{ background: 'rgba(255,251,235,0.08)', boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.10), inset 0 -2px 0 rgba(0,0,0,0.20)' }}
+                className="rounded-[28px] p-7"
+                style={{ background: '#0A2F35', boxShadow: CLAY_SHADOW_TEAL }}
               >
-                🐾
-              </div>
-            </div>
-
-            <ul className="space-y-2.5 mb-6">
-              {FEATURES.map((f) => (
-                <li
-                  key={f.label}
-                  className="flex items-center gap-2.5 text-sm"
-                  style={{ color: '#FFFBEB', fontFamily: 'var(--font-nunito)', opacity: 0.9 }}
-                >
-                  <span
-                    className="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
-                    style={{ background: 'rgba(255,140,82,0.20)' }}
+                <div className="flex items-start justify-between mb-5">
+                  <div>
+                    <p
+                      className="text-xs font-bold uppercase tracking-widest mb-1.5"
+                      style={{ color: 'rgba(255,251,235,0.45)', fontFamily: 'var(--font-nunito)' }}
+                    >
+                      Monthly plan
+                    </p>
+                    <div className="flex items-end gap-2">
+                      <span
+                        className="text-5xl font-bold leading-none"
+                        style={{ fontFamily: 'var(--font-fredoka)', color: '#FFFBEB' }}
+                      >
+                        ₹199
+                      </span>
+                      <span className="text-sm pb-1" style={{ color: 'rgba(255,251,235,0.5)', fontFamily: 'var(--font-nunito)' }}>/month</span>
+                    </div>
+                    <p className="text-xs mt-1.5" style={{ color: 'rgba(255,140,82,0.9)', fontFamily: 'var(--font-nunito)' }}>
+                      Cancel anytime
+                    </p>
+                  </div>
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                    style={{ background: 'rgba(255,251,235,0.08)', boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.10), inset 0 -2px 0 rgba(0,0,0,0.20)' }}
                   >
-                    ✓
-                  </span>
-                  {f.label}
-                </li>
-              ))}
-            </ul>
+                    🐾
+                  </div>
+                </div>
+                <ul className="space-y-2.5 mb-5">
+                  {FEATURES.map((f) => (
+                    <li
+                      key={f.label}
+                      className="flex items-center gap-2.5 text-sm"
+                      style={{ color: '#FFFBEB', fontFamily: 'var(--font-nunito)', opacity: 0.9 }}
+                    >
+                      <span
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                        style={{ background: 'rgba(255,140,82,0.20)' }}
+                      >
+                        ✓
+                      </span>
+                      {f.label}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs" style={{ color: 'rgba(255,251,235,0.50)', fontFamily: 'var(--font-nunito)', lineHeight: 1.6 }}>
+                  After your 3-day trial, upgrade for ₹199/month to keep receiving reports.
+                </p>
+              </div>
+            </>
+          )}
 
-            {isLoggedIn ? (
-              <button
-                onClick={() => handleCheckout('monthly')}
-                disabled={loading !== null}
-                className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
-                style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
+          {/* trial: active trial — show countdown + payment button */}
+          {trialStatus === 'trial' && (
+            <div
+              className="rounded-[28px] p-7"
+              style={{ background: '#0A2F35', boxShadow: CLAY_SHADOW_TEAL }}
+            >
+              {trialDaysRemaining != null && (
+                <div
+                  className="mb-5 px-4 py-3 rounded-2xl text-sm font-semibold text-center"
+                  style={{ background: 'rgba(255,140,82,0.15)', color: 'rgba(255,140,82,0.95)', fontFamily: 'var(--font-nunito)' }}
+                >
+                  {trialDaysRemaining === 1 ? 'Last day of your free trial' : `You have ${trialDaysRemaining} days left in your trial`}
+                </div>
+              )}
+              <div className="flex items-start justify-between mb-5">
+                <div>
+                  <p
+                    className="text-xs font-bold uppercase tracking-widest mb-1.5"
+                    style={{ color: 'rgba(255,251,235,0.45)', fontFamily: 'var(--font-nunito)' }}
+                  >
+                    Monthly plan
+                  </p>
+                  <div className="flex items-end gap-2">
+                    <span
+                      className="text-5xl font-bold leading-none"
+                      style={{ fontFamily: 'var(--font-fredoka)', color: '#FFFBEB' }}
+                    >
+                      ₹199
+                    </span>
+                    <span className="text-sm pb-1" style={{ color: 'rgba(255,251,235,0.5)', fontFamily: 'var(--font-nunito)' }}>/month</span>
+                  </div>
+                  <p className="text-xs mt-1.5" style={{ color: 'rgba(255,140,82,0.9)', fontFamily: 'var(--font-nunito)' }}>
+                    Cancel anytime
+                  </p>
+                </div>
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                  style={{ background: 'rgba(255,251,235,0.08)', boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.10), inset 0 -2px 0 rgba(0,0,0,0.20)' }}
+                >
+                  🐾
+                </div>
+              </div>
+              <ul className="space-y-2.5 mb-6">
+                {FEATURES.map((f) => (
+                  <li
+                    key={f.label}
+                    className="flex items-center gap-2.5 text-sm"
+                    style={{ color: '#FFFBEB', fontFamily: 'var(--font-nunito)', opacity: 0.9 }}
+                  >
+                    <span
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                      style={{ background: 'rgba(255,140,82,0.20)' }}
+                    >
+                      ✓
+                    </span>
+                    {f.label}
+                  </li>
+                ))}
+              </ul>
+              {isLoggedIn ? (
+                <button
+                  onClick={() => handleCheckout('monthly')}
+                  disabled={loading !== null}
+                  className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
+                  style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
+                >
+                  {loading === 'monthly' ? <><Spinner /> Processing…</> : 'Upgrade to Pro — ₹199/month'}
+                </button>
+              ) : (
+                <Link
+                  href="/login?next=/upgrade"
+                  className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center"
+                  style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
+                >
+                  Sign in to upgrade
+                </Link>
+              )}
+            </div>
+          )}
+
+          {/* expired: trial over — show warning + payment button */}
+          {trialStatus === 'expired' && (
+            <div
+              className="rounded-[28px] p-7"
+              style={{ background: '#0A2F35', boxShadow: CLAY_SHADOW_TEAL }}
+            >
+              <div
+                className="mb-5 px-4 py-3 rounded-2xl text-sm font-semibold text-center"
+                style={{ background: 'rgba(252,165,165,0.12)', color: 'rgba(252,165,165,0.90)', fontFamily: 'var(--font-nunito)' }}
               >
-                {loading === 'monthly' ? <><Spinner /> Processing…</> : 'Start 3-day free trial'}
-              </button>
-            ) : (
-              <Link
-                href="/login?next=/upgrade"
-                className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center"
-                style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
-              >
-                Get started free
-              </Link>
-            )}
-          </div>
+                Your trial has ended — new reports are paused
+              </div>
+              <div className="flex items-start justify-between mb-5">
+                <div>
+                  <p
+                    className="text-xs font-bold uppercase tracking-widest mb-1.5"
+                    style={{ color: 'rgba(255,251,235,0.45)', fontFamily: 'var(--font-nunito)' }}
+                  >
+                    Monthly plan
+                  </p>
+                  <div className="flex items-end gap-2">
+                    <span
+                      className="text-5xl font-bold leading-none"
+                      style={{ fontFamily: 'var(--font-fredoka)', color: '#FFFBEB' }}
+                    >
+                      ₹199
+                    </span>
+                    <span className="text-sm pb-1" style={{ color: 'rgba(255,251,235,0.5)', fontFamily: 'var(--font-nunito)' }}>/month</span>
+                  </div>
+                  <p className="text-xs mt-1.5" style={{ color: 'rgba(255,140,82,0.9)', fontFamily: 'var(--font-nunito)' }}>
+                    Cancel anytime
+                  </p>
+                </div>
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+                  style={{ background: 'rgba(255,251,235,0.08)', boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.10), inset 0 -2px 0 rgba(0,0,0,0.20)' }}
+                >
+                  🐾
+                </div>
+              </div>
+              <ul className="space-y-2.5 mb-6">
+                {FEATURES.map((f) => (
+                  <li
+                    key={f.label}
+                    className="flex items-center gap-2.5 text-sm"
+                    style={{ color: '#FFFBEB', fontFamily: 'var(--font-nunito)', opacity: 0.9 }}
+                  >
+                    <span
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                      style={{ background: 'rgba(255,140,82,0.20)' }}
+                    >
+                      ✓
+                    </span>
+                    {f.label}
+                  </li>
+                ))}
+              </ul>
+              {isLoggedIn ? (
+                <button
+                  onClick={() => handleCheckout('monthly')}
+                  disabled={loading !== null}
+                  className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
+                  style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
+                >
+                  {loading === 'monthly' ? <><Spinner /> Processing…</> : 'Upgrade to Pro — ₹199/month'}
+                </button>
+              ) : (
+                <Link
+                  href="/login?next=/upgrade"
+                  className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center"
+                  style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
+                >
+                  Sign in to upgrade
+                </Link>
+              )}
+            </div>
+          )}
+
         </div>
 
         {/* What happens after trial */}

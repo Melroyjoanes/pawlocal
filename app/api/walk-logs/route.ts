@@ -29,6 +29,7 @@ export async function GET() {
 
 // POST /api/walk-logs — walker submits a walk log (no auth required)
 export async function POST(req: NextRequest) {
+  try {
   const body = await req.json()
   const {
     connection_token,
@@ -218,6 +219,29 @@ export async function POST(req: NextRequest) {
         quality_score: qualityScore,
       })
 
+      // Send trial-start email when this is the first report
+      if (!trialStart && deliveryAllowed) {
+        try {
+          const trialExpiry = new Date(Date.now() + 3 * 86400 * 1000)
+            .toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+          const { sendEmail, emailTemplate } = await import('@/lib/email')
+          const { data: { user: ownerUser } } = await db.auth.admin.getUserById(connection.owner_id)
+          const ownerEmail = ownerUser?.email
+          if (ownerEmail) {
+            sendEmail({
+              to: ownerEmail,
+              subject: `🐾 ${dogName}'s first walk report is in! Your trial has started.`,
+              html: emailTemplate(
+                `${dogName}'s first walk report is in!`,
+                `Your 3-day free trial has started. You can receive walk reports until ${trialExpiry}. After that, upgrade for ₹199/month to keep reports coming.\n\nMake sure your walker logs walks every day to get the most out of your trial.`,
+                'View walk report',
+                reportUrl,
+              ),
+            }).catch(() => {})
+          }
+        } catch { /* non-critical */ }
+      }
+
       // Only send email delivery if the owner is within their trial or has an active subscription
       if (deliveryAllowed) {
         // Check notification preference and send email to parent
@@ -275,4 +299,8 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ ok: true, log_id: log.id, wa_link, report_token: reportToken, report_url: reportUrl }, { status: 201 })
+  } catch (err) {
+    console.error('[walk-logs POST] unhandled error:', err)
+    return NextResponse.json({ error: 'Internal server error. Please try again.' }, { status: 500 })
+  }
 }

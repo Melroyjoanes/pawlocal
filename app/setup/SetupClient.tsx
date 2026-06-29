@@ -94,6 +94,24 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
     }
   }, [recover, user]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  function toggleCareFocus(value: string) {
+    if (value === 'normal') {
+      // Normal walk deselects everything else
+      setCareFocuses(['normal'])
+    } else {
+      setCareFocuses(prev => {
+        // Deselect 'normal' when selecting a specific focus
+        const withoutNormal = prev.filter(v => v !== 'normal')
+        if (withoutNormal.includes(value)) {
+          // Deselecting last specific focus reverts to normal
+          const remaining = withoutNormal.filter(v => v !== value)
+          return remaining.length ? remaining : ['normal']
+        }
+        return [...withoutNormal, value] // select
+      })
+    }
+  }
+
   function toggleChip(chip: string) {
     const plain = chip.replace(/\s[\u{1F300}-\u{1FFFF}⚠️❤️🤝🦮🍗🚗🐕]/gu, '').trim()
     setHealthNotes(prev => {
@@ -514,13 +532,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
                     <button
                       key={opt.key}
                       type="button"
-                      onClick={() => setCareFocuses(prev => {
-                        if (opt.key === 'normal') return ['normal']
-                        const without = prev.filter(k => k !== 'normal')
-                        return without.includes(opt.key)
-                          ? without.filter(k => k !== opt.key).length ? without.filter(k => k !== opt.key) : ['normal']
-                          : [...without, opt.key]
-                      })}
+                      onClick={() => toggleCareFocus(opt.key)}
                       style={{
                         padding: '12px 10px',
                         borderRadius: 12,
