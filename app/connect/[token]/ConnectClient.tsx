@@ -336,7 +336,7 @@ export default function ConnectClient({
   if (viewState === 'phone-first') {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: '#FFFBEB' }}>
-        <DogHeader />
+        {DogHeader()}
 
         <div style={{ padding: '0 20px 40px' }}>
           <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#0A2F35', marginBottom: 6 }}>
@@ -387,7 +387,7 @@ export default function ConnectClient({
   if (viewState === 'returning') {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: '#FFFBEB' }}>
-        <DogHeader />
+        {DogHeader()}
 
         <form onSubmit={handleSubmit} style={{ padding: '0 20px 40px' }}>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
@@ -489,7 +489,7 @@ export default function ConnectClient({
   // (viewState === 'new-walker')
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#FFFBEB' }}>
-      <DogHeader />
+      {DogHeader()}
 
       {/* Step progress indicator */}
       <div className="flex items-center justify-center mb-5" style={{ fontFamily: 'var(--font-nunito)' }}>

@@ -2122,8 +2122,16 @@ export default function WalkerClient({
                 </div>
 
                 {submitError && (
-                  <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+                  <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 flex flex-col gap-2">
                     <p className="text-sm text-red-700">{submitError}</p>
+                    <button
+                      type="button"
+                      onClick={() => { setSubmitError(null); setPhase('idle') }}
+                      className="text-xs font-bold text-red-500 underline text-left"
+                      style={{ fontFamily: 'var(--font-nunito)' }}
+                    >
+                      ← Back to dashboard
+                    </button>
                   </div>
                 )}
 
