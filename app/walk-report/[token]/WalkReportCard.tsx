@@ -194,18 +194,21 @@ function PawBurst() {
 }
 
 // ─── Stat box ─────────────────────────────────────────────────────────────────
-function StatBox({ icon, value, label, delay }: { icon: React.ReactNode; value: string | number; label: string; delay: number }) {
+function StatBox({ icon, value, label, delay, bg, color, glow }: {
+  icon: React.ReactNode; value: string | number; label: string; delay: number
+  bg: string; color: string; glow: string
+}) {
   return (
     <motion.div
       style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay, ease: EASE }}>
-      <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'oklch(0.48 0.17 196)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.20), inset 0 -3px 0 rgba(0,0,0,0.20), 0 4px 12px oklch(0.48 0.17 196 / 0.35)' }}>
+      <div style={{ width: 50, height: 50, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: `inset 0 2px 0 rgba(255,255,255,0.22), inset 0 -3px 0 rgba(0,0,0,0.18), 0 4px 14px ${glow}` }}>
         {icon}
       </div>
       <div style={{ textAlign: 'center' }}>
-        <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color: 'oklch(0.48 0.17 196)', margin: 0, lineHeight: 1 }}>{value}</p>
+        <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color, margin: 0, lineHeight: 1 }}>{value}</p>
         <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 600, color: '#9CA3AF', margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
       </div>
     </motion.div>
@@ -265,26 +268,25 @@ function WalkMap({ routePoints, poopEvents, peeEvents }: {
         zIndex: 10,
       })
 
-      // Pin-shaped SVG markers
+      // Emoji bubble markers — fun and instantly recognisable
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      function pin(fill: string, letter: string, gm: any) {
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38">
-          <path d="M15 0C8.1 0 2.5 5.6 2.5 12.5c0 9.4 12.5 25.5 12.5 25.5s12.5-16.1 12.5-25.5C27.5 5.6 21.9 0 15 0z" fill="${fill}" stroke="white" stroke-width="2.5"/>
-          <circle cx="15" cy="12.5" r="7" fill="white" opacity="0.92"/>
-          <text x="15" y="17" text-anchor="middle" font-family="sans-serif" font-size="9" fill="${fill}" font-weight="900">${letter}</text>
+      function emojiBubble(emoji: string, bg: string, gm: any) {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 38 38">
+          <circle cx="19" cy="19" r="18" fill="${bg}" stroke="white" stroke-width="2.5"/>
+          <text x="19" y="26" text-anchor="middle" font-size="20">${emoji}</text>
         </svg>`
         return {
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-          scaledSize: new gm.Size(30, 38),
-          anchor: new gm.Point(15, 38),
+          scaledSize: new gm.Size(38, 38),
+          anchor: new gm.Point(19, 19),
         }
       }
 
       poopEvents?.forEach((e, i) => {
-        new gm.Marker({ position: { lat: e.lat, lng: e.lng }, map, icon: pin('#7C3A18', 'P', gm), title: `Poop ${i + 1}`, zIndex: 8 })
+        new gm.Marker({ position: { lat: e.lat, lng: e.lng }, map, icon: emojiBubble('💩', '#FEF3C7', gm), title: `Poop ${i + 1}`, zIndex: 8 })
       })
       peeEvents?.forEach((e, i) => {
-        new gm.Marker({ position: { lat: e.lat, lng: e.lng }, map, icon: pin('#1E6DB5', 'W', gm), title: `Pee ${i + 1}`, zIndex: 8 })
+        new gm.Marker({ position: { lat: e.lat, lng: e.lng }, map, icon: emojiBubble('💧', '#EFF6FF', gm), title: `Pee ${i + 1}`, zIndex: 8 })
       })
 
       const bounds = new gm.LatLngBounds()
@@ -422,12 +424,9 @@ export default function WalkReportCard({
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ color: '#9CA3AF', display: 'flex' }}><IconCalendar /></span>
-                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF' }}>{formatDate(report.walk_date)}</span>
-                <span style={{ color: '#D1D5DB', fontSize: 10 }}>·</span>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                </svg>
-                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF' }}>{formatTime(report.walk_date)}</span>
+                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF' }}>
+                  {formatDate(report.walk_date)} · {formatTime(report.walk_date)}
+                </span>
               </div>
             </div>
 
@@ -485,16 +484,16 @@ export default function WalkReportCard({
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15, ease: EASE }}>
           {report.duration_mins > 0 && (
-            <StatBox icon={<IconClock />} value={`${durationVal} min`} label="Duration" delay={0.25} />
+            <StatBox icon={<IconClock />} value={`${durationVal} min`} label="Duration" delay={0.25} bg="#FF8C52" color="#FF8C52" glow="rgba(255,140,82,0.35)" />
           )}
           {distKm && (
-            <StatBox icon={<IconRoute />} value={distKm} label="Distance" delay={0.32} />
+            <StatBox icon={<IconRoute />} value={distKm} label="Distance" delay={0.32} bg="oklch(0.48 0.17 196)" color="oklch(0.48 0.17 196)" glow="oklch(0.48 0.17 196 / 0.35)" />
           )}
           {report.pee_count > 0 && (
-            <StatBox icon={<IconDrop />} value={peeVal} label="Pee" delay={0.39} />
+            <StatBox icon={<IconDrop />} value={peeVal} label="Pee" delay={0.39} bg="#1E6DB5" color="#1E6DB5" glow="rgba(30,109,181,0.35)" />
           )}
           {report.poop_count > 0 && (
-            <StatBox icon={<IconPoop />} value={poopVal} label="Poop" delay={0.46} />
+            <StatBox icon={<IconPoop />} value={poopVal} label="Poop" delay={0.46} bg="#92400E" color="#92400E" glow="rgba(146,64,14,0.30)" />
           )}
           {/* Fallback if all zero */}
           {report.duration_mins === 0 && !distKm && report.pee_count === 0 && report.poop_count === 0 && (
@@ -560,46 +559,42 @@ export default function WalkReportCard({
 
         {/* ── SHARE CTAs ───────────────────────────────────── */}
         <motion.div
-          style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 4 }}
+          style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}
           initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.32, ease: EASE }}>
-          {/* Send to family — outlined */}
+
+          {/* Primary: Send to family — full-width green WhatsApp */}
           <motion.a
             href={`https://wa.me/?text=${waText}`}
             target="_blank" rel="noopener noreferrer"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px', borderRadius: 18, background: '#fff', border: '2px solid oklch(0.48 0.17 196)', color: 'oklch(0.48 0.17 196)', fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, textDecoration: 'none', boxShadow: CLAY }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '15px', borderRadius: 18, background: 'linear-gradient(160deg, #25D366 0%, #1aad54 100%)', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.22), inset 0 -4px 0 rgba(14,100,55,0.50), 0 8px 20px rgba(37,211,102,0.28)', color: '#fff', fontFamily: 'var(--font-fredoka)', fontSize: 17, fontWeight: 700, textDecoration: 'none' }}
             whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
             <IconWA />
             Send to family
           </motion.a>
 
-          {/* Copy link / Send to vet — orange filled */}
-          <motion.button
-            onClick={handleCopy}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px', borderRadius: 18, background: copied ? '#22c55e' : '#FF8C52', color: '#fff', fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: copied ? '0 4px 12px rgba(34,197,94,0.4)' : CLAY_ORANGE, transition: 'background 0.25s ease, box-shadow 0.25s ease' }}
-            whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
-            <AnimatePresence mode="wait">
-              {copied ? (
-                <motion.span key="done" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} style={{ display: 'flex', alignItems: 'center', gap: 6 }} transition={{ duration: 0.15 }}>
-                  <IconCheck /> Copied!
-                </motion.span>
-              ) : (
-                <motion.span key="copy" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} style={{ display: 'flex', alignItems: 'center', gap: 6 }} transition={{ duration: 0.15 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                  Save report
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </motion.button>
+          {/* Secondary row: Send to vet + Copy link */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <motion.a
+              href={`https://wa.me/?text=${waVetText}`}
+              target="_blank" rel="noopener noreferrer"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '13px', borderRadius: 16, background: '#fff', border: '1.5px solid rgba(10,47,53,0.12)', color: '#0A2F35', fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, textDecoration: 'none', boxShadow: CLAY }}
+              whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
+              Send to vet
+            </motion.a>
+            <motion.button
+              onClick={handleCopy}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '13px', borderRadius: 16, background: copied ? '#ECFDF5' : '#fff', border: copied ? '1.5px solid #BBF7D0' : '1.5px solid rgba(10,47,53,0.12)', color: copied ? '#15803D' : '#0A2F35', fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: CLAY, transition: 'all 0.2s ease' }}
+              whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
+              <AnimatePresence mode="wait">
+                {copied
+                  ? <motion.span key="done" initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.15 }}>Copied!</motion.span>
+                  : <motion.span key="copy" initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }} transition={{ duration: 0.15 }}>Copy link</motion.span>
+                }
+              </AnimatePresence>
+            </motion.button>
+          </div>
         </motion.div>
-
-        {/* Send to vet — text link */}
-        <div style={{ textAlign: 'center' }}>
-          <a href={`https://wa.me/?text=${waVetText}`} target="_blank" rel="noopener noreferrer"
-            style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: 'oklch(0.48 0.17 196)', textDecoration: 'none' }}>
-            Send to vet →
-          </a>
-        </div>
 
         {/* Footer */}
         <div style={{ textAlign: 'center', paddingTop: 8 }}>
