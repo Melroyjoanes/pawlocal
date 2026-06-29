@@ -134,7 +134,7 @@ async function renderHome(user: { id: string; user_metadata?: Record<string, str
       .limit(1)),
 
     safe((db.from('walker_connections') as any)
-      .select('id, walker_name, walker_phone, walker_role, status, dog_id, connection_token, dogs(name)')
+      .select('id, walker_name, walker_phone, walker_role, status, dog_id, token, dogs(name)')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false })),
 

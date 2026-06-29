@@ -43,7 +43,7 @@ export default async function MyAccountPage() {
       .select('id, name, breed, photo_url, health_notes, care_focus')
       .eq('owner_id', user.id)),
     safe((db.from('walker_connections') as any)
-      .select('id, dog_id, walker_name, walker_phone, walker_role, status, claimed_at, connection_token, dogs(name)')
+      .select('id, dog_id, walker_name, walker_phone, walker_role, status, claimed_at, token, dogs(name)')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false })),
   ])

@@ -30,7 +30,7 @@ interface WalkerConnection {
   walker_role: string | null
   status: string
   claimed_at: string | null
-  connection_token: string | null
+  token: string | null
   dogs?: { name: string }
 }
 
@@ -703,8 +703,8 @@ export default function MyAccountClient({
             {walkerConnections.map(wc => {
               const isActive = wc.status === 'active'
               const dogName  = dogs.find(d => d.id === wc.dog_id)?.name ?? wc.dogs?.name ?? 'your dog'
-              const shareUrl = wc.connection_token
-                ? `https://pupstep.in/connect/${wc.connection_token}`
+              const shareUrl = wc.token
+                ? `https://pupstep.in/connect/${wc.token}`
                 : null
               const waShareText = shareUrl
                 ? encodeURIComponent(`Log walks for ${dogName}: ${shareUrl}`)

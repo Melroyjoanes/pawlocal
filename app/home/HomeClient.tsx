@@ -32,7 +32,7 @@ interface WalkerConnection {
   walker_role: string | null
   status: string
   dog_id: string
-  connection_token?: string | null
+  token?: string | null
   dogs?: { name: string }
 }
 
@@ -471,14 +471,14 @@ function TeamSheet({ open, onClose, connections, dogName }: {
                   </button>
                   {qrExpanded === c.id && (
                     <div style={{ background: 'oklch(0.48 0.17 196)', borderRadius: 14, padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-                      {c.connection_token ? (
+                      {c.token ? (
                         <>
                           <div style={{ background: '#fff', padding: 12, borderRadius: 12 }}>
-                            <QRCodeSVG value={`https://pupstep.in/connect/${c.connection_token}`} size={160} level="M" />
+                            <QRCodeSVG value={`https://pupstep.in/connect/${c.token}`} size={160} level="M" />
                           </div>
-                          <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 28, fontWeight: 700, color: '#fff', margin: 0, letterSpacing: '0.15em' }}>{c.connection_token.slice(0, 4).toUpperCase()}</p>
+                          <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 28, fontWeight: 700, color: '#fff', margin: 0, letterSpacing: '0.15em' }}>{c.token.slice(0, 4).toUpperCase()}</p>
                           <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: 'rgba(255,255,255,0.85)', margin: 0, textAlign: 'center' }}>Share this QR with {c.walker_name}</p>
-                          <a href={`https://wa.me/?text=${encodeURIComponent(`Scan this QR to log walks for ${dogName}: https://pupstep.in/connect/${c.connection_token}`)}`} target="_blank" rel="noopener noreferrer" style={{ background: '#25D366', color: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-nunito)', textDecoration: 'none' }}>💬 Share on WhatsApp</a>
+                          <a href={`https://wa.me/?text=${encodeURIComponent(`Scan this QR to log walks for ${dogName}: https://pupstep.in/connect/${c.token}`)}`} target="_blank" rel="noopener noreferrer" style={{ background: '#25D366', color: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-nunito)', textDecoration: 'none' }}>💬 Share on WhatsApp</a>
                         </>
                       ) : (
                         <div style={{ textAlign: 'center' }}>
@@ -952,7 +952,7 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
           const firstConn = walkerConnections[0]
           const walkerName = firstConn?.walker_name ?? 'your walker'
           const dogName = firstDog?.name ?? 'your dog'
-          const walkerToken = firstConn?.connection_token ?? ''
+          const walkerToken = firstConn?.token ?? ''
           const waText = encodeURIComponent(`Hi ${walkerName}, please use PupStep for today's walk with ${dogName}. Here's your dashboard link: pupstep.in/walker/${walkerToken}`)
           return (
             <div style={{ background: '#ffffff', border: '1.5px solid oklch(0.48 0.17 196 / 0.2)', borderRadius: '16px', padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
