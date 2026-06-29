@@ -192,6 +192,7 @@ export async function POST(req: NextRequest) {
     ;(db.from('profiles') as any)
       .update({ trial_started_at: new Date().toISOString() })
       .eq('id', connection.owner_id)
+      .then(() => {})
       .catch(() => {})
   }
   // --- End paywall gate setup ---
@@ -300,9 +301,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true, log_id: log.id, wa_link, report_token: reportToken, report_url: reportUrl }, { status: 201 })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    const stack = err instanceof Error ? err.stack?.split('\n').slice(0, 4).join(' | ') : ''
-    console.error('[walk-logs POST] unhandled error:', msg, stack)
-    return NextResponse.json({ error: `DEBUG: ${msg}`, stack }, { status: 500 })
+    console.error('[walk-logs POST] unhandled error:', err)
+    return NextResponse.json({ error: 'Failed to submit walk. Please try again.' }, { status: 500 })
   }
 }
