@@ -202,7 +202,7 @@ export default async function WalkReportPage({
   return (
     <WalkReportCard
       report={report}
-      isOwner={isOwner}
+      shareUrl={canonicalUrl}
       isFirstReport={isFirstReport}
     />
   )
