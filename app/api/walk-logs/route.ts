@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
   // Look up the walker_connection by token
   const { data: connection, error: connError } = await (db.from('walker_connections') as any)
-    .select('id, dog_id, owner_id, walker_name, status')
+    .select('id, dog_id, owner_id, walker_name, walker_phone, status')
     .eq('token', connection_token)
     .single()
 

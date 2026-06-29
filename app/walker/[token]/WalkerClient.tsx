@@ -778,7 +778,7 @@ export default function WalkerClient({
   const fetchLogs = useCallback(async () => {
     setLogsLoading(true)
     try {
-      const res = await fetch(`/api/walker/${token}/logs`)
+      const res = await fetch(`/api/walker/${selectedToken}/logs`)
       if (res.ok) {
         const data = await res.json()
         setLogs(Array.isArray(data) ? data : [])
@@ -788,7 +788,7 @@ export default function WalkerClient({
     } finally {
       setLogsLoading(false)
     }
-  }, [token])
+  }, [selectedToken])
 
   useEffect(() => {
     fetchLogs()
@@ -2147,15 +2147,22 @@ export default function WalkerClient({
           {/* ─── SUCCESS PHASE ─── */}
           {phase === 'success' && (
             <div className="px-5 flex flex-col items-center text-center pt-8 pb-24">
+              {(() => {
+                // Use selected connection's owner name — not the URL token's owner
+                const selectedConn = connections.find(c => c.token === selectedToken)
+                const successOwner = selectedConn?.ownerFirstName ?? ownerFirstName
+                const successDog = selectedConn?.dogName ?? dogName
+                return (
+                  <>
               <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-5">
                 <span className="text-4xl">✅</span>
               </div>
               <h2 className="text-3xl font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                Walk done!
+                {successDog}&apos;s walk done!
               </h2>
               <p className="text-sm text-slate-500 mb-1 leading-relaxed px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {ownerFirstName
-                  ? `Report sent to ${ownerFirstName}. WhatsApp is opening now.`
+                {successOwner
+                  ? `Report sent to ${successOwner}. WhatsApp is opening now.`
                   : 'Report sent to the owner.'}
               </p>
               <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF', marginTop: 4, marginBottom: 24 }}>
@@ -2178,7 +2185,13 @@ export default function WalkerClient({
 
                 {/* Primary action: go back to dashboard to log another walk */}
                 <button
-                  onClick={() => { setPhase('idle'); setReportUrl(null); setParentWaLink(null) }}
+                  onClick={() => {
+                    setPhase('idle')
+                    setReportUrl(null)
+                    setParentWaLink(null)
+                    // Re-show picker so walker chooses the next dog
+                    if (connections.length > 1) setShowPicker(true)
+                  }}
                   className="w-full py-4 rounded-2xl font-bold text-lg text-white active:scale-[0.97] transition-transform"
                   style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)' }}
                 >
@@ -2216,13 +2229,21 @@ export default function WalkerClient({
                 })()}
 
                 <button
-                  onClick={() => { setPhase('idle'); setReportUrl(null); setParentWaLink(null) }}
+                  onClick={() => {
+                    setPhase('idle')
+                    setReportUrl(null)
+                    setParentWaLink(null)
+                    if (connections.length > 1) setShowPicker(true)
+                  }}
                   className="w-full py-4 rounded-2xl font-bold text-lg text-white"
                   style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)' }}
                 >
                   Log another walk →
                 </button>
               </div>
+                  </>
+                )
+              })()}
             </div>
           )}
 
