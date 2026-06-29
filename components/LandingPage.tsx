@@ -329,16 +329,17 @@ export default function LandingPage() {
           </Reveal>
 
           {/* Desktop timeline */}
-          <div className="hidden md:grid" style={{ gridTemplateColumns: 'repeat(3,1fr)', gap: 0, position: 'relative' }}>
+          <div className="hidden md:grid" style={{ gridTemplateColumns: 'repeat(4,1fr)', gap: 0, position: 'relative' }}>
             {/* Connecting line */}
-            <div style={{ position: 'absolute', top: 36, left: '16.66%', right: '16.66%', height: 2, background: 'linear-gradient(90deg,rgba(255,140,82,0.25),rgba(255,140,82,0.6),rgba(255,140,82,0.25))', zIndex: 0 }} />
+            <div style={{ position: 'absolute', top: 36, left: '12.5%', right: '12.5%', height: 2, background: 'linear-gradient(90deg,rgba(255,140,82,0.2),rgba(255,140,82,0.55),rgba(255,140,82,0.2))', zIndex: 0 }} />
 
             {[
-              { num: 1, icon: <LucidePaw size={26} strokeWidth={1.5} />, title: 'Add your dog', body: 'Create your dog\'s profile with name, breed, and health notes. Takes 2 minutes.', delay: 0 },
-              { num: 2, icon: <QrCode size={26} strokeWidth={1.5} />, title: 'Walker scans QR', body: 'Share a QR code or WhatsApp link. Walker connects with a 4-digit code — no app needed.', delay: 0.12 },
-              { num: 3, icon: <MessageCircle size={26} strokeWidth={1.5} />, title: 'Report on WhatsApp', body: 'GPS route, pee and poop count, dog photo, and walker notes — straight to your phone.', delay: 0.24 },
+              { num: 1, icon: <LucidePaw size={24} strokeWidth={1.5} />, title: 'Add your dog', body: 'Create your dog\'s profile with name, breed, and health notes. Takes 2 minutes.', delay: 0 },
+              { num: 2, icon: <QrCode size={24} strokeWidth={1.5} />, title: 'Connect your walker', body: 'Share a QR code or WhatsApp link. Walker enters a 4-digit code to connect. No app download.', delay: 0.1 },
+              { num: 3, icon: <Navigation size={24} strokeWidth={1.5} />, title: 'Walker logs the walk', body: 'Walker taps Start Walk, marks pee and poop on the live map, takes a photo, then ends the walk.', delay: 0.2 },
+              { num: 4, icon: <MessageCircle size={24} strokeWidth={1.5} />, title: 'Report on WhatsApp', body: 'You receive a GPS-tagged walk report with photos and health markers — automatically, every time.', delay: 0.3 },
             ].map(({ num, icon, title, body, delay }) => (
-              <Reveal key={title} delay={delay} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '0 28px', position: 'relative', zIndex: 1 }}>
+              <Reveal key={title} delay={delay} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '0 18px', position: 'relative', zIndex: 1 }}>
                 <div style={{ position: 'relative', marginBottom: 20 }}>
                   <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#fff', boxShadow: '0 4px 0 rgba(0,0,0,0.06),0 12px 32px rgba(0,0,0,0.07),inset 0 2px 0 rgba(255,255,255,1)', border: '1.5px solid rgba(226,232,240,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.teal }}>
                     {icon}
@@ -347,8 +348,8 @@ export default function LandingPage() {
                     {num}
                   </span>
                 </div>
-                <h3 style={{ fontFamily: 'var(--font-fredoka)', fontSize: '1.25rem', fontWeight: 700, color: C.dark, marginBottom: 8 }}>{title}</h3>
-                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#64748B', lineHeight: 1.65 }}>{body}</p>
+                <h3 style={{ fontFamily: 'var(--font-fredoka)', fontSize: '1.15rem', fontWeight: 700, color: C.dark, marginBottom: 8 }}>{title}</h3>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', lineHeight: 1.65 }}>{body}</p>
               </Reveal>
             ))}
           </div>
@@ -356,9 +357,10 @@ export default function LandingPage() {
           {/* Mobile vertical steps */}
           <div className="md:hidden flex flex-col">
             {[
-              { num: 1, icon: <LucidePaw size={20} strokeWidth={1.5} />, title: 'Add your dog', body: 'Create your dog\'s profile with health notes. 2 minutes.', delay: 0, last: false },
-              { num: 2, icon: <QrCode size={20} strokeWidth={1.5} />, title: 'Walker scans QR', body: 'Share a QR code or WhatsApp link. Walker connects with a 4-digit code.', delay: 0.1, last: false },
-              { num: 3, icon: <MessageCircle size={20} strokeWidth={1.5} />, title: 'Report on WhatsApp', body: 'GPS, photos, pee and poop count — straight to your phone.', delay: 0.2, last: true },
+              { num: 1, icon: <LucidePaw size={18} strokeWidth={1.5} />, title: 'Add your dog', body: 'Name, breed, and health notes. 2 minutes.', delay: 0, last: false },
+              { num: 2, icon: <QrCode size={18} strokeWidth={1.5} />, title: 'Connect your walker', body: 'Share QR or WhatsApp link. Walker enters a 4-digit code. No app download needed.', delay: 0.08, last: false },
+              { num: 3, icon: <Navigation size={18} strokeWidth={1.5} />, title: 'Walker logs the walk', body: 'Start Walk, mark pee and poop, take photo, End Walk. GPS tracked throughout.', delay: 0.16, last: false },
+              { num: 4, icon: <MessageCircle size={18} strokeWidth={1.5} />, title: 'Report on WhatsApp', body: 'GPS proof, photos, and health markers delivered to your phone automatically.', delay: 0.24, last: true },
             ].map(({ num, icon, title, body, delay, last }) => (
               <div key={title} className="flex gap-4">
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>

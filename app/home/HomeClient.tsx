@@ -79,67 +79,75 @@ interface Props {
 
 const cardClass = 'rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.08)] bg-white'
 
+function TrialDots({ daysRemaining }: { daysRemaining: number }) {
+  const elapsed = Math.max(0, 3 - daysRemaining)
+  return (
+    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+      {[0, 1, 2].map(i => (
+        <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: i < elapsed ? '#FF8C52' : 'rgba(255,100,30,0.2)', flexShrink: 0 }} />
+      ))}
+    </div>
+  )
+}
+
 function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName }: { trialStatus: string; daysRemaining: number | null; totalReports: number; dogName: string }) {
-  if (trialStatus === 'trial' && daysRemaining !== null && daysRemaining <= 3) {
+  // Active trial — countdown state
+  if (trialStatus === 'trial' && daysRemaining !== null) {
+    const isLastDay = daysRemaining === 1
     if (totalReports > 0) {
       return (
-        <div style={{ borderRadius: '16px', background: 'rgba(255,100,30,0.08)', border: '1.5px solid rgba(255,100,30,0.4)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#C2410C', margin: '0 0 2px' }}>
-              🚨 {totalReports} walk {totalReports === 1 ? 'report' : 'reports'} will lock in {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'}. Upgrade to keep them.
-            </p>
+        <div style={{ borderRadius: '16px', background: isLastDay ? 'rgba(255,100,30,0.10)' : 'rgba(251,191,36,0.10)', border: `1.5px solid ${isLastDay ? 'rgba(255,100,30,0.4)' : 'rgba(251,191,36,0.4)'}`, padding: '14px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <TrialDots daysRemaining={daysRemaining} />
+              <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: isLastDay ? '#C2410C' : '#92400E', margin: 0 }}>
+                {isLastDay ? 'Last day of your trial' : `${daysRemaining} days left in your free trial`}
+              </p>
+            </div>
+            <Link href="/upgrade" style={{ flexShrink: 0, backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '100px', padding: '7px 12px', minHeight: 36, display: 'flex', alignItems: 'center', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade →</Link>
           </div>
-          <Link href="/upgrade" style={{ flexShrink: 0, backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '100px', padding: '8px 14px', minHeight: 44, display: 'flex', alignItems: 'center', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade Now →</Link>
-        </div>
-      )
-    }
-    return (
-      <div style={{ borderRadius: '16px', background: 'rgba(255,100,30,0.08)', border: '1.5px solid rgba(255,100,30,0.4)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-        <div style={{ flex: 1 }}>
-          <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#C2410C', margin: '0 0 2px' }}>
-            🚨 Only {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left in your trial.
+          <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: '#92400E', margin: 0 }}>
+            {totalReports} walk {totalReports === 1 ? 'report' : 'reports'} received. After your trial, new reports won&apos;t be delivered without an active plan.
           </p>
         </div>
-        <Link href="/upgrade" style={{ flexShrink: 0, backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '100px', padding: '8px 14px', minHeight: 44, display: 'flex', alignItems: 'center', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade →</Link>
-      </div>
-    )
-  }
-  if (trialStatus === 'trial' && daysRemaining !== null && daysRemaining > 3) {
-    if (totalReports > 0) {
-      return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(251,191,36,0.10)', border: '1.5px solid rgba(251,191,36,0.35)', borderRadius: '100px', padding: '7px 14px' }}>
-          <span style={{ fontSize: '14px' }}>📋</span>
-          <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#92400E', flex: 1 }}>{totalReports} walk {totalReports === 1 ? 'report' : 'reports'} saved. {daysRemaining} days left to keep them coming.</span>
-          <Link href="/upgrade" style={{ color: 'oklch(0.44 0.16 196)', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Keep full history →</Link>
-        </div>
       )
     }
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(251,191,36,0.10)', border: '1.5px solid rgba(251,191,36,0.35)', borderRadius: '100px', padding: '7px 14px' }}>
-        <span style={{ fontSize: '14px' }}>⏳</span>
-        <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#92400E', flex: 1 }}>{daysRemaining} days left in your free trial</span>
-        <Link href="/upgrade" style={{ color: '#B45309', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade →</Link>
+      <div style={{ borderRadius: '16px', background: 'rgba(251,191,36,0.10)', border: '1.5px solid rgba(251,191,36,0.4)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <TrialDots daysRemaining={daysRemaining} />
+          <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#92400E', margin: 0 }}>
+            {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left — waiting for first walk report
+          </p>
+        </div>
+        <Link href="/upgrade" style={{ flexShrink: 0, color: '#B45309', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade →</Link>
       </div>
     )
   }
+  // Expired trial
   if (trialStatus === 'expired') {
     return (
-      <div style={{ borderRadius: '16px', background: '#0A2F35', border: '1.5px solid rgba(255,255,255,0.08)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#FCA5A5', margin: 0 }}>
-          {totalReports > 0
-            ? `🔒 ${totalReports} walk ${totalReports === 1 ? 'report' : 'reports'} saved. New reports won't be delivered until you upgrade.`
-            : `⛔ Your trial has ended. Upgrade to keep receiving ${dogName}'s walk reports on WhatsApp.`}
-        </p>
-        <Link href="/upgrade" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>Get reports delivered → ₹199/month</Link>
+      <div style={{ borderRadius: '16px', background: '#0A2F35', border: '1.5px solid rgba(255,255,255,0.08)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div>
+          <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#FCA5A5', margin: '0 0 4px' }}>
+            {totalReports > 0
+              ? `Free trial ended. ${totalReports} walk ${totalReports === 1 ? 'report' : 'reports'} saved from your trial.`
+              : `Free trial ended.`}
+          </p>
+          <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.5)', margin: 0 }}>
+            {dogName}&apos;s walker can still log walks, but new reports won&apos;t be delivered to you until you upgrade.
+          </p>
+        </div>
+        <Link href="/upgrade" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>Get reports delivered again → ₹199/month</Link>
       </div>
     )
   }
+  // No trial started yet (no walk report received)
   return (
-    <div style={{ borderRadius: '16px', background: 'rgba(255,140,82,0.08)', border: '1.5px solid rgba(255,140,82,0.3)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-      <div style={{ flex: 1 }}>
-        <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#0A2F35', margin: '0 0 2px' }}>🔓 Start your free trial — 3 days free, then ₹199/month</p>
-      </div>
-      <Link href="/setup?go=1" style={{ flexShrink: 0, color: 'oklch(0.44 0.16 196)', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Set up your dog →</Link>
+    <div style={{ borderRadius: '16px', background: 'rgba(255,140,82,0.08)', border: '1.5px solid rgba(255,140,82,0.3)', padding: '14px 16px' }}>
+      <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#0A2F35', margin: '0 0 4px' }}>Your 3-day free trial starts with your first walk report.</p>
+      <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: '#6B7280', margin: '0 0 10px' }}>PupStep delivers reports automatically. Reports depend on your walker logging each walk.</p>
+      <Link href="/setup?go=1" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'oklch(0.44 0.16 196)', fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none' }}>Connect your walker to receive your first report →</Link>
     </div>
   )
 }

@@ -18,26 +18,38 @@ interface Props {
 }
 
 const FEATURES = [
-  { icon: '📍', label: 'GPS proof after every walk' },
-  { icon: '📸', label: 'Photos from the walk saved' },
-  { icon: '💩', label: 'Pee, poop and mood logged' },
-  { icon: '📋', label: 'Full walk report history' },
-  { icon: '💬', label: 'Report delivered on WhatsApp' },
-  { icon: '🔒', label: 'Reports saved to your account forever' },
+  { label: 'GPS-tagged walk reports after every walk' },
+  { label: 'Photos and pee/poop count logged per walk' },
+  { label: 'WhatsApp delivery after each walk' },
+  { label: 'Full report history — browse past walks anytime' },
+  { label: 'Multiple walkers per dog' },
+  { label: 'Reports saved permanently to your account' },
+]
+
+const WHAT_HAPPENS = [
+  { locked: true,  text: 'New walk reports are not delivered to you' },
+  { locked: true,  text: 'WhatsApp notifications stop arriving' },
+  { locked: false, text: 'Reports from your trial stay readable forever' },
+  { locked: false, text: 'Your walker keeps logging walks as normal' },
+  { locked: false, text: 'You can upgrade anytime to resume delivery' },
 ]
 
 const FAQ = [
   {
-    q: 'What happens after my free trial?',
-    a: 'After 3 days your trial ends. To keep receiving walk reports, you pay ₹199/month. Your walker never needs to do anything different.',
+    q: 'What happens when my trial ends?',
+    a: 'Your walker keeps logging walks as usual, but new reports will not be delivered to your WhatsApp or account until you upgrade. Reports from your trial period stay visible forever.',
+  },
+  {
+    q: 'How does PupStep actually work?',
+    a: 'PupStep gives your walker a dashboard link — no app download. They tap Start Walk, mark pee and poop spots on a live GPS map, take a photo, and end the walk. A report is generated automatically and sent to you on WhatsApp.',
   },
   {
     q: 'Will my walker see any difference?',
-    a: 'No. Walkers use PupStep for free, always. Pro is only for dog parents.',
+    a: 'No. Walkers use PupStep for free, always. The dashboard link works the same. Only you lose report delivery when your trial ends.',
   },
   {
     q: 'Can I cancel anytime?',
-    a: 'Yes — cancel before your next billing date and you will not be charged again.',
+    a: 'Yes — cancel before your next billing date and you will not be charged again. Your reports remain visible.',
   },
 ]
 
@@ -254,13 +266,13 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn }: Pr
             className="text-4xl md:text-5xl font-bold leading-tight mb-4"
             style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}
           >
-            Proof after every walk 🐾
+            Keep receiving proof after every walk
           </h1>
           <p
-            className="text-base max-w-xs mx-auto leading-relaxed"
+            className="text-base max-w-sm mx-auto leading-relaxed"
             style={{ fontFamily: 'var(--font-nunito)', color: '#0A2F35', opacity: 0.65 }}
           >
-            Your walker logs every walk. You get a report on WhatsApp. Peace of mind, every day.
+            Your walker logs every walk for free. Your subscription unlocks GPS report delivery to your WhatsApp — automatically, every time.
           </p>
         </div>
 
@@ -346,6 +358,34 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn }: Pr
               </Link>
             )}
           </div>
+        </div>
+
+        {/* What happens after trial */}
+        <div
+          className="rounded-[24px] p-6 mb-8"
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.08)' }}
+        >
+          <p className="text-sm font-bold mb-4" style={{ color: 'rgba(255,251,235,0.55)', fontFamily: 'var(--font-nunito)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11 }}>
+            When your 3-day trial ends
+          </p>
+          <div className="space-y-2.5">
+            {WHAT_HAPPENS.map(({ locked, text }) => (
+              <div key={text} className="flex items-start gap-3">
+                <span
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5"
+                  style={{ background: locked ? 'rgba(252,165,165,0.15)' : 'rgba(134,239,172,0.15)' }}
+                >
+                  {locked ? '✕' : '✓'}
+                </span>
+                <span className="text-sm" style={{ color: locked ? 'rgba(252,165,165,0.85)' : 'rgba(134,239,172,0.85)', fontFamily: 'var(--font-nunito)' }}>
+                  {text}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs mt-4" style={{ color: 'rgba(255,251,235,0.35)', fontFamily: 'var(--font-nunito)', lineHeight: 1.6 }}>
+            Reports are created when your walker logs the walk. PupStep stores and delivers them. Upgrading restores delivery instantly.
+          </p>
         </div>
 
         {/* Social proof */}
