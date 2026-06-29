@@ -300,7 +300,9 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true, log_id: log.id, wa_link, report_token: reportToken, report_url: reportUrl }, { status: 201 })
   } catch (err) {
-    console.error('[walk-logs POST] unhandled error:', err)
-    return NextResponse.json({ error: 'Internal server error. Please try again.' }, { status: 500 })
+    const msg = err instanceof Error ? err.message : String(err)
+    const stack = err instanceof Error ? err.stack?.split('\n').slice(0, 4).join(' | ') : ''
+    console.error('[walk-logs POST] unhandled error:', msg, stack)
+    return NextResponse.json({ error: `DEBUG: ${msg}`, stack }, { status: 500 })
   }
 }
