@@ -73,6 +73,8 @@ interface Props {
   todayLogs: WalkLog[]
   trialStatus: string
   trialDaysRemaining: number | null
+  trialStartedAt?: string | null
+  missedWalksCount?: number
   totalReports: number
   latestReportToken?: string | null
 }
@@ -90,55 +92,108 @@ function TrialDots({ daysRemaining }: { daysRemaining: number }) {
   )
 }
 
-function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName }: { trialStatus: string; daysRemaining: number | null; totalReports: number; dogName: string }) {
+function useTrialCountdown(trialStartedAt: string | null): {
+  hoursLeft: number; minsLeft: number; totalMsLeft: number; isLastDay: boolean
+} {
+  const TRIAL_MS = 3 * 86400 * 1000
+  const calc = () => {
+    if (!trialStartedAt) return { hoursLeft: 0, minsLeft: 0, totalMsLeft: 0, isLastDay: false }
+    const expiry = new Date(trialStartedAt).getTime() + TRIAL_MS
+    const msLeft = Math.max(0, expiry - Date.now())
+    const hoursLeft = Math.floor(msLeft / 3600000)
+    const minsLeft = Math.floor((msLeft % 3600000) / 60000)
+    return { hoursLeft, minsLeft, totalMsLeft: msLeft, isLastDay: msLeft < 86400000 }
+  }
+  const [state, setState] = useState(calc)
+  useEffect(() => {
+    if (!trialStartedAt) return
+    const id = setInterval(() => setState(calc()), 60000)
+    return () => clearInterval(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trialStartedAt])
+  return state
+}
+
+function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName, trialStartedAt, missedWalksCount }: {
+  trialStatus: string
+  daysRemaining: number | null
+  totalReports: number
+  dogName: string
+  trialStartedAt?: string | null
+  missedWalksCount?: number
+}) {
+  const { hoursLeft, minsLeft, isLastDay } = useTrialCountdown(trialStartedAt ?? null)
+
   // Active trial — countdown state
   if (trialStatus === 'trial' && daysRemaining !== null) {
-    const isLastDay = daysRemaining === 1
-    if (totalReports > 0) {
+    if (isLastDay) {
+      // Final 24h — live ticking clock
       return (
-        <div style={{ borderRadius: '16px', background: isLastDay ? 'rgba(255,100,30,0.10)' : 'rgba(251,191,36,0.10)', border: `1.5px solid ${isLastDay ? 'rgba(255,100,30,0.4)' : 'rgba(251,191,36,0.4)'}`, padding: '14px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <TrialDots daysRemaining={daysRemaining} />
-              <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: isLastDay ? '#C2410C' : '#92400E', margin: 0 }}>
-                {isLastDay ? 'Last day of your trial' : `${daysRemaining} days left in your free trial`}
+        <div style={{ borderRadius: 14, background: 'rgba(220,38,38,0.07)', border: '1.5px solid rgba(220,38,38,0.3)', padding: '12px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
+            <div>
+              <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: 13, fontWeight: 700, color: '#DC2626', margin: '0 0 2px' }}>
+                Trial ends in {hoursLeft}h {minsLeft}m
+              </p>
+              <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: 11, color: '#DC2626', opacity: 0.75, margin: 0 }}>
+                {totalReports > 0 ? `${totalReports} ${totalReports === 1 ? 'report' : 'reports'} will stop being delivered` : 'New reports will stop being delivered'}
               </p>
             </div>
-            <Link href="/upgrade" style={{ flexShrink: 0, backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '100px', padding: '7px 12px', minHeight: 36, display: 'flex', alignItems: 'center', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade →</Link>
+            <Link href="/upgrade" style={{ flexShrink: 0, backgroundColor: '#DC2626', color: '#fff', borderRadius: 100, padding: '8px 14px', minHeight: 36, display: 'flex', alignItems: 'center', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade now</Link>
           </div>
-          <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: '#92400E', margin: 0 }}>
-            {totalReports} walk {totalReports === 1 ? 'report' : 'reports'} received. After your trial, new reports won&apos;t be delivered without an active plan.
-          </p>
         </div>
       )
     }
+    // Days 1-2 — ambient amber pill
     return (
-      <div style={{ borderRadius: '16px', background: 'rgba(251,191,36,0.10)', border: '1.5px solid rgba(251,191,36,0.4)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <TrialDots daysRemaining={daysRemaining} />
-          <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#92400E', margin: 0 }}>
-            {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left — waiting for first walk report
-          </p>
+      <div style={{ borderRadius: 14, background: 'rgba(251,191,36,0.12)', border: '1.5px solid rgba(251,191,36,0.4)', padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <TrialDots daysRemaining={daysRemaining ?? 3} />
+          <div>
+            <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: 13, fontWeight: 700, color: '#92400E', margin: '0 0 1px' }}>
+              {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left in your free trial
+            </p>
+            {totalReports > 0 && (
+              <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: 11, color: '#92400E', opacity: 0.7, margin: 0 }}>
+                {totalReports} {totalReports === 1 ? 'report' : 'reports'} saved — upgrade to keep them coming
+              </p>
+            )}
+          </div>
         </div>
-        <Link href="/upgrade" style={{ flexShrink: 0, color: '#B45309', fontSize: '12px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade →</Link>
+        <Link href="/upgrade" style={{ flexShrink: 0, color: '#B45309', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade →</Link>
       </div>
     )
   }
-  // Expired trial
+  // Expired trial — FOMO state
   if (trialStatus === 'expired') {
+    const missed = missedWalksCount ?? 0
     return (
-      <div style={{ borderRadius: '16px', background: '#0A2F35', border: '1.5px solid rgba(255,255,255,0.08)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ borderRadius: 16, background: '#0A2F35', border: '1.5px solid rgba(255,255,255,0.06)', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {/* FOMO headline */}
         <div>
-          <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#FCA5A5', margin: '0 0 4px' }}>
-            {totalReports > 0
-              ? `Free trial ended. ${totalReports} walk ${totalReports === 1 ? 'report' : 'reports'} saved from your trial.`
-              : `Free trial ended.`}
+          <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#FFFBEB', margin: '0 0 4px' }}>
+            {missed > 0
+              ? `${missed} ${missed === 1 ? 'walk was' : 'walks were'} logged while your trial was expired.`
+              : 'Your trial has ended.'}
           </p>
-          <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.5)', margin: 0 }}>
-            {dogName}&apos;s walker can still log walks, but new reports won&apos;t be delivered to you until you upgrade.
+          <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.55)', margin: 0, lineHeight: 1.55 }}>
+            {missed > 0
+              ? `${dogName}'s walker is still logging walks — but reports aren't being delivered to you.`
+              : `${dogName}'s walker can still log walks, but new reports won't reach you until you upgrade.`}
           </p>
         </div>
-        <Link href="/upgrade" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FF8C52', color: '#ffffff', borderRadius: '12px', padding: '12px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>Get reports delivered again → ₹199/month</Link>
+        {/* Report count if any */}
+        {totalReports > 0 && (
+          <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 16 }}>🔒</span>
+            <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: 12, color: 'rgba(255,251,235,0.7)', margin: 0 }}>
+              {totalReports} walk {totalReports === 1 ? 'report' : 'reports'} saved from your trial — still accessible
+            </p>
+          </div>
+        )}
+        <Link href="/upgrade" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FF8C52', color: '#fff', borderRadius: 12, padding: '13px 16px', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
+          {missed > 0 ? `See ${missed} missed ${missed === 1 ? 'report' : 'reports'} → ₹199/month` : 'Get reports delivered again → ₹199/month'}
+        </Link>
       </div>
     )
   }
@@ -760,7 +815,9 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
       {/* 1. Greeting */}
       <motion.div variants={fadeUp}>
         <h1 className="font-[family-name:var(--font-fredoka)] text-3xl font-bold text-[#0A2F35]">{getGreeting()}, {firstName} 👋</h1>
-        <p className="text-gray-500 text-sm mt-1">Here&apos;s everything for your pup today.</p>
+        <p className="text-sm mt-1" style={{ color: isPro ? 'oklch(0.48 0.17 196)' : '#6B7280', fontFamily: 'var(--font-nunito)', fontWeight: isPro ? 700 : 400 }}>
+          {isPro ? 'PupStep Pro · Unlimited walk history' : "Here's everything for your pup today."}
+        </p>
       </motion.div>
 
       {/* 2. Dog card */}
@@ -838,7 +895,7 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
   )
 }
 
-export default function HomeClient({ displayName, firstDog, activeWalk, completedWalk, walkerConnections, lastWalk, isPro, walkStreak, weekData, lastWalkLog, todayWalked, todayLogs, trialStatus, trialDaysRemaining, totalReports, latestReportToken }: Props) {
+export default function HomeClient({ displayName, firstDog, activeWalk, completedWalk, walkerConnections, lastWalk, isPro, walkStreak, weekData, lastWalkLog, todayWalked, todayLogs, trialStatus, trialDaysRemaining, trialStartedAt, missedWalksCount, totalReports, latestReportToken }: Props) {
   const router = useRouter()
   const [showCelebration, setShowCelebration] = useState(false)
   const [teamSheetOpen, setTeamSheetOpen] = useState(false)
@@ -874,7 +931,7 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
   return (
     <div className="min-h-dvh" style={{ background: '#FFFBEB', fontFamily: 'var(--font-nunito), sans-serif' }}>
       {/* ── App header ─────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-[#FFFBEB]" style={{ borderBottom: '1px solid oklch(0.906 0.06 88)' }}>
+      <header className="sticky top-0 z-40 bg-[#FFFBEB]" style={{ borderBottom: '1px solid oklch(0.906 0.06 88)', borderTop: isPro ? '3px solid oklch(0.48 0.17 196)' : 'none' }}>
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/home">
             <Image src="/logo.webp" alt="PupStep" width={130} height={48} className="h-9 w-auto" priority />
@@ -889,16 +946,34 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
                 Walk live
               </span>
             )}
-            <Link href="/my-account" className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: 'oklch(0.52 0.17 196 / 0.12)', color: 'oklch(0.44 0.16 196)' }}>
-              {displayName.charAt(0).toUpperCase()}
-            </Link>
+            {isPro ? (
+              <div style={{ position: 'relative', display: 'inline-flex' }}>
+                <Link href="/my-account" className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: 'oklch(0.52 0.17 196 / 0.18)', color: 'oklch(0.44 0.16 196)' }}>
+                  {displayName.charAt(0).toUpperCase()}
+                </Link>
+                <span style={{ position: 'absolute', bottom: -3, right: -3, background: '#FF8C52', color: '#fff', fontSize: 7, fontWeight: 700, fontFamily: 'var(--font-nunito)', borderRadius: 100, padding: '1.5px 4px', lineHeight: 1.2, border: '1.5px solid #FFFBEB', whiteSpace: 'nowrap' }}>PRO</span>
+              </div>
+            ) : (
+              <Link href="/my-account" className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: 'oklch(0.52 0.17 196 / 0.12)', color: 'oklch(0.44 0.16 196)' }}>
+                {displayName.charAt(0).toUpperCase()}
+              </Link>
+            )}
           </div>
         </div>
       </header>
 
       {/* ── Content ────────────────────────────────────────────────────────── */}
       <main className="max-w-lg mx-auto px-4 pt-5 pb-28 flex flex-col gap-4">
-        {!isPro && <UpgradeBanner trialStatus={trialStatus} daysRemaining={trialDaysRemaining} totalReports={totalReports} dogName={firstDog?.name ?? "your dog"} />}
+        {!isPro && (trialStatus !== 'no_trial' || !lastWalkLog) && (
+          <UpgradeBanner
+            trialStatus={trialStatus}
+            daysRemaining={trialDaysRemaining}
+            totalReports={totalReports}
+            dogName={firstDog?.name ?? 'your dog'}
+            trialStartedAt={trialStartedAt ?? null}
+            missedWalksCount={missedWalksCount ?? 0}
+          />
+        )}
 
         {/* First-report celebration */}
         {showCelebration && lastWalkLog && (

@@ -97,6 +97,8 @@ export default async function HomePage() {
         todayLogs={[]}
         trialStatus="no_trial"
         trialDaysRemaining={null}
+        trialStartedAt={null}
+        missedWalksCount={0}
         totalReports={0}
       />
     )
@@ -198,6 +200,17 @@ async function renderHome(user: { id: string; user_metadata?: Record<string, str
     trialStatus = 'active'
   }
 
+  // Compute missedWalksCount — FOMO number for expired trial non-Pro users
+  let missedWalksCount = 0
+  if (trialStatus === 'expired' && !isPro && trialStartedAt) {
+    const trialExpiredAt = new Date(new Date(trialStartedAt).getTime() + 3 * 86400 * 1000).toISOString()
+    const { count: missed } = await safe((db.from('walk_logs') as any)
+      .select('id', { count: 'exact', head: true })
+      .eq('owner_id', user.id)
+      .gte('started_at', trialExpiredAt))
+    missedWalksCount = missed ?? 0
+  }
+
   const recentLogs = walkLogsRaw ?? []
   // Derive today's logs from the 14-day fetch — no extra round-trip needed
   const todayLogs = recentLogs.filter((l: { started_at: string }) => l.started_at >= todayMidnight)
@@ -231,6 +244,8 @@ async function renderHome(user: { id: string; user_metadata?: Record<string, str
       todayLogs={todayLogs as any}
       trialStatus={trialStatus}
       trialDaysRemaining={trialDaysRemaining}
+      trialStartedAt={trialStartedAt}
+      missedWalksCount={missedWalksCount}
       totalReports={reportCount ?? 0}
       latestReportToken={(latestReportData as { token?: string } | null)?.token ?? null}
     />

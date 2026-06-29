@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import ParentBottomNav from '@/components/ParentBottomNav'
@@ -175,6 +176,10 @@ function EmptyState() {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function MyReportsClient({ walkReports, userName, isSubscribed, trialExpired, totalReports }: Props) {
   const router = useRouter()
+  const [showUnlock, setShowUnlock] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return isSubscribed && !localStorage.getItem('pupstep_pro_welcome_seen')
+  })
 
   if (trialExpired && !isSubscribed) {
     return (
@@ -251,6 +256,9 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, t
             }}
           >
             Walk reports
+            {isSubscribed && (
+              <span style={{ background: '#FF8C52', color: '#fff', fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-nunito)', borderRadius: 100, padding: '3px 8px', marginLeft: 8, verticalAlign: 'middle', letterSpacing: '0.05em' }}>PRO</span>
+            )}
           </h1>
           {dogName && (
             <span
@@ -271,6 +279,31 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, t
 
       {/* Content */}
       <main className="max-w-[480px] mx-auto px-4 pb-28 pt-4">
+
+        {/* Pro subtitle */}
+        {isSubscribed && (
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: 'oklch(0.48 0.17 196)', fontWeight: 600, margin: '0 0 12px' }}>
+            Full history unlocked · Reports saved forever
+          </p>
+        )}
+
+        {/* Pro unlock celebration banner */}
+        {showUnlock && (
+          <div style={{ margin: '0 0 16px', borderRadius: 16, background: 'linear-gradient(135deg, oklch(0.48 0.17 196) 0%, oklch(0.38 0.15 196) 100%)', padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div>
+              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 17, fontWeight: 700, color: '#fff', margin: '0 0 3px' }}>
+                Welcome to PupStep Pro!
+              </p>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: 'rgba(255,255,255,0.8)', margin: 0 }}>
+                All reports unlocked. New reports delivered after every walk.
+              </p>
+            </div>
+            <button
+              onClick={() => { setShowUnlock(false); localStorage.setItem('pupstep_pro_welcome_seen', '1') }}
+              style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', fontSize: 14, flexShrink: 0 }}
+            >×</button>
+          </div>
+        )}
 
         {/* Summary line */}
         {summary && (
