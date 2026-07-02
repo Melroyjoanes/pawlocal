@@ -233,11 +233,79 @@ function cleanRoute(points: { lat: number; lng: number }[]): { lat: number; lng:
   return cleaned
 }
 
+// Rough flat-earth distance in meters — fine at the scale of a single walk
+function distMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  const dLat = a.lat - b.lat
+  const dLng = a.lng - b.lng
+  return Math.sqrt(dLat * dLat + dLng * dLng) * 111000
+}
+
+type RawEvent = { lat: number; lng: number; time: string }
+type EventCluster = { lat: number; lng: number; hasPoop: boolean; hasPee: boolean }
+
+// A poop and a pee logged moments apart at the same spot (a dog marking
+// territory, or sniffing then going) previously rendered as two markers
+// stacked exactly on top of each other — the second one silently hid the
+// first. Cluster events within ~6m into a single marker that shows
+// everything that happened there instead.
+function clusterEvents(poopEvents: RawEvent[], peeEvents: RawEvent[]): EventCluster[] {
+  const all = [
+    ...poopEvents.map(e => ({ ...e, kind: 'poop' as const })),
+    ...peeEvents.map(e => ({ ...e, kind: 'pee' as const })),
+  ]
+  const clusters: EventCluster[] = []
+  for (const e of all) {
+    const near = clusters.find(c => distMeters(c, e) < 6)
+    if (near) {
+      if (e.kind === 'poop') near.hasPoop = true
+      if (e.kind === 'pee') near.hasPee = true
+    } else {
+      clusters.push({ lat: e.lat, lng: e.lng, hasPoop: e.kind === 'poop', hasPee: e.kind === 'pee' })
+    }
+  }
+  return clusters
+}
+
+// Returns the sub-path of `points` covering the first `fraction` (0–1) of its
+// total length, with one interpolated point at the exact cutoff — used to
+// animate the route drawing itself in on load.
+function partialPath(points: { lat: number; lng: number }[], fraction: number): { lat: number; lng: number }[] {
+  if (points.length < 2 || fraction >= 1) return points
+  if (fraction <= 0) return [points[0]]
+
+  const segLengths: number[] = []
+  let total = 0
+  for (let i = 1; i < points.length; i++) {
+    const d = distMeters(points[i - 1], points[i])
+    segLengths.push(d)
+    total += d
+  }
+  if (total === 0) return points
+
+  const targetDist = total * fraction
+  let covered = 0
+  const out: { lat: number; lng: number }[] = [points[0]]
+  for (let i = 0; i < segLengths.length; i++) {
+    const segLen = segLengths[i]
+    if (covered + segLen >= targetDist) {
+      const t = segLen > 0 ? (targetDist - covered) / segLen : 0
+      const a = points[i]
+      const b = points[i + 1]
+      out.push({ lat: a.lat + (b.lat - a.lat) * t, lng: a.lng + (b.lng - a.lng) * t })
+      return out
+    }
+    covered += segLen
+    out.push(points[i + 1])
+  }
+  return points
+}
+
 // ─── Google Maps ──────────────────────────────────────────────────────────────
-function WalkMap({ routePoints, poopEvents, peeEvents }: {
+function WalkMap({ routePoints, poopEvents, peeEvents, reducedMotion }: {
   routePoints: { lat: number; lng: number }[]
   poopEvents: { lat: number; lng: number; time: string }[]
   peeEvents: { lat: number; lng: number; time: string }[]
+  reducedMotion?: boolean
 }) {
   const mapRef = useRef<HTMLDivElement>(null)
 
@@ -245,6 +313,7 @@ function WalkMap({ routePoints, poopEvents, peeEvents }: {
     if (!routePoints?.length || !mapRef.current) return
 
     const cleanedRoutePoints = cleanRoute(routePoints)
+    let rafId: number | null = null
 
     function initMap() {
       if (!mapRef.current) return
@@ -256,62 +325,125 @@ function WalkMap({ routePoints, poopEvents, peeEvents }: {
         disableDefaultUI: true,
         gestureHandling: 'cooperative',
         styles: [
+          { featureType: 'poi.park', elementType: 'geometry', stylers: [{ visibility: 'on' }, { color: '#d7ecd2' }] },
+          { featureType: 'poi.park', elementType: 'labels', stylers: [{ visibility: 'off' }] },
           { featureType: 'poi', stylers: [{ visibility: 'off' }] },
           { featureType: 'transit', stylers: [{ visibility: 'off' }] },
           { elementType: 'geometry', stylers: [{ color: '#f8f4ee' }] },
           { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
+          { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#f0e9db' }] },
           { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9CA3AF' }] },
-          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9e8e0' }] },
+          { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#fdf6e3' }] },
+          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#a8d8d0' }] },
           { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f8f4ee' }] },
+          { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#eef2e0' }] },
         ],
       })
 
-      // Route polyline
-      new gm.Polyline({
-        path: cleanedRoutePoints,
+      // Soft glow layer under the route — wider, translucent, same color.
+      // Gives the line depth without turning it into a gradient/heatmap.
+      const glow = new gm.Polyline({
+        path: [cleanedRoutePoints[0]],
+        strokeColor: 'oklch(0.48 0.17 196)',
+        strokeWeight: 13,
+        strokeOpacity: 0.18,
+        geodesic: true,
+        zIndex: 1,
+      })
+      glow.setMap(map)
+
+      // Main route line
+      const route = new gm.Polyline({
+        path: [cleanedRoutePoints[0]],
         strokeColor: 'oklch(0.48 0.17 196)',
         strokeWeight: 5,
         strokeOpacity: 0.95,
         geodesic: true,
-      }).setMap(map)
-
-      // Start dot
-      new gm.Marker({
-        position: cleanedRoutePoints[0], map,
-        icon: { path: gm.SymbolPath.CIRCLE, scale: 8, fillColor: '#22c55e', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
-        zIndex: 10,
+        zIndex: 2,
       })
-      // End dot
-      new gm.Marker({
-        position: cleanedRoutePoints[cleanedRoutePoints.length - 1], map,
-        icon: { path: gm.SymbolPath.CIRCLE, scale: 8, fillColor: 'oklch(0.48 0.17 196)', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
-        zIndex: 10,
-      })
+      route.setMap(map)
 
-      // Emoji-only markers — minimal, no colored circles
+      // Draw the route in over ~1.4s instead of appearing instantly
+      if (reducedMotion) {
+        glow.setPath(cleanedRoutePoints)
+        route.setPath(cleanedRoutePoints)
+      } else {
+        const durationMs = 1400
+        const start = performance.now()
+        const tick = (now: number) => {
+          const t = Math.min((now - start) / durationMs, 1)
+          const eased = 1 - Math.pow(1 - t, 3)
+          const partial = partialPath(cleanedRoutePoints, eased)
+          glow.setPath(partial)
+          route.setPath(partial)
+          if (t < 1) rafId = requestAnimationFrame(tick)
+        }
+        rafId = requestAnimationFrame(tick)
+      }
+
+      // Labeled pill markers for start/end — clearer than two unlabeled dots
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      function emojiMarker(emoji: string, gm: any) {
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-          <text x="16" y="24" text-anchor="middle" font-size="22">${emoji}</text>
+      function pillMarker(label: string, fill: string, gm: any) {
+        const w = label === 'START' ? 62 : 54
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="26" viewBox="0 0 ${w} 26">
+          <rect x="1" y="1" width="${w - 2}" height="24" rx="12" fill="${fill}" stroke="white" stroke-width="2"/>
+          <text x="${w / 2}" y="17" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="white" letter-spacing="0.5">${label}</text>
         </svg>`
         return {
           url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-          scaledSize: new gm.Size(32, 32),
-          anchor: new gm.Point(16, 16),
+          scaledSize: new gm.Size(w, 26),
+          anchor: new gm.Point(w / 2, 34),
         }
       }
 
-      poopEvents?.forEach((e, i) => {
-        new gm.Marker({ position: { lat: e.lat, lng: e.lng }, map, icon: emojiMarker('💩', gm), title: `Poop ${i + 1}`, zIndex: 8 })
+      new gm.Marker({
+        position: cleanedRoutePoints[0], map,
+        icon: { path: gm.SymbolPath.CIRCLE, scale: 7, fillColor: '#22c55e', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
+        zIndex: 10,
       })
-      peeEvents?.forEach((e, i) => {
-        new gm.Marker({ position: { lat: e.lat, lng: e.lng }, map, icon: emojiMarker('💧', gm), title: `Pee ${i + 1}`, zIndex: 8 })
+      new gm.Marker({
+        position: cleanedRoutePoints[0], map,
+        icon: pillMarker('START', '#22c55e', gm),
+        zIndex: 10,
+      })
+      new gm.Marker({
+        position: cleanedRoutePoints[cleanedRoutePoints.length - 1], map,
+        icon: { path: gm.SymbolPath.CIRCLE, scale: 7, fillColor: 'oklch(0.48 0.17 196)', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
+        zIndex: 10,
+      })
+      new gm.Marker({
+        position: cleanedRoutePoints[cleanedRoutePoints.length - 1], map,
+        icon: pillMarker('END', 'oklch(0.48 0.17 196)', gm),
+        zIndex: 10,
+      })
+
+      // Cluster poop/pee events within ~6m so two events at the same spot
+      // (a dog marking, then going, in one stop) render as ONE marker showing
+      // both — previously they stacked exactly on top of each other and the
+      // second silently hid the first.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      function eventMarker(emoji: string, gm: any) {
+        const w = emoji.length > 2 ? 44 : 32
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="32" viewBox="0 0 ${w} 32">
+          <text x="${w / 2}" y="24" text-anchor="middle" font-size="20">${emoji}</text>
+        </svg>`
+        return {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+          scaledSize: new gm.Size(w, 32),
+          anchor: new gm.Point(w / 2, 16),
+        }
+      }
+
+      const clusters = clusterEvents(poopEvents, peeEvents)
+      clusters.forEach((c, i) => {
+        const emoji = c.hasPoop && c.hasPee ? '💩💧' : c.hasPoop ? '💩' : '💧'
+        const title = c.hasPoop && c.hasPee ? `Poop and pee ${i + 1}` : c.hasPoop ? `Poop ${i + 1}` : `Pee ${i + 1}`
+        new gm.Marker({ position: { lat: c.lat, lng: c.lng }, map, icon: eventMarker(emoji, gm), title, zIndex: 8 })
       })
 
       const bounds = new gm.LatLngBounds()
       cleanedRoutePoints.forEach(p => bounds.extend(p))
-      poopEvents?.forEach(e => bounds.extend({ lat: e.lat, lng: e.lng }))
-      peeEvents?.forEach(e => bounds.extend({ lat: e.lat, lng: e.lng }))
+      clusters.forEach(c => bounds.extend({ lat: c.lat, lng: c.lng }))
       map.fitBounds(bounds, { top: 36, bottom: 36, left: 36, right: 36 })
     }
 
@@ -333,7 +465,9 @@ function WalkMap({ routePoints, poopEvents, peeEvents }: {
       script.onload = initMap
       document.head.appendChild(script)
     }
-  }, [routePoints, poopEvents, peeEvents])
+
+    return () => { if (rafId !== null) cancelAnimationFrame(rafId) }
+  }, [routePoints, poopEvents, peeEvents, reducedMotion])
 
   return <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 }
@@ -460,6 +594,7 @@ export default function WalkReportCard({
                 routePoints={report.route_points!}
                 poopEvents={report.poop_events ?? []}
                 peeEvents={report.pee_events ?? []}
+                reducedMotion={!!rm}
               />
             </div>
             {/* Legend */}
