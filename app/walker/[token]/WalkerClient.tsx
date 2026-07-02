@@ -179,6 +179,7 @@ interface GpsPoint {
   lat: number
   lng: number
   ts: string
+  accuracy?: number // meters — stored for future route-quality auditing
 }
 
 interface WalkEvent {
@@ -850,13 +851,16 @@ export default function WalkerClient({
         }
         watchIdRef.current = navigator.geolocation.watchPosition(
           (p) => {
-            // Reject low-accuracy fixes (common right after GPS lock-on — can be 50-200m off)
-            if (p.coords.accuracy > 30) return
+            // Reject only genuine multipath garbage (100m+) — see note in startWalk's
+            // watchPosition callback for why 30m was starving gpsRoute in urban Mumbai.
+            const accuracy = p.coords.accuracy
+            if (accuracy > 100) return
 
             const pt: GpsPoint = {
               lat: p.coords.latitude,
               lng: p.coords.longitude,
               ts: new Date().toISOString(),
+              accuracy,
             }
 
             setGpsRoute((prev) => {
@@ -869,6 +873,10 @@ export default function WalkerClient({
                 // but still catch GPS teleport artifacts (jumping 200m in 1 second = 200 m/s).
                 const impliedSpeed = elapsedSec > 0 ? (delta * 1000) / elapsedSec : 0
                 if (impliedSpeed > 20) return prev // discard this point, keep previous route unchanged
+                // Debounce GPS jitter: ignore a new fix under 3m from the last one if it
+                // arrived within 5 seconds — otherwise a stationary walker generates a
+                // jagged "spider web" from GPS noise alone, not real movement.
+                if (delta * 1000 < 3 && elapsedSec < 5) return prev
                 setDistanceKm((d) => +(d + delta).toFixed(3))
               }
               return [...prev, pt]
@@ -971,13 +979,18 @@ export default function WalkerClient({
     if (navigator.geolocation) {
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
-          // Reject low-accuracy fixes (common right after GPS lock-on — can be 50-200m off)
-          if (pos.coords.accuracy > 30) return
+          // Reject only genuine multipath garbage (100m+). Dense Mumbai neighbourhoods
+          // (tall buildings, narrow lanes) routinely give 40-80m accuracy on real Android
+          // phones even while moving normally — a stricter cutoff here starves gpsRoute
+          // almost entirely, which is why every report used to look the same (empty route).
+          const accuracy = pos.coords.accuracy
+          if (accuracy > 100) return
 
           const point: GpsPoint = {
             lat: pos.coords.latitude,
             lng: pos.coords.longitude,
             ts: new Date().toISOString(),
+            accuracy,
           }
 
           setGpsRoute((prev) => {
@@ -990,6 +1003,10 @@ export default function WalkerClient({
               // but still catch GPS teleport artifacts (jumping 200m in 1 second = 200 m/s).
               const impliedSpeed = elapsedSec > 0 ? (delta * 1000) / elapsedSec : 0
               if (impliedSpeed > 20) return prev // discard this point, keep previous route unchanged
+              // Debounce GPS jitter: ignore a new fix under 3m from the last one if it
+              // arrived within 5 seconds — a stationary walker otherwise generates a
+              // jagged "spider web" from GPS noise alone, not real movement.
+              if (delta * 1000 < 3 && elapsedSec < 5) return prev
               setDistanceKm((d) => +(d + delta).toFixed(3))
             }
             return [...prev, point]
