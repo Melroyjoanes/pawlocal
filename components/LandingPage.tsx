@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useId } from 'react'
 import Link from 'next/link'
 import {
   motion, useScroll, useTransform, useInView, useMotionValue, useSpring,
@@ -110,6 +110,9 @@ function Tilt3D({ children, max = 10 }: { children: React.ReactNode; max?: numbe
 
 // ─── Walk report mock ────────────────────────────────────────────────────────
 function WalkReportMock() {
+  const rm = useReducedMotion()
+  // Unique per instance — this mock renders twice on the page (hero + report section)
+  const routeId = `mockRoutePath-${useId()}`
   return (
     <div style={{
       background: '#fff',
@@ -166,10 +169,19 @@ function WalkReportMock() {
       {/* GPS map preview */}
       <div style={{ height: 76, background: 'linear-gradient(135deg, #e8f5f8, #d0ebf1)', position: 'relative', overflow: 'hidden' }}>
         <svg viewBox="0 0 340 76" width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
-          <polyline points="16,58 55,44 100,48 145,32 190,38 230,22 275,28 324,16"
+          <path id={routeId} d="M16,58 L55,44 L100,48 L145,32 L190,38 L230,22 L275,28 L324,16"
             fill="none" stroke="oklch(0.48 0.17 196)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           <circle cx="16" cy="58" r="4" fill={C.orange} />
           <circle cx="324" cy="16" r="4" fill="oklch(0.48 0.17 196)" />
+          {/* Paw walks the route on loop — the 2-second wow moment */}
+          <text fontSize="15" textAnchor="middle" dominantBaseline="middle">
+            🐾
+            {!rm && (
+              <animateMotion dur="3.2s" repeatCount="indefinite" calcMode="linear">
+                <mpath href={`#${routeId}`} />
+              </animateMotion>
+            )}
+          </text>
         </svg>
         <span style={{ position: 'absolute', top: 6, left: 8, background: 'rgba(255,255,255,0.88)', borderRadius: 6, padding: '2px 7px', fontFamily: 'var(--font-nunito)', fontSize: 9, fontWeight: 700, color: C.dark }}>GPS Route</span>
       </div>
@@ -308,7 +320,7 @@ export default function LandingPage() {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.4, delay: 0.38 }}
                 className="flex items-center gap-5 justify-center lg:justify-start flex-wrap">
-                {['3-day free trial', 'No app download', 'Walker uses WhatsApp'].map(t => (
+                {['3-day free trial', 'No app download', 'Works with any walker'].map(t => (
                   <span key={t} className="flex items-center gap-1.5"
                     style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 600, color: '#94A3B8' }}>
                     <Check size={12} style={{ color: C.teal }} strokeWidth={3} /> {t}
