@@ -19,6 +19,7 @@ interface Props {
   trialDaysRemaining?: number | null
   walkerToken?: string | null
   walkerName?: string | null
+  walkerPhone?: string | null
   dogName?: string | null
 }
 
@@ -104,7 +105,7 @@ function Spinner() {
   )
 }
 
-export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, trialStatus = 'no_trial', trialDaysRemaining, walkerToken, walkerName, dogName }: Props) {
+export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, trialStatus = 'no_trial', trialDaysRemaining, walkerToken, walkerName, walkerPhone, dogName }: Props) {
   const [loading, setLoading] = useState<'monthly' | null>(null)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -309,7 +310,11 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                 </p>
                 {walkerToken ? (
                   <a
-                    href={`https://wa.me/?text=${encodeURIComponent(`Hi${walkerName ? ` ${walkerName}` : ''}, please log today's walk on PupStep and send me the report. Here's your dashboard: https://pupstep.in/walker/${walkerToken}`)}`}
+                    href={(() => {
+                      const text = encodeURIComponent(`Hi${walkerName ? ` ${walkerName}` : ''}, please log today's walk on PupStep and send me the report. Here's your dashboard: https://pupstep.in/walker/${walkerToken}`)
+                      const digits = walkerPhone?.replace(/\D/g, '') ?? ''
+                      return digits ? `https://wa.me/91${digits}?text=${text}` : `https://wa.me/?text=${text}`
+                    })()}
                     target="_blank" rel="noopener noreferrer"
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '14px', borderRadius: 16, background: '#25D366', color: '#fff', fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none', boxSizing: 'border-box' }}
                   >

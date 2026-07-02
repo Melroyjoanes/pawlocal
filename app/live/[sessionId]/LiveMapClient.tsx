@@ -453,6 +453,8 @@ export default function LiveMapClient({ sessionId, session }: Props) {
               inset: 0,
               width: '100%',
               height: '100%',
+              touchAction: 'none',
+              overscrollBehavior: 'contain',
             }}
           />
 

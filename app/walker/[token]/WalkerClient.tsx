@@ -111,7 +111,13 @@ function LiveMap({
     })
   }, [poopEvents, peeEvents])
 
-  return <div ref={mapDivRef} className="w-full h-full" />
+  return (
+    <div
+      ref={mapDivRef}
+      className="w-full h-full"
+      style={{ touchAction: 'none', overscrollBehavior: 'contain' }}
+    />
+  )
 }
 
 interface WalkerClientProps {
@@ -663,6 +669,14 @@ export default function WalkerClient({
   const [addClientSuccess, setAddClientSuccess] = useState<string | null>(null)
   const [addClientError, setAddClientError] = useState<string | null>(null)
 
+  // Derived: the currently-selected dog's identity (walker may switch dogs via the picker).
+  // Falls back to the URL token's props when no connection is selected yet (single-dog walkers).
+  const selectedConn = connections.find(c => c.token === selectedToken)
+  const activeDogName = selectedConn?.dogName ?? dogName
+  const activeDogPhoto = selectedConn?.dogPhoto ?? dogPhotoUrl
+  const activeDogBreed = selectedConn?.dogBreed ?? dogBreed
+  const activeHealthNotes = selectedConn?.healthNotes ?? healthNotes
+
   // Demo walk state
   const [isDemoWalk, setIsDemoWalk] = useState(false)
   const [showDemoConfirm, setShowDemoConfirm] = useState(false)
@@ -836,20 +850,30 @@ export default function WalkerClient({
         }
         watchIdRef.current = navigator.geolocation.watchPosition(
           (p) => {
+            // Reject low-accuracy fixes (common right after GPS lock-on — can be 50-200m off)
+            if (p.coords.accuracy > 30) return
+
             const pt: GpsPoint = {
               lat: p.coords.latitude,
               lng: p.coords.longitude,
               ts: new Date().toISOString(),
             }
-            setCurrentPos({ lat: pt.lat, lng: pt.lng })
+
             setGpsRoute((prev) => {
               const last = prev[prev.length - 1]
               if (last) {
                 const delta = haversineKm(last.lat, last.lng, pt.lat, pt.lng)
+                const elapsedSec = (new Date(pt.ts).getTime() - new Date(last.ts).getTime()) / 1000
+                // Reject implausible jumps: a dog walk never exceeds ~15 km/h (4.2 m/s).
+                // Allow generous margin (20 m/s ≈ 72 km/h) to avoid rejecting valid fast segments,
+                // but still catch GPS teleport artifacts (jumping 200m in 1 second = 200 m/s).
+                const impliedSpeed = elapsedSec > 0 ? (delta * 1000) / elapsedSec : 0
+                if (impliedSpeed > 20) return prev // discard this point, keep previous route unchanged
                 setDistanceKm((d) => +(d + delta).toFixed(3))
               }
               return [...prev, pt]
             })
+            setCurrentPos({ lat: pt.lat, lng: pt.lng })
             lastPointRef.current = pt
           },
           (err) => {
@@ -947,20 +971,30 @@ export default function WalkerClient({
     if (navigator.geolocation) {
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
+          // Reject low-accuracy fixes (common right after GPS lock-on — can be 50-200m off)
+          if (pos.coords.accuracy > 30) return
+
           const point: GpsPoint = {
             lat: pos.coords.latitude,
             lng: pos.coords.longitude,
             ts: new Date().toISOString(),
           }
-          setCurrentPos({ lat: point.lat, lng: point.lng })
+
           setGpsRoute((prev) => {
             const last = prev[prev.length - 1]
             if (last) {
               const delta = haversineKm(last.lat, last.lng, point.lat, point.lng)
+              const elapsedSec = (new Date(point.ts).getTime() - new Date(last.ts).getTime()) / 1000
+              // Reject implausible jumps: a dog walk never exceeds ~15 km/h (4.2 m/s).
+              // Allow generous margin (20 m/s ≈ 72 km/h) to avoid rejecting valid fast segments,
+              // but still catch GPS teleport artifacts (jumping 200m in 1 second = 200 m/s).
+              const impliedSpeed = elapsedSec > 0 ? (delta * 1000) / elapsedSec : 0
+              if (impliedSpeed > 20) return prev // discard this point, keep previous route unchanged
               setDistanceKm((d) => +(d + delta).toFixed(3))
             }
             return [...prev, point]
           })
+          setCurrentPos({ lat: point.lat, lng: point.lng })
           lastPointRef.current = point
         },
         (err) => {
@@ -1573,9 +1607,9 @@ export default function WalkerClient({
           <div className="mx-5 mb-5 rounded-2xl bg-white border border-slate-100 px-4 py-4 flex items-center gap-4 shadow-sm">
             <div className="w-14 h-14 rounded-full flex-shrink-0 overflow-hidden"
               style={{ background: '#FF8C52' }}>
-              {dogPhotoUrl ? (
+              {activeDogPhoto ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={dogPhotoUrl} alt={dogName} className="w-full h-full object-cover" />
+                <img src={activeDogPhoto} alt={activeDogName} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-3xl">🐕</div>
               )}
@@ -1583,9 +1617,9 @@ export default function WalkerClient({
             <div className="flex-1 min-w-0">
               <p className="text-xs text-slate-500 font-medium">You&apos;re walking</p>
               <p className="font-bold text-[#0A2F35] text-xl leading-tight" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                {dogName}
+                {activeDogName}
               </p>
-              {dogBreed && <p className="text-xs text-slate-400">{dogBreed}</p>}
+              {activeDogBreed && <p className="text-xs text-slate-400">{activeDogBreed}</p>}
             </div>
             {phase === 'walking' && (
               <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1">
@@ -1596,10 +1630,10 @@ export default function WalkerClient({
           </div>
 
           {/* Health note */}
-          {healthNotes && (
+          {activeHealthNotes && (
             <div className="mx-5 mb-4 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-start gap-2.5">
               <span className="text-base flex-shrink-0 mt-0.5">⚠️</span>
-              <p className="text-sm text-amber-800 font-medium"><strong>Health note:</strong> {healthNotes}</p>
+              <p className="text-sm text-amber-800 font-medium"><strong>Health note:</strong> {activeHealthNotes}</p>
             </div>
           )}
 

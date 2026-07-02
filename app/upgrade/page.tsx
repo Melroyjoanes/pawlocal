@@ -69,7 +69,7 @@ export default async function UpgradePage() {
   const { data: walkerConn } = user
     ? await supabase
         .from('walker_connections')
-        .select('token, walker_name, dogs(name)')
+        .select('token, walker_name, walker_phone, dogs(name)')
         .eq('owner_id', user.id)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
@@ -82,6 +82,8 @@ export default async function UpgradePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const walkerName: string | null = (walkerConn as any)?.walker_name ?? null
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const walkerPhone: string | null = (walkerConn as any)?.walker_phone ?? null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dogName: string | null = (walkerConn as any)?.dogs?.name ?? null
 
   return (
@@ -93,6 +95,7 @@ export default async function UpgradePage() {
       trialDaysRemaining={trialDaysRemaining}
       walkerToken={walkerToken}
       walkerName={walkerName}
+      walkerPhone={walkerPhone}
       dogName={dogName}
     />
   )

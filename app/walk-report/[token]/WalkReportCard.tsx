@@ -82,22 +82,6 @@ function IconRoute() {
     </svg>
   )
 }
-function IconDrop() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
-    </svg>
-  )
-}
-function IconPoop() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2c-1.1 0-2 .9-2 2 0 .74.4 1.38 1 1.73V7H9.5C7.6 7 6 8.6 6 10.5c0 .17.01.34.04.5C4.83 11.35 4 12.33 4 13.5 4 15.43 5.57 17 7.5 17h9c1.93 0 3.5-1.57 3.5-3.5 0-1.17-.83-2.15-2.04-2.5.03-.16.04-.33.04-.5C18 8.6 16.4 7 14.5 7H13V5.73c.6-.35 1-.99 1-1.73 0-1.1-.9-2-2-2z" />
-      <rect x="8" y="17" width="8" height="2" rx="1" />
-      <rect x="9" y="19" width="6" height="2" rx="1" />
-    </svg>
-  )
-}
 function IconPaw() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -227,6 +211,28 @@ function PoopStat({ count, poopEvents }: {
   )
 }
 
+// Remove GPS outlier points that create implausible jumps (e.g. a bad first
+// fix right after location lock-on). A dog walk never exceeds ~15km/h, so any
+// consecutive-point jump implying a much higher speed is almost certainly a
+// GPS glitch, not real movement.
+function cleanRoute(points: { lat: number; lng: number }[]): { lat: number; lng: number }[] {
+  if (points.length < 3) return points
+  const cleaned: { lat: number; lng: number }[] = [points[0]]
+  for (let i = 1; i < points.length; i++) {
+    const prev = cleaned[cleaned.length - 1]
+    const curr = points[i]
+    const dLat = curr.lat - prev.lat
+    const dLng = curr.lng - prev.lng
+    // Rough distance in meters (good enough for outlier detection at this scale)
+    const distMeters = Math.sqrt(dLat * dLat + dLng * dLng) * 111000
+    // Reject single-point jumps further than 150m from the previous accepted point
+    // (typical GPS noise is under 30m; 150m in one reading is almost certainly bad)
+    if (distMeters > 150 && i < points.length - 1) continue
+    cleaned.push(curr)
+  }
+  return cleaned
+}
+
 // ─── Google Maps ──────────────────────────────────────────────────────────────
 function WalkMap({ routePoints, poopEvents, peeEvents }: {
   routePoints: { lat: number; lng: number }[]
@@ -238,13 +244,15 @@ function WalkMap({ routePoints, poopEvents, peeEvents }: {
   useEffect(() => {
     if (!routePoints?.length || !mapRef.current) return
 
+    const cleanedRoutePoints = cleanRoute(routePoints)
+
     function initMap() {
       if (!mapRef.current) return
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const gm = (window as any).google.maps
       const map = new gm.Map(mapRef.current, {
         zoom: 15,
-        center: routePoints[0],
+        center: cleanedRoutePoints[0],
         disableDefaultUI: true,
         gestureHandling: 'cooperative',
         styles: [
@@ -260,7 +268,7 @@ function WalkMap({ routePoints, poopEvents, peeEvents }: {
 
       // Route polyline
       new gm.Polyline({
-        path: routePoints,
+        path: cleanedRoutePoints,
         strokeColor: 'oklch(0.48 0.17 196)',
         strokeWeight: 5,
         strokeOpacity: 0.95,
@@ -269,13 +277,13 @@ function WalkMap({ routePoints, poopEvents, peeEvents }: {
 
       // Start dot
       new gm.Marker({
-        position: routePoints[0], map,
+        position: cleanedRoutePoints[0], map,
         icon: { path: gm.SymbolPath.CIRCLE, scale: 8, fillColor: '#22c55e', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
         zIndex: 10,
       })
       // End dot
       new gm.Marker({
-        position: routePoints[routePoints.length - 1], map,
+        position: cleanedRoutePoints[cleanedRoutePoints.length - 1], map,
         icon: { path: gm.SymbolPath.CIRCLE, scale: 8, fillColor: 'oklch(0.48 0.17 196)', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
         zIndex: 10,
       })
@@ -301,7 +309,7 @@ function WalkMap({ routePoints, poopEvents, peeEvents }: {
       })
 
       const bounds = new gm.LatLngBounds()
-      routePoints.forEach(p => bounds.extend(p))
+      cleanedRoutePoints.forEach(p => bounds.extend(p))
       poopEvents?.forEach(e => bounds.extend({ lat: e.lat, lng: e.lng }))
       peeEvents?.forEach(e => bounds.extend({ lat: e.lat, lng: e.lng }))
       map.fitBounds(bounds, { top: 36, bottom: 36, left: 36, right: 36 })
@@ -447,7 +455,7 @@ export default function WalkReportCard({
             style={{ background: '#fff', borderRadius: 24, overflow: 'hidden', boxShadow: CLAY }}
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1, ease: EASE }}>
-            <div style={{ width: '100%', height: 240 }}>
+            <div style={{ width: '100%', height: 240, touchAction: 'none', overscrollBehavior: 'contain' }}>
               <WalkMap
                 routePoints={report.route_points!}
                 poopEvents={report.poop_events ?? []}
@@ -457,11 +465,11 @@ export default function WalkReportCard({
             {/* Legend */}
             <div style={{ padding: '10px 16px', display: 'flex', gap: 16, alignItems: 'center', borderTop: '1px solid rgba(10,47,53,0.06)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ color: '#1E6DB5', display: 'flex' }}><IconDrop /></span>
+                <span style={{ fontSize: 16 }}>💧</span>
                 <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 600, color: '#374151' }}>Pee</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ color: '#7C3A18', display: 'flex' }}><IconPoop /></span>
+                <span style={{ fontSize: 16 }}>💩</span>
                 <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 600, color: '#374151' }}>Poop</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>

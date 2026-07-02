@@ -154,7 +154,13 @@ function LiveMap({
     })
   }, [poopEvents, peeEvents])
 
-  return <div ref={mapDivRef} className="w-full h-full" />
+  return (
+    <div
+      ref={mapDivRef}
+      className="w-full h-full"
+      style={{ touchAction: 'none', overscrollBehavior: 'contain' }}
+    />
+  )
 }
 
 export default function LiveWalkClient({

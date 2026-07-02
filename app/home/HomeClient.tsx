@@ -1030,6 +1030,8 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
           const dogName = firstDog?.name ?? 'your dog'
           const walkerToken = firstConn?.token ?? ''
           const waText = encodeURIComponent(`Hi ${walkerName}, please use PupStep for today's walk with ${dogName}. Here's your dashboard link: pupstep.in/walker/${walkerToken}`)
+          const walkerPhone = firstConn?.walker_phone?.replace(/\D/g, '') ?? ''
+          const waHref = walkerPhone ? `https://wa.me/91${walkerPhone}?text=${waText}` : `https://wa.me/?text=${waText}`
           return (
             <div style={{ background: '#ffffff', border: '1.5px solid oklch(0.48 0.17 196 / 0.2)', borderRadius: '16px', padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
               <span style={{ fontSize: 48 }}>🐾</span>
@@ -1039,7 +1041,7 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
                 <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', color: '#6B7280', margin: 0 }}>Send them a reminder to use PupStep today.</p>
               </div>
               <a
-                href={`https://wa.me/?text=${waText}`}
+                href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', background: '#25D366', color: '#ffffff', borderRadius: '12px', padding: '13px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', boxSizing: 'border-box' }}

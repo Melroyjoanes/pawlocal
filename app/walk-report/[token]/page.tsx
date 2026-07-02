@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
@@ -28,7 +29,9 @@ type WalkReport = {
   pee_events: {lat: number, lng: number, time: string}[] | null
 }
 
-async function getReport(token: string): Promise<WalkReport | null> {
+// cache() dedupes this across generateMetadata + the page body within the
+// same request — without it, both call sites ran the same 2 DB queries.
+const getReport = cache(async (token: string): Promise<WalkReport | null> => {
   const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -74,7 +77,7 @@ async function getReport(token: string): Promise<WalkReport | null> {
     poop_events: data.poop_events ?? null,
     pee_events: data.pee_events ?? null,
   }
-}
+})
 
 export async function generateMetadata({
   params,
@@ -158,44 +161,42 @@ export default async function WalkReportPage({
   const { data: { user } } = await supabase.auth.getUser()
 
   const isClaimedByMe = !!user && report.customer_id === user.id
+  const adminCheck = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 
   // Check if this is the owner's first-ever walk report
   // Wrapped in try-catch — owner_id column requires migration 047
-  let isFirstReport = false
-  try {
-    if (report.customer_id) {
-      const adminFirst = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
+  const firstReportCheck = (async () => {
+    try {
+      if (!report.customer_id) return false
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { count } = await (adminFirst.from('walk_reports') as any)
+      const { count } = await (adminCheck.from('walk_reports') as any)
         .select('id', { count: 'exact', head: true })
         .eq('customer_id', report.customer_id)  // use customer_id — always exists
-      isFirstReport = (count ?? 0) === 1
-    }
-  } catch { /* non-critical — skip if column missing */ }
+      return (count ?? 0) === 1
+    } catch { return false /* non-critical — skip if column missing */ }
+  })()
 
   // V2: owner is whoever has this dog via walker_connections
   // Simple check: if logged-in user's customer_id matches OR if they have a
   // walker connection for this report's connection_id
-  let isLinkedOwner = false
-  try {
-    if (user && report.provider_id === null) {
+  const linkedOwnerCheck = (async () => {
+    try {
+      if (!(user && report.provider_id === null)) return false
       // V2 report — check if user owns a dog linked via walker_connections
-      const adminCheck = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: conn } = await (adminCheck.from('walker_connections') as any)
         .select('owner_id')
         .eq('owner_id', user.id)
         .limit(1)
         .maybeSingle()
-      isLinkedOwner = !!conn
-    }
-  } catch { /* non-critical */ }
+      return !!conn
+    } catch { return false /* non-critical */ }
+  })()
+
+  const [isFirstReport, isLinkedOwner] = await Promise.all([firstReportCheck, linkedOwnerCheck])
 
   const isOwner = isLinkedOwner || isClaimedByMe
 
