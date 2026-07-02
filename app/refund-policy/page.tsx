@@ -51,18 +51,18 @@ export default function RefundPolicyPage() {
 
           <Section title="2. Cancellation">
             <ul>
-              <li>You may cancel your subscription at any time from your <Link href="/my-account" style={{ color: 'oklch(0.48 0.17 196)' }}>My Account</Link> page.</li>
-              <li>After cancellation, your Pro access continues until the end of the current billing period.</li>
-              <li>You will not be charged for subsequent billing cycles.</li>
-              <li>No partial refund is issued for unused days within an already-paid month.</li>
+              <li>Plans do not auto-renew, so there is nothing to cancel — your access simply ends 30 days after payment unless you renew manually.</li>
+              <li>Your Pro access always continues until the end of the paid 30-day period.</li>
+              <li>No charge is ever made without your explicit action.</li>
+              <li>No partial refund is issued for unused days within an already-paid period.</li>
             </ul>
           </Section>
 
           <Section title="3. Refund Eligibility">
             <ul>
               <li><strong>Within 7 days of the first payment:</strong> Full refund of ₹199, no questions asked.</li>
-              <li><strong>After 7 days:</strong> No refund for the current month. Cancel to stop future charges.</li>
-              <li><strong>Renewal payments:</strong> If you did not intend to renew, contact us within 48 hours of the auto-renewal charge for a full refund.</li>
+              <li><strong>After 7 days:</strong> No refund for the current 30-day period.</li>
+              <li><strong>Renewal payments:</strong> Plans do not auto-renew — every payment is made manually by you. If you paid by mistake, contact us within 48 hours for a full refund.</li>
             </ul>
             <SubSection title="Non-refundable situations">
               <ul>

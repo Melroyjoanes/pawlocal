@@ -129,7 +129,7 @@ export default function ConnectClient({
     if (digits.length !== 10) return
     setLookingUp(true)
     try {
-      const res = await fetch(`/api/walker/lookup?phone=${digits}`)
+      const res = await fetch(`/api/walker/lookup?phone=${digits}&token=${encodeURIComponent(token)}`)
       const data = await res.json()
       if (data.found) {
         setRecognisedName(data.name as string)

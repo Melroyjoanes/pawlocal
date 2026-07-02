@@ -73,7 +73,7 @@ export default function TermsPage() {
                   Terms of Service
                 </a>.
               </li>
-              <li>Subscriptions auto-renew. You may cancel at any time from your account settings before the next billing date.</li>
+              <li>Each payment unlocks 30 days of report delivery. Plans do not auto-renew — you will receive a reminder before your access expires and can renew manually. No charge is ever made without your action.</li>
               <li>Please refer to our <Link href="/refund-policy" style={{ color: 'oklch(0.48 0.17 196)' }}>Refund &amp; Cancellation Policy</Link> for details on refunds.</li>
             </ul>
           </Section>

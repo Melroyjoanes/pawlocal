@@ -22,7 +22,7 @@ export async function POST(
 
   // Check current status
   const { data: connection, error: fetchError } = await (db.from('walker_connections') as any)
-    .select('id, status, otp')
+    .select('id, status, otp, otp_attempts')
     .eq('token', token)
     .single()
 
@@ -34,8 +34,20 @@ export async function POST(
     return NextResponse.json({ error: 'Already claimed' }, { status: 409 })
   }
 
+  // Brute-force protection: a 4-digit OTP has only 10,000 combinations.
+  // Lock the connection after 5 wrong attempts — owner regenerates the QR to reset.
+  const attempts: number = connection.otp_attempts ?? 0
+  if (attempts >= 5) {
+    return NextResponse.json({ error: 'Too many wrong attempts. Ask the owner to generate a new QR code.' }, { status: 429 })
+  }
+
   // Verify OTP if one exists on the connection
   if (connection.otp && otp?.toString() !== connection.otp) {
+    await (db.from('walker_connections') as any)
+      .update({ otp_attempts: attempts + 1 })
+      .eq('id', connection.id)
+      .then(() => {})
+      .catch(() => {})
     return NextResponse.json({ error: 'Incorrect code. Please ask the owner to show you their code again.' }, { status: 401 })
   }
 
