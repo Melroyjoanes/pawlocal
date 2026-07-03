@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
@@ -97,23 +96,9 @@ export default function LoginClient({ next }: Props) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '24px 20px',
+        padding: '16px 20px',
       }}
     >
-      {/* Logo */}
-      <div style={{ marginBottom: 28 }}>
-        <Link href="/">
-          <Image
-            src="/logo.webp"
-            alt="PupStep"
-            width={130}
-            height={48}
-            style={{ height: 40, width: 'auto' }}
-            priority
-          />
-        </Link>
-      </div>
-
       {/* Auth card */}
       <div
         style={{
@@ -122,7 +107,7 @@ export default function LoginClient({ next }: Props) {
           background: '#fff',
           borderRadius: 24,
           boxShadow: '0 4px 0 rgba(0,0,0,0.06), 0 12px 36px rgba(10,47,53,0.10)',
-          padding: '28px 24px',
+          padding: '24px 22px',
         }}
       >
         {emailView === 'otp' ? (
@@ -243,7 +228,7 @@ export default function LoginClient({ next }: Props) {
             <p
               style={{
                 textAlign: 'center',
-                marginBottom: 24,
+                marginBottom: 18,
                 fontSize: 13,
                 color: '#6B7280',
                 fontFamily: 'var(--font-nunito, sans-serif)',
@@ -271,7 +256,7 @@ export default function LoginClient({ next }: Props) {
                 background: '#fff',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.5 : 1,
-                marginBottom: 16,
+                marginBottom: 12,
                 fontFamily: 'var(--font-nunito, sans-serif)',
                 transition: 'border-color 0.15s',
               }}
@@ -293,7 +278,7 @@ export default function LoginClient({ next }: Props) {
             </button>
 
             {/* Divider */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
               <div style={{ flex: 1, height: 1, background: '#F3F4F6' }} />
               <span style={{ fontSize: 12, color: '#9CA3AF', fontWeight: 500, fontFamily: 'var(--font-nunito, sans-serif)' }}>or</span>
               <div style={{ flex: 1, height: 1, background: '#F3F4F6' }} />
@@ -316,12 +301,12 @@ export default function LoginClient({ next }: Props) {
                 color: '#0A2F35',
                 fontFamily: 'var(--font-nunito, sans-serif)',
                 boxSizing: 'border-box',
-                marginBottom: 12,
+                marginBottom: 10,
               } as React.CSSProperties}
             />
 
             {error && (
-              <p style={{ fontSize: 13, color: '#EF4444', textAlign: 'center', marginBottom: 12 }}>{error}</p>
+              <p style={{ fontSize: 13, color: '#EF4444', textAlign: 'center', marginBottom: 10 }}>{error}</p>
             )}
 
             <button
@@ -343,7 +328,6 @@ export default function LoginClient({ next }: Props) {
                 border: 'none',
                 cursor: loading || !emailInput.trim() ? 'not-allowed' : 'pointer',
                 opacity: loading || !emailInput.trim() ? 0.5 : 1,
-                marginBottom: 16,
               }}
             >
               {loading ? (
@@ -364,10 +348,10 @@ export default function LoginClient({ next }: Props) {
           fontFamily: 'var(--font-nunito, sans-serif)',
           fontSize: 12,
           color: '#9CA3AF',
-          marginTop: 20,
+          marginTop: 14,
           textAlign: 'center',
           maxWidth: 320,
-          lineHeight: 1.6,
+          lineHeight: 1.5,
         }}
       >
         By continuing you agree to our{' '}

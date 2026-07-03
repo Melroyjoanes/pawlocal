@@ -26,7 +26,12 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
     pathname.startsWith('/setup/') ||
     pathname === '/upgrade' ||
     pathname.startsWith('/walker-guide') ||
-    pathname === '/install'
+    pathname === '/install' ||
+    // Focused auth screens — a sign-in card doesn't need the marketplace
+    // header/footer around it, it's a dead end for a task the user wants
+    // to finish in one glance
+    pathname === '/login' ||
+    pathname === '/account'
 
   if (isIsolated) return <>{children}</>
 
