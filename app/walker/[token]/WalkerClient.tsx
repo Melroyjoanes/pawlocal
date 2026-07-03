@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { parseCareFocus } from '@/lib/careFocus'
+import { LoadingButton } from '@/components/LoadingButton'
+import { loadGoogleMaps } from '@/lib/googleMapsLoader'
 
 // ── Live map shown to walker during walk ──────────────────────────────────────
 function LiveMap({
@@ -61,21 +63,9 @@ function LiveMap({
       })
     }
 
-    if ((window as { google?: { maps: typeof google.maps } }).google?.maps) {
-      initMap()
-    } else {
-      const existing = document.getElementById('gmaps-script')
-      if (!existing) {
-        const script = document.createElement('script')
-        script.id = 'gmaps-script'
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
-        script.async = true
-        script.onload = initMap
-        document.head.appendChild(script)
-      } else {
-        existing.addEventListener('load', initMap)
-      }
-    }
+    loadGoogleMaps(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
+      .then(initMap)
+      .catch(err => console.error('[WalkerClient] failed to load Google Maps', err))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pan + update route on every new GPS point
@@ -382,22 +372,15 @@ function SettingsTab({
               ))}
             </div>
           </div>
-          <button
-            type="button"
+          <LoadingButton
             onClick={handleSaveProfile}
-            disabled={saving}
-            className="w-full rounded-2xl font-bold text-white disabled:opacity-60 active:scale-[0.97] transition-transform"
-            style={{
-              background: 'oklch(0.48 0.17 196)',
-              minHeight: 48,
-              fontFamily: 'var(--font-fredoka)',
-              fontSize: 16,
-              border: 'none',
-              cursor: 'pointer',
-            }}
+            loading={saving}
+            loadingText="Saving…"
+            className="rounded-2xl"
+            style={{ minHeight: 48, fontSize: 16 }}
           >
-            {saving ? 'Saving…' : 'Save changes'}
-          </button>
+            Save changes
+          </LoadingButton>
         </div>
       </div>
 
@@ -607,8 +590,10 @@ function SettingsTab({
                 {addClientError}
               </p>
             )}
-            <button
-              disabled={addClientOtp.length !== 4 || addClientLoading}
+            <LoadingButton
+              disabled={addClientOtp.length !== 4}
+              loading={addClientLoading}
+              loadingText="Connecting…"
               onClick={async () => {
                 setAddClientLoading(true)
                 setAddClientError(null)
@@ -627,14 +612,16 @@ function SettingsTab({
                 } catch { setAddClientError('Network error. Try again.') }
                 finally { setAddClientLoading(false) }
               }}
-              style={{ width: '100%', minHeight: 52, borderRadius: 12, border: 'none',
+              className="rounded-xl"
+              style={{
+                minHeight: 52,
+                fontSize: 16,
                 background: addClientOtp.length === 4 ? 'oklch(0.48 0.17 196)' : '#E5E7EB',
                 color: addClientOtp.length === 4 ? '#fff' : '#9CA3AF',
-                fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700,
-                cursor: addClientOtp.length === 4 ? 'pointer' : 'not-allowed' }}
+              }}
             >
-              {addClientLoading ? 'Connecting…' : 'Connect →'}
-            </button>
+              Connect →
+            </LoadingButton>
           </>
         )}
       </div>
@@ -746,6 +733,12 @@ export default function WalkerClient({
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [startingWalk, setStartingWalk] = useState(false)
+  const [endingWalk, setEndingWalk] = useState(false)
+  // Brief tap-lock + "logged" confirmation so a walker who isn't sure the tap
+  // registered doesn't fire off multiple duplicate pee/poop events.
+  const [peeTapLocked, setPeeTapLocked] = useState(false)
+  const [poopTapLocked, setPoopTapLocked] = useState(false)
   const [parentWaLink, setParentWaLink] = useState<string | null>(null)
   const [reportUrl, setReportUrl] = useState<string | null>(null)
 
@@ -1594,16 +1587,19 @@ export default function WalkerClient({
             <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#6B7280', margin: '0 0 20px', textAlign: 'center' }}>
               Add a photo? The owner can see it in the report.
             </p>
-            <button
+            <LoadingButton
+              loading={poopPhotoUploading}
+              loadingText="Uploading photo…"
               onClick={() => poopPhotoInputRef.current?.click()}
-              disabled={poopPhotoUploading}
-              style={{ width: '100%', padding: '14px', borderRadius: 16, background: '#FF8C52', color: '#fff', fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, border: 'none', cursor: 'pointer', marginBottom: 10, opacity: poopPhotoUploading ? 0.6 : 1 }}>
-              {poopPhotoUploading ? 'Uploading...' : '📷 Take photo'}
-            </button>
+              style={{ padding: '14px', borderRadius: 16, background: '#FF8C52', fontSize: 16, marginBottom: 10 }}
+            >
+              📷 Take photo
+            </LoadingButton>
             <button
               onClick={handlePoopSkip}
               disabled={poopPhotoUploading}
-              style={{ width: '100%', padding: '14px', borderRadius: 16, background: '#F3F4F6', color: '#6B7280', fontFamily: 'var(--font-nunito)', fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
+              className="disabled:opacity-60"
+              style={{ width: '100%', padding: '14px', borderRadius: 16, background: '#F3F4F6', color: '#6B7280', fontFamily: 'var(--font-nunito)', fontSize: 15, fontWeight: 700, border: 'none', cursor: poopPhotoUploading ? 'not-allowed' : 'pointer' }}>
               Skip
             </button>
           </div>
@@ -1785,13 +1781,20 @@ export default function WalkerClient({
                   </div>
                 )
               })}
-              <button
-                onClick={() => { setIsDemoWalk(false); startWalk() }}
-                className="w-full py-5 rounded-2xl font-bold text-2xl text-white shadow-lg active:scale-[0.97] transition-transform"
-                style={{ background: 'linear-gradient(135deg, #FF8C52 0%, #F07030 100%)', fontFamily: 'var(--font-fredoka)' }}
+              <LoadingButton
+                loading={startingWalk}
+                loadingText="Starting walk…"
+                onClick={() => {
+                  if (startingWalk) return
+                  setStartingWalk(true)
+                  setIsDemoWalk(false)
+                  startWalk()
+                }}
+                className="rounded-2xl text-2xl shadow-lg"
+                style={{ minHeight: 68, background: 'linear-gradient(135deg, #FF8C52 0%, #F07030 100%)', fontSize: 22 }}
               >
                 🐾 Start Walk
-              </button>
+              </LoadingButton>
               <div className="flex flex-col items-center gap-1">
                 <p className="text-center text-xs text-slate-400">GPS tracking starts automatically when you begin</p>
                 <button
@@ -2064,13 +2067,19 @@ export default function WalkerClient({
                   {/* Toilet button */}
                   <button
                     type="button"
-                    onClick={handlePeeTap}
-                    className="rounded-2xl border-2 border-blue-200 bg-blue-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform"
+                    onClick={() => {
+                      if (peeTapLocked) return
+                      setPeeTapLocked(true)
+                      handlePeeTap()
+                      setTimeout(() => setPeeTapLocked(false), 700)
+                    }}
+                    disabled={peeTapLocked}
+                    className="rounded-2xl border-2 border-blue-200 bg-blue-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform disabled:opacity-70"
                     style={{ minHeight: 80 }}
                   >
-                    <span className="text-3xl">💧</span>
+                    <span className="text-3xl">{peeTapLocked ? '✅' : '💧'}</span>
                     <span className="text-sm font-bold text-blue-700" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                      Toilet 💧
+                      {peeTapLocked ? 'Logged!' : 'Toilet 💧'}
                     </span>
                     {livePeeCount > 0 && (
                       <span className="text-xs font-bold text-blue-500 bg-blue-100 rounded-full px-2 py-0.5">
@@ -2086,13 +2095,19 @@ export default function WalkerClient({
                     )}
                     <button
                       type="button"
-                      onClick={handlePoopTap}
-                      className="rounded-2xl border-2 border-amber-200 bg-amber-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform"
+                      onClick={() => {
+                        if (poopTapLocked) return
+                        setPoopTapLocked(true)
+                        handlePoopTap()
+                        setTimeout(() => setPoopTapLocked(false), 700)
+                      }}
+                      disabled={poopTapLocked}
+                      className="rounded-2xl border-2 border-amber-200 bg-amber-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform disabled:opacity-70"
                       style={{ minHeight: 80, boxShadow: (careFocusKeys.includes('stomach') || careFocusKeys.includes('recovery')) ? '0 0 0 3px rgba(255,140,82,0.4)' : undefined }}
                     >
-                      <span className="text-3xl">💩</span>
+                      <span className="text-3xl">{poopTapLocked ? '✅' : '💩'}</span>
                       <span className="text-sm font-bold text-amber-700" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                        Potty + Photo 💩
+                        {poopTapLocked ? 'Logged!' : 'Potty + Photo 💩'}
                       </span>
                       {livePoopCount > 0 && (
                         <span className="text-xs font-bold text-amber-600 bg-amber-100 rounded-full px-2 py-0.5">
@@ -2130,13 +2145,25 @@ export default function WalkerClient({
                       </p>
                     </div>
                   ) : (
-                    <button
-                      onClick={endWalk}
-                      className="w-full py-4 rounded-2xl font-bold text-xl text-white shadow-md active:scale-[0.97] transition-transform"
-                      style={{ background: isDemoWalk ? '#FF8C52' : '#DC2626', fontFamily: 'var(--font-fredoka)' }}
+                    <LoadingButton
+                      loading={endingWalk}
+                      loadingText="Ending walk…"
+                      onClick={() => {
+                        if (endingWalk) return
+                        setEndingWalk(true)
+                        try {
+                          endWalk()
+                        } finally {
+                          // endWalk() may just show a demo "walk more" nudge without
+                          // changing phase — re-enable so the walker can tap again.
+                          setEndingWalk(false)
+                        }
+                      }}
+                      className="rounded-2xl text-xl shadow-md"
+                      style={{ minHeight: 56, background: isDemoWalk ? '#FF8C52' : '#DC2626', fontSize: 20 }}
                     >
                       {isDemoWalk ? 'End Practice Walk ✓' : 'End Walk'}
-                    </button>
+                    </LoadingButton>
                   )}
                 </div>
               </div>
@@ -2249,11 +2276,15 @@ export default function WalkerClient({
                   </div>
                 )}
 
-                <button type="submit" disabled={submitting}
-                  className="w-full py-4 rounded-2xl font-bold text-lg text-white disabled:opacity-60 active:scale-[0.98] transition-transform shadow-md min-h-[56px]"
-                  style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)' }}>
-                  {submitting ? 'Sending report…' : `Send to ${ownerFirstName} ✓`}
-                </button>
+                <LoadingButton
+                  type="submit"
+                  loading={submitting}
+                  loadingText="Sending report…"
+                  className="rounded-2xl text-lg shadow-md"
+                  style={{ minHeight: 56, background: '#FF8C52' }}
+                >
+                  {`Send to ${ownerFirstName} ✓`}
+                </LoadingButton>
               </form>
             </div>
           )}

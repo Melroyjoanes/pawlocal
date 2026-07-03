@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { LoadingButton } from '@/components/LoadingButton'
 
 interface WalkerConnection {
   id: string
@@ -298,14 +299,15 @@ export default function StartWalkPanel({ walkerName, walkerPhone }: { walkerName
             {activeWalk.gpsError && (
               <p className="text-xs text-amber-300 mb-3">⚠️ {activeWalk.gpsError}</p>
             )}
-            <button
+            <LoadingButton
               onClick={handleEndWalk}
-              disabled={ending}
-              className="w-full py-3.5 rounded-xl font-bold text-base text-[#0A2F35] bg-white disabled:opacity-60 active:scale-[0.98] transition-transform"
-              style={{ fontFamily: 'var(--font-fredoka)' }}
+              loading={ending}
+              loadingText="Ending…"
+              className="rounded-xl text-base"
+              style={{ padding: '14px', background: '#fff', color: '#0A2F35' }}
             >
-              {ending ? 'Ending…' : 'End Walk →'}
-            </button>
+              End Walk →
+            </LoadingButton>
           </motion.div>
         )}
       </AnimatePresence>

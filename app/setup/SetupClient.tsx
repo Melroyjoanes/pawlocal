@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import AuthModal from '@/components/AuthModal'
+import { LoadingButton } from '@/components/LoadingButton'
 
 interface Props {
   user: { id: string; fullName: string | null } | null
@@ -783,34 +784,14 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
           )}
 
           {/* CTA */}
-          <button
-            type="button"
+          <LoadingButton
             onClick={handleCreateWalkerLink}
-            disabled={loading}
-            style={{
-              ...ctaStyle,
-              background: loading ? '#FDB896' : '#FF8C52',
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
-            onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#e87a40' }}
-            onMouseLeave={e => { if (!loading) e.currentTarget.style.background = loading ? '#FDB896' : '#FF8C52' }}
+            loading={loading}
+            loadingText="Creating link…"
+            style={{ ...ctaStyle, background: '#FF8C52' }}
           >
-            {loading ? (
-              <>
-                <span style={{
-                  display: 'inline-block',
-                  width: 16, height: 16,
-                  border: '2px solid rgba(255,255,255,0.4)',
-                  borderTopColor: '#fff',
-                  borderRadius: '50%',
-                  animation: 'spin 0.7s linear infinite',
-                }} />
-                Creating link...
-              </>
-            ) : (
-              'Create walker link →'
-            )}
-          </button>
+            Create walker link →
+          </LoadingButton>
 
           {!user && (
             <p style={{ textAlign: 'center', fontSize: 12, color: '#9CA3AF', margin: '-8px 0 0' }}>

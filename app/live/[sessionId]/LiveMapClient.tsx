@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { loadGoogleMaps } from '@/lib/googleMapsLoader'
 
 /* ─── Types ──────────────────────────────────────────────────── */
 interface SessionData {
@@ -97,35 +98,21 @@ export default function LiveMapClient({ sessionId, session }: Props) {
     if (mapsLoadedRef.current) return
     if (typeof window === 'undefined') return
 
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
+    // NOTE: this used to read NEXT_PUBLIC_GOOGLE_MAPS_KEY, which isn't set anywhere in
+    // .env — only NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is (see .env.example / other map
+    // components in this app). That meant this page's map silently never loaded.
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
     if (!apiKey) {
-      console.error('[LiveMap] NEXT_PUBLIC_GOOGLE_MAPS_KEY is not set')
+      console.error('[LiveMap] NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is not set')
       return
     }
 
-    // If already loaded by another instance
-    if (window.google?.maps) {
-      mapsLoadedRef.current = true
-      setMapsReady(true)
-      return
-    }
-
-    const callbackName = '__pupstep_maps_cb__'
-    ;(window as unknown as Record<string, unknown>)[callbackName] = () => {
-      mapsLoadedRef.current = true
-      setMapsReady(true)
-    }
-
-    const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=${callbackName}`
-    script.async = true
-    script.defer = true
-    script.id = 'google-maps-script'
-    document.head.appendChild(script)
-
-    return () => {
-      // Don't remove — map stays loaded for navigation
-    }
+    loadGoogleMaps(apiKey)
+      .then(() => {
+        mapsLoadedRef.current = true
+        setMapsReady(true)
+      })
+      .catch(err => console.error('[LiveMap] failed to load Google Maps', err))
   }, [])
 
   /* ── Init map once Google Maps is ready ──────────────────── */

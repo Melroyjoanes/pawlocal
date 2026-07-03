@@ -153,12 +153,20 @@ export default async function WalkReportPage({
   params: Promise<{ token: string }>
 }) {
   const { token } = await params
-  const report = await getReport(token)
+
+  // getReport() (a DB query) and the auth lookup (a network round-trip to Supabase
+  // Auth to validate/refresh the session) are independent — run them concurrently
+  // instead of waiting on the report before even starting the auth check.
+  const [report, { user }] = await Promise.all([
+    getReport(token),
+    (async () => {
+      const supabase = await createServerClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      return { user }
+    })(),
+  ])
 
   if (!report) notFound()
-
-  const supabase = await createServerClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
   const isClaimedByMe = !!user && report.customer_id === user.id
   const adminCheck = createClient(

@@ -442,10 +442,10 @@ export default function MyAccountClient({
                   <button
                     onClick={handleSaveName}
                     disabled={savingName}
-                    className="text-xs font-bold disabled:opacity-50"
+                    className="text-xs font-bold disabled:opacity-50 whitespace-nowrap"
                     style={{ color: TEAL, minHeight: 44, minWidth: 44 }}
                   >
-                    {savingName ? '…' : 'Save'}
+                    {savingName ? 'Saving…' : 'Save'}
                   </button>
                   <button
                     onClick={() => { setEditingName(false); setNameInput(displayName) }}
@@ -527,10 +527,10 @@ export default function MyAccountClient({
                 <button
                   onClick={handleSavePhone}
                   disabled={savingPhone}
-                  className="text-xs font-bold disabled:opacity-50"
+                  className="text-xs font-bold disabled:opacity-50 whitespace-nowrap"
                   style={{ color: TEAL, minHeight: 44, minWidth: 44 }}
                 >
-                  {savingPhone ? '…' : 'Save'}
+                  {savingPhone ? 'Saving…' : 'Save'}
                 </button>
                 <button
                   onClick={() => { setEditingPhone(false); setPhoneInput(phone) }}

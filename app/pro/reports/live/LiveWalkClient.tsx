@@ -5,6 +5,7 @@ import { AnimatePresence, motion, type Variants } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import ClientSelector, { type ProviderClient } from '@/components/ClientSelector'
+import { loadGoogleMaps } from '@/lib/googleMapsLoader'
 
 type WalkState = 'ready' | 'walking' | 'summary' | 'done'
 
@@ -103,21 +104,9 @@ function LiveMap({
       })
     }
 
-    if ((window as any).google?.maps) {
-      initMap()
-    } else {
-      const existing = document.getElementById('gmaps-script')
-      if (!existing) {
-        const script = document.createElement('script')
-        script.id = 'gmaps-script'
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
-        script.async = true
-        script.onload = initMap
-        document.head.appendChild(script)
-      } else {
-        existing.addEventListener('load', initMap)
-      }
-    }
+    loadGoogleMaps(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
+      .then(initMap)
+      .catch(err => console.error('[LiveMap] failed to load Google Maps', err))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pan + update route on every new GPS point

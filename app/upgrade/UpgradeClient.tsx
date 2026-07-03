@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import ParentBottomNav from '@/components/ParentBottomNav'
+import { LoadingButton } from '@/components/LoadingButton'
 
 declare global {
   interface Window {
@@ -94,15 +95,6 @@ function loadRazorpay(): Promise<void> {
     script.onerror = () => reject(new Error('Failed to load Razorpay'))
     document.body.appendChild(script)
   })
-}
-
-function Spinner() {
-  return (
-    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-    </svg>
-  )
 }
 
 export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, trialStatus = 'no_trial', trialDaysRemaining, walkerToken, walkerName, walkerPhone, dogName }: Props) {
@@ -446,14 +438,16 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                 ))}
               </ul>
               {isLoggedIn ? (
-                <button
+                <LoadingButton
                   onClick={() => handleCheckout('monthly')}
+                  loading={loading === 'monthly'}
                   disabled={loading !== null}
-                  className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
-                  style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
+                  loadingText="Processing…"
+                  className="rounded-[18px] text-sm"
+                  style={{ padding: '16px', background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE }}
                 >
-                  {loading === 'monthly' ? <><Spinner /> Processing…</> : 'Upgrade to Pro — ₹199/month'}
-                </button>
+                  Upgrade to Pro — ₹199/month
+                </LoadingButton>
               ) : (
                 <Link
                   href="/login?next=/upgrade"
@@ -524,14 +518,16 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                 ))}
               </ul>
               {isLoggedIn ? (
-                <button
+                <LoadingButton
                   onClick={() => handleCheckout('monthly')}
+                  loading={loading === 'monthly'}
                   disabled={loading !== null}
-                  className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center gap-2 transition-opacity disabled:opacity-60"
-                  style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
+                  loadingText="Processing…"
+                  className="rounded-[18px] text-sm"
+                  style={{ padding: '16px', background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE }}
                 >
-                  {loading === 'monthly' ? <><Spinner /> Processing…</> : 'Upgrade to Pro — ₹199/month'}
-                </button>
+                  Upgrade to Pro — ₹199/month
+                </LoadingButton>
               ) : (
                 <Link
                   href="/login?next=/upgrade"

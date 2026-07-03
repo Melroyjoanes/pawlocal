@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { getConnectionByToken } from '@/lib/getConnectionByToken'
 import ConnectClient from './ConnectClient'
 
 interface ConnectPageProps {
@@ -8,10 +9,12 @@ interface ConnectPageProps {
 export default async function ConnectPage({ params }: ConnectPageProps) {
   const { token } = await params
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-  const res = await fetch(`${baseUrl}/api/connect/${token}`, { cache: 'no-store' })
+  // Call the DB lookup directly instead of `fetch()`-ing our own /api/connect/[token]
+  // route — the old approach added an unnecessary extra HTTP round-trip (and a second
+  // serverless function invocation) to every single load of this page.
+  const data = await getConnectionByToken(token)
 
-  if (!res.ok) {
+  if (!data) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center"
         style={{ background: '#FFFBEB' }}>
@@ -25,8 +28,6 @@ export default async function ConnectPage({ params }: ConnectPageProps) {
       </div>
     )
   }
-
-  const data = await res.json()
 
   if (data.status === 'active') {
     redirect(`/walker/${token}`)

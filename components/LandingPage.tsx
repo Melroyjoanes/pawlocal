@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect, useId } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   motion, useScroll, useTransform, useInView, useMotionValue, useSpring,
@@ -108,13 +108,193 @@ function Tilt3D({ children, max = 10 }: { children: React.ReactNode; max?: numbe
   )
 }
 
-// ─── Walk report mock ────────────────────────────────────────────────────────
+// ─── Page-level ambient background — teal/orange blobs, subtle scroll parallax ─
+function PageBackground({ rm }: { rm: boolean }) {
+  const { scrollY } = useScroll()
+  const tealY   = useTransform(scrollY, [0, 4000], [0, rm ? 0 : -320])
+  const orangeY = useTransform(scrollY, [0, 4000], [0, rm ? 0 : 220])
+  const teal2Y  = useTransform(scrollY, [0, 4000], [0, rm ? 0 : -160])
+
+  return (
+    <div aria-hidden className="pointer-events-none"
+      style={{ position: 'fixed', inset: 0, zIndex: -1, overflow: 'hidden', background: C.pageBg }}>
+      <motion.div className="absolute" aria-hidden
+        style={{ top: -120, right: -100, width: 480, height: 480, borderRadius: '50%', background: 'oklch(0.48 0.17 196 / 0.065)', filter: 'blur(70px)', y: tealY }}
+        animate={rm ? {} : { x: [0, -16, 0] }}
+        transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }} />
+      <motion.div className="absolute" aria-hidden
+        style={{ bottom: -80, left: -60, width: 320, height: 320, borderRadius: '50%', background: C.orange, opacity: 0.05, filter: 'blur(55px)', y: orangeY }}
+        animate={rm ? {} : { x: [0, 18, 0] }}
+        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 1.4 }} />
+      <motion.div className="absolute" aria-hidden
+        style={{ top: '58%', left: '46%', width: 380, height: 380, borderRadius: '50%', background: 'oklch(0.48 0.17 196 / 0.04)', filter: 'blur(80px)', y: teal2Y }}
+        animate={rm ? {} : { x: [0, -12, 0] }}
+        transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }} />
+    </div>
+  )
+}
+
+// ─── Site-wide paper grain — SVG turbulence overlay, decorative only ──────────
+function GrainOverlay() {
+  return (
+    <div aria-hidden className="pointer-events-none"
+      style={{ position: 'fixed', inset: 0, zIndex: 30, opacity: 0.035, mixBlendMode: 'overlay' }}>
+      <svg width="100%" height="100%">
+        <filter id="pupstepGrain">
+          <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" stitchTiles="stitch" />
+          <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.9 0" />
+        </filter>
+        <rect width="100%" height="100%" filter="url(#pupstepGrain)" />
+      </svg>
+    </div>
+  )
+}
+
+// ─── Mock route geometry — pixel-space polyline behind the animated report card ─
+type Pt = { x: number; y: number }
+const MOCK_ROUTE: Pt[] = [
+  { x: 16, y: 58 }, { x: 55, y: 44 }, { x: 100, y: 48 }, { x: 145, y: 32 },
+  { x: 190, y: 38 }, { x: 230, y: 22 }, { x: 275, y: 28 }, { x: 324, y: 16 },
+]
+const MOCK_EVENTS: { frac: number; kind: 'pee' | 'poop' }[] = [
+  { frac: 0.14, kind: 'pee' },
+  { frac: 0.34, kind: 'poop' },
+  { frac: 0.52, kind: 'pee' },
+  { frac: 0.70, kind: 'poop' },
+  { frac: 0.88, kind: 'pee' },
+]
+const MOCK_STATS = { durationMin: 32, distanceKm: 2.1, poop: 2, pee: 3 }
+
+function segLengths(points: Pt[]): { lens: number[]; total: number } {
+  const lens: number[] = []
+  let total = 0
+  for (let i = 1; i < points.length; i++) {
+    const d = Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y)
+    lens.push(d)
+    total += d
+  }
+  return { lens, total }
+}
+
+// Point along the polyline at 0..1 of its length — places pee/poop pins and
+// tells us the instant the drawing line has "reached" each one.
+function pointAtFraction(points: Pt[], fraction: number): Pt {
+  const { lens, total } = segLengths(points)
+  if (fraction <= 0 || total === 0) return points[0]
+  if (fraction >= 1) return points[points.length - 1]
+  const target = total * fraction
+  let covered = 0
+  for (let i = 0; i < lens.length; i++) {
+    if (covered + lens[i] >= target) {
+      const t = lens[i] > 0 ? (target - covered) / lens[i] : 0
+      const a = points[i]; const b = points[i + 1]
+      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
+    }
+    covered += lens[i]
+  }
+  return points[points.length - 1]
+}
+
+// SVG path `d` for the first `fraction` of the route — the drawn portion.
+function partialPathD(points: Pt[], fraction: number): string {
+  if (fraction <= 0) return `M${points[0].x},${points[0].y}`
+  if (fraction >= 1) return points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ')
+  const { lens, total } = segLengths(points)
+  const target = total * fraction
+  let covered = 0
+  let d = `M${points[0].x},${points[0].y}`
+  for (let i = 0; i < lens.length; i++) {
+    if (covered + lens[i] >= target) {
+      const t = lens[i] > 0 ? (target - covered) / lens[i] : 0
+      const a = points[i]; const b = points[i + 1]
+      d += ` L${a.x + (b.x - a.x) * t},${a.y + (b.y - a.y) * t}`
+      return d
+    }
+    covered += lens[i]
+    d += ` L${points[i + 1].x},${points[i + 1].y}`
+  }
+  return d
+}
+
+// ─── Reusable count-up — animates a number 0 → value, ease-out-quart ──────────
+function useCountUp(value: number, play: boolean, cycleKey: number, duration = 1.3): number {
+  const rm = useReducedMotion()
+  const [display, setDisplay] = useState(rm ? value : 0)
+  useEffect(() => {
+    let raf = 0
+    if (rm) {
+      raf = requestAnimationFrame(() => setDisplay(value))
+      return () => cancelAnimationFrame(raf)
+    }
+    if (!play) return
+    const start = performance.now()
+    function tick(now: number) {
+      const t = Math.min((now - start) / (duration * 1000), 1)
+      const eased = 1 - Math.pow(1 - t, 4)
+      setDisplay(value * eased)
+      if (t < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [play, value, cycleKey, rm, duration])
+  return display
+}
+
+// ─── Walk report mock — route draws itself in, pins pop in, stats count up ────
 function WalkReportMock() {
   const rm = useReducedMotion()
-  // Unique per instance — this mock renders twice on the page (hero + report section)
-  const routeId = `mockRoutePath-${useId()}`
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const inView = useInView(wrapRef, { margin: '-80px 0px' })
+  const [fraction, setFraction] = useState(rm ? 1 : 0)
+  const [cycleKey, setCycleKey] = useState(0)
+
+  // Draw the route in, hold at full length, reset, loop — pauses whenever the
+  // card is scrolled out of view so visitors who linger see it replay.
+  useEffect(() => {
+    if (rm || !inView) return
+    let stopped = false
+    let rafId = 0
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+    function draw() {
+      const DRAW_MS = 2200
+      const HOLD_MS = 3800
+      const start = performance.now()
+      function tick(now: number) {
+        if (stopped) return
+        const t = Math.min((now - start) / DRAW_MS, 1)
+        setFraction(1 - Math.pow(1 - t, 3))
+        if (t < 1) { rafId = requestAnimationFrame(tick) }
+        else {
+          timeoutId = setTimeout(() => {
+            if (stopped) return
+            setFraction(0)
+            setCycleKey(k => k + 1)
+            draw()
+          }, HOLD_MS)
+        }
+      }
+      rafId = requestAnimationFrame(tick)
+    }
+    draw()
+
+    return () => { stopped = true; cancelAnimationFrame(rafId); if (timeoutId) clearTimeout(timeoutId) }
+  }, [rm, inView])
+
+  const playStats = rm ? true : fraction > 0.03
+  const durationDisplay = useCountUp(MOCK_STATS.durationMin, playStats, cycleKey, 1.3)
+  const distanceDisplay = useCountUp(MOCK_STATS.distanceKm, playStats, cycleKey, 1.1)
+  const poopDisplay     = useCountUp(MOCK_STATS.poop, playStats, cycleKey, 1.5)
+  const peeDisplay      = useCountUp(MOCK_STATS.pee, playStats, cycleKey, 1.5)
+
+  const drawnFraction = rm ? 1 : fraction
+  const pathD = partialPathD(MOCK_ROUTE, drawnFraction)
+  const head = pointAtFraction(MOCK_ROUTE, drawnFraction)
+  const start = MOCK_ROUTE[0]
+  const end = MOCK_ROUTE[MOCK_ROUTE.length - 1]
+
   return (
-    <div style={{
+    <div ref={wrapRef} style={{
       background: '#fff',
       borderRadius: 24,
       boxShadow: '0 8px 0 rgba(0,0,0,0.09), 0 30px 70px rgba(10,47,53,0.20), inset 0 2px 0 rgba(255,255,255,0.9)',
@@ -151,12 +331,12 @@ function WalkReportMock() {
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats — count up from 0 each time the route redraws */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', borderBottom: '1px solid #f3f4f6' }}>
         {[
-          { icon: <Timer size={13} />, label: 'Duration', value: '32 min' },
-          { icon: <Ruler size={13} />, label: 'Distance', value: '2.1 km' },
-          { icon: <Navigation size={13} />, label: 'Poop + Pee', value: '2 + 3' },
+          { icon: <Timer size={13} />, label: 'Duration', value: `${Math.round(durationDisplay)} min` },
+          { icon: <Ruler size={13} />, label: 'Distance', value: `${distanceDisplay.toFixed(1)} km` },
+          { icon: <Navigation size={13} />, label: 'Poop + Pee', value: `${Math.round(poopDisplay)} + ${Math.round(peeDisplay)}` },
         ].map(({ icon, label, value }, i) => (
           <div key={label} style={{ padding: '10px 8px', textAlign: 'center', borderRight: i < 2 ? '1px solid #f3f4f6' : 'none' }}>
             <div style={{ color: C.teal, display: 'flex', justifyContent: 'center', marginBottom: 3 }}>{icon}</div>
@@ -166,22 +346,32 @@ function WalkReportMock() {
         ))}
       </div>
 
-      {/* GPS map preview */}
+      {/* GPS map preview — route draws itself in, pins pop in as it's reached */}
       <div style={{ height: 76, background: 'linear-gradient(135deg, #e8f5f8, #d0ebf1)', position: 'relative', overflow: 'hidden' }}>
         <svg viewBox="0 0 340 76" width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
-          <path id={routeId} d="M16,58 L55,44 L100,48 L145,32 L190,38 L230,22 L275,28 L324,16"
-            fill="none" stroke="oklch(0.48 0.17 196)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx="16" cy="58" r="4" fill={C.orange} />
-          <circle cx="324" cy="16" r="4" fill="oklch(0.48 0.17 196)" />
-          {/* Paw walks the route on loop — the 2-second wow moment */}
-          <text fontSize="15" textAnchor="middle" dominantBaseline="middle">
-            🐾
-            {!rm && (
-              <animateMotion dur="3.2s" repeatCount="indefinite" calcMode="linear">
-                <mpath href={`#${routeId}`} />
-              </animateMotion>
-            )}
-          </text>
+          <path d={pathD} fill="none" stroke="oklch(0.48 0.17 196)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx={start.x} cy={start.y} r="4" fill={C.orange} />
+          <circle cx={end.x} cy={end.y} r="4" fill="oklch(0.48 0.17 196)" />
+
+          {MOCK_EVENTS.map((e, i) => {
+            if (!rm && drawnFraction < e.frac) return null
+            const p = pointAtFraction(MOCK_ROUTE, e.frac)
+            return (
+              <motion.text
+                key={`${i}-${cycleKey}`}
+                x={p.x} y={p.y - 6} fontSize="13" textAnchor="middle" dominantBaseline="middle"
+                initial={rm ? false : { scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={SPRING}
+              >
+                {e.kind === 'poop' ? '💩' : '💧'}
+              </motion.text>
+            )
+          })}
+
+          {!rm && drawnFraction > 0 && drawnFraction < 1 && (
+            <text x={head.x} y={head.y} fontSize="15" textAnchor="middle" dominantBaseline="middle">🐾</text>
+          )}
         </svg>
         <span style={{ position: 'absolute', top: 6, left: 8, background: 'rgba(255,255,255,0.88)', borderRadius: 6, padding: '2px 7px', fontFamily: 'var(--font-nunito)', fontSize: 9, fontWeight: 700, color: C.dark }}>GPS Route</span>
       </div>
@@ -199,6 +389,28 @@ function WalkReportMock() {
     </div>
   )
 }
+
+// ─── Proof strip chips ──────────────────────────────────────────────────────
+const PROOF_CHIPS: { stat: string; icon: 'ruler' | 'nav' | 'timer' | 'paw' }[] = [
+  { stat: '460m · 12 min · 3 pee marks', icon: 'ruler' },
+  { stat: '890m · 18 min · 2 poop logged', icon: 'nav' },
+  { stat: '1.2km · 24 min · 4 pee marks', icon: 'timer' },
+  { stat: '340m · 9 min · 1 poop logged', icon: 'paw' },
+  { stat: '2.1km · 32 min · 3 pee, 2 poop', icon: 'ruler' },
+  { stat: '610m · 15 min · 2 pee marks', icon: 'nav' },
+  { stat: '980m · 21 min · 1 pee, 1 poop', icon: 'timer' },
+]
+function proofIcon(kind: 'ruler' | 'nav' | 'timer' | 'paw') {
+  switch (kind) {
+    case 'ruler': return <Ruler size={12} />
+    case 'nav': return <Navigation size={12} />
+    case 'timer': return <Timer size={12} />
+    case 'paw': return <LucidePaw size={12} />
+  }
+}
+
+// ─── Closing CTA paw-print pattern ──────────────────────────────────────────
+const PAW_PATTERN_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='84' height='84'><g fill='rgba(255,255,255,0.09)'><circle cx='30' cy='46' r='4'/><circle cx='38' cy='39' r='3.2'/><circle cx='47' cy='39' r='3.2'/><circle cx='55' cy='46' r='3.2'/><ellipse cx='42' cy='55' rx='9' ry='6.5'/></g></svg>`
 
 // ─── FAQ ─────────────────────────────────────────────────────────────────────
 const FAQ_ITEMS = [
@@ -235,29 +447,19 @@ export default function LandingPage() {
   const cardY      = useTransform(scrollY, [0, 600], [0, rm ? 0 : -38])
 
   return (
-    <div style={{ background: C.pageBg }} className="-mt-8">
+    <div className="-mt-8" style={{ position: 'relative' }}>
+      <PageBackground rm={rm} />
+      <GrainOverlay />
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}
       <section
         id="hero"
-        style={{ ...BLEED, background: C.pageBg, position: 'relative', overflow: 'hidden' }}
+        style={{ ...BLEED, position: 'relative', overflow: 'hidden' }}
         className="min-h-[100svh] flex flex-col justify-center"
       >
         {/* Dot grid */}
         <div className="absolute inset-0 pointer-events-none" aria-hidden
           style={{ backgroundImage: 'radial-gradient(circle,rgba(180,83,9,0.04) 1px,transparent 1px)', backgroundSize: '30px 30px' }} />
-
-        {/* Teal glow blob */}
-        <motion.div className="absolute pointer-events-none" aria-hidden
-          style={{ top: -120, right: -100, width: 480, height: 480, borderRadius: '50%', background: 'oklch(0.48 0.17 196 / 0.07)', filter: 'blur(70px)' }}
-          animate={rm ? {} : { y: [0, -22, 0] }}
-          transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }} />
-
-        {/* Orange glow blob */}
-        <motion.div className="absolute pointer-events-none" aria-hidden
-          style={{ bottom: -80, left: -60, width: 320, height: 320, borderRadius: '50%', background: C.orange, opacity: 0.055, filter: 'blur(55px)' }}
-          animate={rm ? {} : { y: [0, -15, 0] }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 1.8 }} />
 
         <div className="relative max-w-7xl mx-auto px-5 sm:px-8 py-20 lg:py-16 w-full">
           <div className="flex flex-col lg:flex-row items-center gap-14 lg:gap-20">
@@ -375,6 +577,23 @@ export default function LandingPage() {
         </div>
       </div>
 
+      {/* ── PROOF STRIP — auto-scrolling walk-report chips ─────────────────── */}
+      <div style={{ ...BLEED, background: 'transparent', borderBottom: '1px solid rgba(10,47,53,0.06)', padding: '14px 0', overflow: 'hidden', position: 'relative' }}>
+        <style>{`
+          @keyframes pupstepMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+          .pupstep-marquee-track { animation: pupstepMarquee 34s linear infinite; }
+          .pupstep-marquee-track:hover { animation-play-state: paused; }
+        `}</style>
+        <div className="pupstep-marquee-track" style={{ display: 'flex', gap: 10, width: 'max-content' }}>
+          {[...PROOF_CHIPS, ...PROOF_CHIPS].map((c, i) => (
+            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, flexShrink: 0, background: '#fff', border: '1px solid rgba(226,232,240,0.7)', borderRadius: 100, padding: '7px 14px', boxShadow: '0 2px 6px rgba(10,47,53,0.05)' }}>
+              <span style={{ color: C.teal, display: 'flex' }}>{proofIcon(c.icon)}</span>
+              <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 700, color: C.dark, whiteSpace: 'nowrap' }}>{c.stat}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* ── HOW IT WORKS ──────────────────────────────────────────────────── */}
       <section id="how-it-works"
         style={{ ...BLEED, background: 'linear-gradient(120deg,#FEF9ED,#FEF3C7 50%,#FEF9ED)', borderTop: '1.5px solid rgba(253,230,138,0.8)', borderBottom: '1.5px solid rgba(253,230,138,0.8)' }}
@@ -441,7 +660,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── WHAT'S IN THE REPORT ──────────────────────────────────────────── */}
-      <section style={{ ...BLEED, background: C.pageBg }} className="py-16 sm:py-20 lg:py-28">
+      <section style={{ ...BLEED, background: 'transparent' }} className="py-16 sm:py-20 lg:py-28">
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
           <div className="flex flex-col lg:flex-row items-center gap-14 lg:gap-20">
 
@@ -572,7 +791,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── FAQ ───────────────────────────────────────────────────────────── */}
-      <section style={{ ...BLEED, background: C.pageBg }} className="py-16 sm:py-20 lg:py-24">
+      <section style={{ ...BLEED, background: 'transparent' }} className="py-16 sm:py-20 lg:py-24">
         <div className="max-w-2xl mx-auto px-5 sm:px-8">
           <Reveal variant="up" className="text-center mb-10">
             <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.orange, marginBottom: 12 }}>Questions</p>
@@ -590,8 +809,11 @@ export default function LandingPage() {
       </section>
 
       {/* ── CLOSING CTA ───────────────────────────────────────────────────── */}
-      <section style={{ ...BLEED, background: C.orange, position: 'relative', overflow: 'hidden' }} className="py-16 sm:py-20">
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle,rgba(255,255,255,0.06) 1px,transparent 1px)', backgroundSize: '24px 24px' }} />
+      <section style={{ ...BLEED, background: `linear-gradient(160deg, ${C.orangeDeep} 0%, ${C.orange} 45%, ${C.orangeDeep} 100%)`, position: 'relative', overflow: 'hidden' }} className="py-20 sm:py-24 lg:py-32">
+        {/* Barely-visible paw print texture — depth without a light show */}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(PAW_PATTERN_SVG)}")`, backgroundSize: '84px 84px' }} />
+        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse at 26% 18%, rgba(255,255,255,0.12) 0%, transparent 55%)' }} />
+        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse at 80% 90%, rgba(0,0,0,0.10) 0%, transparent 60%)' }} />
         <div className="relative max-w-2xl mx-auto px-5 sm:px-8 text-center">
           <Reveal variant="zoom">
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>

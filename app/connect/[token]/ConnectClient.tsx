@@ -5,6 +5,7 @@
 // and <meta name="apple-mobile-web-app-capable" content="yes" />
 
 import { useState, useEffect } from 'react'
+import { LoadingButton } from '@/components/LoadingButton'
 
 type Lang = 'en' | 'hi' | 'mr'
 type Step = 'form' | 'success'
@@ -360,24 +361,21 @@ export default function ConnectClient({
             />
           </div>
 
-          <button
-            disabled={phoneInput.length !== 10 || lookingUp}
+          <LoadingButton
+            disabled={phoneInput.length !== 10}
+            loading={lookingUp}
+            loadingText="Checking…"
             onClick={() => lookupPhone(phoneInput)}
+            className="rounded-2xl"
             style={{
-              width: '100%',
               minHeight: 56,
-              borderRadius: 14,
-              border: 'none',
+              fontSize: 17,
               background: phoneInput.length === 10 ? '#FF8C52' : '#E5E7EB',
               color: phoneInput.length === 10 ? '#fff' : '#9CA3AF',
-              fontFamily: 'var(--font-fredoka)',
-              fontSize: 17,
-              fontWeight: 700,
-              cursor: phoneInput.length === 10 ? 'pointer' : 'not-allowed',
             }}
           >
-            {lookingUp ? 'Checking…' : 'Continue →'}
-          </button>
+            Continue →
+          </LoadingButton>
         </div>
       </div>
     )
@@ -443,24 +441,21 @@ export default function ConnectClient({
             </p>
           )}
 
-          <button
+          <LoadingButton
             type="submit"
-            disabled={loading || otp.length !== 4}
+            disabled={otp.length !== 4}
+            loading={loading}
+            loadingText="Connecting…"
+            className="rounded-2xl"
             style={{
-              width: '100%',
               minHeight: 56,
-              borderRadius: 14,
-              border: 'none',
+              fontSize: 17,
               background: otp.length === 4 ? 'oklch(0.48 0.17 196)' : '#E5E7EB',
               color: otp.length === 4 ? '#fff' : '#9CA3AF',
-              fontFamily: 'var(--font-fredoka)',
-              fontSize: 17,
-              fontWeight: 700,
-              cursor: otp.length === 4 ? 'pointer' : 'not-allowed',
             }}
           >
-            {loading ? 'Connecting…' : 'Connect →'}
-          </button>
+            Connect →
+          </LoadingButton>
 
           <button
             type="button"
@@ -639,17 +634,15 @@ export default function ConnectClient({
         </p>
 
         <div className="pb-8 pt-2">
-          <button
+          <LoadingButton
             type="submit"
-            disabled={loading}
-            className="w-full py-4 rounded-2xl font-bold text-lg text-white transition-all disabled:opacity-60 min-h-[56px] shadow-md active:scale-[0.98]"
-            style={{
-              background: loading ? '#F07030' : '#FF8C52',
-              fontFamily: 'var(--font-fredoka)',
-            }}
+            loading={loading}
+            loadingText="Connecting…"
+            className="rounded-2xl text-lg shadow-md"
+            style={{ minHeight: 56, background: '#FF8C52' }}
           >
-            {loading ? 'Connecting…' : t.submitBtn}
-          </button>
+            {t.submitBtn}
+          </LoadingButton>
         </div>
       </form>
     </div>

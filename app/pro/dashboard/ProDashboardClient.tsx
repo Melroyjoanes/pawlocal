@@ -47,6 +47,7 @@ export default function ProDashboardClient({ provider, stats, firstName, provide
   )
 
   const [toggling, setToggling] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
 
   const missingItems: string[] = []
   if (!provider.bio) missingItems.push('Bio')
@@ -54,9 +55,15 @@ export default function ProDashboardClient({ provider, stats, firstName, provide
   if (provider.price_min == null && provider.price_max == null) missingItems.push('Pricing')
 
   async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    window.location.href = '/?signed_out=1'
+    if (signingOut) return
+    setSigningOut(true)
+    try {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      window.location.href = '/?signed_out=1'
+    } catch {
+      setSigningOut(false)
+    }
   }
 
   async function handleAvailabilityToggle() {
@@ -100,9 +107,10 @@ export default function ProDashboardClient({ provider, stats, firstName, provide
             )}
             <button
               onClick={handleSignOut}
-              className="text-xs font-medium text-stone-500 hover:text-stone-800 transition-colors"
+              disabled={signingOut}
+              className="text-xs font-medium text-stone-500 hover:text-stone-800 transition-colors disabled:opacity-50"
             >
-              Sign out
+              {signingOut ? 'Signing out…' : 'Sign out'}
             </button>
           </div>
         </div>

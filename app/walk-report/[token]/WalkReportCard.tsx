@@ -3,6 +3,7 @@
 import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useRef, useEffect, useState } from 'react'
+import { loadGoogleMaps } from '@/lib/googleMapsLoader'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type WalkReport = {
@@ -426,24 +427,9 @@ function WalkMap({ routePoints, poopEvents, peeEvents, reducedMotion }: {
       map.fitBounds(bounds, { top: 36, bottom: 36, left: 36, right: 36 })
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((window as any).google?.maps) {
-      initMap()
-    } else {
-      if (document.querySelector('script[data-gm]')) {
-        const check = setInterval(() => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          if ((window as any).google?.maps) { clearInterval(check); initMap() }
-        }, 100)
-        return
-      }
-      const script = document.createElement('script')
-      script.setAttribute('data-gm', '1')
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`
-      script.async = true
-      script.onload = initMap
-      document.head.appendChild(script)
-    }
+    loadGoogleMaps(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
+      .then(initMap)
+      .catch(err => console.error('[WalkMap] failed to load Google Maps', err))
 
     return () => { if (rafId !== null) cancelAnimationFrame(rafId) }
   }, [routePoints, poopEvents, peeEvents, reducedMotion])
