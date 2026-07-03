@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     const email = user.email
     if (!email || !process.env.RESEND_API_KEY) return
     const planLabel = '₹199/month'
-    const expiryLabel = new Date(expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+    const expiryLabel = new Date(expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.RESEND_API_KEY}` },

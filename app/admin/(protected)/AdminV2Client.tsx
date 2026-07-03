@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { AdminReportsTab, AdminPaymentsTab, AdminFollowupsTab } from './AdminExtraTabs'
+import { parseCareFocus } from '@/lib/careFocus'
 
 type AdminTab = 'overview' | 'parents' | 'dogs' | 'walkers' | 'reports' | 'payments' | 'followups'
 
@@ -304,7 +305,9 @@ function DogsTab() {
             </thead>
             <tbody>
               {dogs.map((d, i) => {
-                const fc = FOCUS_COLORS[d.careFocus] ?? FOCUS_COLORS.normal
+                const focusKeys = parseCareFocus(d.careFocus)
+                const primaryFocus = focusKeys.find(k => k !== 'normal') ?? 'normal'
+                const fc = FOCUS_COLORS[primaryFocus] ?? FOCUS_COLORS.normal
                 return (
                   <tr key={d.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}>
                     <Td>
@@ -321,7 +324,7 @@ function DogsTab() {
                     </Td>
                     <Td>
                       <span style={{ background: fc.bg, color: fc.color, fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 100 }}>
-                        {d.careFocus}
+                        {focusKeys.join(' + ')}
                       </span>
                     </Td>
                     <Td>{d.hasPhoto ? '✅' : '❌'}</Td>

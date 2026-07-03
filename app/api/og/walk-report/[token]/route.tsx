@@ -26,7 +26,7 @@ type Report = {
 function formatDate(iso: string) {
   try {
     return new Date(iso).toLocaleDateString('en-IN', {
-      day: 'numeric', month: 'short', year: 'numeric',
+      day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata',
     })
   } catch { return '' }
 }

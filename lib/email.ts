@@ -215,8 +215,33 @@ export function walkReportEmail(opts: {
   peeCount: number
   reportUrl: string
   reportDate?: string
+  trialExpiryLabel?: string
 }): string {
-  const { dogName, walkerName, durationMins, distanceKm, poopCount, peeCount, reportUrl } = opts
+  const { dogName, walkerName, durationMins, distanceKm, poopCount, peeCount, reportUrl, trialExpiryLabel } = opts
+
+  const trialBanner = trialExpiryLabel
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="padding:20px 36px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                   style="background:#F0FDFA;border:1px solid #99F6E4;border-radius:12px;">
+              <tr>
+                <td style="padding:14px 18px;">
+                  <p style="margin:0;font-size:14px;color:#0F766E;line-height:1.6;font-weight:600;
+                            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                    🎉 Welcome to PupStep! Your 3-day free trial has started.
+                  </p>
+                  <p style="margin:6px 0 0;font-size:13px;color:#374151;line-height:1.6;font-weight:400;
+                            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                    You'll receive walk reports like this one until ${trialExpiryLabel}. After that, upgrade for ₹199/month to keep reports coming.
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>`
+    : ''
 
   const pills: Array<{ icon: string; label: string }> = []
   if (durationMins) pills.push({ icon: '⏱', label: `${durationMins} min` })
@@ -241,6 +266,8 @@ export function walkReportEmail(opts: {
         </td>
       </tr>
     </table>
+
+    ${trialBanner}
 
     <!-- Walker info -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">

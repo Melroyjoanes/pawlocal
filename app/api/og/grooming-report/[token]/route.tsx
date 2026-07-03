@@ -97,7 +97,7 @@ export async function GET(
 
   const groomDate = (() => {
     try {
-      return new Date(report.grooming_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      return new Date(report.grooming_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })
     } catch { return '' }
   })()
 

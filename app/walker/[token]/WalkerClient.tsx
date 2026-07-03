@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { parseCareFocus } from '@/lib/careFocus'
 
 // ── Live map shown to walker during walk ──────────────────────────────────────
 function LiveMap({
@@ -280,6 +281,7 @@ function SettingsTab({
   const [profileRole, setProfileRole] = useState(walkerRole ?? '')
   const [saving, setSaving] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const careFocusKeys = parseCareFocus(careFocus)
 
   const dashUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/walker/${token}`
@@ -422,16 +424,16 @@ function SettingsTab({
           </div>
         </div>
 
-        {/* Care focus badge */}
-        {careFocus && careFocus !== 'normal' && CARE_FOCUS_CONFIG[careFocus] && (() => {
-          const cfg = CARE_FOCUS_CONFIG[careFocus]
+        {/* Care focus badges — one per selected care focus */}
+        {careFocusKeys.filter(k => k !== 'normal' && CARE_FOCUS_CONFIG[k]).map(k => {
+          const cfg = CARE_FOCUS_CONFIG[k]
           return (
-            <div style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 12, padding: '8px 12px', marginBottom: 10, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 12, padding: '8px 12px', marginBottom: 10, marginRight: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: 14 }}>{cfg.emoji}</span>
               <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 700, color: cfg.color }}>{cfg.label}</span>
             </div>
           )
-        })()}
+        })}
 
         {/* Health notes */}
         {healthNotes && (
@@ -660,6 +662,7 @@ export default function WalkerClient({
   const [toast, setToast] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<WalkerTab>('walk')
   const [showSaveNotice, setShowSaveNotice] = useState(false)
+  const careFocusKeys = parseCareFocus(careFocus)
 
   // Multi-client state
   const [connections, setConnections] = useState<ClientConnection[]>([])
@@ -1769,10 +1772,10 @@ export default function WalkerClient({
                   </div>
                 </div>
               )}
-              {careFocus && careFocus !== 'normal' && CARE_FOCUS_CONFIG[careFocus] && (() => {
-                const cfg = CARE_FOCUS_CONFIG[careFocus]
+              {careFocusKeys.filter(k => k !== 'normal' && CARE_FOCUS_CONFIG[k]).map(k => {
+                const cfg = CARE_FOCUS_CONFIG[k]
                 return (
-                  <div style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 14, padding: '12px 14px', marginBottom: 8 }}>
+                  <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 14, padding: '12px 14px', marginBottom: 8 }}>
                     <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: cfg.color, margin: '0 0 4px' }}>
                       {cfg.emoji} {cfg.label}
                     </p>
@@ -1781,7 +1784,7 @@ export default function WalkerClient({
                     </p>
                   </div>
                 )
-              })()}
+              })}
               <button
                 onClick={() => { setIsDemoWalk(false); startWalk() }}
                 className="w-full py-5 rounded-2xl font-bold text-2xl text-white shadow-lg active:scale-[0.97] transition-transform"
@@ -1940,11 +1943,11 @@ export default function WalkerClient({
 
               {/* ── Controls — bottom section ── */}
               <div className="flex-1 flex flex-col px-5 pt-4 pb-6 gap-3" style={{ background: '#FFFBEB' }}>
-                {/* Care Focus banner — walking phase */}
-                {careFocus && careFocus !== 'normal' && CARE_FOCUS_CONFIG[careFocus] && (() => {
-                  const cfg = CARE_FOCUS_CONFIG[careFocus]
+                {/* Care Focus banners — walking phase, one per selected care focus */}
+                {careFocusKeys.filter(k => k !== 'normal' && CARE_FOCUS_CONFIG[k]).map(k => {
+                  const cfg = CARE_FOCUS_CONFIG[k]
                   return (
-                    <div style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 14, padding: '12px 14px', marginBottom: 8 }}>
+                    <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 14, padding: '12px 14px', marginBottom: 8 }}>
                       <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: cfg.color, margin: '0 0 4px' }}>
                         {cfg.emoji} {cfg.label}
                       </p>
@@ -1953,7 +1956,7 @@ export default function WalkerClient({
                       </p>
                     </div>
                   )
-                })()}
+                })}
 
                 {/* FEATURE 2: Health notes pinned during walk */}
                 {healthNotes && (
@@ -2078,14 +2081,14 @@ export default function WalkerClient({
 
                   {/* Potty button */}
                   <div className="flex flex-col gap-1">
-                    {(careFocus === 'stomach' || careFocus === 'recovery') && (
+                    {(careFocusKeys.includes('stomach') || careFocusKeys.includes('recovery')) && (
                       <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, color: '#854D0E', textAlign: 'center', margin: 0 }}>📸 Photo important today</p>
                     )}
                     <button
                       type="button"
                       onClick={handlePoopTap}
                       className="rounded-2xl border-2 border-amber-200 bg-amber-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform"
-                      style={{ minHeight: 80, boxShadow: (careFocus === 'stomach' || careFocus === 'recovery') ? '0 0 0 3px rgba(255,140,82,0.4)' : undefined }}
+                      style={{ minHeight: 80, boxShadow: (careFocusKeys.includes('stomach') || careFocusKeys.includes('recovery')) ? '0 0 0 3px rgba(255,140,82,0.4)' : undefined }}
                     >
                       <span className="text-3xl">💩</span>
                       <span className="text-sm font-bold text-amber-700" style={{ fontFamily: 'var(--font-fredoka)' }}>

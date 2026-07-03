@@ -381,39 +381,18 @@ function WalkMap({ routePoints, poopEvents, peeEvents, reducedMotion }: {
         rafId = requestAnimationFrame(tick)
       }
 
-      // Labeled pill markers for start/end — clearer than two unlabeled dots
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      function pillMarker(label: string, fill: string, gm: any) {
-        const w = label === 'START' ? 62 : 54
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="26" viewBox="0 0 ${w} 26">
-          <rect x="1" y="1" width="${w - 2}" height="24" rx="12" fill="${fill}" stroke="white" stroke-width="2"/>
-          <text x="${w / 2}" y="17" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="white" letter-spacing="0.5">${label}</text>
-        </svg>`
-        return {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-          scaledSize: new gm.Size(w, 26),
-          anchor: new gm.Point(w / 2, 34),
-        }
-      }
-
+      // Color-coded start/end — green means the walk began here, red means it
+      // stopped/ended here. No on-map text; the legend below explains the colors.
       new gm.Marker({
         position: cleanedRoutePoints[0], map,
-        icon: { path: gm.SymbolPath.CIRCLE, scale: 7, fillColor: '#22c55e', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
-        zIndex: 10,
-      })
-      new gm.Marker({
-        position: cleanedRoutePoints[0], map,
-        icon: pillMarker('START', '#22c55e', gm),
+        icon: { path: gm.SymbolPath.CIRCLE, scale: 8, fillColor: '#22c55e', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
+        title: 'Walk started here',
         zIndex: 10,
       })
       new gm.Marker({
         position: cleanedRoutePoints[cleanedRoutePoints.length - 1], map,
-        icon: { path: gm.SymbolPath.CIRCLE, scale: 7, fillColor: 'oklch(0.48 0.17 196)', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
-        zIndex: 10,
-      })
-      new gm.Marker({
-        position: cleanedRoutePoints[cleanedRoutePoints.length - 1], map,
-        icon: pillMarker('END', 'oklch(0.48 0.17 196)', gm),
+        icon: { path: gm.SymbolPath.CIRCLE, scale: 8, fillColor: '#EF4444', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
+        title: 'Walk ended here',
         zIndex: 10,
       })
 
@@ -610,6 +589,18 @@ export default function WalkReportCard({
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <div style={{ width: 22, height: 4, borderRadius: 2, background: 'oklch(0.48 0.17 196)' }} />
                 <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 600, color: '#374151' }}>Route</span>
+              </div>
+
+              {/* Start/end color key — pushed to the right */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginLeft: 'auto' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />
+                  <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 600, color: '#374151' }}>Started</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ width: 9, height: 9, borderRadius: '50%', background: '#EF4444', flexShrink: 0 }} />
+                  <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 600, color: '#374151' }}>Ended</span>
+                </div>
               </div>
             </div>
           </motion.div>

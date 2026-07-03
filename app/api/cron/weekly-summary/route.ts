@@ -42,6 +42,16 @@ export async function GET(req: NextRequest) {
     const email = user?.email
     if (!email) continue
 
+    // Respect the owner's weekly_summary notification preference (default true if unset)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: ownerProfile } = await (db.from('profiles') as any)
+      .select('notification_preferences')
+      .eq('id', ownerId)
+      .maybeSingle()
+    const prefs = (ownerProfile?.notification_preferences ?? {}) as Record<string, boolean>
+    const weeklySummaryEnabled = prefs.weekly_summary !== false // default true
+    if (!weeklySummaryEnabled) continue
+
     const totalWalks = ownerLogs.length
     const totalMins = ownerLogs.reduce((s: number, l: { duration_mins: number }) => s + (l.duration_mins ?? 0), 0)
     const totalKm = ownerLogs.reduce((s: number, l: { distance_km: number }) => s + (l.distance_km ?? 0), 0)

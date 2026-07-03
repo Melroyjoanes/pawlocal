@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import ParentBottomNav from '@/components/ParentBottomNav'
+import { parseCareFocus } from '@/lib/careFocus'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -590,7 +591,8 @@ export default function MyAccountClient({
         ) : (
           <div className="space-y-3">
             {dogs.map(dog => {
-              const focus = CARE_FOCUS_OPTIONS.find(o => o.key === (dog.care_focus ?? 'normal'))
+              const dogFocusKeys = parseCareFocus(dog.care_focus)
+              const focuses = CARE_FOCUS_OPTIONS.filter(o => dogFocusKeys.includes(o.key))
               return (
                 <Card key={dog.id} className="flex items-center gap-3">
                   {/* Dog photo */}
@@ -614,16 +616,21 @@ export default function MyAccountClient({
                     {dog.breed && (
                       <p className="text-xs text-slate-500">{dog.breed}</p>
                     )}
-                    {focus && (
-                      <span
-                        className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mt-1"
-                        style={{
-                          background: 'oklch(0.48 0.17 196 / 0.10)',
-                          color: TEAL,
-                        }}
-                      >
-                        {focus.emoji} {focus.label}
-                      </span>
+                    {focuses.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {focuses.map(focus => (
+                          <span
+                            key={focus.key}
+                            className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full"
+                            style={{
+                              background: 'oklch(0.48 0.17 196 / 0.10)',
+                              color: TEAL,
+                            }}
+                          >
+                            {focus.emoji} {focus.label}
+                          </span>
+                        ))}
+                      </div>
                     )}
                     {/* Walker status */}
                     {(() => {

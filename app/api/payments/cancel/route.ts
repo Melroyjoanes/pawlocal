@@ -38,7 +38,7 @@ export async function POST() {
 
   const email = user.email
   const expiryDate = sub.expires_at
-    ? new Date(sub.expires_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+    ? new Date(sub.expires_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
     : 'your plan end date'
 
   const resendKey = process.env.RESEND_API_KEY

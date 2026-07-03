@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     const email = user?.email
     if (!email) continue
 
-    const expiryLabel = new Date(sub.expires_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })
+    const expiryLabel = new Date(sub.expires_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' })
     const planLabel = '₹199/month'
 
     sendEmail({

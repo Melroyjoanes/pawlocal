@@ -220,30 +220,9 @@ export async function POST(req: NextRequest) {
         quality_score: qualityScore,
       })
 
-      // Send trial-start email when this is the first report
-      if (!trialStart && deliveryAllowed) {
-        try {
-          const trialExpiry = new Date(Date.now() + 3 * 86400 * 1000)
-            .toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
-          const { sendEmail, emailTemplate } = await import('@/lib/email')
-          const { data: { user: ownerUser } } = await db.auth.admin.getUserById(connection.owner_id)
-          const ownerEmail = ownerUser?.email
-          if (ownerEmail) {
-            sendEmail({
-              to: ownerEmail,
-              subject: `🐾 ${dogName}'s first walk report is in! Your trial has started.`,
-              html: emailTemplate(
-                `${dogName}'s first walk report is in!`,
-                `Your 3-day free trial has started. You can receive walk reports until ${trialExpiry}. After that, upgrade for ₹199/month to keep reports coming.\n\nMake sure your walker logs walks every day to get the most out of your trial.`,
-                'View walk report',
-                reportUrl,
-              ),
-            }).catch(() => {})
-          }
-        } catch { /* non-critical */ }
-      }
-
-      // Only send email delivery if the owner is within their trial or has an active subscription
+      // Only send the report email if the owner is within their trial or has an active subscription.
+      // This is the single email sent per walk — for the owner's very first-ever report, it
+      // includes an extra "your trial has started" banner at the top instead of a separate email.
       if (deliveryAllowed) {
         // Check notification preference and send email to parent
         try {
@@ -257,6 +236,12 @@ export async function POST(req: NextRequest) {
             const reportEmailEnabled = prefs.report_email !== false // default true
 
             if (reportEmailEnabled) {
+              const isFirstReport = !trialStart
+              const trialExpiryLabel = isFirstReport
+                ? new Date(Date.now() + 3 * 86400 * 1000)
+                    .toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
+                : undefined
+
               const { sendEmail, walkReportEmail } = await import('@/lib/email')
               sendEmail({
                 to: ownerEmail,
@@ -269,6 +254,7 @@ export async function POST(req: NextRequest) {
                   poopCount: finalPoopCount,
                   peeCount: finalPeeCount,
                   reportUrl,
+                  trialExpiryLabel,
                 }),
               }).catch(() => {})
 
