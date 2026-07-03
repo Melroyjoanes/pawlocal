@@ -1,6 +1,15 @@
 import { redirect } from 'next/navigation'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { getConnectionByToken } from '@/lib/getConnectionByToken'
+import { computeStreak, fourteenDaysAgoIST } from '@/lib/streak'
 import WalkerClient from './WalkerClient'
+
+function admin() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 interface WalkerPageProps {
   params: Promise<{ token: string }>
@@ -33,6 +42,22 @@ export default async function WalkerPage({ params }: WalkerPageProps) {
     redirect(`/connect/${token}`)
   }
 
+  // Walker's own logging streak — same computeStreak logic used on the parent's
+  // Home screen, but scoped to walks this walker has logged for this connection.
+  let walkerStreak = 0
+  try {
+    const db = admin()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: recentLogs } = await (db.from('walk_logs') as any)
+      .select('started_at')
+      .eq('connection_id', data.id)
+      .gte('started_at', fourteenDaysAgoIST())
+      .order('started_at', { ascending: false })
+    walkerStreak = computeStreak(recentLogs ?? [])
+  } catch (err) {
+    console.error('[walker page] streak calc failed:', err)
+  }
+
   return (
     <WalkerClient
       token={token}
@@ -46,6 +71,7 @@ export default async function WalkerPage({ params }: WalkerPageProps) {
       walkerRole={data.walkerRole ?? null}
       ownerPhone={data.ownerPhone ?? null}
       careFocus={data.careFocus ?? 'normal'}
+      walkerStreak={walkerStreak}
     />
   )
 }

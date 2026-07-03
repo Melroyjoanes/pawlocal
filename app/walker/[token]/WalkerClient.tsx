@@ -123,6 +123,7 @@ interface WalkerClientProps {
   walkerRole: string | null
   ownerPhone: string | null
   careFocus: string | null
+  walkerStreak?: number
 }
 
 interface ClientConnection {
@@ -642,6 +643,7 @@ export default function WalkerClient({
   walkerRole,
   ownerPhone,
   careFocus,
+  walkerStreak = 0,
 }: WalkerClientProps) {
   const [phase, setPhase] = useState<WalkPhase>('idle')
   const [logs, setLogs] = useState<WalkLog[]>([])
@@ -1743,6 +1745,25 @@ export default function WalkerClient({
                   >
                     ✕
                   </button>
+                </div>
+              )}
+
+              {/* Walker's own logging streak — a warm nod to their own consistency,
+                  not a scorecard. Only shown once they've actually built a streak. */}
+              {walkerStreak >= 2 && (
+                <div
+                  className="rounded-2xl px-4 py-3 flex items-center gap-3"
+                  style={{ background: 'linear-gradient(135deg, #FFF3E0 0%, #FFE8CC 100%)', border: '1.5px solid #FFD8A8' }}
+                >
+                  <span className="text-3xl leading-none">🔥</span>
+                  <div>
+                    <p className="font-bold text-[#0A2F35] text-base leading-tight" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                      {walkerStreak} day streak!
+                    </p>
+                    <p className="text-xs text-[#B45309] leading-snug" style={{ fontFamily: 'var(--font-nunito)' }}>
+                      You&apos;ve logged a walk every day — keep it going 🐾
+                    </p>
+                  </div>
                 </div>
               )}
 

@@ -28,21 +28,35 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { name, breed, dob, health_notes, photo_url } = body
+  const { name, breed, dob, health_notes, photo_url, walk_time_bucket } = body
 
   if (!name) return NextResponse.json({ error: 'name is required' }, { status: 400 })
 
-  const { data, error } = await (admin().from('dogs') as any)
-    .insert({
-      owner_id: user.id,
-      name,
-      breed: breed ?? null,
-      dob: dob ?? null,
-      health_notes: health_notes ?? null,
-      photo_url: photo_url ?? null,
-    })
+  const insertPayload: Record<string, unknown> = {
+    owner_id: user.id,
+    name,
+    breed: breed ?? null,
+    dob: dob ?? null,
+    health_notes: health_notes ?? null,
+    photo_url: photo_url ?? null,
+  }
+  if (walk_time_bucket) insertPayload.walk_time_bucket = walk_time_bucket
+
+  let { data, error } = await (admin().from('dogs') as any)
+    .insert(insertPayload)
     .select()
     .single()
+
+  // walk_time_bucket is a nullable column added in migration 053 — until that
+  // migration is run manually against prod, the column won't exist yet. Retry
+  // without it rather than failing dog creation entirely.
+  if (error && 'walk_time_bucket' in insertPayload && /walk_time_bucket/i.test(error.message ?? '')) {
+    delete insertPayload.walk_time_bucket
+    ;({ data, error } = await (admin().from('dogs') as any)
+      .insert(insertPayload)
+      .select()
+      .single())
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

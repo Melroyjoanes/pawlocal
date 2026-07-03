@@ -5,6 +5,7 @@ function admin() {
 }
 
 export interface ConnectionInfo {
+  id: string
   token: string
   status: string
   dogName: string
@@ -71,6 +72,7 @@ export async function getConnectionByToken(token: string): Promise<ConnectionInf
   }
 
   return {
+    id: connection.id,
     token: connection.token,
     status: connection.status,
     dogName: connection.dogs?.name ?? 'Dog',

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import HomeClient from './HomeClient'
+import { computeStreak, todayMidnightIST, fourteenDaysAgoIST } from '@/lib/streak'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,43 +11,6 @@ function admin() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
-}
-
-// IST midnight as UTC
-function todayMidnightIST(): string {
-  const now = new Date()
-  // IST is UTC+5:30
-  const istOffset = 5.5 * 60 * 60 * 1000
-  const nowIST = new Date(now.getTime() + istOffset)
-  const midnightIST = new Date(nowIST)
-  midnightIST.setUTCHours(0, 0, 0, 0)
-  // Convert back to UTC
-  return new Date(midnightIST.getTime() - istOffset).toISOString()
-}
-
-function fourteenDaysAgoIST(): string {
-  const d = new Date(todayMidnightIST())
-  d.setDate(d.getDate() - 14)
-  return d.toISOString()
-}
-
-function computeStreak(logs: Array<{ started_at: string }>): number {
-  if (!logs || logs.length === 0) return 0
-  const istOffset = 5.5 * 60 * 60 * 1000
-  const toISTDateStr = (iso: string) => {
-    const d = new Date(new Date(iso).getTime() + istOffset)
-    return d.toISOString().slice(0, 10)
-  }
-  const walkedDates = new Set(logs.map(l => toISTDateStr(l.started_at)))
-  let streak = 0
-  const now = new Date(Date.now() + istOffset)
-  const check = new Date(now)
-  check.setUTCHours(0, 0, 0, 0)
-  while (walkedDates.has(check.toISOString().slice(0, 10))) {
-    streak++
-    check.setDate(check.getDate() - 1)
-  }
-  return streak
 }
 
 function computeWeekData(logs: Array<{ started_at: string; distance_km?: number | null; poop_count?: number | null }>) {

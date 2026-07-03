@@ -19,6 +19,7 @@ interface DraftData {
   photoUrl: string | null
   parentName: string
   ownerPhone: string
+  walkTimeBucket: string | null
 }
 
 const HEALTH_CHIPS = [
@@ -39,6 +40,12 @@ const CARE_FOCUS_OPTIONS = [
   { key: 'puppy', emoji: '🐶', label: 'Puppy training' },
 ]
 
+const WALK_TIME_OPTIONS = [
+  { key: 'morning', emoji: '🌅', label: 'Morning' },
+  { key: 'afternoon', emoji: '☀️', label: 'Afternoon' },
+  { key: 'evening', emoji: '🌆', label: 'Evening' },
+]
+
 // Teal brand color
 const TEAL = 'oklch(0.48 0.17 196)'
 const TEAL_LIGHT = 'oklch(0.95 0.04 196)'
@@ -55,6 +62,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
   const [healthNotes, setHealthNotes] = useState('')
   const [walkingInstructions, setWalkingInstructions] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [walkTimeBucket, setWalkTimeBucket] = useState<string | null>(null)
 
   // Contact details
   const [parentName, setParentName] = useState('')
@@ -84,6 +92,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
       setHealthNotes(draft.healthNotes || '')
       setWalkingInstructions(draft.walkingInstructions || '')
       setPhotoUrl(draft.photoUrl || null)
+      setWalkTimeBucket(draft.walkTimeBucket || null)
       setParentName(draft.parentName || '')
       setOwnerPhone(draft.ownerPhone || '')
       localStorage.removeItem('pup-setup-draft')
@@ -111,6 +120,10 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
         return [...withoutNormal, value] // select
       })
     }
+  }
+
+  function toggleWalkTime(value: string) {
+    setWalkTimeBucket(prev => (prev === value ? null : value))
   }
 
   function toggleChip(chip: string) {
@@ -147,7 +160,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
   }
 
   async function submitDog(userId: string, data?: DraftData) {
-    const d = data ?? { name, careFocuses, healthNotes, walkingInstructions, photoUrl, parentName, ownerPhone }
+    const d = data ?? { name, careFocuses, healthNotes, walkingInstructions, photoUrl, parentName, ownerPhone, walkTimeBucket }
     setLoading(true)
     setError(null)
     try {
@@ -161,6 +174,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
           care_focus: (d.careFocuses ?? ['normal']).join(','),
           owner_phone: d.ownerPhone.trim() || null,
           photo_url: d.photoUrl || null,
+          walk_time_bucket: d.walkTimeBucket || null,
         }),
       })
       if (!res.ok) {
@@ -632,6 +646,50 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
                 onFocus={e => (e.target.style.borderColor = '#FF8C52')}
                 onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
               />
+            </div>
+
+            {/* Usual walk time */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={labelStyle}>
+                Usual walk time{' '}
+                <span style={{ fontWeight: 400, color: '#9CA3AF' }}>(optional)</span>
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                {WALK_TIME_OPTIONS.map(opt => {
+                  const selected = walkTimeBucket === opt.key
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => toggleWalkTime(opt.key)}
+                      style={{
+                        padding: '12px 10px',
+                        borderRadius: 12,
+                        border: `2px solid ${selected ? TEAL : '#E5E7EB'}`,
+                        background: selected ? TEAL_LIGHT : '#fff',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 6,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <span style={{ fontSize: 24 }}>{opt.emoji}</span>
+                      <span style={{
+                        fontFamily: 'var(--font-fredoka)',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: selected ? '#0A2F35' : '#6B7280',
+                        textAlign: 'center',
+                        lineHeight: 1.2,
+                      }}>
+                        {opt.label}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
             {/* Error */}

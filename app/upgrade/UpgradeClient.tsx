@@ -275,6 +275,12 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
           >
             Your walker logs every walk for free. Your subscription unlocks GPS report delivery to your WhatsApp — automatically, every time.
           </p>
+          <p
+            className="text-sm max-w-sm mx-auto leading-relaxed mt-3"
+            style={{ fontFamily: 'var(--font-nunito)', color: '#0A2F35', opacity: 0.5 }}
+          >
+            Every walk logged becomes a permanent part of {dogName ? `${dogName}'s` : 'your dog\'s'} health history — vet visits, grooming, and daily walks, all in one place.
+          </p>
         </div>
 
         {/* Error */}
@@ -313,11 +319,16 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                     Send dashboard link to {walkerName ?? 'walker'} on WhatsApp
                   </a>
                 ) : (
-                  <Link href="/setup/qr"
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '14px', borderRadius: 16, background: 'oklch(0.48 0.17 196)', color: '#fff', fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none', boxSizing: 'border-box' }}
-                  >
-                    Connect your walker first →
-                  </Link>
+                  <>
+                    <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 700, color: 'oklch(0.48 0.17 196)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                      Step 1 — required before your trial can start
+                    </p>
+                    <Link href="/setup/qr"
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '14px', borderRadius: 16, background: 'oklch(0.48 0.17 196)', color: '#fff', fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none', boxSizing: 'border-box' }}
+                    >
+                      Connect your walker first →
+                    </Link>
+                  </>
                 )}
               </div>
 
@@ -545,7 +556,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
         {/* What happens after trial */}
         <div
           className="rounded-[24px] p-6 mb-8"
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.08)' }}
+          style={{ background: '#0A2F35', boxShadow: CLAY_SHADOW_TEAL }}
         >
           <p className="text-sm font-bold mb-4" style={{ color: 'rgba(255,251,235,0.55)', fontFamily: 'var(--font-nunito)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11 }}>
             When your 3-day trial ends
@@ -565,7 +576,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
               </div>
             ))}
           </div>
-          <p className="text-xs mt-4" style={{ color: 'rgba(255,251,235,0.35)', fontFamily: 'var(--font-nunito)', lineHeight: 1.6 }}>
+          <p className="text-xs mt-4" style={{ color: 'rgba(255,251,235,0.55)', fontFamily: 'var(--font-nunito)', lineHeight: 1.6 }}>
             Reports are created when your walker logs the walk. PupStep stores and delivers them. Upgrading restores delivery instantly.
           </p>
         </div>
