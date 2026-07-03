@@ -22,7 +22,7 @@ export default async function SetupQRPage({
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/account?next=/setup/qr')
+    redirect('/login?next=/setup/qr')
   }
 
   if (!dogId) {

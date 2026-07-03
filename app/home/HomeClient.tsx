@@ -58,9 +58,17 @@ interface WalkLog {
 interface WeekDay { label: string; date: string; walked: boolean }
 interface WeekData { days: WeekDay[]; totalKm: number; totalPoops: number; totalWalks: number }
 
+interface OtherDog {
+  id: string
+  name: string
+  photo_url: string | null
+  walkedToday: boolean
+}
+
 interface Props {
   displayName: string
   firstDog: Dog | null
+  otherDogs?: OtherDog[]
   activeWalk: WalkSession | null
   completedWalk: WalkSession | null
   walkerConnections: WalkerConnection[]
@@ -251,6 +259,42 @@ function DogAvatar({ dog, size = 'md' }: { dog: Dog | null; size?: 'sm' | 'md' |
   )
 }
 
+// ── Multi-dog chip row ──────────────────────────────────────────────────────
+// Only rendered when the parent has 2+ dogs. Tapping a chip navigates to
+// /home?dog=<id>, which re-fetches the page with that dog fully expanded.
+function DogChipRow({ dogs }: { dogs: OtherDog[] }) {
+  if (dogs.length === 0) return null
+  return (
+    <motion.div variants={fadeUp} style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+      {dogs.map((dog) => (
+        <Link
+          key={dog.id}
+          href={`/home?dog=${dog.id}`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            flexShrink: 0,
+            background: '#fff',
+            border: '1.5px solid #E5E7EB',
+            borderRadius: 100,
+            padding: '6px 12px 6px 6px',
+            textDecoration: 'none',
+          }}
+        >
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <DogAvatar dog={{ id: dog.id, name: dog.name, breed: null, photo_url: dog.photo_url }} size="sm" />
+            {dog.walkedToday && (
+              <span style={{ position: 'absolute', bottom: -1, right: -1, width: 12, height: 12, borderRadius: '50%', background: '#25D366', border: '2px solid #fff' }} />
+            )}
+          </div>
+          <span style={{ fontFamily: 'var(--font-fredoka)', fontSize: 13, fontWeight: 600, color: '#0A2F35', whiteSpace: 'nowrap' }}>{dog.name}</span>
+        </Link>
+      ))}
+    </motion.div>
+  )
+}
+
 function WalkStreak({ streak }: { streak: number }) {
   if (streak === 0) return null
   return (
@@ -339,7 +383,7 @@ function LastWalkCard({ log, reportToken }: { log: WalkLog; reportToken?: string
         {log.duration_mins && <span style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#C2410C' }}>⏱ {log.duration_mins} min</span>}
         {log.distance_km && <span style={{ background: '#F0FDFA', border: '1px solid #99F6E4', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#0F766E' }}>📍 {log.distance_km} km</span>}
         {(log.poop_count ?? 0) > 0 && <span style={{ background: '#FEF9C3', border: '1px solid #FDE047', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#854D0E' }}>💩 {log.poop_count}</span>}
-        {(log.pee_count ?? 0) > 0 && <span style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#166534' }}>🌿 {log.pee_count}</span>}
+        {(log.pee_count ?? 0) > 0 && <span style={{ background: '#EFF6FF', border: '1px solid #93C5FD', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#1D4ED8' }}>💧 {log.pee_count}</span>}
         {log.mood && <span style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 600, color: '#1D4ED8' }}>😊 {log.mood}</span>}
       </div>
       <Link href={reportHref} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, paddingTop: 10, borderTop: '1px solid rgba(226,220,200,0.5)', fontSize: 12, fontWeight: 700, color: 'oklch(0.44 0.16 196)', textDecoration: 'none', fontFamily: 'var(--font-nunito)' }}>
@@ -894,7 +938,7 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
   )
 }
 
-export default function HomeClient({ displayName, firstDog, activeWalk, completedWalk, walkerConnections, lastWalk, isPro, walkStreak, weekData, lastWalkLog, todayWalked, todayLogs, trialStatus, trialDaysRemaining, trialStartedAt, missedWalksCount, totalReports, latestReportToken }: Props) {
+export default function HomeClient({ displayName, firstDog, otherDogs, activeWalk, completedWalk, walkerConnections, lastWalk, isPro, walkStreak, weekData, lastWalkLog, todayWalked, todayLogs, trialStatus, trialDaysRemaining, trialStartedAt, missedWalksCount, totalReports, latestReportToken }: Props) {
   const router = useRouter()
   const [showCelebration, setShowCelebration] = useState(false)
   const [teamSheetOpen, setTeamSheetOpen] = useState(false)
@@ -963,6 +1007,9 @@ export default function HomeClient({ displayName, firstDog, activeWalk, complete
 
       {/* ── Content ────────────────────────────────────────────────────────── */}
       <main className="max-w-lg mx-auto px-4 pt-5 pb-28 flex flex-col gap-4">
+        {/* Other dogs — collapsed chip row, only shown for 2+ dog parents */}
+        {otherDogs && otherDogs.length > 0 && <DogChipRow dogs={otherDogs} />}
+
         {!isPro && (trialStatus !== 'no_trial' || !lastWalkLog) && (
           <UpgradeBanner
             trialStatus={trialStatus}

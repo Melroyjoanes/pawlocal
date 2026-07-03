@@ -33,22 +33,29 @@ function computeWeekData(logs: Array<{ started_at: string; distance_km?: number 
   return { days, totalKm: Math.round(totalKm * 10) / 10, totalPoops, totalWalks }
 }
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ dog?: string }>
+}) {
   // Auth check
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/?auth_required=1&next=/home')
 
+  const { dog: requestedDogId } = await searchParams
+
   // Wrap everything in try-catch — if any query or env var is missing,
   // still render the page with defaults rather than showing a blank crash screen
   try {
-    return await renderHome(user)
+    return await renderHome(user, requestedDogId)
   } catch (err) {
     console.error('[home] render error:', err)
     return (
       <HomeClient
         displayName={user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? 'there'}
         firstDog={null}
+        otherDogs={[]}
         activeWalk={null}
         completedWalk={null}
         walkerConnections={[]}
@@ -69,7 +76,10 @@ export default async function HomePage() {
   }
 }
 
-async function renderHome(user: { id: string; user_metadata?: Record<string, string> | null; email?: string | null }) {
+async function renderHome(
+  user: { id: string; user_metadata?: Record<string, string> | null; email?: string | null },
+  requestedDogId?: string
+) {
   const db = admin()
   const todayMidnight = todayMidnightIST()
 
@@ -84,20 +94,20 @@ async function renderHome(user: { id: string; user_metadata?: Record<string, str
     { data: walkerConnectionsRaw },
     { data: subData },
     { data: trialProfileData },
-    { data: walkLogsRaw },
     { count: reportCount },
-    { data: latestReportData },
+    { data: mostRecentLogData },
   ] = await Promise.all([
     safe((db.from('profiles') as any)
       .select('id, full_name, avatar_url')
       .eq('id', user.id)
       .maybeSingle()),
 
+    // All dogs for this owner — a parent may have 2+ dogs, home page shows one
+    // fully expanded at a time plus a chip row for the others
     safe((db.from('dogs') as any)
-      .select('id, name, breed, photo_url, health_notes')
+      .select('id, name, breed, photo_url, health_notes, created_at')
       .eq('owner_id', user.id)
-      .order('created_at', { ascending: true })
-      .limit(1)),
+      .order('created_at', { ascending: true })),
 
     safe((db.from('walker_connections') as any)
       .select('id, walker_name, walker_phone, walker_role, status, dog_id, token, dogs(name)')
@@ -117,20 +127,16 @@ async function renderHome(user: { id: string; user_metadata?: Record<string, str
       .maybeSingle()),
 
     safe((db.from('walk_logs') as any)
-      .select('id, started_at, ended_at, duration_mins, distance_km, poop_count, pee_count, mood, walker_name')
-      .eq('owner_id', user.id)
-      .gte('started_at', fourteenDaysAgoIST())
-      .order('started_at', { ascending: false })),
-
-    safe((db.from('walk_logs') as any)
       .select('id', { count: 'exact', head: true })
       .eq('owner_id', user.id)),
 
-    // Latest walk report token — for direct link from last walk card
-    safe((db.from('walk_reports') as any)
-      .select('token')
+    // Most recently-active dog across ALL of this owner's dogs (all-time, not
+    // just the 14-day window) — used as the default expanded dog when no
+    // explicit ?dog= selection is present
+    safe((db.from('walk_logs') as any)
+      .select('dog_id')
       .eq('owner_id', user.id)
-      .order('walk_date', { ascending: false })
+      .order('started_at', { ascending: false })
       .limit(1)
       .maybeSingle()),
   ])
@@ -143,9 +149,74 @@ async function renderHome(user: { id: string; user_metadata?: Record<string, str
     user.email?.split('@')[0] ??
     'there'
 
-  const firstDog = dogsRaw?.[0] ?? null
+  type DogRow = { id: string; name: string; breed: string | null; photo_url: string | null; health_notes: string | null; created_at: string }
+  const dogs: DogRow[] = dogsRaw ?? []
   const walkerConnections = walkerConnectionsRaw ?? []
   const isPro = !!subData
+
+  // Determine the selected dog: explicit ?dog= param wins if it matches one of
+  // this owner's dogs; otherwise fall back to whichever dog has the most
+  // recent walk activity; otherwise the first dog by created_at.
+  const mostRecentDogId = (mostRecentLogData as { dog_id?: string } | null)?.dog_id ?? null
+  let selectedDog: DogRow | null = null
+  if (requestedDogId) {
+    selectedDog = dogs.find(d => d.id === requestedDogId) ?? null
+  }
+  if (!selectedDog && mostRecentDogId) {
+    selectedDog = dogs.find(d => d.id === mostRecentDogId) ?? null
+  }
+  if (!selectedDog) {
+    selectedDog = dogs[0] ?? null
+  }
+  const firstDog = selectedDog
+
+  // Other dogs — only relevant when the parent has 2+ dogs. Kept minimal:
+  // just enough to render a collapsed chip (photo, name, walked-today dot).
+  const otherDogRows = dogs.filter(d => d.id !== selectedDog?.id)
+  let otherDogs: { id: string; name: string; photo_url: string | null; walkedToday: boolean }[] = []
+  if (otherDogRows.length > 0) {
+    const otherDogIds = otherDogRows.map(d => d.id)
+    const { data: otherDogsTodayLogs } = await safe((db.from('walk_logs') as any)
+      .select('dog_id')
+      .eq('owner_id', user.id)
+      .in('dog_id', otherDogIds)
+      .gte('started_at', todayMidnight))
+    const walkedTodayIds = new Set((otherDogsTodayLogs ?? []).map((l: { dog_id: string }) => l.dog_id))
+    otherDogs = otherDogRows.map(d => ({
+      id: d.id,
+      name: d.name,
+      photo_url: d.photo_url,
+      walkedToday: walkedTodayIds.has(d.id),
+    }))
+  }
+
+  // Per-dog stat queries — scoped to BOTH owner_id and dog_id so a parent
+  // with multiple dogs doesn't see walks blended across all their dogs.
+  const [
+    { data: walkLogsRaw },
+    { data: latestReportData },
+  ] = await Promise.all([
+    safe((db.from('walk_logs') as any)
+      .select('id, started_at, ended_at, duration_mins, distance_km, poop_count, pee_count, mood, walker_name')
+      .eq('owner_id', user.id)
+      .eq('dog_id', selectedDog?.id ?? '')
+      .gte('started_at', fourteenDaysAgoIST())
+      .order('started_at', { ascending: false })),
+
+    // Latest walk report token — for direct link from last walk card.
+    // walk_reports has no dog_id column directly; it links to the dog via
+    // connection_id -> walker_connections.dog_id, so we embed that relation
+    // to filter by the selected dog.
+    selectedDog
+      ? safe((db.from('walk_reports') as any)
+          .select('token, walker_connections!inner(dog_id)')
+          .eq('owner_id', user.id)
+          .eq('walker_connections.dog_id', selectedDog.id)
+          .order('walk_date', { ascending: false })
+          .limit(1)
+          .maybeSingle())
+      : Promise.resolve({ data: null }),
+  ])
 
   // Compute trial status from profiles.trial_started_at
   const trialStartedAt: string | null = (trialProfileData as { trial_started_at?: string | null } | null)?.trial_started_at ?? null
@@ -192,6 +263,7 @@ async function renderHome(user: { id: string; user_metadata?: Record<string, str
       displayName={displayName}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       firstDog={firstDog as any}
+      otherDogs={otherDogs}
       activeWalk={null}
       completedWalk={null}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

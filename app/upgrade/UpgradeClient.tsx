@@ -556,9 +556,9 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
         {/* What happens after trial */}
         <div
           className="rounded-[24px] p-6 mb-8"
-          style={{ background: '#0A2F35', boxShadow: CLAY_SHADOW_TEAL }}
+          style={{ background: 'linear-gradient(155deg, #FF8C52, #F56B22)', boxShadow: CLAY_SHADOW_ORANGE }}
         >
-          <p className="text-sm font-bold mb-4" style={{ color: 'rgba(255,251,235,0.55)', fontFamily: 'var(--font-nunito)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11 }}>
+          <p className="text-sm font-bold mb-4" style={{ color: 'rgba(10,47,53,0.55)', fontFamily: 'var(--font-nunito)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11 }}>
             When your 3-day trial ends
           </p>
           <div className="space-y-2.5">
@@ -566,17 +566,17 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
               <div key={text} className="flex items-start gap-3">
                 <span
                   className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5"
-                  style={{ background: locked ? 'rgba(252,165,165,0.15)' : 'rgba(134,239,172,0.15)' }}
+                  style={{ background: locked ? 'rgba(124,45,18,0.18)' : 'rgba(10,47,53,0.14)', color: locked ? '#7C2D12' : '#0A2F35' }}
                 >
                   {locked ? '✕' : '✓'}
                 </span>
-                <span className="text-sm" style={{ color: locked ? 'rgba(252,165,165,0.85)' : 'rgba(134,239,172,0.85)', fontFamily: 'var(--font-nunito)' }}>
+                <span className="text-sm font-medium" style={{ color: locked ? '#7C2D12' : '#0A2F35', opacity: locked ? 0.85 : 0.8, fontFamily: 'var(--font-nunito)' }}>
                   {text}
                 </span>
               </div>
             ))}
           </div>
-          <p className="text-xs mt-4" style={{ color: 'rgba(255,251,235,0.55)', fontFamily: 'var(--font-nunito)', lineHeight: 1.6 }}>
+          <p className="text-xs mt-4" style={{ color: '#0A2F35', opacity: 0.6, fontFamily: 'var(--font-nunito)', lineHeight: 1.6 }}>
             Reports are created when your walker logs the walk. PupStep stores and delivers them. Upgrading restores delivery instantly.
           </p>
         </div>
