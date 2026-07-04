@@ -4,6 +4,7 @@ import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useRef, useEffect, useState } from 'react'
 import { loadGoogleMaps } from '@/lib/googleMapsLoader'
+import { trackEvent } from '@/lib/analytics'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type WalkReport = {
@@ -465,6 +466,10 @@ export default function WalkReportCard({
   useEffect(() => {
     if (burst) { const t = setTimeout(() => setBurst(false), 1200); return () => clearTimeout(t) }
   }, [burst])
+  useEffect(() => {
+    trackEvent('report_viewed', { is_first_report: isFirstReport })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const mood       = parseMood(report.notes)
   const cleanNotes = cleanupNotes(report.notes)
@@ -479,6 +484,7 @@ export default function WalkReportCard({
 
   async function handleCopy() {
     try { await navigator.clipboard.writeText(shareUrl) } catch { void 0 }
+    trackEvent('report_shared', { method: 'copy_link' })
     setCopied(true); setTimeout(() => setCopied(false), 2200)
   }
 
@@ -725,6 +731,7 @@ export default function WalkReportCard({
           <motion.a
             href={`https://wa.me/?text=${waText}`}
             target="_blank" rel="noopener noreferrer"
+            onClick={() => trackEvent('report_shared', { method: 'whatsapp' })}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '15px', borderRadius: 18, background: 'linear-gradient(160deg, #25D366 0%, #1aad54 100%)', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.22), inset 0 -4px 0 rgba(14,100,55,0.5), 0 8px 20px rgba(37,211,102,0.28)', color: '#fff', fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, textDecoration: 'none' }}
             whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
             <IconWA />

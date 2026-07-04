@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { getEntitlement } from '@/lib/entitlement'
+import { sendGA4Event } from '@/lib/ga4'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -198,6 +199,13 @@ export async function POST(req: NextRequest) {
 
   const deliveryAllowed = entitlement.isEntitled
   const isGenuinelyFirstReportEver = (priorReportCount ?? 0) === 0
+
+  if (isGenuinelyFirstReportEver) {
+    // No browser session available here (the walker submits this, not the
+    // parent), so we fall back to the owner's user_id as the GA4 client_id —
+    // won't merge with their client-side session, but the event still counts.
+    sendGA4Event(connection.owner_id, { name: 'trial_start' })
+  }
 
   // Only start the trial clock on a genuinely-first-ever report for this
   // owner — never on a lapsed account whose trial_started_at happens to be

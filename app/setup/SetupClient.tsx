@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import AuthModal from '@/components/AuthModal'
 import { LoadingButton } from '@/components/LoadingButton'
+import { trackEvent } from '@/lib/analytics'
 
 interface Props {
   user: { id: string; fullName: string | null } | null
@@ -208,6 +209,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
         }
       }
 
+      trackEvent('dog_created', { dog_id: dog.id })
       router.push(`/setup/qr?dog=${dog.id}&phone=${encodeURIComponent(d.ownerPhone.trim())}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')

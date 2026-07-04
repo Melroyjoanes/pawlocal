@@ -5,6 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import ParentBottomNav from '@/components/ParentBottomNav'
 import { LoadingButton } from '@/components/LoadingButton'
+import { trackEvent, getGaClientId } from '@/lib/analytics'
 
 declare global {
   interface Window {
@@ -124,6 +125,8 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
       }
       if (!res.ok || !data.order_id) throw new Error(data.error ?? 'Failed to create order')
 
+      trackEvent('begin_checkout', { currency: 'INR', value: 199, plan })
+
       const rzp = new window.Razorpay({
         key: data.key_id,
         amount: data.amount,
@@ -142,10 +145,20 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
                 plan,
+                ga_client_id: getGaClientId(),
               }),
             })
             const verifyData = await verifyRes.json() as { ok?: boolean; error?: string }
             if (!verifyRes.ok || !verifyData.ok) throw new Error(verifyData.error ?? 'Verification failed')
+            // Client-side purchase event too — the server-side one (fired from
+            // /api/payments/verify) is the source of truth for revenue reporting,
+            // this just gets it into real-time reports faster.
+            trackEvent('purchase', {
+              currency: 'INR',
+              value: 199,
+              transaction_id: response.razorpay_payment_id,
+              plan,
+            })
             // After payment, send user to setup so they activate immediately
             window.location.href = '/setup?just_paid=1'
           } catch (err) {

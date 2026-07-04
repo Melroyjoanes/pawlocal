@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { trackEvent } from '@/lib/analytics'
 
 interface Props {
   next: string
@@ -61,7 +62,7 @@ export default function LoginClient({ next }: Props) {
     if (otpCode.trim().length !== 6) { setError('Enter the 6-digit code'); return }
     setLoading(true)
     setError('')
-    const { error: verifyError } = await supabase.auth.verifyOtp({
+    const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
       email: emailInput.trim(),
       token: otpCode.trim(),
       type: 'email',
@@ -70,6 +71,16 @@ export default function LoginClient({ next }: Props) {
       setError('Incorrect code. Please try again.')
       setLoading(false)
       return
+    }
+    // Same "new vs returning" signal used server-side for the Google OAuth path —
+    // created_at and last_sign_in_at within 10s of each other means first-ever sign-in.
+    const user = verifyData.user
+    if (user) {
+      const createdAt = new Date(user.created_at).getTime()
+      const lastSignIn = user.last_sign_in_at ? new Date(user.last_sign_in_at).getTime() : createdAt
+      if (Math.abs(createdAt - lastSignIn) < 10_000) {
+        trackEvent('sign_up', { method: 'email_otp' })
+      }
     }
     setLoading(false)
     router.push(next)

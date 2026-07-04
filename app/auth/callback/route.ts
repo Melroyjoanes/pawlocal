@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { sendGA4Event } from '@/lib/ga4'
 
 function resolveBase(request: NextRequest): string {
   const forwardedHost = request.headers.get('x-forwarded-host')
@@ -103,6 +104,15 @@ export async function GET(request: NextRequest) {
     user_agent: userAgent,
     metadata: { next, provider: 'google' },
   })
+
+  // GA4 sign_up — only for genuinely new accounts, matches the same isNewUser
+  // signal used for the internal analytics_events log above.
+  if (isNewUser) {
+    const gaCookie = cookieStore.get('_ga')?.value
+    const gaParts = gaCookie?.split('.') ?? []
+    const gaClientId = gaParts.length >= 4 ? `${gaParts[2]}.${gaParts[3]}` : user.id
+    sendGA4Event(gaClientId, { name: 'sign_up', params: { method: 'google' } })
+  }
 
   // V1 provider routing removed — all users are treated as pet parents in V2.
   // If next points to a dead /pro route, redirect to /home instead.

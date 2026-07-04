@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import crypto from 'crypto'
+import { sendGA4Event } from '@/lib/ga4'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, plan } = await req.json()
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, plan, ga_client_id } = await req.json()
 
   // Verify HMAC signature
   const keySecret = process.env.RAZORPAY_KEY_SECRET!
@@ -49,6 +50,21 @@ export async function POST(req: NextRequest) {
     )
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  // Server-side purchase event — the source of truth for revenue reporting.
+  // Fired here (not just client-side) so a closed tab or network blip between
+  // "payment succeeded" and the browser sending its own beacon never loses
+  // the conversion. Uses the browser's real GA4 client_id when available so
+  // it merges into that visitor's session instead of showing up disconnected.
+  sendGA4Event(ga_client_id || user.id, {
+    name: 'purchase',
+    params: {
+      currency: 'INR',
+      value: (PLAN_PAISE[plan] ?? 19900) / 100,
+      transaction_id: razorpay_payment_id,
+      plan,
+    },
+  })
 
   // Fire-and-forget welcome / renewal email
   ;(async () => {

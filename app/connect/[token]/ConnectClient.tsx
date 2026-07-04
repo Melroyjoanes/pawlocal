@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from 'react'
 import { LoadingButton } from '@/components/LoadingButton'
+import { trackEvent } from '@/lib/analytics'
 
 type Lang = 'en' | 'hi' | 'mr'
 type Step = 'form' | 'success'
@@ -200,6 +201,7 @@ export default function ConnectClient({
         return
       }
 
+      trackEvent('walker_connected')
       setStep('success')
       setLoading(false)
       // Auto-open WhatsApp so walker saves their dashboard link immediately

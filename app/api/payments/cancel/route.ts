@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
+import { sendGA4Event } from '@/lib/ga4'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -35,6 +37,12 @@ export async function POST() {
   if (!count || count === 0) {
     return NextResponse.json({ error: 'No active subscription' }, { status: 404 })
   }
+
+  const cookieStore = await cookies()
+  const gaCookie = cookieStore.get('_ga')?.value
+  const gaParts = gaCookie?.split('.') ?? []
+  const gaClientId = gaParts.length >= 4 ? `${gaParts[2]}.${gaParts[3]}` : user.id
+  sendGA4Event(gaClientId, { name: 'subscription_cancelled' })
 
   const email = user.email
   const expiryDate = sub.expires_at
