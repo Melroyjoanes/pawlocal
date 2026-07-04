@@ -16,7 +16,7 @@ interface Props {
   currentPlan: 'monthly' | null
   expiresAt: string | null
   isLoggedIn: boolean
-  trialStatus?: 'no_trial' | 'trial' | 'expired' | 'active'
+  trialStatus?: 'no_trial' | 'trial' | 'lapsed' | 'active'
   trialDaysRemaining?: number | null
   walkerToken?: string | null
   walkerName?: string | null
@@ -267,7 +267,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
           >
             {trialStatus === 'no_trial' && 'Your 3-day free trial is waiting'}
             {trialStatus === 'trial' && 'Keep receiving reports after your trial'}
-            {trialStatus === 'expired' && 'Unlock your walk reports'}
+            {trialStatus === 'lapsed' && 'Welcome back!'}
             {trialStatus === 'active' && 'You\'re on PupStep Pro'}
           </h1>
           <p
@@ -472,8 +472,9 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
             </div>
           )}
 
-          {/* expired: trial over — show warning + payment button */}
-          {trialStatus === 'expired' && (
+          {/* lapsed: had access before (trial ran out OR subscription
+              cancelled/expired) — welcome-back treatment, no trial language */}
+          {trialStatus === 'lapsed' && (
             <div
               className="rounded-[28px] p-7"
               style={{ background: '#0A2F35', boxShadow: CLAY_SHADOW_TEAL }}
@@ -482,7 +483,9 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                 className="mb-5 px-4 py-3 rounded-2xl text-sm font-semibold text-center"
                 style={{ background: 'rgba(252,165,165,0.12)', color: 'rgba(252,165,165,0.90)', fontFamily: 'var(--font-nunito)' }}
               >
-                Your trial has ended — new reports are paused
+                {expiresAt
+                  ? `Your account was active until ${new Date(expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} — resume anytime`
+                  : 'Your access has paused — resume anytime'}
               </div>
               <div className="flex items-start justify-between mb-5">
                 <div>
@@ -538,7 +541,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                   className="rounded-[18px] text-sm"
                   style={{ padding: '16px', background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE }}
                 >
-                  Upgrade to Pro — ₹199/month
+                  Resubscribe — ₹199/month
                 </LoadingButton>
               ) : (
                 <Link
@@ -546,7 +549,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                   className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center"
                   style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
                 >
-                  Sign in to upgrade
+                  Sign in to resubscribe
                 </Link>
               )}
             </div>
@@ -560,7 +563,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
           style={{ background: 'linear-gradient(155deg, #FF8C52, #F56B22)', boxShadow: CLAY_SHADOW_ORANGE }}
         >
           <p className="text-sm font-bold mb-4" style={{ color: '#0A2F35', fontFamily: 'var(--font-nunito)', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11 }}>
-            When your 3-day trial ends
+            {trialStatus === 'lapsed' ? 'While your account is paused' : 'When your 3-day trial ends'}
           </p>
           <div className="space-y-2.5">
             {WHAT_HAPPENS.map(({ locked, text }) => (

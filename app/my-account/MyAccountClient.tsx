@@ -53,6 +53,7 @@ interface Props {
     trial_days_remaining: number | null
     expires_at: string | null
   } | null
+  isEntitled: boolean
 }
 
 interface BillingRow {
@@ -171,6 +172,7 @@ export default function MyAccountClient({
   profilePhone,
   notificationPreferences,
   subStatus,
+  isEntitled,
 }: Props) {
   // ── Profile section state
   const [displayName, setDisplayName] = useState(userDisplay)
@@ -391,6 +393,41 @@ export default function MyAccountClient({
 
       {/* ── Scroll body ── */}
       <div className="max-w-[480px] mx-auto px-4 pb-32 pt-6">
+
+        {/* ── Paused reports banner (only when not entitled) ── */}
+        {!isEntitled && (
+          <Card className="mb-5 flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0"
+              style={{ background: 'oklch(0.48 0.17 196 / 0.10)', minWidth: 40, minHeight: 40 }}
+            >
+              ⏸️
+            </div>
+            <div className="flex-1 min-w-0">
+              <p
+                className="font-bold text-slate-900"
+                style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14 }}
+              >
+                Your walk reports are paused
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+                Upgrade to start receiving them again.
+              </p>
+            </div>
+            <Link
+              href="/upgrade"
+              className="flex-shrink-0 inline-flex items-center justify-center px-4 rounded-xl font-bold text-xs"
+              style={{
+                background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
+                color: '#451A03',
+                boxShadow: '0 4px 0 rgba(175,65,10,0.28)',
+                minHeight: 44,
+              }}
+            >
+              Upgrade
+            </Link>
+          </Card>
+        )}
 
         {/* ════════════════════════════════════════════════════════════════
             SECTION 1: PROFILE

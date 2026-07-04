@@ -172,22 +172,31 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName, tria
       </div>
     )
   }
-  // Expired trial — FOMO state
-  if (trialStatus === 'expired') {
+  // Lapsed — unifies "trial ran out" AND "subscription cancelled/expired".
+  // trialStartedAt tells us which flavor this account is: if it's set, they
+  // had a trial (possibly with missed-walks FOMO copy); if it's null, they
+  // had a paid subscription directly and it lapsed — never show trial
+  // language to that account.
+  if (trialStatus === 'lapsed') {
     const missed = missedWalksCount ?? 0
+    const hadTrial = !!trialStartedAt
+    const headline = missed > 0
+      ? `${missed} ${missed === 1 ? 'walk was' : 'walks were'} logged while your access was paused.`
+      : hadTrial
+        ? 'Your trial has ended.'
+        : 'Welcome back — your subscription has ended.'
+    const body = missed > 0
+      ? `${dogName}'s walker is still logging walks — but reports aren't being delivered to you.`
+      : `${dogName}'s walker can still log walks, but new reports won't reach you until you resubscribe.`
     return (
       <div style={{ borderRadius: 16, background: '#0A2F35', border: '1.5px solid rgba(255,255,255,0.06)', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {/* FOMO headline */}
+        {/* FOMO / welcome-back headline */}
         <div>
           <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#FFFBEB', margin: '0 0 4px' }}>
-            {missed > 0
-              ? `${missed} ${missed === 1 ? 'walk was' : 'walks were'} logged while your trial was expired.`
-              : 'Your trial has ended.'}
+            {headline}
           </p>
           <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: 12, color: 'rgba(255,255,255,0.55)', margin: 0, lineHeight: 1.55 }}>
-            {missed > 0
-              ? `${dogName}'s walker is still logging walks — but reports aren't being delivered to you.`
-              : `${dogName}'s walker can still log walks, but new reports won't reach you until you upgrade.`}
+            {body}
           </p>
         </div>
         {/* Report count if any */}
@@ -195,12 +204,12 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName, tria
           <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 16 }}>🔒</span>
             <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: 12, color: 'rgba(255,251,235,0.7)', margin: 0 }}>
-              {totalReports} walk {totalReports === 1 ? 'report' : 'reports'} saved from your trial — still accessible
+              {totalReports} walk {totalReports === 1 ? 'report' : 'reports'} saved — still accessible
             </p>
           </div>
         )}
         <Link href="/upgrade" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FF8C52', color: '#fff', borderRadius: 12, padding: '13px 16px', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
-          {missed > 0 ? `See ${missed} missed ${missed === 1 ? 'report' : 'reports'} → ₹199/month` : 'Get reports delivered again → ₹199/month'}
+          {missed > 0 ? `See ${missed} missed ${missed === 1 ? 'report' : 'reports'} → ₹199/month` : 'Resubscribe → ₹199/month'}
         </Link>
       </div>
     )

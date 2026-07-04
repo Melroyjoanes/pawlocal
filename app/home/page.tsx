@@ -210,23 +210,29 @@ async function renderHome(
 
   // Trial status derived from the shared entitlement helper (keeps this page,
   // /upgrade, and /my-reports from drifting apart on trial-window math).
+  // 'lapsed' unifies "trial ran out" and "subscription cancelled/expired" —
+  // both get the same "welcome back, resubscribe" treatment, distinct from
+  // 'no_trial' which is a genuine first-time visitor (entitlement.hasHistory
+  // is false).
   const trialDaysRemaining = entitlement.trialDaysRemaining
   let trialStatus = 'no_trial'
   if (isPro) {
     trialStatus = 'active'
   } else if (entitlement.trialActive) {
     trialStatus = 'trial'
-  } else if (entitlement.trialExpired) {
-    trialStatus = 'expired'
+  } else if (entitlement.hasHistory) {
+    trialStatus = 'lapsed'
   }
 
   // Need trial_started_at for the missedWalksCount FOMO query below — re-derive
   // the trial expiry timestamp the same way the entitlement helper does.
   const trialStartedAt: string | null = (profileData as { trial_started_at?: string | null } | null)?.trial_started_at ?? null
 
-  // Compute missedWalksCount — FOMO number for expired trial non-Pro users
+  // Compute missedWalksCount — FOMO number for lapsed non-Pro users who did
+  // have a trial (trialStartedAt set). For a lapsed *subscription* (no trial
+  // ever started), this stays 0 and the banner falls back to generic copy.
   let missedWalksCount = 0
-  if (trialStatus === 'expired' && !isPro && trialStartedAt) {
+  if (trialStatus === 'lapsed' && !isPro && trialStartedAt) {
     const trialExpiredAt = new Date(new Date(trialStartedAt).getTime() + 3 * 86400 * 1000).toISOString()
     const { count: missed } = await safe((db.from('walk_logs') as any)
       .select('id', { count: 'exact', head: true })

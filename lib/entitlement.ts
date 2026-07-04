@@ -25,10 +25,24 @@ export type Entitlement = {
   trialExpired: boolean
   /** isPro || trialActive — the single flag that gates report viewing. */
   isEntitled: boolean
+  /**
+   * True if this account has EVER had access before — either (a) any
+   * `subscriptions` row exists at all for this user_id, regardless of its
+   * current status (active, cancelled, or however else it's marked) and
+   * regardless of whether it's still within its paid period, or (b)
+   * `trial_started_at` is non-null on their profile (a trial was started at
+   * some point, even if it's currently active or long expired).
+   *
+   * This is a cheap existence check, not filtered by current validity — it's
+   * what lets us distinguish a lapsed returning customer (had access, lost
+   * it) from a genuine first-time visitor (never had access) even though
+   * both currently have isEntitled === false.
+   */
+  hasHistory: boolean
 }
 
 export async function getEntitlement(db: AnySupabaseClient, userId: string): Promise<Entitlement> {
-  const [{ data: subData }, { data: profileData }] = await Promise.all([
+  const [{ data: subData }, { data: profileData }, { data: anySubData }] = await Promise.all([
     (db.from('subscriptions') as AnySupabaseClient)
       .select('plan, status, expires_at')
       .eq('user_id', userId)
@@ -41,6 +55,14 @@ export async function getEntitlement(db: AnySupabaseClient, userId: string): Pro
     (db.from('profiles') as AnySupabaseClient)
       .select('trial_started_at')
       .eq('id', userId)
+      .maybeSingle(),
+
+    // Existence check only — any subscription row at all for this user,
+    // regardless of status or expiry. Used solely to compute `hasHistory`.
+    (db.from('subscriptions') as AnySupabaseClient)
+      .select('id')
+      .eq('user_id', userId)
+      .limit(1)
       .maybeSingle(),
   ])
 
@@ -64,6 +86,8 @@ export async function getEntitlement(db: AnySupabaseClient, userId: string): Pro
     }
   }
 
+  const hasHistory = !!anySubData || !!trialStartedAt
+
   return {
     isPro,
     planExpiresAt,
@@ -71,5 +95,6 @@ export async function getEntitlement(db: AnySupabaseClient, userId: string): Pro
     trialDaysRemaining,
     trialExpired,
     isEntitled: isPro || trialActive,
+    hasHistory,
   }
 }

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { getEntitlement } from '@/lib/entitlement'
 import MyAccountClient from './MyAccountClient'
 
 function admin() {
@@ -28,6 +29,7 @@ export default async function MyAccountPage() {
     { data: profileData },
     { data: dogsRaw },
     { data: walkerConnectionsRaw },
+    entitlement,
   ] = await Promise.all([
     safe((db.from('subscriptions') as any)
       .select('plan, status, expires_at')
@@ -46,6 +48,7 @@ export default async function MyAccountPage() {
       .select('id, dog_id, walker_name, walker_phone, walker_role, status, claimed_at, token, dogs(name)')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false })),
+    getEntitlement(db, user.id),
   ])
 
   const trialStartedAt = (profileData as any)?.trial_started_at ?? null
@@ -92,6 +95,7 @@ export default async function MyAccountPage() {
       subStatus={subStatus}
       profilePhone={profilePhone}
       notificationPreferences={notificationPreferences}
+      isEntitled={entitlement.isEntitled}
     />
   )
 }

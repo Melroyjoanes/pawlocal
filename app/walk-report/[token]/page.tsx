@@ -256,7 +256,7 @@ function LockedReportView({ dogName }: { dogName: string }) {
               ].join(', '),
             }}
           >
-            Go to PupStep
+            Upgrade →
           </Link>
         </div>
       </div>

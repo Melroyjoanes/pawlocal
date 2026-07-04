@@ -23,7 +23,13 @@ export default async function UpgradePage() {
 
   let currentPlan: 'monthly' | null = null
   let expiresAt: string | null = null
-  let trialStatus: 'no_trial' | 'trial' | 'expired' | 'active' = 'no_trial'
+  // Four user-facing states:
+  //  - 'active'   currently entitled (Pro or in-trial-and-paid — see below)
+  //  - 'trial'    currently inside the free trial window
+  //  - 'lapsed'   not entitled now, but has had access before (trial ran out,
+  //               OR a subscription was cancelled/expired) — "welcome back"
+  //  - 'no_trial' genuinely never had any history — true first-time visitor
+  let trialStatus: 'no_trial' | 'trial' | 'lapsed' | 'active' = 'no_trial'
   let trialDaysRemaining: number | null = null
 
   if (user) {
@@ -53,8 +59,26 @@ export default async function UpgradePage() {
       trialStatus = 'active'
     } else if (entitlement.trialActive) {
       trialStatus = 'trial'
-    } else if (entitlement.trialExpired) {
-      trialStatus = 'expired'
+    } else if (entitlement.hasHistory) {
+      // Covers BOTH a trial that ran out AND a cancelled/expired subscription
+      // — same "welcome back, resubscribe" treatment either way.
+      trialStatus = 'lapsed'
+    }
+
+    // For the lapsed state, expiresAt from getEntitlement() only reflects a
+    // currently-valid plan (null once the plan has actually expired). Look up
+    // the most recent subscription's expiry (regardless of current validity)
+    // so the "welcome back" copy can reference the date they lost access.
+    if (trialStatus === 'lapsed' && !expiresAt) {
+      const { data: lastSub } = await adminClient
+        .from('subscriptions')
+        .select('expires_at')
+        .eq('user_id', user.id)
+        .order('expires_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      expiresAt = (lastSub as any)?.expires_at ?? null
     }
   }
 

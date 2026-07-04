@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
+import { getEntitlement } from '@/lib/entitlement'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -174,31 +175,35 @@ export async function POST(req: NextRequest) {
     (notes?.trim() ? 10 : 0)                               // Notes
 
   // --- Paywall delivery gate ---
-  // Fetch owner trial + subscription status synchronously so both the fire-and-forget
-  // email block and the wa_link build below can use the same result.
-  const [{ data: ownerProfile }, { data: ownerSub }] = await Promise.all([
+  // Uses the shared entitlement helper (same logic as the viewing paywall in
+  // app/walk-report/[token]/page.tsx, app/home/page.tsx, app/upgrade/page.tsx,
+  // app/my-reports/page.tsx) so a cancelled-but-not-yet-expired subscription
+  // still counts as entitled here too — this file used to have its own ad-hoc
+  // copy of this logic that didn't respect that rule.
+  const [entitlement, { data: ownerProfile }, { count: priorReportCount }] = await Promise.all([
+    getEntitlement(db, connection.owner_id),
     (db.from('profiles') as any)
-      .select('trial_started_at, notification_preferences')
+      .select('notification_preferences')
       .eq('id', connection.owner_id)
       .maybeSingle(),
-    (db.from('subscriptions') as any)
-      .select('id')
-      .eq('user_id', connection.owner_id)
-      .eq('status', 'active')
-      .gt('expires_at', new Date().toISOString())
-      .maybeSingle(),
+    // Real "has this owner ever had a report before" check — NOT based on
+    // trial_started_at being null, which is also null for a lapsed account
+    // whose profile row is missing/incomplete. Using null trial_started_at
+    // as a proxy for "first ever report" would let a lapsed subscriber's
+    // data gap silently re-grant a fresh trial and bypass the paywall.
+    (db.from('walk_reports') as any)
+      .select('id', { count: 'exact', head: true })
+      .eq('owner_id', connection.owner_id),
   ])
 
-  const TRIAL_DAYS = 3
-  const trialStart: string | null = ownerProfile?.trial_started_at ?? null
-  const trialActive = trialStart
-    ? (Date.now() - new Date(trialStart).getTime()) < TRIAL_DAYS * 86400 * 1000
-    : true // no trial started yet = first report = allow delivery
-  const isPro = !!ownerSub
-  const deliveryAllowed = isPro || trialActive
+  const deliveryAllowed = entitlement.isEntitled
+  const isGenuinelyFirstReportEver = (priorReportCount ?? 0) === 0
 
-  // Set trial_started_at if this is the first report (fire-and-forget — non-blocking)
-  if (!trialStart) {
+  // Only start the trial clock on a genuinely-first-ever report for this
+  // owner — never on a lapsed account whose trial_started_at happens to be
+  // unset for some other reason (e.g. a subscription granted without ever
+  // going through the trial flow).
+  if (isGenuinelyFirstReportEver) {
     ;(db.from('profiles') as any)
       .update({ trial_started_at: new Date().toISOString() })
       .eq('id', connection.owner_id)
@@ -246,7 +251,7 @@ export async function POST(req: NextRequest) {
             const reportEmailEnabled = prefs.report_email !== false // default true
 
             if (reportEmailEnabled) {
-              const isFirstReport = !trialStart
+              const isFirstReport = isGenuinelyFirstReportEver
               const trialExpiryLabel = isFirstReport
                 ? new Date(Date.now() + 3 * 86400 * 1000)
                     .toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
