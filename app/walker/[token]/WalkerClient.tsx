@@ -225,6 +225,307 @@ const ROLE_OPTIONS = [
   { value: 'other', label: 'Other' },
 ]
 
+// ── Walker dashboard translations ──────────────────────────────────────────────
+// Covers the highest-frequency strings a walker sees every day: primary action
+// buttons, tab labels, pee/poop logging, section headers, GPS help, and the
+// send-report confirmation flow. Lower-priority secondary copy (demo/practice
+// walk hints, settings sub-sections beyond My Profile/Connected Dog, etc.) is
+// intentionally left in English for now to keep this change scoped and low-risk.
+export type WalkerLang = 'en' | 'hinglish' | 'hi' | 'mr'
+
+export const WALKER_LANGUAGES: { code: WalkerLang; label: string }[] = [
+  { code: 'en', label: 'English' },
+  { code: 'hinglish', label: 'Hinglish' },
+  { code: 'hi', label: 'हिंदी' },
+  { code: 'mr', label: 'मराठी' },
+]
+
+interface WalkerTranslations {
+  tabWalk: string
+  tabSettings: string
+  hiGreeting: string
+  youreWalking: string
+  live: string
+  whoWalkingToday: string
+  chooseDog: string
+  changeDog: string
+  startWalk: string
+  gpsAutoNote: string
+  healthNoteLabel: string
+  healthNotesFromOwner: string
+  dogHealthNotes: (dog: string) => string
+  toiletLabel: string
+  pottyLabel: string
+  logged: string
+  endWalk: string
+  endPracticeWalk: string
+  gettingGps: string
+  takePhotoOf: (dog: string) => string
+  tapToTakePhoto: string
+  uploadingPhoto: string
+  howWasDog: (dog: string) => string
+  moodGreat: string
+  moodOkay: string
+  moodIssue: string
+  sendToOwner: (dog: string) => string
+  sendingReport: string
+  walkDoneTitle: (dog: string) => string
+  reportSentBody: (dog: string) => string
+  alsoEmailed: string
+  sendReportButton: (dog: string) => string
+  logAnotherWalk: string
+  recentWalks: string
+  noWalksYet: (dog: string) => string
+  reportSentToOwner: (dog: string) => string
+  minWalk: (n: number) => string
+  walkWord: string
+  gpsHelpHeading: string
+  gpsHelpBody: (dog: string) => string
+  onAndroid: string
+  onIphone: string
+  tryLocationAgain: string
+  androidSteps: string[]
+  iphoneSteps: string[]
+  myProfile: string
+  connectedDog: string
+}
+
+const WALKER_T: Record<WalkerLang, WalkerTranslations> = {
+  en: {
+    tabWalk: 'Walk',
+    tabSettings: 'Settings',
+    hiGreeting: 'Hi',
+    youreWalking: "You're walking",
+    live: 'Live',
+    whoWalkingToday: 'Who are you walking today? 🐕',
+    chooseDog: 'Choose the dog for this walk',
+    changeDog: '← Change dog',
+    startWalk: '🐾 Start Walk',
+    gpsAutoNote: 'GPS tracking starts automatically when you begin',
+    healthNoteLabel: 'Health note:',
+    healthNotesFromOwner: 'Health notes from owner',
+    dogHealthNotes: (dog: string) => `${dog}'s health notes`,
+    toiletLabel: 'Toilet 💧',
+    pottyLabel: 'Potty + Photo 💩',
+    logged: 'Logged!',
+    endWalk: 'End Walk',
+    endPracticeWalk: 'End Practice Walk ✓',
+    gettingGps: 'Getting GPS…',
+    takePhotoOf: (dog: string) => `Take a photo of ${dog} 📸`,
+    tapToTakePhoto: 'Tap to take a photo',
+    uploadingPhoto: 'Uploading…',
+    howWasDog: (dog: string) => `How was ${dog}?`,
+    moodGreat: 'Great',
+    moodOkay: 'Okay',
+    moodIssue: 'Had a problem',
+    sendToOwner: (dog: string) => `Send to ${dog}'s owner ✓`,
+    sendingReport: 'Sending report…',
+    walkDoneTitle: (dog: string) => `${dog}'s walk done!`,
+    reportSentBody: (dog: string) => `Report sent to ${dog}'s owner. WhatsApp is opening now.`,
+    alsoEmailed: 'PupStep has also emailed the report to the owner.',
+    sendReportButton: (dog: string) => `📲 Send report to ${dog}'s owner`,
+    logAnotherWalk: '🐕 Log another walk',
+    recentWalks: 'Recent Walks',
+    noWalksYet: (dog: string) => `No walks logged yet. Tap Start Walk to begin your first walk with ${dog}.`,
+    reportSentToOwner: (dog: string) => `✅ Report sent to ${dog}'s owner`,
+    minWalk: (n: number) => `${n} min walk`,
+    walkWord: 'Walk',
+    gpsHelpHeading: 'Location access needed',
+    gpsHelpBody: (dog: string) => `Without GPS, ${dog}'s owner cannot see the route ${dog} walked.`,
+    onAndroid: 'On Android',
+    onIphone: 'On iPhone',
+    tryLocationAgain: 'Try location again',
+    androidSteps: ['Open Chrome Settings (three dots, top right)', 'Tap "Site settings"', 'Find "Location" and allow'],
+    iphoneSteps: ['Go to Settings → Safari', 'Tap "Location"', 'Select "Allow"'],
+    myProfile: 'My Profile',
+    connectedDog: 'Connected Dog',
+  },
+  hinglish: {
+    tabWalk: 'Walk',
+    tabSettings: 'Settings',
+    hiGreeting: 'Hi',
+    youreWalking: 'Aap walk karwa rahe ho',
+    live: 'Live',
+    whoWalkingToday: 'Aaj kis kutte ko walk karwana hai? 🐕',
+    chooseDog: 'Is walk ke liye kutta choose karein',
+    changeDog: '← Kutta badlein',
+    startWalk: '🐾 Start Walk',
+    gpsAutoNote: 'GPS tracking apne aap shuru ho jaati hai jab aap start karte ho',
+    healthNoteLabel: 'Health note:',
+    healthNotesFromOwner: 'Owner ke health notes',
+    dogHealthNotes: (dog: string) => `${dog} ke health notes`,
+    toiletLabel: 'Toilet 💧',
+    pottyLabel: 'Potty + Photo 💩',
+    logged: 'Log ho gaya!',
+    endWalk: 'End Walk',
+    endPracticeWalk: 'Practice Walk Khatam Karein ✓',
+    gettingGps: 'GPS mil raha hai…',
+    takePhotoOf: (dog: string) => `${dog} ki photo lein 📸`,
+    tapToTakePhoto: 'Photo lene ke liye tap karein',
+    uploadingPhoto: 'Upload ho raha hai…',
+    howWasDog: (dog: string) => `${dog} kaisa tha?`,
+    moodGreat: 'Bahut Achha',
+    moodOkay: 'Theek-Thaak',
+    moodIssue: 'Problem hui',
+    sendToOwner: (dog: string) => `${dog} ke owner ko bhejein ✓`,
+    sendingReport: 'Report bheji ja rahi hai…',
+    walkDoneTitle: (dog: string) => `${dog} ki walk ho gayi!`,
+    reportSentBody: (dog: string) => `${dog} ke owner ko report bhej di gayi. WhatsApp khul raha hai.`,
+    alsoEmailed: 'PupStep ne owner ko report email bhi kar di hai.',
+    sendReportButton: (dog: string) => `📲 ${dog} ke owner ko report bhejein`,
+    logAnotherWalk: '🐕 Ek aur walk log karein',
+    recentWalks: 'Recent Walks',
+    noWalksYet: (dog: string) => `Abhi tak koi walk log nahi hui. ${dog} ke saath pehli walk shuru karne ke liye Start Walk par tap karein.`,
+    reportSentToOwner: (dog: string) => `✅ ${dog} ke owner ko report bhej di gayi`,
+    minWalk: (n: number) => `${n} min ki walk`,
+    walkWord: 'Walk',
+    gpsHelpHeading: 'Location access chahiye',
+    gpsHelpBody: (dog: string) => `GPS ke bina, ${dog} ke owner ko ${dog} ka route nahi dikhega.`,
+    onAndroid: 'Android par',
+    onIphone: 'iPhone par',
+    tryLocationAgain: 'Location dobara try karein',
+    androidSteps: ['Chrome Settings kholein (upar right mein teen dots)', '"Site settings" par tap karein', '"Location" dhoondein aur allow karein'],
+    iphoneSteps: ['Settings → Safari mein jaayein', '"Location" par tap karein', '"Allow" select karein'],
+    myProfile: 'Meri Profile',
+    connectedDog: 'Connected Dog',
+  },
+  hi: {
+    tabWalk: 'वॉक',
+    tabSettings: 'सेटिंग्स',
+    hiGreeting: 'नमस्ते',
+    youreWalking: 'आप वॉक करवा रहे हैं',
+    live: 'लाइव',
+    whoWalkingToday: 'आज किस कुत्ते को वॉक करवाना है? 🐕',
+    chooseDog: 'इस वॉक के लिए कुत्ता चुनें',
+    changeDog: '← कुत्ता बदलें',
+    startWalk: '🐾 Start Walk',
+    gpsAutoNote: 'शुरू करते ही GPS ट्रैकिंग अपने आप शुरू हो जाती है',
+    healthNoteLabel: 'हेल्थ नोट:',
+    healthNotesFromOwner: 'मालिक के हेल्थ नोट्स',
+    dogHealthNotes: (dog: string) => `${dog} के हेल्थ नोट्स`,
+    toiletLabel: 'पेशाब 💧',
+    pottyLabel: 'पॉटी + फोटो 💩',
+    logged: 'लॉग हो गया!',
+    endWalk: 'End Walk',
+    endPracticeWalk: 'प्रैक्टिस वॉक समाप्त करें ✓',
+    gettingGps: 'GPS मिल रहा है…',
+    takePhotoOf: (dog: string) => `${dog} की फोटो लें 📸`,
+    tapToTakePhoto: 'फोटो लेने के लिए टैप करें',
+    uploadingPhoto: 'अपलोड हो रहा है…',
+    howWasDog: (dog: string) => `${dog} कैसा था?`,
+    moodGreat: 'बहुत अच्छा',
+    moodOkay: 'ठीक-ठाक',
+    moodIssue: 'समस्या हुई',
+    sendToOwner: (dog: string) => `${dog} के मालिक को भेजें ✓`,
+    sendingReport: 'रिपोर्ट भेजी जा रही है…',
+    walkDoneTitle: (dog: string) => `${dog} की वॉक हो गई!`,
+    reportSentBody: (dog: string) => `${dog} के मालिक को रिपोर्ट भेज दी गई है। WhatsApp खुल रहा है।`,
+    alsoEmailed: 'PupStep ने मालिक को रिपोर्ट ईमेल भी कर दी है।',
+    sendReportButton: (dog: string) => `📲 ${dog} के मालिक को रिपोर्ट भेजें`,
+    logAnotherWalk: '🐕 एक और वॉक लॉग करें',
+    recentWalks: 'हाल की वॉक्स',
+    noWalksYet: (dog: string) => `अभी तक कोई वॉक लॉग नहीं हुई। ${dog} के साथ पहली वॉक शुरू करने के लिए Start Walk पर टैप करें।`,
+    reportSentToOwner: (dog: string) => `✅ ${dog} के मालिक को रिपोर्ट भेज दी गई`,
+    minWalk: (n: number) => `${n} मिनट की वॉक`,
+    walkWord: 'वॉक',
+    gpsHelpHeading: 'लोकेशन एक्सेस चाहिए',
+    gpsHelpBody: (dog: string) => `GPS के बिना, ${dog} के मालिक को ${dog} का रूट नहीं दिखेगा।`,
+    onAndroid: 'Android पर',
+    onIphone: 'iPhone पर',
+    tryLocationAgain: 'लोकेशन फिर से आज़माएं',
+    androidSteps: ['Chrome सेटिंग्स खोलें (ऊपर दाईं ओर तीन डॉट्स)', '"Site settings" पर टैप करें', '"Location" ढूंढें और अनुमति दें'],
+    iphoneSteps: ['Settings → Safari में जाएं', '"Location" पर टैप करें', '"Allow" चुनें'],
+    myProfile: 'मेरी प्रोफ़ाइल',
+    connectedDog: 'जुड़ा हुआ कुत्ता',
+  },
+  mr: {
+    tabWalk: 'वॉक',
+    tabSettings: 'सेटिंग्ज',
+    hiGreeting: 'नमस्कार',
+    youreWalking: 'तुम्ही वॉक करवत आहात',
+    live: 'लाइव्ह',
+    whoWalkingToday: 'आज कोणत्या कुत्र्याला वॉक करवायचे? 🐕',
+    chooseDog: 'या वॉकसाठी कुत्रा निवडा',
+    changeDog: '← कुत्रा बदला',
+    startWalk: '🐾 Start Walk',
+    gpsAutoNote: 'सुरू करताच GPS ट्रॅकिंग आपोआप सुरू होते',
+    healthNoteLabel: 'हेल्थ नोट:',
+    healthNotesFromOwner: 'मालकाच्या हेल्थ नोट्स',
+    dogHealthNotes: (dog: string) => `${dog} च्या हेल्थ नोट्स`,
+    toiletLabel: 'लघवी 💧',
+    pottyLabel: 'शौच + फोटो 💩',
+    logged: 'लॉग झाले!',
+    endWalk: 'End Walk',
+    endPracticeWalk: 'सराव वॉक संपवा ✓',
+    gettingGps: 'GPS मिळत आहे…',
+    takePhotoOf: (dog: string) => `${dog} चा फोटो घ्या 📸`,
+    tapToTakePhoto: 'फोटो घेण्यासाठी टॅप करा',
+    uploadingPhoto: 'अपलोड होत आहे…',
+    howWasDog: (dog: string) => `${dog} कसा होता?`,
+    moodGreat: 'खूप छान',
+    moodOkay: 'ठीक-ठाक',
+    moodIssue: 'समस्या झाली',
+    sendToOwner: (dog: string) => `${dog} च्या मालकाला पाठवा ✓`,
+    sendingReport: 'अहवाल पाठवला जात आहे…',
+    walkDoneTitle: (dog: string) => `${dog} ची वॉक झाली!`,
+    reportSentBody: (dog: string) => `${dog} च्या मालकाला अहवाल पाठवला गेला आहे. WhatsApp उघडत आहे.`,
+    alsoEmailed: 'PupStep ने मालकाला अहवाल ईमेलनेही पाठवला आहे.',
+    sendReportButton: (dog: string) => `📲 ${dog} च्या मालकाला अहवाल पाठवा`,
+    logAnotherWalk: '🐕 आणखी एक वॉक लॉग करा',
+    recentWalks: 'अलीकडील वॉक्स',
+    noWalksYet: (dog: string) => `अजून कोणतीही वॉक लॉग झाली नाही. ${dog} सोबत पहिली वॉक सुरू करण्यासाठी Start Walk वर टॅप करा.`,
+    reportSentToOwner: (dog: string) => `✅ ${dog} च्या मालकाला अहवाल पाठवला गेला`,
+    minWalk: (n: number) => `${n} मिनिटांची वॉक`,
+    walkWord: 'वॉक',
+    gpsHelpHeading: 'लोकेशन अ‍ॅक्सेस हवा',
+    gpsHelpBody: (dog: string) => `GPS शिवाय, ${dog} च्या मालकाला ${dog} चा मार्ग दिसणार नाही.`,
+    onAndroid: 'Android वर',
+    onIphone: 'iPhone वर',
+    tryLocationAgain: 'लोकेशन पुन्हा प्रयत्न करा',
+    androidSteps: ['Chrome सेटिंग्ज उघडा (वरती उजवीकडे तीन ठिपके)', '"Site settings" वर टॅप करा', '"Location" शोधा आणि परवानगी द्या'],
+    iphoneSteps: ['Settings → Safari मध्ये जा', '"Location" वर टॅप करा', '"Allow" निवडा'],
+    myProfile: 'माझी प्रोफाइल',
+    connectedDog: 'जोडलेला कुत्रा',
+  },
+}
+
+function moodLabel(t: WalkerTranslations, value: string): string {
+  if (value === 'great') return t.moodGreat
+  if (value === 'okay') return t.moodOkay
+  if (value === 'issue') return t.moodIssue
+  return value
+}
+
+function WalkerLanguagePicker({ lang, onChange }: { lang: WalkerLang; onChange: (l: WalkerLang) => void }) {
+  return (
+    <div
+      className="flex items-center gap-0.5 w-full"
+      style={{ background: 'rgba(10,47,53,0.06)', borderRadius: 999, padding: 3 }}
+    >
+      {WALKER_LANGUAGES.map((l) => (
+        <button
+          key={l.code}
+          type="button"
+          onClick={() => onChange(l.code)}
+          className="flex-1 py-1.5 rounded-full text-center transition-all"
+          style={{
+            background: lang === l.code ? 'oklch(0.48 0.17 196)' : 'transparent',
+            color: lang === l.code ? '#ffffff' : '#4B5563',
+            fontFamily: 'var(--font-nunito)',
+            fontSize: 10.5,
+            fontWeight: 700,
+            boxShadow: lang === l.code ? '0 2px 6px rgba(10,47,53,0.18)' : 'none',
+            transitionTimingFunction: 'cubic-bezier(0.25, 1, 0.5, 1)',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {l.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function SettingsTab({
   token,
   walkerName,
@@ -246,6 +547,7 @@ function SettingsTab({
   setAddClientSuccess,
   addClientError,
   setAddClientError,
+  t,
 }: {
   token: string
   walkerName: string
@@ -267,28 +569,39 @@ function SettingsTab({
   setAddClientSuccess: (v: string | null) => void
   addClientError: string | null
   setAddClientError: (v: string | null) => void
+  t: WalkerTranslations
 }) {
   const [profileName, setProfileName] = useState(walkerName)
   const [profileRole, setProfileRole] = useState(walkerRole ?? '')
   const [saving, setSaving] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
   const careFocusKeys = parseCareFocus(careFocus)
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Tracks the last value we actually intended to persist (or the initial value),
+  // so we only schedule a save when the walker changes something — guards against
+  // React re-invoking this effect (e.g. Strict Mode's dev double-invoke) with the
+  // same unchanged values and firing a spurious network request on mount.
+  const lastIntentRef = useRef({ name: walkerName, role: walkerRole ?? '' })
 
   const dashUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/walker/${token}`
     : `https://pupstep.in/walker/${token}`
 
-  async function handleSaveProfile() {
-    if (!profileName.trim()) return
+  const saveProfile = useCallback(async (name: string, role: string) => {
+    if (!name.trim()) return
     setSaving(true)
+    setJustSaved(false)
     try {
       const res = await fetch(`/api/walker/${token}/profile`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walker_name: profileName, walker_role: profileRole }),
+        body: JSON.stringify({ walker_name: name, walker_role: role }),
       })
       if (res.ok) {
         showToast('Profile updated ✓')
+        setJustSaved(true)
+        setTimeout(() => setJustSaved(false), 2000)
       } else {
         showToast('Failed to save. Try again.')
       }
@@ -297,7 +610,24 @@ function SettingsTab({
     } finally {
       setSaving(false)
     }
-  }
+  }, [token, showToast])
+
+  // Auto-save profile changes (debounced) — no explicit "Save" button needed.
+  useEffect(() => {
+    if (profileName === lastIntentRef.current.name && profileRole === lastIntentRef.current.role) {
+      // Nothing actually changed since the last time we scheduled/applied a save —
+      // avoid firing a request (protects against effect re-invocation, e.g. Strict Mode).
+      return
+    }
+    lastIntentRef.current = { name: profileName, role: profileRole }
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    autoSaveTimer.current = setTimeout(() => {
+      saveProfile(profileName, profileRole)
+    }, 800)
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    }
+  }, [profileName, profileRole, saveProfile])
 
   function handleCopyLink() {
     navigator.clipboard.writeText(dashUrl).then(() => {
@@ -323,19 +653,29 @@ function SettingsTab({
 
       {/* ── Section 1: My Profile ── */}
       <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-5">
-        {sectionHead('My Profile')}
+        {sectionHead(t.myProfile)}
         <div className="space-y-3">
           <div>
             <label style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: '#64748B', display: 'block', marginBottom: 6 }}>
               Name
             </label>
-            <input
-              type="text"
-              value={profileName}
-              onChange={(e) => setProfileName(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2"
-              style={{ fontFamily: 'var(--font-nunito)', outlineColor: 'oklch(0.48 0.17 196)' }}
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 px-3 py-3 pr-20 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2"
+                style={{ fontFamily: 'var(--font-nunito)', outlineColor: 'oklch(0.48 0.17 196)' }}
+              />
+              {(saving || justSaved) && (
+                <span
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold"
+                  style={{ fontFamily: 'var(--font-nunito)', color: saving ? '#94A3B8' : 'oklch(0.48 0.17 196)' }}
+                >
+                  {saving ? 'Saving…' : 'Saved ✓'}
+                </span>
+              )}
+            </div>
           </div>
           {walkerPhone && (
             <div>
@@ -373,21 +713,12 @@ function SettingsTab({
               ))}
             </div>
           </div>
-          <LoadingButton
-            onClick={handleSaveProfile}
-            loading={saving}
-            loadingText="Saving…"
-            className="rounded-2xl"
-            style={{ minHeight: 48, fontSize: 16 }}
-          >
-            Save changes
-          </LoadingButton>
         </div>
       </div>
 
       {/* ── Section 2: Connected Dog ── */}
       <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-5">
-        {sectionHead('Connected Dog')}
+        {sectionHead(t.connectedDog)}
         {/* Dog identity row */}
         <div className="flex items-center gap-3 mb-3">
           <div className="w-14 h-14 rounded-full flex-shrink-0 overflow-hidden" style={{ background: '#FF8C52' }}>
@@ -429,7 +760,7 @@ function SettingsTab({
 
         {/* Owner label */}
         <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', margin: '0 0 10px' }}>
-          Owner: <strong style={{ color: '#0A2F35' }}>{ownerFirstName}</strong>
+          {dogName}&apos;s owner: <strong style={{ color: '#0A2F35' }}>{ownerFirstName}</strong>
         </p>
 
         {/* WhatsApp owner */}
@@ -441,7 +772,7 @@ function SettingsTab({
             className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white text-sm active:scale-[0.97] transition-transform"
             style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', textDecoration: 'none' }}
           >
-            💬 WhatsApp {ownerFirstName}
+            💬 WhatsApp {dogName}&apos;s owner
           </a>
         )}
 
@@ -517,7 +848,7 @@ function SettingsTab({
           ))}
         </div>
         <a
-          href="/walker-guide"
+          href={`/walker-guide?token=${token}`}
           style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: 'oklch(0.48 0.17 196)', display: 'block', textAlign: 'center', marginTop: 16 }}
         >
           Need GPS help? → View walker guide
@@ -652,6 +983,18 @@ export default function WalkerClient({
   const [activeTab, setActiveTab] = useState<WalkerTab>('walk')
   const [showSaveNotice, setShowSaveNotice] = useState(false)
   const careFocusKeys = parseCareFocus(careFocus)
+
+  // Walker's preferred language — persisted to localStorage so a walker returning
+  // to their bookmarked dashboard link doesn't have to re-select it every visit.
+  const [lang, setLang] = useState<WalkerLang>('en')
+  useEffect(() => {
+    const saved = localStorage.getItem('pup-walker-lang') as WalkerLang | null
+    if (saved && WALKER_LANGUAGES.some(l => l.code === saved)) setLang(saved)
+  }, [])
+  useEffect(() => {
+    localStorage.setItem('pup-walker-lang', lang)
+  }, [lang])
+  const t = WALKER_T[lang]
 
   // Multi-client state
   const [connections, setConnections] = useState<ClientConnection[]>([])
@@ -1210,8 +1553,21 @@ export default function WalkerClient({
           padding: '0 20px 40px',
           overflowY: 'auto',
         }}>
+          {/* Header — keep logo/greeting visible on this full-screen state too */}
+          <div className="flex items-center justify-between" style={{ paddingTop: 32, paddingBottom: 4 }}>
+            <span className="text-xl font-bold text-[#0A2F35]" style={{ fontFamily: 'var(--font-fredoka)' }}>
+              PupStep 🐾
+            </span>
+            <span className="text-sm text-slate-500" style={{ fontFamily: 'var(--font-nunito)' }}>
+              {t.hiGreeting}, {walkerName}
+            </span>
+          </div>
+          <div style={{ paddingBottom: 8 }}>
+            <WalkerLanguagePicker lang={lang} onChange={setLang} />
+          </div>
+
           {/* Back button */}
-          <div style={{ paddingTop: 52, paddingBottom: 8 }}>
+          <div style={{ paddingTop: 8, paddingBottom: 8 }}>
             <button
               onClick={() => { setPhase('idle'); setGpsError(null) }}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white shadow-md text-gray-700 active:opacity-60 transition-opacity"
@@ -1246,7 +1602,7 @@ export default function WalkerClient({
             textAlign: 'center',
             margin: '0 0 10px',
           }}>
-            Location access needed
+            {t.gpsHelpHeading}
           </h1>
 
           {/* Subtext */}
@@ -1258,7 +1614,7 @@ export default function WalkerClient({
             margin: '0 0 28px',
             lineHeight: 1.6,
           }}>
-            Without GPS, {ownerFirstName} cannot see the route {dogName} walked.
+            {t.gpsHelpBody(dogName)}
           </p>
 
           {/* Android steps */}
@@ -1278,13 +1634,9 @@ export default function WalkerClient({
               letterSpacing: '0.05em',
               margin: '0 0 12px',
             }}>
-              On Android
+              {t.onAndroid}
             </p>
-            {[
-              'Open Chrome Settings (three dots, top right)',
-              'Tap "Site settings"',
-              'Find "Location" and allow',
-            ].map((step, i) => (
+            {t.androidSteps.map((step, i) => (
               <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: i < 2 ? 10 : 0 }}>
                 <div style={{
                   width: 24,
@@ -1326,13 +1678,9 @@ export default function WalkerClient({
               letterSpacing: '0.05em',
               margin: '0 0 12px',
             }}>
-              On iPhone
+              {t.onIphone}
             </p>
-            {[
-              'Go to Settings → Safari',
-              'Tap "Location"',
-              'Select "Allow"',
-            ].map((step, i) => (
+            {t.iphoneSteps.map((step, i) => (
               <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: i < 2 ? 10 : 0 }}>
                 <div style={{
                   width: 24,
@@ -1373,7 +1721,7 @@ export default function WalkerClient({
               cursor: 'pointer',
             }}
           >
-            Try location again
+            {t.tryLocationAgain}
           </button>
         </div>
       )}
@@ -1484,6 +1832,18 @@ export default function WalkerClient({
           justifyContent: 'center',
           padding: '0 24px',
         }}>
+          {/* Header — keep logo/greeting visible on this full-screen state too */}
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '32px 20px 8px' }}>
+            <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
+              <span className="text-xl font-bold text-[#0A2F35]" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                PupStep 🐾
+              </span>
+              <span className="text-sm text-slate-500" style={{ fontFamily: 'var(--font-nunito)' }}>
+                {t.hiGreeting}, {walkerName}
+              </span>
+            </div>
+            <WalkerLanguagePicker lang={lang} onChange={setLang} />
+          </div>
           <div style={{
             width: 72,
             height: 72,
@@ -1609,13 +1969,18 @@ export default function WalkerClient({
       )}
 
       {/* Header */}
-      <div className="px-5 pt-8 pb-4 flex items-center justify-between">
+      <div className="px-5 pt-8 pb-2 flex items-center justify-between">
         <span className="text-xl font-bold text-[#0A2F35]" style={{ fontFamily: 'var(--font-fredoka)' }}>
           PupStep 🐾
         </span>
         <span className="text-sm text-slate-500" style={{ fontFamily: 'var(--font-nunito)' }}>
-          Hi, {walkerName}
+          {t.hiGreeting}, {walkerName}
         </span>
+      </div>
+
+      {/* Language selector — segmented pill, 4 options, each labelled in its own script */}
+      <div className="px-5 pb-4">
+        <WalkerLanguagePicker lang={lang} onChange={setLang} />
       </div>
 
       {/* Tab content */}
@@ -1633,7 +1998,7 @@ export default function WalkerClient({
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-slate-500 font-medium">You&apos;re walking</p>
+              <p className="text-xs text-slate-500 font-medium">{t.youreWalking}</p>
               <p className="font-bold text-[#0A2F35] text-xl leading-tight" style={{ fontFamily: 'var(--font-fredoka)' }}>
                 {activeDogName}
               </p>
@@ -1642,7 +2007,7 @@ export default function WalkerClient({
             {phase === 'walking' && (
               <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1">
                 <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-xs font-bold text-green-700">Live</span>
+                <span className="text-xs font-bold text-green-700">{t.live}</span>
               </div>
             )}
           </div>
@@ -1651,7 +2016,7 @@ export default function WalkerClient({
           {activeHealthNotes && (
             <div className="mx-5 mb-4 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-start gap-2.5">
               <span className="text-base flex-shrink-0 mt-0.5">⚠️</span>
-              <p className="text-sm text-amber-800 font-medium"><strong>Health note:</strong> {activeHealthNotes}</p>
+              <p className="text-sm text-amber-800 font-medium"><strong>{t.healthNoteLabel}</strong> {activeHealthNotes}</p>
             </div>
           )}
 
@@ -1659,10 +2024,10 @@ export default function WalkerClient({
           {phase === 'idle' && showPicker && (
             <div className="px-5 pt-6 pb-24">
               <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 24, fontWeight: 700, color: '#0A2F35', marginBottom: 6 }}>
-                Who are you walking today? 🐕
+                {t.whoWalkingToday}
               </p>
               <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', marginBottom: 24 }}>
-                Choose the dog for this walk
+                {t.chooseDog}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {connections.map(c => (
@@ -1709,7 +2074,7 @@ export default function WalkerClient({
                   onClick={() => setShowPicker(true)}
                   style={{ background: 'none', border: 'none', fontFamily: 'var(--font-nunito)', fontSize: 13,
                     color: 'oklch(0.48 0.17 196)', fontWeight: 600, cursor: 'pointer', padding: '8px 0', minHeight: 44 }}>
-                  ← Change dog
+                  {t.changeDog}
                 </button>
               )}
               {/* First-time save notice */}
@@ -1781,7 +2146,7 @@ export default function WalkerClient({
                   <span style={{ fontSize: 20, flexShrink: 0 }}>⚠️</span>
                   <div>
                     <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: '#92400E', margin: '0 0 3px' }}>
-                      Health notes from owner
+                      {t.healthNotesFromOwner}
                     </p>
                     <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#B45309', margin: 0, lineHeight: 1.5 }}>
                       {healthNotes}
@@ -1814,10 +2179,10 @@ export default function WalkerClient({
                 className="rounded-2xl text-2xl shadow-lg"
                 style={{ minHeight: 68, background: 'linear-gradient(135deg, #FF8C52 0%, #F07030 100%)', fontSize: 22 }}
               >
-                🐾 Start Walk
+                {t.startWalk}
               </LoadingButton>
               <div className="flex flex-col items-center gap-1">
-                <p className="text-center text-xs text-slate-400">GPS tracking starts automatically when you begin</p>
+                <p className="text-center text-xs text-slate-400">{t.gpsAutoNote}</p>
                 <button
                   onClick={() => setShowDemoConfirm(true)}
                   style={{
@@ -1952,7 +2317,7 @@ export default function WalkerClient({
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                       </svg>
-                      <p className="text-sm">Getting GPS…</p>
+                      <p className="text-sm">{t.gettingGps}</p>
                     </div>
                   </div>
                 )}
@@ -1996,7 +2361,7 @@ export default function WalkerClient({
                     <span style={{ fontSize: 20, flexShrink: 0 }}>⚠️</span>
                     <div>
                       <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 13, fontWeight: 700, color: '#92400E', margin: '0 0 2px' }}>
-                        {dogName}&apos;s health notes
+                        {t.dogHealthNotes(dogName)}
                       </p>
                       <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#78350F', margin: 0, lineHeight: 1.5 }}>
                         {healthNotes}
@@ -2100,7 +2465,7 @@ export default function WalkerClient({
                   >
                     <span className="text-3xl">{peeTapLocked ? '✅' : '💧'}</span>
                     <span className="text-sm font-bold text-blue-700" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                      {peeTapLocked ? 'Logged!' : 'Toilet 💧'}
+                      {peeTapLocked ? t.logged : t.toiletLabel}
                     </span>
                     {livePeeCount > 0 && (
                       <span className="text-xs font-bold text-blue-500 bg-blue-100 rounded-full px-2 py-0.5">
@@ -2128,7 +2493,7 @@ export default function WalkerClient({
                     >
                       <span className="text-3xl">{poopTapLocked ? '✅' : '💩'}</span>
                       <span className="text-sm font-bold text-amber-700" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                        {poopTapLocked ? 'Logged!' : 'Potty + Photo 💩'}
+                        {poopTapLocked ? t.logged : t.pottyLabel}
                       </span>
                       {livePoopCount > 0 && (
                         <span className="text-xs font-bold text-amber-600 bg-amber-100 rounded-full px-2 py-0.5">
@@ -2183,7 +2548,7 @@ export default function WalkerClient({
                       className="rounded-2xl text-xl shadow-md"
                       style={{ minHeight: 56, background: isDemoWalk ? '#FF8C52' : '#DC2626', fontSize: 20 }}
                     >
-                      {isDemoWalk ? 'End Practice Walk ✓' : 'End Walk'}
+                      {isDemoWalk ? t.endPracticeWalk : t.endWalk}
                     </LoadingButton>
                   )}
                 </div>
@@ -2217,7 +2582,7 @@ export default function WalkerClient({
                 {/* B) Dog photo */}
                 <div>
                   <label className="block text-sm font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                    Take a photo of {dogName} 📸
+                    {t.takePhotoOf(dogName)}
                   </label>
                   <input
                     ref={photoInputRef}
@@ -2246,7 +2611,7 @@ export default function WalkerClient({
                       style={{ borderColor: 'oklch(0.70 0.13 196)', color: 'oklch(0.48 0.17 196)' }}
                     >
                       <span className="text-3xl">{uploading ? '⏳' : '📷'}</span>
-                      <span className="text-sm font-bold">{uploading ? 'Uploading…' : 'Tap to take a photo'}</span>
+                      <span className="text-sm font-bold">{uploading ? t.uploadingPhoto : t.tapToTakePhoto}</span>
                     </button>
                   )}
                 </div>
@@ -2254,7 +2619,7 @@ export default function WalkerClient({
                 {/* C) Mood — 3 big emoji buttons */}
                 <div>
                   <label className="block text-sm font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                    How was {dogName}?
+                    {t.howWasDog(dogName)}
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {MOOD_OPTIONS.map((opt) => (
@@ -2267,7 +2632,7 @@ export default function WalkerClient({
                           color: mood === opt.value ? 'oklch(0.40 0.17 196)' : '#64748B',
                         }}>
                         <span className="text-2xl">{opt.emoji}</span>
-                        <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-fredoka)' }}>{opt.label}</span>
+                        <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-fredoka)' }}>{moodLabel(t, opt.value)}</span>
                       </button>
                     ))}
                   </div>
@@ -2300,11 +2665,11 @@ export default function WalkerClient({
                 <LoadingButton
                   type="submit"
                   loading={submitting}
-                  loadingText="Sending report…"
+                  loadingText={t.sendingReport}
                   className="rounded-2xl text-lg shadow-md"
                   style={{ minHeight: 56, background: '#FF8C52' }}
                 >
-                  {`Send to ${ownerFirstName} ✓`}
+                  {t.sendToOwner(dogName)}
                 </LoadingButton>
               </form>
             </div>
@@ -2314,9 +2679,8 @@ export default function WalkerClient({
           {phase === 'success' && (
             <div className="px-5 flex flex-col items-center text-center pt-8 pb-24">
               {(() => {
-                // Use selected connection's owner name — not the URL token's owner
+                // Use selected connection's dog name — not the URL token's dog
                 const selectedConn = connections.find(c => c.token === selectedToken)
-                const successOwner = selectedConn?.ownerFirstName ?? ownerFirstName
                 const successDog = selectedConn?.dogName ?? dogName
                 return (
                   <>
@@ -2324,15 +2688,13 @@ export default function WalkerClient({
                 <span className="text-4xl">✅</span>
               </div>
               <h2 className="text-3xl font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                {successDog}&apos;s walk done!
+                {t.walkDoneTitle(successDog)}
               </h2>
               <p className="text-sm text-slate-500 mb-1 leading-relaxed px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {successOwner
-                  ? `Report sent to ${successOwner}. WhatsApp is opening now.`
-                  : 'Report sent to the owner.'}
+                {t.reportSentBody(successDog)}
               </p>
               <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF', marginTop: 4, marginBottom: 24 }}>
-                PupStep has also emailed the report to the owner.
+                {t.alsoEmailed}
               </p>
 
               <div className="w-full max-w-sm space-y-3">
@@ -2345,7 +2707,7 @@ export default function WalkerClient({
                     className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-white text-base shadow-md"
                     style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', fontSize: '17px' }}
                   >
-                    📲 Send report to {ownerFirstName ?? 'owner'}
+                    {t.sendReportButton(successDog)}
                   </a>
                 )}
 
@@ -2361,7 +2723,7 @@ export default function WalkerClient({
                   className="w-full py-4 rounded-2xl font-bold text-lg text-white active:scale-[0.97] transition-transform"
                   style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)' }}
                 >
-                  🐕 Log another walk
+                  {t.logAnotherWalk}
                 </button>
 
                 {/* Save dashboard link to WhatsApp */}
@@ -2404,7 +2766,7 @@ export default function WalkerClient({
                   className="w-full py-4 rounded-2xl font-bold text-lg text-white"
                   style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)' }}
                 >
-                  Log another walk →
+                  {t.logAnotherWalk} →
                 </button>
               </div>
                   </>
@@ -2417,7 +2779,7 @@ export default function WalkerClient({
           {phase === 'idle' && (
             <div className="px-5 mt-6">
               <h2 className="text-base font-bold text-[#0A2F35] mb-3" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                Recent Walks{logs.length > 0 ? ` (${logs.length})` : ''}
+                {t.recentWalks}{logs.length > 0 ? ` (${logs.length})` : ''}
               </h2>
 
               {logsLoading ? (
@@ -2430,7 +2792,7 @@ export default function WalkerClient({
                 <div className="bg-white rounded-2xl px-5 py-8 text-center" style={{ border: '1px solid rgba(226,220,200,0.6)' }}>
                   <p className="text-3xl mb-2">🐾</p>
                   <p className="text-sm text-slate-500" style={{ fontFamily: 'var(--font-nunito)' }}>
-                    No walks logged yet. Tap Start Walk to begin your first walk with {dogName}.
+                    {t.noWalksYet(dogName)}
                   </p>
                 </div>
               ) : (
@@ -2446,7 +2808,7 @@ export default function WalkerClient({
                         {/* Title row: duration left, date right */}
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: '#0A2F35', margin: 0 }}>
-                            {log.duration_mins ? `${log.duration_mins} min walk` : 'Walk'}
+                            {log.duration_mins ? t.minWalk(log.duration_mins) : t.walkWord}
                           </p>
                           <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#94A3B8', flexShrink: 0 }}>
                             {formatDate(log.created_at)}
@@ -2461,12 +2823,12 @@ export default function WalkerClient({
                         {/* Mood */}
                         {moodOption && (
                           <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#94A3B8', margin: '0 0 4px' }}>
-                            {moodOption.emoji} {moodOption.label}
+                            {moodOption.emoji} {moodLabel(t, moodOption.value)}
                           </p>
                         )}
                         {/* Report confirmation */}
                         <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#CBD5E1', margin: 0 }}>
-                          ✅ Report sent to {ownerFirstName}
+                          {t.reportSentToOwner(dogName)}
                         </p>
                       </div>
                     )
@@ -2475,8 +2837,8 @@ export default function WalkerClient({
               )}
 
               {/* Bookmark hint */}
-              <div className="mt-6 rounded-2xl bg-[#0A2F35] bg-opacity-5 border border-[#0A2F35] border-opacity-10 px-4 py-3 text-center">
-                <p className="text-xs text-[#0D3D45] font-medium">📌 Bookmark this page — it&apos;s your permanent walk log</p>
+              <div className="mt-6 rounded-2xl border px-4 py-3 text-center" style={{ background: 'rgba(10,47,53,0.05)', borderColor: 'rgba(10,47,53,0.10)' }}>
+                <p className="text-xs font-medium" style={{ color: '#0D3D45' }}>📌 Bookmark this page — it&apos;s your permanent walk log</p>
               </div>
             </div>
           )}
@@ -2509,6 +2871,7 @@ export default function WalkerClient({
           setAddClientSuccess={setAddClientSuccess}
           addClientError={addClientError}
           setAddClientError={setAddClientError}
+          t={t}
         />
       )}
 
@@ -2523,8 +2886,8 @@ export default function WalkerClient({
       >
         {(
           [
-            { tab: 'walk' as WalkerTab, icon: '🐾', label: 'Walk' },
-            { tab: 'settings' as WalkerTab, icon: '⚙️', label: 'Settings' },
+            { tab: 'walk' as WalkerTab, icon: '🐾', label: t.tabWalk },
+            { tab: 'settings' as WalkerTab, icon: '⚙️', label: t.tabSettings },
           ] as const
         ).map(({ tab, icon, label }) => (
           <button

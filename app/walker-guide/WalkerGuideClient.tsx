@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 type Lang = 'en' | 'hi' | 'mr'
 
@@ -82,7 +83,7 @@ const STEPS: { emoji: string; titleKey: keyof typeof T.en; bodyKey: keyof typeof
   { emoji: '✅', titleKey: 'reportTitle', bodyKey: 'reportBody' },
 ]
 
-export default function WalkerGuideClient() {
+export default function WalkerGuideClient({ token }: { token?: string } = {}) {
   const router = useRouter()
   const [lang, setLang] = useState<Lang>('en')
   const [copied, setCopied] = useState(false)
@@ -123,25 +124,49 @@ export default function WalkerGuideClient() {
         style={{ background: 'rgba(255,251,235,0.97)', backdropFilter: 'blur(10px)', borderBottom: '1px solid oklch(0.906 0.06 88)' }}
       >
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between gap-2">
-          {/* Back button */}
-          <button
-            type="button"
-            onClick={() => router.back()}
-            aria-label="Go back"
-            className="flex items-center justify-center flex-shrink-0"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: '#ffffff',
-              color: '#0A2F35',
-              boxShadow: '0 1px 0 rgba(0,0,0,0.05), 0 4px 12px -2px rgba(10,47,53,0.12)',
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
+          {/* Back button — if we arrived with the walker's own token (from their
+              dashboard's "Need GPS help?" link), go straight back to that dashboard.
+              Browser history is unreliable if the guide was opened in a new tab or
+              from a bookmark, so router.back() is only a fallback for the
+              parent-facing entry points that don't pass a token. */}
+          {token ? (
+            <Link
+              href={`/walker/${token}`}
+              aria-label="Go back"
+              className="flex items-center justify-center flex-shrink-0"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                background: '#ffffff',
+                color: '#0A2F35',
+                boxShadow: '0 1px 0 rgba(0,0,0,0.05), 0 4px 12px -2px rgba(10,47,53,0.12)',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => router.back()}
+              aria-label="Go back"
+              className="flex items-center justify-center flex-shrink-0"
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: '50%',
+                background: '#ffffff',
+                color: '#0A2F35',
+                boxShadow: '0 1px 0 rgba(0,0,0,0.05), 0 4px 12px -2px rgba(10,47,53,0.12)',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+          )}
 
           {/* Logo */}
           <div className="flex items-center gap-1.5 flex-shrink-0">

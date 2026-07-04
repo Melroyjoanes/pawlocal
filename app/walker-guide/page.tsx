@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   },
 }
 
-export default function WalkerGuidePage() {
-  return <WalkerGuideClient />
+export default async function WalkerGuidePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ token?: string }>
+}) {
+  const { token } = await searchParams
+  return <WalkerGuideClient token={token} />
 }
