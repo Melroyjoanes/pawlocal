@@ -155,7 +155,7 @@ export default function PrivacyPolicyPage() {
             </ul>
             <p className="text-sm mt-3" style={{ opacity: 0.75 }}>
               To exercise any of these rights, email us at <strong>melroy@verfolia.com</strong> with the subject line
-              &quot;Data Request — [your request type]&quot;. We will respond within 30 days.
+              &quot;Data Request — [your request type]&quot;. We will respond within 7 days.
             </p>
           </Section>
 

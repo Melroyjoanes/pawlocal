@@ -104,20 +104,30 @@ export async function POST(req: NextRequest) {
       })
   }
 
-  // Look up owner phone for WhatsApp notification link
-  const { data: connWithPhone } = await (db.from('walker_connections') as any)
-    .select('owner_phone, walker_name')
-    .eq('id', connection.id)
-    .single()
+  // Look up owner phone for WhatsApp notification link.
+  // profiles.phone is the single source of truth (kept up to date via My Account and
+  // setup); walker_connections.owner_phone is only a fallback for accounts that saved
+  // a number the old way but haven't touched My Account yet.
+  const [{ data: connWithPhone }, { data: ownerProfilePhone }] = await Promise.all([
+    (db.from('walker_connections') as any)
+      .select('owner_phone, walker_name')
+      .eq('id', connection.id)
+      .single(),
+    (db.from('profiles') as any)
+      .select('phone')
+      .eq('id', connection.owner_id)
+      .maybeSingle(),
+  ])
+  const resolvedOwnerPhone: string | null = ownerProfilePhone?.phone || connWithPhone?.owner_phone || null
 
   let wa_link: string | null = null
-  if (connWithPhone?.owner_phone) {
-    const phone = connWithPhone.owner_phone.replace(/\D/g, '')
+  if (resolvedOwnerPhone) {
+    const phone = resolvedOwnerPhone.replace(/\D/g, '')
     const fullPhone = phone.startsWith('91') ? phone : `91${phone}`
     const dogRow = await (db.from('dogs') as any).select('name').eq('id', connection.dog_id).single()
     const dogName = dogRow?.data?.name ?? 'your dog'
     const poopEmoji = (poop_count ?? 0) > 0 ? `💩 ${poop_count}` : ''
-    const peeEmoji = (pee_count ?? 0) > 0 ? `🌿 ${pee_count}` : ''
+    const peeEmoji = (pee_count ?? 0) > 0 ? `💧 ${pee_count}` : ''
     const distText = distance_km ? `${distance_km}km` : ''
     const durText = duration_mins ? `${duration_mins} min` : ''
     const stats = [durText, distText, poopEmoji, peeEmoji].filter(Boolean).join(' · ')
@@ -273,8 +283,8 @@ export async function POST(req: NextRequest) {
   })()
 
   // Build WhatsApp link — report URL for active subscribers/trial, upgrade prompt otherwise
-  if (connWithPhone?.owner_phone) {
-    const phone = connWithPhone.owner_phone.replace(/\D/g, '')
+  if (resolvedOwnerPhone) {
+    const phone = resolvedOwnerPhone.replace(/\D/g, '')
     const fullPhone = phone.startsWith('91') ? phone : `91${phone}`
     if (deliveryAllowed) {
       const msg = `🐾 *${dogName}'s walk report is ready!*\n\nTap to view: ${reportUrl}\n\nLogged by ${connection.walker_name ?? 'your walker'} via PupStep`

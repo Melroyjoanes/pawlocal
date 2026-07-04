@@ -1082,7 +1082,7 @@ export default function MyAccountClient({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end justify-center"
+            className="fixed inset-0 z-[60] flex items-end justify-center"
             style={{ background: 'rgba(10,47,53,0.5)', backdropFilter: 'blur(4px)' }}
             onClick={e => { if (e.target === e.currentTarget && !savingDog) setEditingDog(null) }}
           >
@@ -1243,7 +1243,7 @@ export default function MyAccountClient({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+            className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4"
             style={{ background: 'rgba(10,47,53,0.5)', backdropFilter: 'blur(4px)' }}
             onClick={e => { if (e.target === e.currentTarget && !deleting) setShowDeleteConfirm(false) }}
           >

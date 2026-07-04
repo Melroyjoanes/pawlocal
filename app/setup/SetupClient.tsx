@@ -96,6 +96,18 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
       setParentName(draft.parentName || '')
       setOwnerPhone(draft.ownerPhone || '')
       localStorage.removeItem('pup-setup-draft')
+
+      // WhatsApp number is mandatory — if the recovered draft is missing a valid
+      // number, don't auto-submit. Land the user on step 2 with an inline error
+      // instead so they can fill it in before continuing.
+      const draftDigits = (draft.ownerPhone || '').replace(/\D/g, '')
+      if (!draft.ownerPhone?.trim() || draftDigits.length !== 10) {
+        autoSubmittedRef.current = true
+        setStep(2)
+        setError('Please enter your 10-digit WhatsApp number')
+        return
+      }
+
       autoSubmittedRef.current = true
       setSavingDraft(true)
       setTimeout(() => submitDog(user.id, draft), 300)
@@ -206,10 +218,10 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
 
   async function handleCreateWalkerLink() {
     setError(null)
-    // WhatsApp is optional — validate only if something was entered
+    // WhatsApp number is required — reports are delivered here
     const digits = ownerPhone.replace(/\D/g, '')
-    if (ownerPhone.trim() && digits.length !== 10) {
-      setError('WhatsApp number must be 10 digits (or leave blank)')
+    if (!ownerPhone.trim() || digits.length !== 10) {
+      setError('Please enter your 10-digit WhatsApp number')
       return
     }
 

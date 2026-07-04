@@ -59,16 +59,20 @@ export async function getConnectionByToken(token: string): Promise<ConnectionInf
 
   if (error || !connection) return null
 
-  // Look up owner first name
+  // Look up owner first name + phone. profiles.phone is the single source of truth
+  // (kept current via My Account and setup); walker_connections.owner_phone is only a
+  // fallback for accounts that saved a number the old way but haven't touched My Account yet.
   let ownerFirstName = 'Your owner'
+  let ownerProfilePhone: string | null = null
   if (connection.dogs?.owner_id) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: profile } = await (db.from('profiles') as any)
-      .select('name, full_name')
+      .select('name, full_name, phone')
       .eq('id', connection.dogs.owner_id)
       .single()
     const fullName = profile?.name ?? profile?.full_name ?? null
     if (fullName) ownerFirstName = fullName.split(' ')[0]
+    ownerProfilePhone = profile?.phone ?? null
   }
 
   return {
@@ -83,7 +87,7 @@ export async function getConnectionByToken(token: string): Promise<ConnectionInf
     walkerName: connection.walker_name ?? null,
     walkerPhone: connection.walker_phone ?? null,
     walkerRole: connection.walker_role ?? null,
-    ownerPhone: connection.owner_phone ?? null,
+    ownerPhone: ownerProfilePhone || connection.owner_phone || null,
     careFocus: connection.dogs?.care_focus ?? 'normal',
     expectedWalkerPhone: connection.expected_walker_phone ?? null,
   }

@@ -68,6 +68,15 @@ export default async function SetupQRPage({
       .select('id, token, walker_name, walker_phone, status, otp, owner_phone')
       .single()
 
+    // Keep profiles.phone in sync — this is the single source of truth that
+    // /my-account reads/edits and that WhatsApp delivery should ultimately respect.
+    if (ownerPhone) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (db.from('profiles') as any)
+        .update({ phone: ownerPhone })
+        .eq('id', user.id)
+    }
+
     if (insertErr) {
       console.error('[setup/qr] walker_connections insert failed:', insertErr.message)
       return (

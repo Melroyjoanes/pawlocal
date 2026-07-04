@@ -364,8 +364,15 @@ function WalkMap({ routePoints, poopEvents, peeEvents, reducedMotion }: {
       })
       route.setMap(map)
 
-      // Draw the route in over ~1.4s instead of appearing instantly
-      if (reducedMotion) {
+      // Draw the route in over ~1.4s instead of appearing instantly — but not
+      // on small/mobile viewports. Each animation frame calls Polyline.setPath()
+      // on TWO overlays (glow + route), forcing Google Maps to re-tessellate and
+      // repaint the whole path (up to 900+ points on a long walk) ~84 times in
+      // 1.4s. On desktop that's imperceptible; on a mid-range mobile CPU/GPU
+      // during the exact window it's also busy hydrating the page, it's a real
+      // source of jank for a purely decorative flourish on a 240px-tall map.
+      const isSmallViewport = typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches
+      if (reducedMotion || isSmallViewport) {
         glow.setPath(cleanedRoutePoints)
         route.setPath(cleanedRoutePoints)
       } else {

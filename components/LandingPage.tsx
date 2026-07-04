@@ -250,11 +250,21 @@ function WalkReportMock() {
 
   // Draw the route in, hold at full length, reset, loop — pauses whenever the
   // card is scrolled out of view so visitors who linger see it replay.
+  //
+  // Capped at MAX_LOOPS instead of looping forever: this drives a setState on
+  // every animation frame (~60/s) for ~2.2s of every ~6s cycle. The hero card
+  // is above the fold, so `inView` is true for most mobile visitors from the
+  // moment the page loads — an uncapped loop meant this kept re-rendering and
+  // burning CPU/battery for as long as the tab stayed on the hero, competing
+  // with hydration on exactly the slower mobile CPUs this hurts most. A couple
+  // of replays is enough to sell the effect; after that it settles fully drawn.
   useEffect(() => {
     if (rm || !inView) return
+    const MAX_LOOPS = 2
     let stopped = false
     let rafId = 0
     let timeoutId: ReturnType<typeof setTimeout> | undefined
+    let loops = 0
 
     function draw() {
       const DRAW_MS = 2200
@@ -265,9 +275,10 @@ function WalkReportMock() {
         const t = Math.min((now - start) / DRAW_MS, 1)
         setFraction(1 - Math.pow(1 - t, 3))
         if (t < 1) { rafId = requestAnimationFrame(tick) }
-        else {
+        else if (loops < MAX_LOOPS) {
           timeoutId = setTimeout(() => {
             if (stopped) return
+            loops += 1
             setFraction(0)
             setCycleKey(k => k + 1)
             draw()

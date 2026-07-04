@@ -535,8 +535,8 @@ function TeamSheet({ open, onClose, connections, dogName }: {
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 40 }} />
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, background: '#fff', borderRadius: '28px 28px 0 0', maxHeight: '80vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom, 16px)', boxShadow: '0 -8px 24px -4px rgba(10,47,53,0.14)' }}>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 60 }} />
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 61, background: '#fff', borderRadius: '28px 28px 0 0', maxHeight: '80vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom, 16px)', boxShadow: '0 -8px 24px -4px rgba(10,47,53,0.14)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 8px' }}>
           <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color: '#0A2F35', margin: 0 }}>My Team 👥</h2>
           <button onClick={onClose} style={{ background: '#F3F4F6', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6B7280' }}>✕</button>
@@ -669,8 +669,8 @@ function DogEditSheet({ open, dog, onClose }: { open: boolean; dog: Dog | null; 
 
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 40 }} />
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, background: '#fff', borderRadius: '28px 28px 0 0', maxHeight: '80vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom, 16px)', boxShadow: '0 -8px 24px -4px rgba(10,47,53,0.14)' }}>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 60 }} />
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 61, background: '#fff', borderRadius: '28px 28px 0 0', maxHeight: '80vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom, 16px)', boxShadow: '0 -8px 24px -4px rgba(10,47,53,0.14)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 8px' }}>
           <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color: '#0A2F35', margin: 0 }}>Edit Dog Profile 🐕</h2>
           <button onClick={onClose} style={{ background: '#F3F4F6', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6B7280' }}>✕</button>
