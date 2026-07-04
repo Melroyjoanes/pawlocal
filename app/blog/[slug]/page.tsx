@@ -109,7 +109,7 @@ const POSTS: BlogPost[] = [
         <p>Without the care report, she might have noticed something was off a few days later — or not at all, until it became serious.</p>
 
         <h2>How to claim your dog&apos;s care reports on PupStep</h2>
-        <p>If your walker uses PupStep, reports are sent directly to your account after every walk. You can view them on your phone, download them as PDFs, and share them directly with your vet. Reports are stored permanently — so when you visit a new vet or see a specialist, you have months of health history ready.</p>
+        <p>If your walker uses PupStep, reports are sent directly to your account after every walk. You can view them on your phone, download them as PDFs, and share them directly with your vet. Your data is stored permanently and never deleted — so as long as your subscription is active, you have months of health history ready whenever you visit a new vet or see a specialist.</p>
         <p>Ask your current walker to start using PupStep reports. If they&apos;re not on the platform yet, they can join and register your dog for free. The reports cost nothing extra — they&apos;re part of the service.</p>
 
         <h2>What to do with your reports</h2>

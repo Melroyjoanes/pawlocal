@@ -283,7 +283,7 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, t
         {/* Pro subtitle */}
         {isSubscribed && (
           <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: 'oklch(0.48 0.17 196)', fontWeight: 600, margin: '0 0 12px' }}>
-            Full history unlocked · Reports saved forever
+            Full history unlocked · Never deleted
           </p>
         )}
 

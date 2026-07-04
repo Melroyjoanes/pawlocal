@@ -36,7 +36,8 @@ const FEATURES = [
 const WHAT_HAPPENS = [
   { locked: true,  text: 'New walk reports are not delivered to you' },
   { locked: true,  text: 'WhatsApp notifications stop arriving' },
-  { locked: false, text: 'Reports from your trial stay readable forever' },
+  { locked: true,  text: 'You won’t be able to view past reports until you resubscribe' },
+  { locked: false, text: 'Your dog’s walk history is safely kept, never deleted' },
   { locked: false, text: 'Your walker keeps logging walks as normal' },
   { locked: false, text: 'You can upgrade anytime to resume delivery' },
 ]
@@ -44,7 +45,7 @@ const WHAT_HAPPENS = [
 const FAQ = [
   {
     q: 'What happens when my trial ends?',
-    a: 'Your walker keeps logging walks as usual, but new reports will not be delivered to your WhatsApp or account until you upgrade. Reports from your trial period stay visible forever.',
+    a: 'Your walker keeps logging walks as usual, but new reports will not be delivered to your WhatsApp or account until you upgrade. Your dog’s history from your trial is never deleted — resubscribe anytime to view it again.',
   },
   {
     q: 'How does PupStep actually work?',
@@ -56,7 +57,7 @@ const FAQ = [
   },
   {
     q: 'Can I cancel anytime?',
-    a: 'Yes — cancel before your next billing date and you will not be charged again. Your reports remain visible.',
+    a: 'Yes — cancel before your next billing date and you will not be charged again. Your reports remain visible until your current paid period ends.',
   },
 ]
 
@@ -591,7 +592,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
 
         {/* Feature pills */}
         <div className="flex flex-wrap gap-2 justify-center mb-12">
-          {['GPS every walk', 'Photos saved forever', 'Vet-ready PDF', 'Grooming history', 'Share with vets'].map((pill) => (
+          {['GPS every walk', 'Photos never deleted', 'Vet-ready PDF', 'Grooming history', 'Share with vets'].map((pill) => (
             <span
               key={pill}
               className="px-4 py-2 rounded-full text-xs font-semibold"

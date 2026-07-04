@@ -881,13 +881,17 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
             </div>
           </div>
           {connections.length > 0 && (
-            <div className="mt-4 bg-amber-50 rounded-xl p-3 flex items-start gap-3">
+            <Link
+              href={`/setup/qr?dog=${connections[0].dog_id}`}
+              className="mt-4 bg-amber-50 rounded-xl p-3 flex items-start gap-3 hover:bg-amber-100 transition-colors"
+            >
               <span className="text-xl mt-0.5">🔗</span>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[#0A2F35]">Share your walker&apos;s QR</p>
                 <p className="text-xs text-gray-500 mt-0.5">Let {connections[0].walker_name} log walks from their phone.</p>
               </div>
-            </div>
+              <span className="text-gray-400 text-sm mt-0.5">→</span>
+            </Link>
           )}
         </motion.div>
       ) : (
@@ -1026,7 +1030,7 @@ export default function HomeClient({ displayName, firstDog, otherDogs, activeWal
           <div style={{ borderRadius: '16px', background: 'oklch(0.48 0.17 196)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
             <div style={{ flex: 1 }}>
               <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#ffffff', margin: '0 0 2px' }}>🎉 Your first walk report is in!</p>
-              <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.8)', margin: 0 }}>{firstDog?.name ?? 'Your dog'}&apos;s walks are now saved forever.</p>
+              <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.8)', margin: 0 }}>{firstDog?.name ?? 'Your dog'}&apos;s walks are safely saved and never deleted.</p>
             </div>
             <button onClick={dismissCelebration} style={{ flexShrink: 0, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ffffff', fontSize: '16px', fontWeight: 700, lineHeight: 1 }} aria-label="Dismiss">×</button>
           </div>

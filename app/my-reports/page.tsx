@@ -2,6 +2,7 @@ import { createClient as createServerClient } from '@/lib/supabase/server'
 import { createClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import MyReportsClient from './MyReportsClient'
+import { getEntitlement } from '@/lib/entitlement'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -34,17 +35,24 @@ export default async function MyReportsPage() {
   const dogNames: string[] = (dogsRaw ?? []).map((d: { name: string }) => d.name).filter(Boolean)
 
   const [
-    { data: sub },
+    entitlement,
+    { data: subPlanRow },
     { data: ownerReports },       // via owner_id (migration 047)
     { data: claimedReports },     // via customer_id (old viral hook)
     { data: connectionReports },  // via connection_id (V2 primary)
     { data: dogNameReports },     // via dog_name fallback — catches old reports with null owner_id/connection_id
   ] = await Promise.all([
-    safe(db.from('subscriptions' as any)
-      .select('status, plan, expires_at')
+    getEntitlement(db, user.id),
+
+    // Plan name only — getEntitlement() doesn't expose it, and the client
+    // component wants it for display (e.g. "Monthly plan").
+    safe((db.from('subscriptions') as any)
+      .select('plan')
       .eq('user_id', user.id)
-      .eq('status', 'active')
+      .in('status', ['active', 'cancelled'])
       .gt('expires_at', new Date().toISOString())
+      .order('expires_at', { ascending: false })
+      .limit(1)
       .maybeSingle()),
 
     safe((db.from('walk_reports') as any)
@@ -89,28 +97,15 @@ export default async function MyReportsPage() {
     }
   }
 
-  const isSubscribed = !!(sub as { status?: string } | null)?.status
-
-  // Fetch trial status
-  const { data: trialProfile } = await safe((db.from('profiles') as any)
-    .select('trial_started_at')
-    .eq('id', user.id)
-    .maybeSingle())
-
-  const trialStartedAt: string | null = (trialProfile as any)?.trial_started_at ?? null
-  const TRIAL_DAYS = 3
-  let trialExpired = false
-  if (!isSubscribed && trialStartedAt) {
-    const msRemaining = new Date(trialStartedAt).getTime() + TRIAL_DAYS * 86400 * 1000 - Date.now()
-    trialExpired = msRemaining <= 0
-  }
+  const isSubscribed = entitlement.isPro
+  const trialExpired = entitlement.trialExpired
 
   return (
     <MyReportsClient
       walkReports={Array.from(walkMap.values())}
       isSubscribed={isSubscribed}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      subscriptionPlan={(sub as any)?.plan ?? null}
+      subscriptionPlan={(subPlanRow as any)?.plan ?? null}
       userName={user.user_metadata?.full_name ?? user.email ?? ''}
       trialExpired={trialExpired}
       totalReports={Array.from(walkMap.values()).length}

@@ -47,11 +47,11 @@ const FAQS: { category: string; color: string; textColor: string; icon: string; 
       },
       {
         q: 'Can I share walk reports with my vet?',
-        a: 'Yes. Every report has a permanent shareable link. Forward it to your vet on WhatsApp or email. Vets appreciate seeing walk frequency, distance, and health trends over time — it makes consultations sharper.',
+        a: 'Yes. Every report has a shareable link you can forward to your vet on WhatsApp or email, as long as your subscription is active. Vets appreciate seeing walk frequency, distance, and health trends over time — it makes consultations sharper.',
       },
       {
         q: 'How long are reports saved?',
-        a: 'Walk reports are saved permanently. You can scroll back through your dog\'s entire history from day one. Nothing is ever deleted.',
+        a: 'Walk reports are saved permanently and nothing is ever deleted. While your subscription is active, you can scroll back through your dog\'s entire history from day one.',
       },
     ],
   },

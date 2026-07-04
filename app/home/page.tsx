@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import HomeClient from './HomeClient'
 import { computeStreak, todayMidnightIST, fourteenDaysAgoIST } from '@/lib/streak'
+import { getEntitlement } from '@/lib/entitlement'
 
 export const dynamic = 'force-dynamic'
 
@@ -92,13 +93,12 @@ async function renderHome(
     { data: profileData },
     { data: dogsRaw },
     { data: walkerConnectionsRaw },
-    { data: subData },
-    { data: trialProfileData },
+    entitlement,
     { count: reportCount },
     { data: mostRecentLogData },
   ] = await Promise.all([
     safe((db.from('profiles') as any)
-      .select('id, full_name, avatar_url')
+      .select('id, full_name, avatar_url, trial_started_at')
       .eq('id', user.id)
       .maybeSingle()),
 
@@ -114,17 +114,7 @@ async function renderHome(
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false })),
 
-    safe((db.from('subscriptions') as any)
-      .select('plan, status, expires_at')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .gt('expires_at', new Date().toISOString())
-      .maybeSingle()),
-
-    safe((db.from('profiles') as any)
-      .select('trial_started_at')
-      .eq('id', user.id)
-      .maybeSingle()),
+    getEntitlement(db, user.id),
 
     safe((db.from('walk_logs') as any)
       .select('id', { count: 'exact', head: true })
@@ -152,7 +142,7 @@ async function renderHome(
   type DogRow = { id: string; name: string; breed: string | null; photo_url: string | null; health_notes: string | null; created_at: string }
   const dogs: DogRow[] = dogsRaw ?? []
   const walkerConnections = walkerConnectionsRaw ?? []
-  const isPro = !!subData
+  const isPro = entitlement.isPro
 
   // Determine the selected dog: explicit ?dog= param wins if it matches one of
   // this owner's dogs; otherwise fall back to whichever dog has the most
@@ -218,22 +208,21 @@ async function renderHome(
       : Promise.resolve({ data: null }),
   ])
 
-  // Compute trial status from profiles.trial_started_at
-  const trialStartedAt: string | null = (trialProfileData as { trial_started_at?: string | null } | null)?.trial_started_at ?? null
-  const TRIAL_DAYS = 3
+  // Trial status derived from the shared entitlement helper (keeps this page,
+  // /upgrade, and /my-reports from drifting apart on trial-window math).
+  const trialDaysRemaining = entitlement.trialDaysRemaining
   let trialStatus = 'no_trial'
-  let trialDaysRemaining: number | null = null
-  if (!isPro && trialStartedAt) {
-    const msRemaining = new Date(trialStartedAt).getTime() + TRIAL_DAYS * 86400 * 1000 - Date.now()
-    if (msRemaining > 0) {
-      trialStatus = 'trial'
-      trialDaysRemaining = Math.ceil(msRemaining / 86400000)
-    } else {
-      trialStatus = 'expired'
-    }
-  } else if (isPro) {
+  if (isPro) {
     trialStatus = 'active'
+  } else if (entitlement.trialActive) {
+    trialStatus = 'trial'
+  } else if (entitlement.trialExpired) {
+    trialStatus = 'expired'
   }
+
+  // Need trial_started_at for the missedWalksCount FOMO query below — re-derive
+  // the trial expiry timestamp the same way the entitlement helper does.
+  const trialStartedAt: string | null = (profileData as { trial_started_at?: string | null } | null)?.trial_started_at ?? null
 
   // Compute missedWalksCount — FOMO number for expired trial non-Pro users
   let missedWalksCount = 0

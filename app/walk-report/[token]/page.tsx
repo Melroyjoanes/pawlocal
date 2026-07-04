@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import WalkReportCard from './WalkReportCard'
+import { getEntitlement } from '@/lib/entitlement'
 
 type WalkReport = {
   id: string
@@ -11,6 +13,8 @@ type WalkReport = {
   customer_id: string | null
   client_id: string | null
   provider_id: string | null
+  owner_id: string | null
+  connection_id: string | null
   dog_name: string
   walk_date: string
   duration_mins: number
@@ -59,6 +63,8 @@ const getReport = cache(async (token: string): Promise<WalkReport | null> => {
     customer_id: data.customer_id ?? null,
     client_id: data.client_id ?? null,
     provider_id: data.provider_id ?? null,
+    owner_id: data.owner_id ?? null,
+    connection_id: data.connection_id ?? null,
     dog_name: data.dog_name,
     walk_date: data.walk_date,
     duration_mins: data.duration_mins,
@@ -147,6 +153,123 @@ export async function generateMetadata({
   }
 }
 
+// Resolve the parent (owner) this report belongs to, trying the same
+// fallback chain used in app/my-reports/page.tsx, in priority order:
+//   1. owner_id column directly (migration 047, the modern path)
+//   2. customer_id (legacy "claimed report" path)
+//   3. connection_id -> walker_connections.owner_id (V2 QR-walker path)
+//   4. dog_name matching against the dogs table (last-resort, pre-migration data)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function resolveReportOwnerId(report: WalkReport, admin: any): Promise<string | null> {
+  if (report.owner_id) return report.owner_id
+  if (report.customer_id) return report.customer_id
+
+  if (report.connection_id) {
+    try {
+      const { data: conn } = await admin
+        .from('walker_connections')
+        .select('owner_id')
+        .eq('id', report.connection_id)
+        .maybeSingle()
+      if (conn?.owner_id) return conn.owner_id
+    } catch { /* non-critical — fall through to next strategy */ }
+  }
+
+  if (report.dog_name) {
+    try {
+      const { data: dog } = await admin
+        .from('dogs')
+        .select('owner_id')
+        .eq('name', report.dog_name)
+        .limit(1)
+        .maybeSingle()
+      if (dog?.owner_id) return dog.owner_id
+    } catch { /* non-critical */ }
+  }
+
+  return null
+}
+
+// ─── Locked / paywall state ─────────────────────────────────────────────────
+// Rendered instead of the full report when the owning parent's entitlement
+// has lapsed. Copy is deliberately neutral — this link can be opened by
+// anyone (vet, family member, the parent) since there's no login required to
+// view a walk report, so we never assume who's reading it.
+function LockedReportView({ dogName }: { dogName: string }) {
+  return (
+    <div style={{ minHeight: '100dvh', background: '#FFFBEB', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 40, background: 'rgba(255,251,235,0.95)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(10,47,53,0.08)', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.webp" alt="PupStep" style={{ height: 28, width: 'auto' }} />
+      </div>
+
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 20px' }}>
+        <div style={{
+          maxWidth: 420,
+          width: '100%',
+          background: '#fff',
+          borderRadius: 24,
+          padding: '32px 24px',
+          textAlign: 'center',
+          boxShadow: [
+            'inset 0 2px 0 rgba(255,255,255,0.92)',
+            'inset 0 -3px 0 rgba(0,0,0,0.09)',
+            '0 1px 0 rgba(0,0,0,0.05)',
+            '0 6px 20px -4px rgba(10,47,53,0.12)',
+            '0 24px 48px -8px rgba(10,47,53,0.08)',
+          ].join(', '),
+        }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: '50%', margin: '0 auto 18px',
+            background: 'linear-gradient(135deg, oklch(0.48 0.17 196) 0%, oklch(0.38 0.15 196) 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.2), 0 4px 10px oklch(0.48 0.17 196 / 0.3)',
+          }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+
+          <h1 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color: '#0A2F35', margin: '0 0 8px' }}>
+            {dogName}&apos;s walk report
+          </h1>
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#6B7280', lineHeight: 1.6, margin: '0 0 4px' }}>
+            A walk report exists for {dogName}, but it isn&apos;t currently viewable — the dog&apos;s parent needs an active PupStep subscription to keep report access open.
+          </p>
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#6B7280', lineHeight: 1.6, margin: '0 0 22px' }}>
+            If you&apos;re the parent, resubscribing will restore access to this and all other reports.
+          </p>
+
+          <Link
+            href="/upgrade"
+            style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              padding: '13px 28px', borderRadius: 18,
+              background: '#FF8C52', color: '#fff',
+              fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700,
+              textDecoration: 'none',
+              boxShadow: [
+                'inset 0 1.5px 0 rgba(255,200,120,0.6)',
+                'inset 0 -3px 0 rgba(180,60,0,0.22)',
+                '0 4px 14px rgba(255,140,82,0.42)',
+              ].join(', '),
+            }}
+          >
+            Go to PupStep
+          </Link>
+        </div>
+      </div>
+
+      <div style={{ textAlign: 'center', padding: '16px 0 24px' }}>
+        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, color: '#CBD5E1', margin: 0 }}>
+          GPS-verified walk reports · Mumbai
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default async function WalkReportPage({
   params,
 }: {
@@ -209,6 +332,16 @@ export default async function WalkReportPage({
   const isOwner = isLinkedOwner || isClaimedByMe
 
   const shareUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/walk-report/${token}`
+
+  // Gate: this page has no login requirement to view, so resolve the report's
+  // owning parent and check their entitlement (paid access, not who's currently
+  // viewing) before rendering the full report content.
+  const ownerId = await resolveReportOwnerId(report, adminCheck)
+  const isEntitled = ownerId ? (await getEntitlement(adminCheck, ownerId)).isEntitled : false
+
+  if (!isEntitled) {
+    return <LockedReportView dogName={report.dog_name} />
+  }
 
   return (
     <WalkReportCard
