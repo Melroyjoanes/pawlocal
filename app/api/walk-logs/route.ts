@@ -214,9 +214,15 @@ export async function POST(req: NextRequest) {
   // request just started the trial" as entitled below, closes both.
   if (isGenuinelyFirstReportEver) {
     try {
+      // upsert, not update: most real accounts never get a `profiles` row
+      // created any other way (the signup trigger that's supposed to isn't
+      // reliably firing — confirmed directly against prod, most owners have
+      // no profiles row at all). update() against a nonexistent row silently
+      // affects zero rows, so the trial clock would never actually persist —
+      // the report page would show the locked paywall on the very first
+      // walk despite the trial being "active" in intent.
       await (db.from('profiles') as any)
-        .update({ trial_started_at: new Date().toISOString() })
-        .eq('id', connection.owner_id)
+        .upsert({ id: connection.owner_id, trial_started_at: new Date().toISOString() }, { onConflict: 'id' })
     } catch { /* non-critical — entitlement fallback below still covers this request */ }
 
     // No browser session available here (the walker submits this, not the
