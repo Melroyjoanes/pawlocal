@@ -797,7 +797,7 @@ function StateA({ walk, displayName, firstDog }: { walk: WalkSession; displayNam
         </div>
       </motion.div>
       <motion.div variants={fadeUp} className={`${cardClass} p-4 flex gap-3`}>
-        <Link href="/my-dogs" className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 border-2 border-[#0A2F35] text-[#0A2F35] font-semibold text-sm hover:bg-[#0A2F35] hover:text-white transition-colors">+ Add Dog</Link>
+        <Link href="/setup?new=1" className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 border-2 border-[#0A2F35] text-[#0A2F35] font-semibold text-sm hover:bg-[#0A2F35] hover:text-white transition-colors">+ Add Dog</Link>
         <Link href="/my-account" className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors">⚙ Settings</Link>
       </motion.div>
     </motion.div>

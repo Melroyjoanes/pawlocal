@@ -9,7 +9,7 @@ import {
   MapPin, Check, Timer, Ruler, Navigation,
   ArrowRight, ChevronDown, QrCode, Camera,
   FileText, Share2, MessageCircle, Zap, Shield,
-  PawPrint as LucidePaw, Sparkles,
+  PawPrint as LucidePaw, Sparkles, Bone,
 } from 'lucide-react'
 
 // ─── Tokens ──────────────────────────────────────────────────────────────────
@@ -130,6 +130,88 @@ function PageBackground({ rm }: { rm: boolean }) {
         style={{ top: '58%', left: '46%', width: 380, height: 380, borderRadius: '50%', background: 'oklch(0.48 0.17 196 / 0.04)', filter: 'blur(80px)', y: teal2Y }}
         animate={rm ? {} : { x: [0, -12, 0] }}
         transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }} />
+    </div>
+  )
+}
+
+// ─── Floating background decor — paw prints, bones, a ball drifting behind
+// the hero with per-element scroll parallax (depth) and a slow perspective
+// tilt (the closest thing to "3D" a fixed/transform-only layer can do
+// without pulling in a WebGL library for a purely decorative background).
+// Purely cosmetic: aria-hidden, pointer-events-none, transform/opacity only.
+type FloatItem = {
+  Icon: typeof LucidePaw
+  top: string
+  left: string
+  size: number
+  color: string
+  opacity: number
+  parallaxRange: number   // how far it drifts across 0–4000px of scroll
+  parallaxDir: 1 | -1
+  floatDuration: number
+  rotateDuration: number
+  rotateDir: 1 | -1
+  delay: number
+}
+
+const FLOAT_ITEMS: FloatItem[] = [
+  { Icon: LucidePaw, top: '8%',  left: '10%', size: 34, color: C.teal,   opacity: 0.10, parallaxRange: 260, parallaxDir: -1, floatDuration: 7,  rotateDuration: 22, rotateDir: 1,  delay: 0 },
+  { Icon: Bone,       top: '18%', left: '86%', size: 40, color: C.orange, opacity: 0.09, parallaxRange: 200, parallaxDir: 1,  floatDuration: 8.5,rotateDuration: 26, rotateDir: -1, delay: 0.6 },
+  { Icon: LucidePaw, top: '68%', left: '92%', size: 26, color: C.teal,   opacity: 0.08, parallaxRange: 340, parallaxDir: 1,  floatDuration: 6.5,rotateDuration: 18, rotateDir: -1, delay: 1.2 },
+  { Icon: Bone,       top: '78%', left: '6%',  size: 30, color: C.orange, opacity: 0.08, parallaxRange: 220, parallaxDir: -1, floatDuration: 9,  rotateDuration: 24, rotateDir: 1,  delay: 0.3 },
+  { Icon: LucidePaw, top: '40%', left: '4%',  size: 22, color: C.orange, opacity: 0.07, parallaxRange: 180, parallaxDir: 1,  floatDuration: 7.5,rotateDuration: 20, rotateDir: 1,  delay: 0.9 },
+]
+
+function FloatingBall({ rm }: { rm: boolean }) {
+  const { scrollY } = useScroll()
+  const y = useTransform(scrollY, [0, 4000], [0, rm ? 0 : -300])
+  return (
+    <motion.div
+      className="absolute"
+      aria-hidden
+      style={{ top: '32%', left: '90%', width: 30, height: 30, y, perspective: 400 }}
+      animate={rm ? {} : { rotateX: [0, 360], rotateY: [0, 180, 0], y: [0, -16, 0] }}
+      transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+    >
+      <svg viewBox="0 0 32 32" width="100%" height="100%" style={{ opacity: 0.09 }}>
+        <circle cx="16" cy="16" r="15" fill="none" stroke={C.orange} strokeWidth="2" />
+        <path d="M2 16 Q 16 4, 30 16" fill="none" stroke={C.orange} strokeWidth="1.5" />
+        <path d="M2 16 Q 16 28, 30 16" fill="none" stroke={C.orange} strokeWidth="1.5" />
+      </svg>
+    </motion.div>
+  )
+}
+
+function FloatingIcon({ item, rm }: { item: FloatItem; rm: boolean }) {
+  const { scrollY } = useScroll()
+  const y = useTransform(scrollY, [0, 4000], [0, rm ? 0 : item.parallaxRange * item.parallaxDir])
+  return (
+    <motion.div
+      className="absolute"
+      aria-hidden
+      style={{ top: item.top, left: item.left, y, perspective: 500 }}
+      animate={rm ? {} : {
+        rotate: [0, 360 * item.rotateDir],
+        rotateY: [0, 25, 0, -25, 0],
+        y: [0, -14, 0],
+      }}
+      transition={{
+        rotate: { duration: item.rotateDuration, repeat: Infinity, ease: 'linear', delay: item.delay },
+        rotateY: { duration: item.floatDuration, repeat: Infinity, ease: 'easeInOut', delay: item.delay },
+        y: { duration: item.floatDuration, repeat: Infinity, ease: 'easeInOut', delay: item.delay },
+      }}
+    >
+      <item.Icon size={item.size} color={item.color} strokeWidth={1.5} style={{ opacity: item.opacity }} />
+    </motion.div>
+  )
+}
+
+function FloatingDecor({ rm }: { rm: boolean }) {
+  return (
+    <div aria-hidden className="pointer-events-none hidden sm:block"
+      style={{ position: 'fixed', inset: 0, zIndex: -1, overflow: 'hidden' }}>
+      {FLOAT_ITEMS.map((item, i) => <FloatingIcon key={i} item={item} rm={rm} />)}
+      <FloatingBall rm={rm} />
     </div>
   )
 }
@@ -460,6 +542,7 @@ export default function LandingPage() {
   return (
     <div className="-mt-8" style={{ position: 'relative' }}>
       <PageBackground rm={rm} />
+      <FloatingDecor rm={rm} />
       <GrainOverlay />
 
       {/* ── HERO ──────────────────────────────────────────────────────────── */}

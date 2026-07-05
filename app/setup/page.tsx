@@ -6,15 +6,18 @@ import SetupClient from './SetupClient'
 export default async function SetupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ just_paid?: string; recover?: string }>
+  searchParams: Promise<{ just_paid?: string; recover?: string; new?: string }>
 }) {
-  const { just_paid, recover } = await searchParams
+  const { just_paid, recover, new: isAddingAnother } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   // If logged in, check if they already have a dog — if so, skip setup and go to QR
-  // This prevents creating duplicate dogs when parent navigates back from QR page
-  if (user && !just_paid) {
+  // This prevents creating duplicate dogs when parent navigates back from QR page.
+  // Skipped when ?new=1 — that's an explicit "add another dog" intent (e.g. the
+  // "+ Add Dog" button for parents who already have one), where landing on the
+  // existing dog's QR page instead of a fresh form would be the wrong outcome.
+  if (user && !just_paid && !isAddingAnother) {
     try {
       const db = createAdminClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
