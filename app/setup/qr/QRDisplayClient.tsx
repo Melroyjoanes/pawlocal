@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import Link from 'next/link'
 
+type InviteLang = 'en' | 'hi' | 'mr'
+
 interface Props {
   token: string
   dogName: string
@@ -12,6 +14,31 @@ interface Props {
   walkerPhone: string | null
   status: string
   otp: string | null
+  parentFirstName: string | null
+}
+
+// Walker-invite message, Option A: the parent's own name up front (this is
+// who the walker actually trusts, not an app they've never heard of), a
+// one-line reason framed around what it does for the parent, an explicit
+// "it's free" reassurance since an unfamiliar link is the main hesitation,
+// and the code pulled onto its own clearly-labelled line instead of buried
+// mid-sentence in asterisks.
+function buildInviteText(lang: InviteLang, parentFirstName: string | null, dogName: string, otp: string, link: string): string {
+  const owner = parentFirstName ? parentFirstName : null
+  if (lang === 'hi') {
+    const intro = owner
+      ? `नमस्ते! मैं ${owner} बोल रहा/रही हूँ, ${dogName} का मालिक।`
+      : `नमस्ते! मैं ${dogName} का मालिक बोल रहा/रही हूँ।`
+    return `${intro} PupStep ऐप से मुझे हर वॉक के बाद सबूत मिलता है — यह मुफ़्त है और बस 30 सेकंड लगते हैं। नीचे दिया लिंक खोलें।\n\nआपका कोड: ${otp}\n\n${link}`
+  }
+  if (lang === 'mr') {
+    const intro = owner
+      ? `नमस्कार! मी ${owner}, ${dogName}चा मालक.`
+      : `नमस्कार! मी ${dogName}चा मालक.`
+    return `${intro} PupStep अ‍ॅपमुळे मला दर वेळी पुरावा मिळतो — हे मोफत आहे आणि फक्त 30 सेकंद लागतात. खालील लिंक उघडा.\n\nतुमचा कोड: ${otp}\n\n${link}`
+  }
+  const intro = owner ? `Hi! This is ${owner}, ${dogName}'s owner.` : `Hi! This is ${dogName}'s owner.`
+  return `${intro} I'm using an app called PupStep so I get proof every time you walk ${dogName} — it's free and takes 30 seconds. Tap the link below.\n\nYour code: ${otp}\n\n${link}`
 }
 
 export default function QRDisplayClient({
@@ -22,6 +49,7 @@ export default function QRDisplayClient({
   walkerPhone: initialWalkerPhone,
   status: initialStatus,
   otp,
+  parentFirstName,
 }: Props) {
   const [connectUrl, setConnectUrl] = useState('')
   const [shareUrl, setShareUrl] = useState('')
@@ -32,7 +60,9 @@ export default function QRDisplayClient({
   const [status, setStatus] = useState(initialStatus)
   const [justConnected, setJustConnected] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [codeCopied, setCodeCopied] = useState(false)
   const [walkerDirectPhone, setWalkerDirectPhone] = useState('')
+  const [inviteLang, setInviteLang] = useState<InviteLang>('en')
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Build connect URL and WhatsApp share URL using window.location.origin (client-side only)
@@ -40,11 +70,11 @@ export default function QRDisplayClient({
     const origin = window.location.origin
     const url = origin + '/connect/' + token
     setConnectUrl(url)
-    const msg = `Hi! Open this link to connect to ${dogName} on PupStep.\n\nEnter code *${otp ?? ''}* when asked.\n\n${url}`
+    const msg = buildInviteText(inviteLang, parentFirstName, dogName, otp ?? '', url)
     setShareUrl('https://wa.me/?text=' + encodeURIComponent(msg))
     const dashUrl = origin + '/walker/' + token
     setWalkerDashUrl(dashUrl)
-  }, [token, dogName, otp])
+  }, [token, dogName, otp, inviteLang, parentFirstName])
 
   // Build walker dashboard WhatsApp URL (depends on walkerName which may update after poll)
   useEffect(() => {
@@ -56,7 +86,7 @@ export default function QRDisplayClient({
 
   function buildDirectWaLink(phone: string): string {
     const fullPhone = phone.startsWith('91') ? phone : `91${phone}`
-    const msg = `Hi! Please open this link to connect to ${dogName} on PupStep.\n\nEnter code *${otp ?? ''}* when asked.\n\n${connectUrl}`
+    const msg = buildInviteText(inviteLang, parentFirstName, dogName, otp ?? '', connectUrl)
     return `https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`
   }
 
@@ -75,6 +105,14 @@ export default function QRDisplayClient({
     navigator.clipboard.writeText(walkerDashUrl).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  function handleCopyCode() {
+    if (!otp) return
+    navigator.clipboard.writeText(otp).then(() => {
+      setCodeCopied(true)
+      setTimeout(() => setCodeCopied(false), 2000)
     })
   }
 
@@ -337,6 +375,23 @@ export default function QRDisplayClient({
               >
                 Tell this to your walker when they scan
               </p>
+              <button
+                type="button"
+                onClick={handleCopyCode}
+                style={{
+                  background: codeCopied ? 'rgba(134,239,172,0.15)' : 'rgba(255,255,255,0.08)',
+                  border: `1px solid ${codeCopied ? 'rgba(134,239,172,0.4)' : 'rgba(255,255,255,0.15)'}`,
+                  borderRadius: '100px',
+                  padding: '6px 16px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: codeCopied ? '#86EFAC' : '#9ECDD4',
+                  fontFamily: 'var(--font-nunito), sans-serif',
+                  cursor: 'pointer',
+                }}
+              >
+                {codeCopied ? '✅ Copied!' : '📋 Copy code'}
+              </button>
             </div>
           )}
 
@@ -453,6 +508,36 @@ export default function QRDisplayClient({
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Divider */}
             <div style={{ borderTop: '1px solid #E5E7EB', width: '100%' }} />
+
+            {/* Message language — picks the language the invite message below is written in */}
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
+                Message language for your walker
+              </p>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {(['en', 'hi', 'mr'] as InviteLang[]).map((l) => (
+                  <button
+                    key={l}
+                    type="button"
+                    onClick={() => setInviteLang(l)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 4px',
+                      borderRadius: 10,
+                      fontSize: 13,
+                      fontWeight: 700,
+                      fontFamily: 'var(--font-nunito)',
+                      border: inviteLang === l ? '2px solid #FF8C52' : '2px solid #E5E7EB',
+                      background: inviteLang === l ? 'rgba(255,140,82,0.08)' : '#fff',
+                      color: inviteLang === l ? '#C2410C' : '#6B7280',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {l === 'en' ? 'English' : l === 'hi' ? 'हिंदी' : 'मराठी'}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Direct send to walker — primary action */}
             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>

@@ -6,6 +6,13 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react'],
   },
 
+  // Dev-only: lets a phone on the same WiFi load the dev server via its LAN IP.
+  // Next.js blocks cross-origin HMR/dev-resource requests by default, which
+  // otherwise renders the initial HTML shell fine but leaves the page empty
+  // since client-side JS never finishes hydrating. Has zero effect on
+  // production builds. Update the IP if your machine's local address changes.
+  allowedDevOrigins: ['192.168.0.106'],
+
   // ── Route redirects ──────────────────────────────────────────────────────────
   // NOTE: /pro/*, /join/*, /become-a-provider, /review/*, /live/* are NOT
   // redirected here — they are protected in middleware.ts (admin-only access).

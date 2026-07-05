@@ -14,7 +14,6 @@ type ViewState = 'phone-first' | 'returning' | 'new-walker'
 
 const STRINGS = {
   en: {
-    brand: 'PupStep 🐾',
     codeLabel: 'Enter the 4-digit code shown by the owner *',
     nameLabel: 'Your name *',
     phoneLabel: 'Your phone number *',
@@ -30,7 +29,6 @@ const STRINGS = {
     dashboardHint: "We'll send your dashboard link here",
   },
   hi: {
-    brand: 'PupStep 🐾',
     codeLabel: 'मालिक द्वारा दिखाया गया 4-अंकीय कोड दर्ज करें *',
     nameLabel: 'आपका नाम *',
     phoneLabel: 'आपका फोन नंबर *',
@@ -46,7 +44,6 @@ const STRINGS = {
     dashboardHint: 'हम यहाँ आपका डैशबोर्ड लिंक भेजेंगे',
   },
   mr: {
-    brand: 'PupStep 🐾',
     codeLabel: 'मालकाने दाखवलेला 4-अंकी कोड टाका *',
     nameLabel: 'तुमचे नाव *',
     phoneLabel: 'तुमचा फोन नंबर *',
@@ -291,9 +288,8 @@ export default function ConnectClient({
 
       {/* Header */}
       <div className="flex items-center justify-center pt-6 pb-4 px-6">
-        <span className="text-2xl font-bold text-[#0A2F35]" style={{ fontFamily: 'var(--font-fredoka)' }}>
-          {t.brand}
-        </span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.webp" alt="PupStep" style={{ height: 36, width: 'auto' }} />
       </div>
 
       {/* Dog avatar section */}

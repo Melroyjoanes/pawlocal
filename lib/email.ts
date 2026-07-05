@@ -5,7 +5,10 @@ interface EmailOpts {
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
-const LOGO_URL = `${SITE_URL}/logo.webp`
+// PNG, not WebP — many email clients (Outlook desktop, some webmail) don't
+// support WebP and fall back to a broken/blurry render with black artifacts
+// where the transparent background should be.
+const LOGO_URL = `${SITE_URL}/logo-email.png`
 
 export async function sendEmail(opts: EmailOpts): Promise<void> {
   const resendKey = process.env.RESEND_API_KEY
@@ -160,15 +163,17 @@ export function emailTemplate(
  */
 export function otpEmailTemplate(code: string, expiryMins = 60): string {
   const content = `
-    <!-- Teal top accent -->
+    <!-- Teal top accent — hex, not oklch(): most email clients (Outlook,
+         many webmail renderers) don't support modern CSS color functions
+         and silently drop the style rather than falling back gracefully. -->
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-      <tr><td style="background:oklch(0.48 0.17 196);height:6px;"></td></tr>
+      <tr><td style="background:#00777d;height:6px;"></td></tr>
     </table>
 
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       <tr>
         <td style="padding:36px 36px 12px;" align="center">
-          <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:oklch(0.40 0.17 196);
+          <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#005f65;
                     text-transform:uppercase;letter-spacing:0.12em;
                     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
             Sign-in code

@@ -107,6 +107,17 @@ export default async function SetupQRPage({
     redirect('/setup')
   }
 
+  // Parent's own first name — used in the walker-invite WhatsApp message so
+  // it reads as coming from the employer the walker actually knows and
+  // trusts, not an anonymous app link.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: profile } = await (db.from('profiles') as any)
+    .select('full_name')
+    .eq('id', user.id)
+    .maybeSingle()
+  const parentFullName: string | null = profile?.full_name ?? user.user_metadata?.full_name ?? null
+  const parentFirstName = parentFullName?.trim().split(' ')[0] ?? null
+
   return (
     <QRDisplayClient
       token={connection.token}
@@ -116,6 +127,7 @@ export default async function SetupQRPage({
       walkerPhone={connection.walker_phone ?? null}
       status={connection.status}
       otp={connection.otp ?? null}
+      parentFirstName={parentFirstName}
     />
   )
 }

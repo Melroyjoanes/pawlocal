@@ -70,7 +70,8 @@ export default function AuthNavItem() {
   return (
     <a
       href="/login?next=/home"
-      className="text-sm font-medium px-3 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-amber-50 transition-all border border-border whitespace-nowrap flex-shrink-0"
+      className="text-sm font-bold px-4 py-2 rounded-full whitespace-nowrap flex-shrink-0 transition-opacity hover:opacity-90"
+      style={{ background: '#FF8C52', color: '#fff', fontFamily: 'var(--font-nunito)' }}
     >
       Sign in
     </a>
