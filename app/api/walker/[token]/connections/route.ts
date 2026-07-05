@@ -23,7 +23,7 @@ export async function GET(
   }
 
   // Get ALL active connections for this phone
-  const { data: allConns } = await (db.from('walker_connections') as any)
+  let { data: allConns, error: allConnsError } = await (db.from('walker_connections') as any)
     .select(`
       id, token, status, walker_phone,
       dogs!walker_connections_dog_id_fkey (
@@ -33,6 +33,22 @@ export async function GET(
     `)
     .eq('walker_phone', thisConn.walker_phone)
     .eq('status', 'active')
+
+  // walk_time_bucket is a nullable column added in migration 053 — until that
+  // migration is run manually against prod, the column won't exist yet. Retry
+  // without it rather than silently returning an empty picker to the walker.
+  if (allConnsError && /walk_time_bucket/i.test(allConnsError.message ?? '')) {
+    ;({ data: allConns, error: allConnsError } = await (db.from('walker_connections') as any)
+      .select(`
+        id, token, status, walker_phone,
+        dogs!walker_connections_dog_id_fkey (
+          id, name, breed, photo_url, health_notes, care_focus
+        ),
+        owner_id
+      `)
+      .eq('walker_phone', thisConn.walker_phone)
+      .eq('status', 'active'))
+  }
 
   if (!allConns?.length) return NextResponse.json([])
 

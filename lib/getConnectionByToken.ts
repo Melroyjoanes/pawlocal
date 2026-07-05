@@ -34,9 +34,7 @@ export interface ConnectionInfo {
 export async function getConnectionByToken(token: string): Promise<ConnectionInfo | null> {
   const db = admin()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: connection, error } = await (db.from('walker_connections') as any)
-    .select(`
+  const SELECT_WITH_WALK_TIME_BUCKET = `
       id,
       token,
       status,
@@ -55,9 +53,44 @@ export async function getConnectionByToken(token: string): Promise<ConnectionInf
         care_focus,
         walk_time_bucket
       )
-    `)
+    `
+  const SELECT_WITHOUT_WALK_TIME_BUCKET = `
+      id,
+      token,
+      status,
+      walker_name,
+      walker_phone,
+      walker_role,
+      owner_phone,
+      claimed_at,
+      expected_walker_phone,
+      dogs!walker_connections_dog_id_fkey (
+        name,
+        breed,
+        photo_url,
+        health_notes,
+        owner_id,
+        care_focus
+      )
+    `
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let { data: connection, error } = await (db.from('walker_connections') as any)
+    .select(SELECT_WITH_WALK_TIME_BUCKET)
     .eq('token', token)
     .single()
+
+  // walk_time_bucket is a nullable column added in migration 053 — until that
+  // migration is run manually against prod, the column won't exist yet. This
+  // function is shared by /connect/[token] and /walker/[token], so failing
+  // here breaks every single walker invite link site-wide — retry without
+  // the column rather than ever letting that happen again.
+  if (error && /walk_time_bucket/i.test(error.message ?? '')) {
+    ;({ data: connection, error } = await (db.from('walker_connections') as any)
+      .select(SELECT_WITHOUT_WALK_TIME_BUCKET)
+      .eq('token', token)
+      .single())
+  }
 
   if (error || !connection) return null
 

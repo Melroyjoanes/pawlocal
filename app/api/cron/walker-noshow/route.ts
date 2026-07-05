@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
   const nowIso = new Date(nowUtcMs).toISOString()
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: connections, error } = await (db.from('walker_connections') as any)
+  let { data: connections, error } = await (db.from('walker_connections') as any)
     .select(`
       id,
       owner_id,
@@ -64,6 +64,22 @@ export async function GET(req: NextRequest) {
       )
     `)
     .eq('status', 'active')
+
+  // walk_time_bucket is a nullable column added in migration 053 — until that
+  // migration is run manually against prod, the column won't exist yet. Retry
+  // without it (this cron just has nothing to check for no-shows that day)
+  // rather than failing the whole run.
+  if (error && /walk_time_bucket/i.test(error.message ?? '')) {
+    ;({ data: connections, error } = await (db.from('walker_connections') as any)
+      .select(`
+        id,
+        owner_id,
+        walker_name,
+        status,
+        dogs!walker_connections_dog_id_fkey ( name )
+      `)
+      .eq('status', 'active'))
+  }
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
