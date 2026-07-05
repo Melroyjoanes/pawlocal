@@ -6,7 +6,12 @@ import { getEntitlement } from '@/lib/entitlement'
 
 export const metadata = { title: 'Pricing — PupStep' }
 
-export default async function UpgradePage() {
+export default async function UpgradePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ just_paid?: string }>
+}) {
+  const { just_paid } = await searchParams
   const cookieStore = await cookies()
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -133,6 +138,7 @@ export default async function UpgradePage() {
       walkerPhone={walkerPhone}
       dogName={dogName}
       firstDogId={firstDogId}
+      justPaid={just_paid === '1'}
     />
   )
 }

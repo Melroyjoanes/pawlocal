@@ -179,7 +179,11 @@ export default function MyAccountClient({
   hasEverPaid = false,
 }: Props) {
   // Opens Razorpay directly from My Account — no intermediate /upgrade page visit
-  const { checkout, loading: checkoutLoading, error: checkoutError } = useRazorpayCheckout({ onSuccessRedirect: '/my-account?just_paid=1' })
+  // Redirects to /upgrade's celebration screen (not back to /my-account) so
+  // there's one single, well-built "you're now Pro" experience regardless of
+  // which page the checkout was started from — it auto-continues to /home
+  // itself once the celebration has been shown.
+  const { checkout, loading: checkoutLoading, error: checkoutError } = useRazorpayCheckout({ onSuccessRedirect: '/upgrade?just_paid=1' })
   const reduceMotion = useReducedMotion()
 
   // ── Profile section state

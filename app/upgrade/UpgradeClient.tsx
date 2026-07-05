@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion, useReducedMotion } from 'framer-motion'
-import { PawPrint, PartyPopper } from 'lucide-react'
+import { PawPrint, Sparkles } from 'lucide-react'
 import ParentBottomNav from '@/components/ParentBottomNav'
 import { LoadingButton } from '@/components/LoadingButton'
 import { useRazorpayCheckout } from '@/lib/useRazorpayCheckout'
 
 const SPRING = { type: 'spring', duration: 0.5, bounce: 0.3 } as const
+const AUTO_REDIRECT_SECONDS = 5
 
 interface Props {
   currentPlan: 'monthly' | null
@@ -23,6 +25,7 @@ interface Props {
   walkerName?: string | null
   walkerPhone?: string | null
   dogName?: string | null
+  justPaid?: boolean
 }
 
 const FEATURES = [
@@ -88,56 +91,81 @@ const CLAY_SHADOW_ORANGE = [
   '0 12px 28px rgba(255,140,82,0.20)',
 ].join(', ')
 
-export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, trialStatus = 'no_trial', trialDaysRemaining, hasEverPaid = false, firstDogId, walkerToken, walkerName, walkerPhone, dogName }: Props) {
-  const [success, setSuccess] = useState(false)
+export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, trialStatus = 'no_trial', trialDaysRemaining, hasEverPaid = false, firstDogId, walkerToken, walkerName, walkerPhone, dogName, justPaid = false }: Props) {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const { checkout: handleCheckout, loading, error } = useRazorpayCheckout()
   const rm = useReducedMotion()
+  const router = useRouter()
+  const [secondsLeft, setSecondsLeft] = useState(AUTO_REDIRECT_SECONDS)
 
-  // — Success state —
-  if (success) {
+  // Auto-continue to the home dashboard after the celebration has had a
+  // moment to register — the standard pattern most SaaS checkouts use
+  // (show success, then get out of the way). Ticks a visible countdown
+  // rather than redirecting silently, and "Go now" always short-circuits it.
+  useEffect(() => {
+    if (!(justPaid && currentPlan)) return
+    if (secondsLeft <= 0) { router.push('/home'); return }
+    const id = setTimeout(() => setSecondsLeft(s => s - 1), 1000)
+    return () => clearTimeout(id)
+  }, [justPaid, currentPlan, secondsLeft, router])
+
+  // — Just paid: celebration, then hand off to the home dashboard where
+  // Pro status is already shown (badge, teal header accent, unlocked
+  // history) — this is the ONLY state that auto-redirects. —
+  if (justPaid && currentPlan) {
     return (
       <div className="min-h-dvh flex flex-col items-center justify-center px-4 py-10" style={{ background: '#FFFBEB', position: 'relative', overflow: 'hidden' }}>
-        <div aria-hidden className="pointer-events-none" style={{ position: 'absolute', top: '18%', left: '50%', width: 420, height: 420, transform: 'translateX(-50%)', borderRadius: '50%', background: 'oklch(0.48 0.17 196 / 0.08)', filter: 'blur(70px)' }} />
+        <div aria-hidden className="pointer-events-none" style={{ position: 'absolute', top: '14%', left: '50%', width: 480, height: 480, transform: 'translateX(-50%)', borderRadius: '50%', background: 'oklch(0.48 0.17 196 / 0.10)', filter: 'blur(80px)' }} />
+        <div aria-hidden className="pointer-events-none" style={{ position: 'absolute', top: '30%', left: '18%', width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,140,82,0.08)', filter: 'blur(60px)' }} />
         <Image src="/logo.webp" alt="PupStep" width={130} height={48} className="h-9 w-auto mb-8 relative" priority />
         <motion.div
-          initial={rm ? undefined : { opacity: 0, scale: 0.9, y: 12 }}
+          initial={rm ? undefined : { opacity: 0, scale: 0.88, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={SPRING}
-          className="text-center max-w-sm w-full px-8 py-10 rounded-[28px] relative"
-          style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}
+          className="text-center max-w-sm w-full px-9 py-12 relative"
+          style={{ background: '#0A2F35', boxShadow: CLAY_SHADOW_TEAL, borderRadius: 40 }}
         >
           <motion.div
-            initial={rm ? undefined : { scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', duration: 0.6, bounce: 0.5, delay: 0.15 }}
-            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
-            style={{ background: 'oklch(0.48 0.17 196 / 0.12)' }}
+            initial={rm ? undefined : { scale: 0, rotate: -12 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', duration: 0.7, bounce: 0.55, delay: 0.15 }}
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+            style={{ background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)', boxShadow: CLAY_SHADOW_ORANGE }}
           >
-            <PartyPopper size={30} color="oklch(0.40 0.17 196)" strokeWidth={1.75} />
+            <Sparkles size={34} color="#451A03" strokeWidth={1.75} />
           </motion.div>
-          <h1
-            className="text-3xl font-bold mb-3"
-            style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}
+          <span
+            className="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-4"
+            style={{ background: 'rgba(255,140,82,0.16)', color: '#FF8C52', fontFamily: 'var(--font-nunito)', letterSpacing: '0.08em' }}
           >
-            You&apos;re all set!
+            PupStep Pro
+          </span>
+          <h1
+            className="text-3xl font-bold mb-3 leading-tight"
+            style={{ fontFamily: 'var(--font-fredoka)', color: '#FFFBEB' }}
+          >
+            You&apos;re a Pro member!
           </h1>
-          <p className="mb-8 text-sm leading-relaxed" style={{ fontFamily: 'var(--font-nunito)', color: '#0A2F35', opacity: 0.72 }}>
-            Welcome to PupStep Pro. Your dog&apos;s care history is now always at your fingertips.
+          <p className="mb-8 text-sm leading-relaxed" style={{ fontFamily: 'var(--font-nunito)', color: '#FFFBEB', opacity: 0.7 }}>
+            Every walk report, GPS route, and photo — unlocked and saved for good. Let&apos;s take you to your dashboard.
           </p>
           <Link
-            href="/my-account"
-            className="inline-block px-8 py-3.5 rounded-full font-bold text-white text-sm"
-            style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
+            href="/home"
+            className="inline-block px-8 py-3.5 rounded-full font-bold text-sm mb-4"
+            style={{ background: '#FF8C52', color: '#451A03', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
           >
-            Go to My Account
+            Go to my dashboard now
           </Link>
+          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#FFFBEB', opacity: 0.4 }}>
+            Continuing automatically in {secondsLeft}s…
+          </p>
         </motion.div>
       </div>
     )
   }
 
-  // — Already subscribed state —
+  // — Already subscribed (browsing pricing while already Pro, not right
+  // after paying) — calmer, no auto-redirect. —
   if (currentPlan) {
     const expiry = expiresAt
       ? new Date(expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
@@ -150,8 +178,8 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
           initial={rm ? undefined : { opacity: 0, scale: 0.94, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={SPRING}
-          className="text-center max-w-sm w-full px-8 py-10 rounded-[28px] relative"
-          style={{ background: '#0A2F35', boxShadow: CLAY_SHADOW_TEAL }}
+          className="text-center max-w-sm w-full px-8 py-10 relative"
+          style={{ background: '#0A2F35', boxShadow: CLAY_SHADOW_TEAL, borderRadius: 40 }}
         >
           <div
             className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"

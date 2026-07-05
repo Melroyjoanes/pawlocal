@@ -86,7 +86,13 @@ export function useRazorpayCheckout(opts?: { onSuccessRedirect?: string }) {
               transaction_id: response.razorpay_payment_id,
               plan,
             })
-            window.location.href = opts?.onSuccessRedirect ?? '/setup?just_paid=1'
+            // /upgrade?just_paid=1 (not /setup) — /setup is the dog-creation
+            // wizard, which makes no sense to detour an EXISTING customer
+            // through right after they pay. /upgrade already re-fetches
+            // entitlement fresh on load, so it correctly shows the
+            // celebration + "you're on Pro now" state regardless of whether
+            // this user has a dog yet or not.
+            window.location.href = opts?.onSuccessRedirect ?? '/upgrade?just_paid=1'
           } catch (err) {
             const message = err instanceof Error ? err.message : 'Payment verification failed'
             setError(message)
