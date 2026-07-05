@@ -118,21 +118,15 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
   }, [recover, user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleCareFocus(value: string) {
-    if (value === 'normal') {
-      // Normal walk deselects everything else
-      setCareFocuses(['normal'])
-    } else {
-      setCareFocuses(prev => {
-        // Deselect 'normal' when selecting a specific focus
-        const withoutNormal = prev.filter(v => v !== 'normal')
-        if (withoutNormal.includes(value)) {
-          // Deselecting last specific focus reverts to normal
-          const remaining = withoutNormal.filter(v => v !== value)
-          return remaining.length ? remaining : ['normal']
-        }
-        return [...withoutNormal, value] // select
-      })
-    }
+    // Every option, including "Normal walk", is an independent toggle — all
+    // combinations are valid. Only fallback: never leave zero selected.
+    setCareFocuses(prev => {
+      if (prev.includes(value)) {
+        const remaining = prev.filter(v => v !== value)
+        return remaining.length ? remaining : ['normal']
+      }
+      return [...prev, value]
+    })
   }
 
   function toggleWalkTime(value: string) {

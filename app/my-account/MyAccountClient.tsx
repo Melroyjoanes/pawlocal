@@ -282,18 +282,15 @@ export default function MyAccountClient({
   // Same exclusivity rule as the setup flow: 'normal' clears everything else,
   // selecting any specific focus clears 'normal' and toggles independently.
   function toggleDogCareFocus(value: string) {
-    if (value === 'normal') {
-      setDogCareFocuses(['normal'])
-    } else {
-      setDogCareFocuses(prev => {
-        const withoutNormal = prev.filter(v => v !== 'normal')
-        if (withoutNormal.includes(value)) {
-          const remaining = withoutNormal.filter(v => v !== value)
-          return remaining.length ? remaining : ['normal']
-        }
-        return [...withoutNormal, value]
-      })
-    }
+    // Every option, including "Normal walk", is an independent toggle — all
+    // combinations are valid. Only fallback: never leave zero selected.
+    setDogCareFocuses(prev => {
+      if (prev.includes(value)) {
+        const remaining = prev.filter(v => v !== value)
+        return remaining.length ? remaining : ['normal']
+      }
+      return [...prev, value]
+    })
   }
 
   async function handleSaveDog() {
