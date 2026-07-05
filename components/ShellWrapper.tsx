@@ -84,7 +84,7 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
 
       <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
 
-      <footer style={{ background: '#0A2F35', marginTop: '4rem' }}>
+      <footer style={{ background: '#0A2F35' }}>
         {/* Top grid */}
         <div className="max-w-7xl mx-auto px-5 sm:px-8 pt-12 pb-8 grid grid-cols-2 sm:grid-cols-4 gap-8">
           {/* Brand col */}

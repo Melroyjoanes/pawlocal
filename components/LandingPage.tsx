@@ -155,11 +155,11 @@ type FloatItem = {
 }
 
 const FLOAT_ITEMS: FloatItem[] = [
-  { Icon: LucidePaw, top: '8%',  left: '10%', size: 34, color: C.teal,   opacity: 0.10, parallaxRange: 260, parallaxDir: -1, floatDuration: 7,  rotateDuration: 22, rotateDir: 1,  delay: 0 },
-  { Icon: Bone,       top: '18%', left: '86%', size: 40, color: C.orange, opacity: 0.09, parallaxRange: 200, parallaxDir: 1,  floatDuration: 8.5,rotateDuration: 26, rotateDir: -1, delay: 0.6 },
-  { Icon: LucidePaw, top: '68%', left: '92%', size: 26, color: C.teal,   opacity: 0.08, parallaxRange: 340, parallaxDir: 1,  floatDuration: 6.5,rotateDuration: 18, rotateDir: -1, delay: 1.2 },
-  { Icon: Bone,       top: '78%', left: '6%',  size: 30, color: C.orange, opacity: 0.08, parallaxRange: 220, parallaxDir: -1, floatDuration: 9,  rotateDuration: 24, rotateDir: 1,  delay: 0.3 },
-  { Icon: LucidePaw, top: '40%', left: '4%',  size: 22, color: C.orange, opacity: 0.07, parallaxRange: 180, parallaxDir: 1,  floatDuration: 7.5,rotateDuration: 20, rotateDir: 1,  delay: 0.9 },
+  { Icon: LucidePaw, top: '8%',  left: '10%', size: 34, color: C.teal,   opacity: 0.22, parallaxRange: 260, parallaxDir: -1, floatDuration: 7,  rotateDuration: 22, rotateDir: 1,  delay: 0 },
+  { Icon: Bone,       top: '18%', left: '86%', size: 40, color: C.orange, opacity: 0.20, parallaxRange: 200, parallaxDir: 1,  floatDuration: 8.5,rotateDuration: 26, rotateDir: -1, delay: 0.6 },
+  { Icon: LucidePaw, top: '68%', left: '92%', size: 26, color: C.teal,   opacity: 0.18, parallaxRange: 340, parallaxDir: 1,  floatDuration: 6.5,rotateDuration: 18, rotateDir: -1, delay: 1.2 },
+  { Icon: Bone,       top: '78%', left: '6%',  size: 30, color: C.orange, opacity: 0.18, parallaxRange: 220, parallaxDir: -1, floatDuration: 9,  rotateDuration: 24, rotateDir: 1,  delay: 0.3 },
+  { Icon: LucidePaw, top: '40%', left: '4%',  size: 22, color: C.orange, opacity: 0.16, parallaxRange: 180, parallaxDir: 1,  floatDuration: 7.5,rotateDuration: 20, rotateDir: 1,  delay: 0.9 },
 ]
 
 function FloatingBall({ rm }: { rm: boolean }) {
@@ -173,7 +173,7 @@ function FloatingBall({ rm }: { rm: boolean }) {
       animate={rm ? {} : { rotateX: [0, 360], rotateY: [0, 180, 0], y: [0, -16, 0] }}
       transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
     >
-      <svg viewBox="0 0 32 32" width="100%" height="100%" style={{ opacity: 0.09 }}>
+      <svg viewBox="0 0 32 32" width="100%" height="100%" style={{ opacity: 0.20 }}>
         <circle cx="16" cy="16" r="15" fill="none" stroke={C.orange} strokeWidth="2" />
         <path d="M2 16 Q 16 4, 30 16" fill="none" stroke={C.orange} strokeWidth="1.5" />
         <path d="M2 16 Q 16 28, 30 16" fill="none" stroke={C.orange} strokeWidth="1.5" />
@@ -934,20 +934,36 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── MOBILE STICKY BAR ─────────────────────────────────────────────── */}
+      {/* ── MOBILE STICKY BAR — floating glass pill, matches ParentBottomNav ── */}
       <motion.div
         initial={rm ? {} : { y: 80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: EASE_EXP, delay: 1.6 }}
-        className="lg:hidden fixed bottom-0 inset-x-0 z-50"
-        style={{ background: 'rgba(255,251,235,0.97)', borderTop: '1px solid #FDE68A', backdropFilter: 'blur(10px)', paddingBottom: 'env(safe-area-inset-bottom,12px)' }}>
-        <div style={{ display: 'flex', gap: 10, padding: '10px 16px' }}>
+        className="lg:hidden fixed left-0 right-0 z-50 flex justify-center px-4"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}>
+        <div
+          className="max-w-lg w-full flex"
+          style={{
+            gap: 10,
+            padding: '10px',
+            borderRadius: 28,
+            background: 'oklch(0.995 0.005 85 / 0.72)',
+            backdropFilter: 'blur(20px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+            border: '1px solid oklch(0.906 0.06 88 / 0.55)',
+            boxShadow: [
+              'inset 0 1px 0 rgba(255,255,255,0.55)',
+              'inset 0 -1px 0 rgba(10,47,53,0.05)',
+              '0 8px 24px -6px rgba(10,47,53,0.16)',
+              '0 24px 48px -16px rgba(10,47,53,0.18)',
+            ].join(', '),
+          }}>
           <Link href="/setup?go=1"
-            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '13px', borderRadius: 16, background: `linear-gradient(155deg,${C.orange},${C.orangeDeep})`, boxShadow: '0 4px 0 rgba(175,65,10,0.26),0 8px 20px rgba(245,107,34,0.28)', color: '#451A03', fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '13px', borderRadius: 20, background: `linear-gradient(155deg,${C.orange},${C.orangeDeep})`, boxShadow: '0 4px 0 rgba(175,65,10,0.26),0 8px 20px rgba(245,107,34,0.28)', color: '#451A03', fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
             Set up your dog
           </Link>
           <Link href="/upgrade"
-            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '13px', borderRadius: 16, background: 'rgba(10,47,53,0.08)', color: C.dark, fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '13px', borderRadius: 20, background: 'rgba(10,47,53,0.08)', color: C.dark, fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
             See pricing
           </Link>
         </div>
