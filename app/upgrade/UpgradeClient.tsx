@@ -14,6 +14,7 @@ interface Props {
   trialStatus?: 'no_trial' | 'trial' | 'lapsed' | 'active'
   trialDaysRemaining?: number | null
   hasEverPaid?: boolean
+  firstDogId?: string | null
   walkerToken?: string | null
   walkerName?: string | null
   walkerPhone?: string | null
@@ -83,7 +84,7 @@ const CLAY_SHADOW_ORANGE = [
   '0 12px 28px rgba(255,140,82,0.20)',
 ].join(', ')
 
-export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, trialStatus = 'no_trial', trialDaysRemaining, hasEverPaid = false, walkerToken, walkerName, walkerPhone, dogName }: Props) {
+export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, trialStatus = 'no_trial', trialDaysRemaining, hasEverPaid = false, firstDogId, walkerToken, walkerName, walkerPhone, dogName }: Props) {
   const [success, setSuccess] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const { checkout: handleCheckout, loading, error } = useRazorpayCheckout()
@@ -249,10 +250,10 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                     <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 700, color: 'oklch(0.48 0.17 196)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
                       Step 1 — required before your trial can start
                     </p>
-                    <Link href="/setup/qr"
+                    <Link href={firstDogId ? `/setup/qr?dog=${firstDogId}` : '/setup?go=1'}
                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '14px', borderRadius: 16, background: 'oklch(0.48 0.17 196)', color: '#fff', fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none', boxSizing: 'border-box' }}
                     >
-                      Connect your walker first →
+                      {firstDogId ? 'Connect your walker first →' : 'Add your dog first →'}
                     </Link>
                   </>
                 )}

@@ -105,6 +105,21 @@ export default async function UpgradePage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const dogName: string | null = (walkerConn as any)?.dogs?.name ?? null
 
+  // Independent of walker-connection status — needed so the "Connect your
+  // walker first" CTA (shown when there's no active connection) can link
+  // straight to /setup/qr?dog=<id> instead of bouncing through /setup, which
+  // only recovers this correctly when the visitor still has a live session.
+  const { data: firstDog } = user
+    ? await adminClient
+        .from('dogs')
+        .select('id')
+        .eq('owner_id', user.id)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+    : { data: null }
+  const firstDogId: string | null = (firstDog as { id: string } | null)?.id ?? null
+
   return (
     <UpgradeClient
       currentPlan={currentPlan}
@@ -117,6 +132,7 @@ export default async function UpgradePage() {
       walkerName={walkerName}
       walkerPhone={walkerPhone}
       dogName={dogName}
+      firstDogId={firstDogId}
     />
   )
 }

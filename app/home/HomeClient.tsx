@@ -122,11 +122,12 @@ function useTrialCountdown(trialStartedAt: string | null): {
   return state
 }
 
-function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName, trialStartedAt, missedWalksCount }: {
+function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName, dogId, trialStartedAt, missedWalksCount }: {
   trialStatus: string
   daysRemaining: number | null
   totalReports: number
   dogName: string
+  dogId?: string | null
   trialStartedAt?: string | null
   missedWalksCount?: number
 }) {
@@ -219,7 +220,7 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName, tria
     <div style={{ borderRadius: '16px', background: 'rgba(255,140,82,0.08)', border: '1.5px solid rgba(255,140,82,0.3)', padding: '14px 16px' }}>
       <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#0A2F35', margin: '0 0 4px' }}>Your 3-day free trial starts with your first walk report.</p>
       <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: '#6B7280', margin: '0 0 10px' }}>PupStep delivers reports automatically. Reports depend on your walker logging each walk.</p>
-      <Link href="/setup?go=1" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'oklch(0.44 0.16 196)', fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none' }}>Connect your walker to receive your first report →</Link>
+      <Link href={dogId ? `/setup/qr?dog=${dogId}` : '/setup?go=1'} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'oklch(0.44 0.16 196)', fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none' }}>Connect your walker to receive your first report →</Link>
     </div>
   )
 }
@@ -506,11 +507,12 @@ function LiveDurationCounter({ startedAt }: { startedAt: string }) {
 }
 
 // ── Feature 2: Team Bottom Sheet ───────────────────────────────────────────
-function TeamSheet({ open, onClose, connections, dogName }: {
+function TeamSheet({ open, onClose, connections, dogName, dogId }: {
   open: boolean
   onClose: () => void
   connections: WalkerConnection[]
   dogName: string
+  dogId?: string | null
 }) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
@@ -554,7 +556,7 @@ function TeamSheet({ open, onClose, connections, dogName }: {
           {connections.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '24px 0' }}>
               <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#9CA3AF', marginBottom: 12 }}>No walkers connected yet</p>
-              <Link href="/setup?go=1" style={{ color: 'oklch(0.48 0.17 196)', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>Connect a walker →</Link>
+              <Link href={dogId ? `/setup/qr?dog=${dogId}` : '/setup?go=1'} style={{ color: 'oklch(0.48 0.17 196)', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>Connect a walker →</Link>
             </div>
           ) : connections.map((c) => (
             <div key={c.id} style={{ border: '1.5px solid #E5E7EB', borderRadius: 16, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1029,6 +1031,7 @@ export default function HomeClient({ displayName, firstDog, otherDogs, activeWal
             daysRemaining={trialDaysRemaining}
             totalReports={totalReports}
             dogName={firstDog?.name ?? 'your dog'}
+            dogId={firstDog?.id ?? null}
             trialStartedAt={trialStartedAt ?? null}
             missedWalksCount={missedWalksCount ?? 0}
           />
@@ -1147,7 +1150,7 @@ export default function HomeClient({ displayName, firstDog, otherDogs, activeWal
       )}
 
       {/* ── Sheets ─────────────────────────────────────────────────────────── */}
-      <TeamSheet open={teamSheetOpen} onClose={() => setTeamSheetOpen(false)} connections={walkerConnections} dogName={firstDog?.name ?? 'your dog'} />
+      <TeamSheet open={teamSheetOpen} onClose={() => setTeamSheetOpen(false)} connections={walkerConnections} dogName={firstDog?.name ?? 'your dog'} dogId={firstDog?.id ?? null} />
       <DogEditSheet open={dogEditOpen} dog={editingDog} onClose={() => { setDogEditOpen(false); setEditingDog(null) }} />
       <AddDogSheet
         open={addDogOpen}
