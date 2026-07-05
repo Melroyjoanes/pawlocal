@@ -208,7 +208,7 @@ function FloatingIcon({ item, rm }: { item: FloatItem; rm: boolean }) {
 
 function FloatingDecor({ rm }: { rm: boolean }) {
   return (
-    <div aria-hidden className="pointer-events-none hidden sm:block"
+    <div aria-hidden className="pointer-events-none block"
       style={{ position: 'fixed', inset: 0, zIndex: -1, overflow: 'hidden' }}>
       {FLOAT_ITEMS.map((item, i) => <FloatingIcon key={i} item={item} rm={rm} />)}
       <FloatingBall rm={rm} />
@@ -677,6 +677,9 @@ export default function LandingPage() {
           @keyframes pupstepMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
           .pupstep-marquee-track { animation: pupstepMarquee 34s linear infinite; }
           .pupstep-marquee-track:hover { animation-play-state: paused; }
+          @media (prefers-reduced-motion: reduce) {
+            .pupstep-marquee-track { animation: none; }
+          }
         `}</style>
         <div className="pupstep-marquee-track" style={{ display: 'flex', gap: 10, width: 'max-content' }}>
           {[...PROOF_CHIPS, ...PROOF_CHIPS].map((c, i) => (
