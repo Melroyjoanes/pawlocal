@@ -90,23 +90,35 @@ export async function POST(req: NextRequest) {
   const days = PLAN_DAYS[plan] ?? 30
   const expiresAt = new Date(Date.now() + days * 86400 * 1000).toISOString()
 
+  // Extend the existing active row if one exists, else insert a new one.
+  // NOT a Supabase upsert(onConflict: 'user_id') — the only unique index on
+  // subscriptions.user_id is PARTIAL (WHERE status = 'active', see migration
+  // 032), which a plain ON CONFLICT (user_id) target can never match. Same
+  // fix as app/api/payments/verify/route.ts — see that file's comment for
+  // the full explanation.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { error } = await (db.from('subscriptions') as any)
-    .upsert(
-      {
-        user_id: userId,
-        plan,
-        status: 'active',
-        razorpay_order_id: orderId,
-        razorpay_payment_id: paymentId,
-        amount_paise: amountPaise,
-        expires_at: expiresAt,
-      },
-      { onConflict: 'user_id', ignoreDuplicates: false }
-    )
+  const { data: existingActive } = await (db.from('subscriptions') as any)
+    .select('id')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .maybeSingle()
+
+  const subPayload = {
+    plan,
+    status: 'active',
+    razorpay_order_id: orderId,
+    razorpay_payment_id: paymentId,
+    amount_paise: amountPaise,
+    expires_at: expiresAt,
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = existingActive
+    ? await (db.from('subscriptions') as any).update(subPayload).eq('id', existingActive.id)
+    : await (db.from('subscriptions') as any).insert({ user_id: userId, ...subPayload })
 
   if (error) {
-    console.error('[webhook] Subscription upsert failed:', error.message)
+    console.error('[webhook] Subscription write failed:', error.message)
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
