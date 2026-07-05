@@ -3,9 +3,13 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { motion, useReducedMotion } from 'framer-motion'
+import { PawPrint, PartyPopper } from 'lucide-react'
 import ParentBottomNav from '@/components/ParentBottomNav'
 import { LoadingButton } from '@/components/LoadingButton'
 import { useRazorpayCheckout } from '@/lib/useRazorpayCheckout'
+
+const SPRING = { type: 'spring', duration: 0.5, bounce: 0.3 } as const
 
 interface Props {
   currentPlan: 'monthly' | null
@@ -88,16 +92,30 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
   const [success, setSuccess] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const { checkout: handleCheckout, loading, error } = useRazorpayCheckout()
+  const rm = useReducedMotion()
 
   // — Success state —
   if (success) {
     return (
-      <div className="min-h-dvh flex items-center justify-center px-4" style={{ background: '#FFFBEB' }}>
-        <div
-          className="text-center max-w-sm w-full px-8 py-10 rounded-[28px]"
+      <div className="min-h-dvh flex flex-col items-center justify-center px-4 py-10" style={{ background: '#FFFBEB', position: 'relative', overflow: 'hidden' }}>
+        <div aria-hidden className="pointer-events-none" style={{ position: 'absolute', top: '18%', left: '50%', width: 420, height: 420, transform: 'translateX(-50%)', borderRadius: '50%', background: 'oklch(0.48 0.17 196 / 0.08)', filter: 'blur(70px)' }} />
+        <Image src="/logo.webp" alt="PupStep" width={130} height={48} className="h-9 w-auto mb-8 relative" priority />
+        <motion.div
+          initial={rm ? undefined : { opacity: 0, scale: 0.9, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={SPRING}
+          className="text-center max-w-sm w-full px-8 py-10 rounded-[28px] relative"
           style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}
         >
-          <div className="text-6xl mb-5">🎉</div>
+          <motion.div
+            initial={rm ? undefined : { scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: 'spring', duration: 0.6, bounce: 0.5, delay: 0.15 }}
+            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+            style={{ background: 'oklch(0.48 0.17 196 / 0.12)' }}
+          >
+            <PartyPopper size={30} color="oklch(0.40 0.17 196)" strokeWidth={1.75} />
+          </motion.div>
           <h1
             className="text-3xl font-bold mb-3"
             style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}
@@ -114,7 +132,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
           >
             Go to My Account
           </Link>
-        </div>
+        </motion.div>
       </div>
     )
   }
@@ -122,15 +140,25 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
   // — Already subscribed state —
   if (currentPlan) {
     const expiry = expiresAt
-      ? new Date(expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+      ? new Date(expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
       : null
     return (
-      <div className="min-h-dvh flex items-center justify-center px-4" style={{ background: '#FFFBEB' }}>
-        <div
-          className="text-center max-w-sm w-full px-8 py-10 rounded-[28px]"
+      <div className="min-h-dvh flex flex-col items-center justify-center px-4 py-10" style={{ background: '#FFFBEB', position: 'relative', overflow: 'hidden' }}>
+        <div aria-hidden className="pointer-events-none" style={{ position: 'absolute', top: '18%', left: '50%', width: 420, height: 420, transform: 'translateX(-50%)', borderRadius: '50%', background: 'oklch(0.48 0.17 196 / 0.08)', filter: 'blur(70px)' }} />
+        <Image src="/logo.webp" alt="PupStep" width={130} height={48} className="h-9 w-auto mb-8 relative" priority />
+        <motion.div
+          initial={rm ? undefined : { opacity: 0, scale: 0.94, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={SPRING}
+          className="text-center max-w-sm w-full px-8 py-10 rounded-[28px] relative"
           style={{ background: '#0A2F35', boxShadow: CLAY_SHADOW_TEAL }}
         >
-          <div className="text-5xl mb-5">🐾</div>
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5"
+            style={{ background: 'rgba(255,251,235,0.08)' }}
+          >
+            <PawPrint size={28} color="#FF8C52" strokeWidth={1.75} />
+          </div>
           <h1
             className="text-2xl font-bold mb-2"
             style={{ fontFamily: 'var(--font-fredoka)', color: '#FFFBEB' }}
@@ -149,7 +177,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
           >
             Back to My Account
           </Link>
-        </div>
+        </motion.div>
       </div>
     )
   }

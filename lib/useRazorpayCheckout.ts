@@ -58,6 +58,12 @@ export function useRazorpayCheckout(opts?: { onSuccessRedirect?: string }) {
         order_id: data.order_id,
         name: 'PupStep Pro',
         description: '₹199/month',
+        // Absolute URL required — Razorpay's checkout renders in its own
+        // origin/iframe, so a relative path never resolves. Reusing the same
+        // PNG built for email clients (logo-email.png), not logo.webp — the
+        // checkout modal is another third-party renderer and WebP support
+        // there is inconsistent, same reasoning as the email template.
+        image: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}/logo-email.png`,
         theme: { color: '#FF8C52' },
         handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
           try {
