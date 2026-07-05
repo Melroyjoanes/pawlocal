@@ -97,20 +97,13 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Start trial on first dog creation if not already started
-  ;(async () => {
-    try {
-      const { data: profile } = await (admin().from('profiles') as any)
-        .select('trial_started_at')
-        .eq('id', user.id)
-        .single()
-      if (profile && profile.trial_started_at === null) {
-        await (admin().from('profiles') as any)
-          .update({ trial_started_at: new Date().toISOString() })
-          .eq('id', user.id)
-      }
-    } catch { /* non-critical */ }
-  })()
+  // Trial start is handled exclusively in app/api/walk-logs/route.ts, on the
+  // first-ever walk report — not here, on dog creation. A dog can sit
+  // unconnected to a walker for days after setup; starting the clock here
+  // would burn trial time before the user ever sees a single report,
+  // contradicting the promise made in the UI ("your free trial starts with
+  // your first walk report"). This file used to also start the trial here,
+  // which raced against and could pre-empt that one — removed.
 
   // Referral attribution: first dog created is the clearest signal this is a
   // real new user. Wrapped so failures never block dog creation — this is a
