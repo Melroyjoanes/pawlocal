@@ -418,8 +418,11 @@ export default function MyAccountClient({
       {/* ── Scroll body ── */}
       <div className="max-w-[480px] mx-auto px-4 pb-32 pt-6">
 
-        {/* ── Paused reports banner (only when not entitled) ── */}
-        {!isEntitled && (
+        {/* ── Paused reports banner ── shown only when access was lost, not
+             for a brand-new user who never had a trial/dog/subscription to
+             begin with (subStatus.status === 'no_trial') — nothing is
+             "paused" for someone who never started. */}
+        {!isEntitled && subStatus?.status !== 'no_trial' && (
           <Card className="mb-5 flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0"
