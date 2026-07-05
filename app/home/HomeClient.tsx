@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { QRCodeSVG } from 'qrcode.react'
 import ParentBottomNav from '@/components/ParentBottomNav'
+import LiveBadge from './LiveBadge'
 
 interface Dog {
   id: string
@@ -228,6 +229,22 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName, dogI
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.1 } } }
 const fadeUp = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } } }
 
+// Motion tokens mirrored from components/LandingPage.tsx for consistency.
+const EASE_EXP = [0.16, 1, 0.3, 1] as const
+const SPRING = { type: 'spring', duration: 0.45, bounce: 0 } as const
+// Entrance for the "walk in progress" hero card — a touch more presence
+// than a plain fadeUp, via a gentle scale-in on the same spring token.
+const popIn = { hidden: { opacity: 0, scale: 0.94, y: 12 }, show: { opacity: 1, scale: 1, y: 0, transition: SPRING } }
+
+function useReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+function tapProps(rm: boolean) {
+  return rm ? {} : { whileTap: { scale: 0.97 } }
+}
+
 function getGreeting(): string {
   const h = new Date().getHours()
   if (h < 12) return 'Good morning'
@@ -320,6 +337,7 @@ function WalkStreak({ streak }: { streak: number }) {
 
 // ── Feature 5: WeekCalendar ────────────────────────────────────────────────
 function WeekCalendar({ weekData }: { weekData: WeekData }) {
+  const rm = useReducedMotion()
   const todayStr = (() => {
     const istOffset = 5.5 * 60 * 60 * 1000
     return new Date(Date.now() + istOffset).toISOString().slice(0, 10)
@@ -345,11 +363,16 @@ function WeekCalendar({ weekData }: { weekData: WeekData }) {
           const isToday = d.date === todayStr
           return (
             <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: d.walked ? 'oklch(0.48 0.17 196)' : '#F3F4F6', outline: isToday ? '2.5px solid #FF8C52' : 'none', outlineOffset: '2px' }}>
+              <motion.div
+                initial={rm ? false : { opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.35, ease: EASE_EXP, delay: rm ? 0 : i * 0.05 }}
+                style={{ width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: d.walked ? 'oklch(0.48 0.17 196)' : '#F3F4F6', outline: isToday ? '2.5px solid #FF8C52' : 'none', outlineOffset: '2px' }}
+              >
                 <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 700, color: d.walked ? '#fff' : '#9CA3AF' }}>
                   {new Date(d.date + 'T12:00:00').getDate()}
                 </span>
-              </div>
+              </motion.div>
             </div>
           )
         })}
@@ -768,17 +791,12 @@ function StateA({ walk, displayName, firstDog }: { walk: WalkSession; displayNam
   const dogName = walk.pet_name ?? displayName
   const walkerName = (walk.providers as { name: string } | null)?.name ?? 'your walker'
   const trackHref = walk.share_token ? `/track/${walk.share_token}` : `/my-reports`
+  const rm = useReducedMotion()
   return (
     <motion.div className="flex flex-col gap-4" variants={stagger} initial="hidden" animate="show">
-      <motion.div variants={fadeUp} className={`${cardClass} overflow-hidden`}>
+      <motion.div variants={popIn} className={`${cardClass} overflow-hidden`}>
         <div className="bg-[#0A2F35] text-white px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#25D366] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#25D366]" />
-            </span>
-            <span className="text-xs font-bold tracking-widest text-[#25D366]">LIVE</span>
-          </div>
+          <LiveBadge />
           <span className="text-xs text-white/60">Walk in progress</span>
         </div>
         <div className="p-5">
@@ -793,7 +811,9 @@ function StateA({ walk, displayName, firstDog }: { walk: WalkSession; displayNam
               <p className="text-lg font-bold text-[#0A2F35] font-[family-name:var(--font-fredoka)]">{formatTime(walk.started_at)}</p>
             </div>
           </div>
-          <Link href={trackHref} className="mt-4 flex items-center justify-center gap-2 w-full rounded-xl py-3 bg-[#FF8C52] text-white font-bold text-base shadow-[0_4px_14px_rgba(255,140,82,0.4)] hover:bg-[#e87a40] transition-colors">Open Live Map →</Link>
+          <motion.div className="mt-4" {...tapProps(rm)}>
+            <Link href={trackHref} className="flex items-center justify-center gap-2 w-full rounded-xl py-3 bg-[#FF8C52] text-white font-bold text-base shadow-[0_4px_14px_rgba(255,140,82,0.4)] hover:bg-[#e87a40] transition-colors">Open Live Map →</Link>
+          </motion.div>
         </div>
       </motion.div>
       <motion.div variants={fadeUp} className={`${cardClass} p-4 flex gap-3`}>
@@ -1037,16 +1057,27 @@ export default function HomeClient({ displayName, firstDog, otherDogs, activeWal
           />
         )}
 
-        {/* First-report celebration */}
-        {showCelebration && lastWalkLog && (
-          <div style={{ borderRadius: '16px', background: 'oklch(0.48 0.17 196)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-            <div style={{ flex: 1 }}>
-              <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#ffffff', margin: '0 0 2px' }}>🎉 Your first walk report is in!</p>
-              <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.8)', margin: 0 }}>{firstDog?.name ?? 'Your dog'}&apos;s walks are safely saved and never deleted.</p>
-            </div>
-            <button onClick={dismissCelebration} style={{ flexShrink: 0, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ffffff', fontSize: '16px', fontWeight: 700, lineHeight: 1 }} aria-label="Dismiss">×</button>
-          </div>
-        )}
+        {/* First-report celebration — the emotional peak moment (the whole
+            product's promise just got proven for the first time), so it gets
+            a spring pop-in/out rather than the plain conditional render every
+            other banner uses. */}
+        <AnimatePresence>
+          {showCelebration && lastWalkLog && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: -8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ type: 'spring', duration: 0.45, bounce: 0 }}
+              style={{ borderRadius: '16px', background: 'oklch(0.48 0.17 196)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}
+            >
+              <div style={{ flex: 1 }}>
+                <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#ffffff', margin: '0 0 2px' }}>🎉 Your first walk report is in!</p>
+                <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: 'rgba(255,255,255,0.8)', margin: 0 }}>{firstDog?.name ?? 'Your dog'}&apos;s walks are safely saved and never deleted.</p>
+              </div>
+              <button onClick={dismissCelebration} style={{ flexShrink: 0, background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ffffff', fontSize: '16px', fontWeight: 700, lineHeight: 1 }} aria-label="Dismiss">×</button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Activation checklist — no walker connected, no walks yet */}
         {showActivationChecklist && (

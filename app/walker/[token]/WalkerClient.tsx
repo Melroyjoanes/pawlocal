@@ -1,9 +1,40 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, memo } from 'react'
+import { motion } from 'framer-motion'
 import { parseCareFocus } from '@/lib/careFocus'
 import { LoadingButton } from '@/components/LoadingButton'
 import { loadGoogleMaps } from '@/lib/googleMapsLoader'
+
+// ─── Motion tokens — mirrors components/LandingPage.tsx so walker-facing
+// motion feels consistent with the rest of the app ────────────────────────────
+const EASE_EXP = [0.16, 1, 0.3, 1] as const
+const SPRING = { type: 'spring', duration: 0.45, bounce: 0 } as const
+
+function useReducedMotion(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
+// ── "Something is happening" live indicator — a gentle breathing dot used
+// wherever we need to signal "walk in progress / recording". Isolated in its
+// own memoized component so the continuous loop never re-renders the rest of
+// the page. Animates opacity only (no layout properties) to stay cheap on
+// low-end Android phones. ──────────────────────────────────────────────────────
+const LivePulseDot = memo(function LivePulseDot({ color = '#22c55e' }: { color?: string }) {
+  const rm = useReducedMotion()
+  if (rm) {
+    return <span className="inline-block w-2 h-2 rounded-full" style={{ background: color }} />
+  }
+  return (
+    <motion.span
+      className="inline-block w-2 h-2 rounded-full"
+      style={{ background: color }}
+      animate={{ opacity: [0.6, 1, 0.6] }}
+      transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+    />
+  )
+})
 
 // ── Live map shown to walker during walk ──────────────────────────────────────
 function LiveMap({
@@ -2302,7 +2333,11 @@ export default function WalkerClient({
 
           {/* ─── WALKING PHASE ─── */}
           {phase === 'walking' && (
-            <div className="flex flex-col" style={{ minHeight: 'calc(100vh - 120px)' }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={SPRING}
+              className="flex flex-col" style={{ minHeight: 'calc(100vh - 120px)' }}>
               {/* ── Live map — top 46vh ── */}
               <div className="relative w-full flex-shrink-0" style={{ height: '46vh' }}>
                 {/* Derive map event arrays from walkEvents */}
@@ -2341,10 +2376,13 @@ export default function WalkerClient({
                   style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 100%)' }}
                 >
                   <div>
-                    <p className="text-3xl font-bold text-white tabular-nums tracking-tight leading-none"
-                      style={{ fontFamily: 'var(--font-fredoka)' }}>
-                      {formatElapsed(elapsed)}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <LivePulseDot color="#ef4444" />
+                      <p className="text-3xl font-bold text-white tabular-nums tracking-tight leading-none"
+                        style={{ fontFamily: 'var(--font-fredoka)' }}>
+                        {formatElapsed(elapsed)}
+                      </p>
+                    </div>
                     <p className="text-sm font-semibold text-white/80 mt-0.5">{distanceKm.toFixed(2)} km</p>
                   </div>
                 </div>
@@ -2601,7 +2639,7 @@ export default function WalkerClient({
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* ─── LOGGING PHASE ─── */}
@@ -2725,22 +2763,38 @@ export default function WalkerClient({
 
           {/* ─── SUCCESS PHASE ─── */}
           {phase === 'success' && (
-            <div className="px-5 flex flex-col items-center text-center pt-8 pb-24">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={SPRING}
+              className="px-5 flex flex-col items-center text-center pt-8 pb-24">
               {(() => {
                 // Use selected connection's dog name — not the URL token's dog
                 const selectedConn = connections.find(c => c.token === selectedToken)
                 const successDog = selectedConn?.dogName ?? dogName
                 return (
                   <>
-              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-5">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', duration: 0.5, bounce: 0.4, delay: 0.1 }}
+                className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-5">
                 <span className="text-4xl">✅</span>
-              </div>
-              <h2 className="text-3xl font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
+              </motion.div>
+              <motion.h2
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: EASE_EXP, delay: 0.15 }}
+                className="text-3xl font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
                 {t.walkDoneTitle(successDog)}
-              </h2>
-              <p className="text-sm text-slate-500 mb-1 leading-relaxed px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: EASE_EXP, delay: 0.22 }}
+                className="text-sm text-slate-500 mb-1 leading-relaxed px-4" style={{ fontFamily: 'var(--font-nunito)' }}>
                 {t.reportSentBody(successDog)}
-              </p>
+              </motion.p>
               <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF', marginTop: 4, marginBottom: 24 }}>
                 {t.alsoEmailed}
               </p>
@@ -2820,7 +2874,7 @@ export default function WalkerClient({
                   </>
                 )
               })()}
-            </div>
+            </motion.div>
           )}
 
           {/* ─── WALK HISTORY (shown in idle phase only) ─── */}

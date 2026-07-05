@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import ParentBottomNav from '@/components/ParentBottomNav'
 import { parseCareFocus } from '@/lib/careFocus'
@@ -180,6 +180,7 @@ export default function MyAccountClient({
 }: Props) {
   // Opens Razorpay directly from My Account — no intermediate /upgrade page visit
   const { checkout, loading: checkoutLoading, error: checkoutError } = useRazorpayCheckout({ onSuccessRedirect: '/my-account?just_paid=1' })
+  const reduceMotion = useReducedMotion()
 
   // ── Profile section state
   const [displayName, setDisplayName] = useState(userDisplay)
@@ -420,11 +421,24 @@ export default function MyAccountClient({
              begin with (subStatus.status === 'no_trial') — nothing is
              "paused" for someone who never started. */}
         {!isEntitled && subStatus?.status !== 'no_trial' && (
+          <motion.div
+            initial={reduceMotion ? undefined : { opacity: 0, scale: 0.96, y: -6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: 'spring', duration: 0.45, bounce: 0 }}
+          >
           <Card className="mb-5 flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0"
+              className="relative w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0"
               style={{ background: 'oklch(0.48 0.17 196 / 0.10)', minWidth: 40, minHeight: 40 }}
             >
+              {!reduceMotion && (
+                <motion.span
+                  className="absolute inset-0 rounded-full"
+                  style={{ border: '1.5px solid oklch(0.48 0.17 196 / 0.4)' }}
+                  animate={{ opacity: [0.6, 0, 0.6], scale: [1, 1.25, 1] }}
+                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                />
+              )}
               ⏸️
             </div>
             <div className="flex-1 min-w-0">
@@ -456,6 +470,7 @@ export default function MyAccountClient({
               {hasEverPaid ? 'Upgrade' : 'Pay Now'}
             </LoadingButton>
           </Card>
+          </motion.div>
         )}
         {checkoutError && (
           <p className="text-xs text-center" style={{ color: '#DC2626', fontFamily: 'var(--font-nunito)' }}>
@@ -945,13 +960,21 @@ export default function MyAccountClient({
               </div>
             )}
 
-            {cancelSuccess && expiryStr && (
-              <div className="mt-4 rounded-xl px-3 py-2.5" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
-                <p className="text-sm text-green-800 font-semibold">
-                  Cancelled. Access continues until {expiryStr}.
-                </p>
-              </div>
-            )}
+            <AnimatePresence>
+              {cancelSuccess && expiryStr && (
+                <motion.div
+                  initial={reduceMotion ? undefined : { opacity: 0, scale: 0.95, y: -6 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  transition={{ type: 'spring', duration: 0.45, bounce: 0 }}
+                  className="mt-4 rounded-xl px-3 py-2.5" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}
+                >
+                  <p className="text-sm text-green-800 font-semibold">
+                    Cancelled. Access continues until {expiryStr}.
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </Card>
 
           {/* Billing history */}
