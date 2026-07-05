@@ -5,13 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import ParentBottomNav from '@/components/ParentBottomNav'
 import { LoadingButton } from '@/components/LoadingButton'
-import { trackEvent, getGaClientId } from '@/lib/analytics'
-
-declare global {
-  interface Window {
-    Razorpay: new (opts: Record<string, unknown>) => { open(): void }
-  }
-}
+import { useRazorpayCheckout } from '@/lib/useRazorpayCheckout'
 
 interface Props {
   currentPlan: 'monthly' | null
@@ -19,6 +13,7 @@ interface Props {
   isLoggedIn: boolean
   trialStatus?: 'no_trial' | 'trial' | 'lapsed' | 'active'
   trialDaysRemaining?: number | null
+  hasEverPaid?: boolean
   walkerToken?: string | null
   walkerName?: string | null
   walkerPhone?: string | null
@@ -88,93 +83,10 @@ const CLAY_SHADOW_ORANGE = [
   '0 12px 28px rgba(255,140,82,0.20)',
 ].join(', ')
 
-function loadRazorpay(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (window.Razorpay) { resolve(); return }
-    const script = document.createElement('script')
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error('Failed to load Razorpay'))
-    document.body.appendChild(script)
-  })
-}
-
-export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, trialStatus = 'no_trial', trialDaysRemaining, walkerToken, walkerName, walkerPhone, dogName }: Props) {
-  const [loading, setLoading] = useState<'monthly' | null>(null)
+export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, trialStatus = 'no_trial', trialDaysRemaining, hasEverPaid = false, walkerToken, walkerName, walkerPhone, dogName }: Props) {
   const [success, setSuccess] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
-
-  async function handleCheckout(plan: 'monthly') {
-    setLoading(plan)
-    setError(null)
-    try {
-      await loadRazorpay()
-
-      const res = await fetch('/api/payments/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
-      })
-      const data = await res.json() as {
-        order_id?: string
-        amount?: number
-        key_id?: string
-        plan?: string
-        error?: string
-      }
-      if (!res.ok || !data.order_id) throw new Error(data.error ?? 'Failed to create order')
-
-      trackEvent('begin_checkout', { currency: 'INR', value: 199, plan })
-
-      const rzp = new window.Razorpay({
-        key: data.key_id,
-        amount: data.amount,
-        currency: 'INR',
-        order_id: data.order_id,
-        name: 'PupStep Pro',
-        description: '₹199/month',
-        theme: { color: '#FF8C52' },
-        handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
-          try {
-            const verifyRes = await fetch('/api/payments/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                plan,
-                ga_client_id: getGaClientId(),
-              }),
-            })
-            const verifyData = await verifyRes.json() as { ok?: boolean; error?: string }
-            if (!verifyRes.ok || !verifyData.ok) throw new Error(verifyData.error ?? 'Verification failed')
-            // Client-side purchase event too — the server-side one (fired from
-            // /api/payments/verify) is the source of truth for revenue reporting,
-            // this just gets it into real-time reports faster.
-            trackEvent('purchase', {
-              currency: 'INR',
-              value: 199,
-              transaction_id: response.razorpay_payment_id,
-              plan,
-            })
-            // After payment, send user to setup so they activate immediately
-            window.location.href = '/setup?just_paid=1'
-          } catch (err) {
-            setError(err instanceof Error ? err.message : 'Payment verification failed')
-          } finally {
-            setLoading(null)
-          }
-        },
-        modal: { ondismiss: () => setLoading(null) },
-      })
-      rzp.open()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
-      setLoading(null)
-    }
-  }
+  const { checkout: handleCheckout, loading, error } = useRazorpayCheckout()
 
   // — Success state —
   if (success) {
@@ -471,7 +383,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                   className="rounded-[18px] text-sm"
                   style={{ padding: '16px', background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE }}
                 >
-                  Upgrade to Pro — ₹199/month
+                  {hasEverPaid ? 'Upgrade to Pro — ₹199/month' : 'Pay Now — ₹199/month'}
                 </LoadingButton>
               ) : (
                 <Link
@@ -479,7 +391,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                   className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center"
                   style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
                 >
-                  Sign in to upgrade
+                  {hasEverPaid ? 'Sign in to upgrade' : 'Sign in to pay'}
                 </Link>
               )}
             </div>
@@ -554,7 +466,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                   className="rounded-[18px] text-sm"
                   style={{ padding: '16px', background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE }}
                 >
-                  Resubscribe — ₹199/month
+                  {hasEverPaid ? 'Resubscribe — ₹199/month' : 'Pay Now — ₹199/month'}
                 </LoadingButton>
               ) : (
                 <Link
@@ -562,7 +474,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                   className="w-full py-4 rounded-[18px] font-bold text-white text-sm flex items-center justify-center"
                   style={{ background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
                 >
-                  Sign in to resubscribe
+                  {hasEverPaid ? 'Sign in to resubscribe' : 'Sign in to pay'}
                 </Link>
               )}
             </div>

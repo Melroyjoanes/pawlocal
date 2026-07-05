@@ -1,9 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+}
+
+// Grants `days` of free access to a user by extending their most recent
+// subscription row's expires_at, or inserting a new zero-amount row if none
+// exists. Mirrors the extend-or-insert pattern used by the admin "grant"
+// action (app/api/admin/v2/parents/[userId]/action/route.ts) — a partial
+// unique index only allows one status='active' row per user_id, so we must
+// reuse the existing row rather than inserting a second one.
+async function grantFreeDays(userId: string, days: number) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const table = admin().from('subscriptions') as any
+
+  const { data: existing } = await table
+    .select('id, expires_at, status')
+    .eq('user_id', userId)
+    .order('expires_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const bonusExpiry = new Date(Date.now() + days * 86400000).toISOString()
+
+  if (existing) {
+    const base = existing.expires_at && new Date(existing.expires_at) > new Date()
+      ? new Date(existing.expires_at)
+      : new Date()
+    const newExpiry = new Date(base.getTime() + days * 86400000).toISOString()
+    await table.update({ status: 'active', expires_at: newExpiry }).eq('id', existing.id)
+  } else {
+    await table.insert({
+      user_id: userId,
+      plan: 'monthly',
+      status: 'active',
+      amount_paise: 0,
+      expires_at: bonusExpiry,
+    })
+  }
 }
 
 // GET /api/dogs — returns authenticated user's dogs
@@ -74,6 +111,37 @@ export async function POST(req: NextRequest) {
       }
     } catch { /* non-critical */ }
   })()
+
+  // Referral attribution: first dog created is the clearest signal this is a
+  // real new user. Wrapped so failures never block dog creation — this is a
+  // bonus, not a blocker.
+  try {
+    const { data: profile } = await (admin().from('profiles') as any)
+      .select('referred_by_code, referral_rewards_granted')
+      .eq('id', user.id)
+      .single()
+
+    if (profile && !profile.referred_by_code && !profile.referral_rewards_granted) {
+      const cookieStore = await cookies()
+      const refCode = cookieStore.get('pupstep_ref')?.value
+
+      if (refCode) {
+        const { data: referrer } = await (admin().from('profiles') as any)
+          .select('id')
+          .eq('referral_code', refCode)
+          .maybeSingle()
+
+        if (referrer && referrer.id !== user.id) {
+          await (admin().from('profiles') as any)
+            .update({ referred_by_code: refCode, referral_rewards_granted: true })
+            .eq('id', user.id)
+
+          await grantFreeDays(user.id, 7)
+          await grantFreeDays(referrer.id, 7)
+        }
+      }
+    }
+  } catch { /* non-critical — referral bonus is best-effort */ }
 
   return NextResponse.json(data, { status: 201 })
 }

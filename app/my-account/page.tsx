@@ -96,6 +96,7 @@ export default async function MyAccountPage() {
       profilePhone={profilePhone}
       notificationPreferences={notificationPreferences}
       isEntitled={entitlement.isEntitled}
+      hasEverPaid={entitlement.hasEverPaid}
     />
   )
 }

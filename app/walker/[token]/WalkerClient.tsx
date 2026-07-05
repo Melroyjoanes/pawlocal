@@ -124,6 +124,7 @@ interface WalkerClientProps {
   ownerPhone: string | null
   careFocus: string | null
   walkerStreak?: number
+  walkTimeBucket?: string | null
 }
 
 interface ClientConnection {
@@ -134,8 +135,39 @@ interface ClientConnection {
   dogPhoto: string | null
   healthNotes: string | null
   careFocus: string
+  walkTimeBucket?: string | null
   ownerFirstName: string
   lastWalkDate: string | null
+}
+
+// ── Walker-side "don't forget today's report" reminder ─────────────────────────
+// Conservative on purpose: only flags once the dog's usual walk window has
+// clearly passed for the day (IST), and only if nothing has been logged for
+// this connection since local midnight IST. Better to under-remind than nag.
+const WALK_BUCKET_PASSED_HOUR_IST: Record<string, number> = {
+  morning: 12,   // walk window is "morning" — flag once it's past noon
+  afternoon: 17, // flag once it's past 5pm
+  evening: 21,   // flag once it's past 9pm
+}
+
+function istNow(): Date {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }))
+}
+
+function istDateKey(iso: string): string {
+  return new Date(new Date(iso).toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })).toDateString()
+}
+
+function walkWindowHasPassed(bucket: string | null | undefined): boolean {
+  if (!bucket) return false
+  const passHour = WALK_BUCKET_PASSED_HOUR_IST[bucket]
+  if (passHour == null) return false
+  return istNow().getHours() >= passHour
+}
+
+function hasLoggedToday(logs: { created_at: string }[]): boolean {
+  const todayKey = istNow().toDateString()
+  return logs.some(l => istDateKey(l.created_at) === todayKey)
 }
 
 function relativeTime(iso: string): string {
@@ -975,6 +1007,7 @@ export default function WalkerClient({
   ownerPhone,
   careFocus,
   walkerStreak = 0,
+  walkTimeBucket = null,
 }: WalkerClientProps) {
   const [phase, setPhase] = useState<WalkPhase>('idle')
   const [logs, setLogs] = useState<WalkLog[]>([])
@@ -1012,6 +1045,10 @@ export default function WalkerClient({
   const activeDogPhoto = selectedConn?.dogPhoto ?? dogPhotoUrl
   const activeDogBreed = selectedConn?.dogBreed ?? dogBreed
   const activeHealthNotes = selectedConn?.healthNotes ?? healthNotes
+  const activeWalkTimeBucket = selectedConn?.walkTimeBucket ?? walkTimeBucket
+  // Show the "don't forget today's report" reminder only once the usual walk
+  // window has clearly passed and nothing has been logged today for this dog.
+  const showNoShowReminder = walkWindowHasPassed(activeWalkTimeBucket) && !hasLoggedToday(logs)
 
   // Demo walk state
   const [isDemoWalk, setIsDemoWalk] = useState(false)
@@ -2017,6 +2054,17 @@ export default function WalkerClient({
             <div className="mx-5 mb-4 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-start gap-2.5">
               <span className="text-base flex-shrink-0 mt-0.5">⚠️</span>
               <p className="text-sm text-amber-800 font-medium"><strong>{t.healthNoteLabel}</strong> {activeHealthNotes}</p>
+            </div>
+          )}
+
+          {/* Don't-forget-today's-report nudge — only shown once the dog's usual
+              walk window has clearly passed and nothing's been logged yet today. */}
+          {showNoShowReminder && (
+            <div className="mx-5 mb-4 rounded-2xl bg-orange-50 border border-orange-200 px-4 py-3 flex items-start gap-2.5">
+              <span className="text-base flex-shrink-0 mt-0.5">🕐</span>
+              <p className="text-sm font-medium" style={{ color: '#9A3412' }}>
+                Don&apos;t forget today&apos;s walk report for {activeDogName}!
+              </p>
             </div>
           )}
 

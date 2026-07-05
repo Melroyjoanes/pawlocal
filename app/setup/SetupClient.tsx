@@ -878,8 +878,22 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
         open={authOpen}
         onClose={() => setAuthOpen(false)}
         message="Sign in to save your dog's profile"
-        onSignedIn={(userId) => {
+        onSignedIn={async (userId) => {
           setAuthOpen(false)
+          // This is a returning user signing in mid-form — the server-side
+          // existing-dog check in setup/page.tsx only runs on page load, so
+          // without this they'd get a duplicate dog created on submit. Check
+          // again now that we know who they are.
+          try {
+            const res = await fetch('/api/dogs')
+            const existingDogs = res.ok ? await res.json() as Array<{ id: string }> : []
+            if (existingDogs.length > 0) {
+              router.push(`/setup/qr?dog=${existingDogs[0].id}`)
+              return
+            }
+          } catch {
+            // If the check fails, fall through to normal submit — safe default
+          }
           submitDog(userId)
         }}
       />

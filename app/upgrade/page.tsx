@@ -31,6 +31,7 @@ export default async function UpgradePage() {
   //  - 'no_trial' genuinely never had any history — true first-time visitor
   let trialStatus: 'no_trial' | 'trial' | 'lapsed' | 'active' = 'no_trial'
   let trialDaysRemaining: number | null = null
+  let hasEverPaid = false
 
   if (user) {
     const entitlement = await getEntitlement(adminClient, user.id)
@@ -55,6 +56,7 @@ export default async function UpgradePage() {
     }
 
     trialDaysRemaining = entitlement.trialDaysRemaining
+    hasEverPaid = entitlement.hasEverPaid
     if (entitlement.isPro) {
       trialStatus = 'active'
     } else if (entitlement.trialActive) {
@@ -110,6 +112,7 @@ export default async function UpgradePage() {
       isLoggedIn={!!user}
       trialStatus={trialStatus}
       trialDaysRemaining={trialDaysRemaining}
+      hasEverPaid={hasEverPaid}
       walkerToken={walkerToken}
       walkerName={walkerName}
       walkerPhone={walkerPhone}

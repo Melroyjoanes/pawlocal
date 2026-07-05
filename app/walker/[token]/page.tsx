@@ -72,6 +72,7 @@ export default async function WalkerPage({ params }: WalkerPageProps) {
       ownerPhone={data.ownerPhone ?? null}
       careFocus={data.careFocus ?? 'normal'}
       walkerStreak={walkerStreak}
+      walkTimeBucket={data.walkTimeBucket ?? null}
     />
   )
 }

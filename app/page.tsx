@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
 import LandingPage from '@/components/LandingPage'
 
@@ -9,7 +10,26 @@ export const metadata: Metadata = {
     "Your dog gets walked. Now prove it. GPS route, pee/poop map, dog photo — sent to you on WhatsApp after every walk.",
 }
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ref?: string }>
+}) {
+  const { ref } = await searchParams
+
+  // Referral capture: the visitor isn't logged in yet, so we can't attribute
+  // this to a user account here. Just persist the intent in a short-lived
+  // cookie — attribution happens later, on first dog creation (app/api/dogs).
+  if (ref) {
+    const cookieStore = await cookies()
+    cookieStore.set('pupstep_ref', ref, {
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+    })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (user) redirect('/home')

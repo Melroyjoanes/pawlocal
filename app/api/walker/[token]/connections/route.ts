@@ -27,7 +27,7 @@ export async function GET(
     .select(`
       id, token, status, walker_phone,
       dogs!walker_connections_dog_id_fkey (
-        id, name, breed, photo_url, health_notes, care_focus
+        id, name, breed, photo_url, health_notes, care_focus, walk_time_bucket
       ),
       owner_id
     `)
@@ -65,6 +65,7 @@ export async function GET(
       dogPhoto: c.dogs?.photo_url ?? null,
       healthNotes: c.dogs?.health_notes ?? null,
       careFocus: c.dogs?.care_focus ?? 'normal',
+      walkTimeBucket: c.dogs?.walk_time_bucket ?? null,
       ownerFirstName,
       lastWalkDate: lastLog?.started_at ?? null,
     }

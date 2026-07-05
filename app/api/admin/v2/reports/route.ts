@@ -25,7 +25,7 @@ export async function GET() {
 
   // Use only guaranteed columns (those in original migration 026 + migration 043)
   const { data: reports, error } = await (client.from('walk_reports') as any)
-    .select('id, token, dog_name, walker_name, walk_date, created_at, duration_mins, distance_meters, poop_count, pee_count, photo_url, route_points, notes, customer_id')
+    .select('id, token, dog_name, walker_name, walk_date, created_at, duration_mins, distance_meters, poop_count, pee_count, photo_url, route_points, notes, customer_id, flagged_suspicious, flag_reason')
     .not('connection_id', 'is', null)
     .order('created_at', { ascending: false })
     .limit(100)
@@ -53,6 +53,8 @@ export async function GET() {
     qualityLabel: qualityLabel(r.quality_score ?? null),
     parentOpened: r.customer_id !== null,
     emailSentAt: r.email_sent_at ?? null,   // null until migration 049 is run
+    flaggedSuspicious: r.flagged_suspicious ?? false,   // null until migration 055 is run
+    flagReason: r.flag_reason ?? null,
   }))
 
   return NextResponse.json(result)

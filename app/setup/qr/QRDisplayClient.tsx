@@ -614,7 +614,7 @@ export default function QRDisplayClient({
               </div>
             </div>
 
-            {/* Share link button — secondary */}
+            {/* Share link button — secondary, but still clearly clickable (teal outline, not grey) */}
             <a
               href={shareUrl || '#'}
               target="_blank"
@@ -623,8 +623,8 @@ export default function QRDisplayClient({
                 display: 'block',
                 width: '100%',
                 textAlign: 'center',
-                backgroundColor: '#F3F4F6',
-                color: '#374151',
+                backgroundColor: '#fff',
+                color: 'oklch(0.40 0.17 196)',
                 textDecoration: 'none',
                 borderRadius: '16px',
                 padding: '14px 24px',
@@ -632,7 +632,7 @@ export default function QRDisplayClient({
                 fontWeight: 700,
                 fontFamily: 'var(--font-fredoka), sans-serif',
                 boxSizing: 'border-box',
-                border: '1px solid #E5E7EB',
+                border: '2px solid oklch(0.48 0.17 196)',
               }}
             >
               🔗 Share link

@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import ParentBottomNav from '@/components/ParentBottomNav'
 import { parseCareFocus } from '@/lib/careFocus'
+import { LoadingButton } from '@/components/LoadingButton'
+import { useRazorpayCheckout } from '@/lib/useRazorpayCheckout'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,6 +56,7 @@ interface Props {
     expires_at: string | null
   } | null
   isEntitled: boolean
+  hasEverPaid?: boolean
 }
 
 interface BillingRow {
@@ -173,7 +176,11 @@ export default function MyAccountClient({
   notificationPreferences,
   subStatus,
   isEntitled,
+  hasEverPaid = false,
 }: Props) {
+  // Opens Razorpay directly from My Account — no intermediate /upgrade page visit
+  const { checkout, loading: checkoutLoading, error: checkoutError } = useRazorpayCheckout({ onSuccessRedirect: '/my-account?just_paid=1' })
+
   // ── Profile section state
   const [displayName, setDisplayName] = useState(userDisplay)
   const [editingName, setEditingName] = useState(false)
@@ -189,7 +196,7 @@ export default function MyAccountClient({
   const [editingDog, setEditingDog] = useState<Dog | null>(null)
   const [dogName, setDogName]             = useState('')
   const [dogBreed, setDogBreed]           = useState('')
-  const [dogCareFocus, setDogCareFocus]   = useState('normal')
+  const [dogCareFocuses, setDogCareFocuses] = useState<string[]>(['normal'])
   const [dogHealthNotes, setDogHealthNotes]         = useState('')
   const [dogWalkingInstructions, setDogWalkingInstructions] = useState('')
   const [savingDog, setSavingDog]         = useState(false)
@@ -267,9 +274,26 @@ export default function MyAccountClient({
     setEditingDog(dog)
     setDogName(dog.name)
     setDogBreed(dog.breed ?? '')
-    setDogCareFocus(dog.care_focus ?? 'normal')
+    setDogCareFocuses(parseCareFocus(dog.care_focus))
     setDogHealthNotes(dog.health_notes ?? '')
     // walking_instructions stored in health_notes
+  }
+
+  // Same exclusivity rule as the setup flow: 'normal' clears everything else,
+  // selecting any specific focus clears 'normal' and toggles independently.
+  function toggleDogCareFocus(value: string) {
+    if (value === 'normal') {
+      setDogCareFocuses(['normal'])
+    } else {
+      setDogCareFocuses(prev => {
+        const withoutNormal = prev.filter(v => v !== 'normal')
+        if (withoutNormal.includes(value)) {
+          const remaining = withoutNormal.filter(v => v !== value)
+          return remaining.length ? remaining : ['normal']
+        }
+        return [...withoutNormal, value]
+      })
+    }
   }
 
   async function handleSaveDog() {
@@ -282,7 +306,7 @@ export default function MyAccountClient({
         body: JSON.stringify({
           name: dogName.trim(),
           breed: dogBreed.trim() || null,
-          care_focus: dogCareFocus,
+          care_focus: (dogCareFocuses.length ? dogCareFocuses : ['normal']).join(','),
           health_notes: dogHealthNotes.trim() || null,
           // walking_instructions stored in health_notes
         }),
@@ -411,22 +435,32 @@ export default function MyAccountClient({
                 Your walk reports are paused
               </p>
               <p className="text-xs text-slate-500 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-                Upgrade to start receiving them again.
+                {hasEverPaid ? 'Upgrade to start receiving them again.' : 'Pay now to start receiving them.'}
               </p>
             </div>
-            <Link
-              href="/upgrade"
-              className="flex-shrink-0 inline-flex items-center justify-center px-4 rounded-xl font-bold text-xs"
+            <LoadingButton
+              onClick={() => checkout('monthly')}
+              loading={checkoutLoading === 'monthly'}
+              disabled={checkoutLoading !== null}
+              loadingText="Opening…"
+              className="flex-shrink-0 rounded-xl text-xs"
               style={{
                 background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
                 color: '#451A03',
                 boxShadow: '0 4px 0 rgba(175,65,10,0.28)',
                 minHeight: 44,
+                paddingLeft: 16,
+                paddingRight: 16,
               }}
             >
-              Upgrade
-            </Link>
+              {hasEverPaid ? 'Upgrade' : 'Pay Now'}
+            </LoadingButton>
           </Card>
+        )}
+        {checkoutError && (
+          <p className="text-xs text-center" style={{ color: '#DC2626', fontFamily: 'var(--font-nunito)' }}>
+            {checkoutError}
+          </p>
         )}
 
         {/* ════════════════════════════════════════════════════════════════
@@ -873,18 +907,23 @@ export default function MyAccountClient({
             ) : (
               <div className="flex flex-col items-start gap-3">
                 <p className="text-sm text-slate-500">You don&apos;t have an active plan.</p>
-                <Link
-                  href="/upgrade"
-                  className="inline-flex items-center gap-2 px-5 rounded-2xl font-bold text-sm"
+                <LoadingButton
+                  onClick={() => checkout('monthly')}
+                  loading={checkoutLoading === 'monthly'}
+                  disabled={checkoutLoading !== null}
+                  loadingText="Opening…"
+                  className="rounded-2xl text-sm"
                   style={{
                     background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
                     color: '#451A03',
                     boxShadow: '0 4px 0px rgba(175,65,10,0.28)',
                     minHeight: 44,
+                    paddingLeft: 20,
+                    paddingRight: 20,
                   }}
                 >
-                  Upgrade to Pro
-                </Link>
+                  {hasEverPaid ? 'Upgrade to Pro' : 'Pay Now'}
+                </LoadingButton>
               </div>
             )}
 
@@ -1195,12 +1234,12 @@ export default function MyAccountClient({
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       {CARE_FOCUS_OPTIONS.map(opt => {
-                        const selected = dogCareFocus === opt.key
+                        const selected = dogCareFocuses.includes(opt.key)
                         return (
                           <button
                             key={opt.key}
                             type="button"
-                            onClick={() => setDogCareFocus(opt.key)}
+                            onClick={() => toggleDogCareFocus(opt.key)}
                             className="flex items-center gap-2 px-3 rounded-xl text-sm font-semibold text-left transition-all"
                             style={{
                               minHeight: 44,

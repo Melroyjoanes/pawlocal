@@ -211,10 +211,38 @@ function ParentsTab() {
   const [parents, setParents] = useState<Parent[]>([])
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
+  const [actingOn, setActingOn] = useState<string | null>(null)
 
-  useEffect(() => {
+  const load = useCallback(() => {
     fetch('/api/admin/v2/parents').then(r => r.json()).then(d => { setParents(Array.isArray(d) ? d : []); setLoading(false) }).catch(() => setLoading(false))
   }, [])
+
+  useEffect(() => { load() }, [load])
+
+  async function runAction(userId: string, action: 'grant' | 'cancel' | 'revoke') {
+    const confirmMsg = {
+      grant: 'Grant this parent free Pro access for 1 year?',
+      cancel: 'Cancel auto-renewal? Access continues until the current period ends.',
+      revoke: 'Immediately end this parent’s access right now?',
+    }[action]
+    if (!window.confirm(confirmMsg)) return
+
+    setActingOn(userId)
+    try {
+      const res = await fetch(`/api/admin/v2/parents/${userId}/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error ?? 'Action failed')
+      load()
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Action failed')
+    } finally {
+      setActingOn(null)
+    }
+  }
 
   const filtered = parents.filter(p =>
     !q || p.name?.toLowerCase().includes(q.toLowerCase()) || p.email?.toLowerCase().includes(q.toLowerCase())
@@ -241,26 +269,62 @@ function ParentsTab() {
         <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid #E5E7EB' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
             <thead>
-              <tr><Th>Parent</Th><Th>WhatsApp</Th><Th>Dogs</Th><Th>Walker</Th><Th>Reports</Th><Th>Status</Th><Th>Last report</Th><Th>Joined</Th></tr>
+              <tr><Th>Parent</Th><Th>WhatsApp</Th><Th>Dogs</Th><Th>Walker</Th><Th>Reports</Th><Th>Status</Th><Th>Last report</Th><Th>Joined</Th><Th>Access</Th></tr>
             </thead>
             <tbody>
-              {filtered.map((p, i) => (
-                <tr key={p.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}>
-                  <Td>
-                    <div>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#0A2F35' }}>{p.name || '—'}</p>
-                      <p style={{ margin: 0, fontSize: 11, color: '#9CA3AF' }}>{p.email}</p>
-                    </div>
-                  </Td>
-                  <Td>{p.phone ? '✅' : '❌'}</Td>
-                  <Td>{p.dogCount}</Td>
-                  <Td>{p.activeWalkers > 0 ? '✅' : '❌'}</Td>
-                  <Td>{p.reportCount}</Td>
-                  <Td>{trialBadge(p)}</Td>
-                  <Td>{p.lastReportDate ? rel(p.lastReportDate) : 'Never'}</Td>
-                  <Td>{rel(p.createdAt)}</Td>
-                </tr>
-              ))}
+              {filtered.map((p, i) => {
+                const busy = actingOn === p.id
+                const hasActiveAccess = p.subStatus === 'active' || (p.trialDaysRemaining !== null && !p.trialExpired)
+                return (
+                  <tr key={p.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}>
+                    <Td>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#0A2F35' }}>{p.name || '—'}</p>
+                        <p style={{ margin: 0, fontSize: 11, color: '#9CA3AF' }}>{p.email}</p>
+                      </div>
+                    </Td>
+                    <Td>{p.phone ? '✅' : '❌'}</Td>
+                    <Td>{p.dogCount}</Td>
+                    <Td>{p.activeWalkers > 0 ? '✅' : '❌'}</Td>
+                    <Td>{p.reportCount}</Td>
+                    <Td>{trialBadge(p)}</Td>
+                    <Td>{p.lastReportDate ? rel(p.lastReportDate) : 'Never'}</Td>
+                    <Td>{rel(p.createdAt)}</Td>
+                    <Td>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          disabled={busy}
+                          onClick={() => runAction(p.id, 'grant')}
+                          style={{ fontSize: 11, fontWeight: 700, padding: '4px 8px', borderRadius: 6,
+                            border: '1px solid #16A34A', background: '#F0FDF4', color: '#166534', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.5 : 1 }}
+                        >
+                          Grant
+                        </button>
+                        {hasActiveAccess && (
+                          <>
+                            <button
+                              disabled={busy}
+                              onClick={() => runAction(p.id, 'cancel')}
+                              style={{ fontSize: 11, fontWeight: 700, padding: '4px 8px', borderRadius: 6,
+                                border: '1px solid #D97706', background: '#FFFBEB', color: '#92400E', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.5 : 1 }}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              disabled={busy}
+                              onClick={() => runAction(p.id, 'revoke')}
+                              style={{ fontSize: 11, fontWeight: 700, padding: '4px 8px', borderRadius: 6,
+                                border: '1px solid #DC2626', background: '#FEF2F2', color: '#991B1B', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.5 : 1 }}
+                            >
+                              Revoke
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </Td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

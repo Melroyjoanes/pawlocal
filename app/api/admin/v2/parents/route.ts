@@ -15,16 +15,29 @@ export async function GET() {
 
   const client = db()
 
-  // 1. Fetch all profiles (limit 100 most recent)
+  // Owners of dogs are the source of truth for "who is a parent" — most
+  // owners never get a `profiles` row (it's only created lazily by a few
+  // flows), so starting from `profiles` and filtering by owner id silently
+  // dropped nearly everyone. Start from `dogs.owner_id` instead and treat
+  // `profiles` as an optional enrichment.
+  const { data: dogOwnerRows } = await (client.from('dogs') as any).select('owner_id').limit(500)
+  const userIds: string[] = [...new Set<string>((dogOwnerRows ?? []).map((d: any) => d.owner_id as string).filter(Boolean))]
+
+  if (!userIds.length) return NextResponse.json([])
+
   const { data: profiles } = await (client.from('profiles') as any)
-    .select('id, full_name, trial_started_at, created_at')
-    .in('id', (await (client.from('dogs') as any).select('owner_id').limit(500)).data?.map((d: any) => d.owner_id as string) ?? [])
-    .order('created_at', { ascending: false })
-    .limit(100)
+    .select('id, full_name, phone, trial_started_at, created_at')
+    .in('id', userIds)
 
-  if (!profiles?.length) return NextResponse.json([])
-
-  const userIds: string[] = profiles.map((p: any) => p.id as string)
+  const profileMap: Record<string, { full_name: string | null; phone: string | null; trial_started_at: string | null; created_at: string | null }> = {}
+  for (const p of profiles ?? []) {
+    profileMap[p.id as string] = {
+      full_name: p.full_name ?? null,
+      phone: p.phone ?? null,
+      trial_started_at: p.trial_started_at ?? null,
+      created_at: p.created_at ?? null,
+    }
+  }
 
   // 2-5. Batch fetch related data
   const [dogsRes, connectionsRes, reportsRes, subsRes, authRes] = await Promise.all([
@@ -41,10 +54,13 @@ export async function GET() {
   const subs: Array<{ user_id: string; plan: string; status: string }> = subsRes.data ?? []
   const authUsers = authRes.data?.users ?? []
 
-  // Build email map from auth users
+  // Build email + fallback-signup-date map from auth users — used whenever a
+  // profiles row doesn't exist for this owner (the common case).
   const emailMap: Record<string, string> = {}
+  const authCreatedMap: Record<string, string> = {}
   for (const u of authUsers) {
     emailMap[u.id] = u.email ?? ''
+    authCreatedMap[u.id] = u.created_at
   }
 
   // Build dog count map
@@ -83,37 +99,41 @@ export async function GET() {
   const now = Date.now()
   const sevenDays = 7 * 86400000
 
-  const result = profiles.map((p: any) => {
-    const trialStartedAt: string | null = p.trial_started_at ?? null
-    let trialDaysRemaining: number | null = null
-    let trialExpired = false
+  const result = userIds
+    .map((id) => {
+      const profile = profileMap[id] ?? null
+      const trialStartedAt: string | null = profile?.trial_started_at ?? null
+      let trialDaysRemaining: number | null = null
+      let trialExpired = false
 
-    if (trialStartedAt) {
-      const trialEnd = new Date(trialStartedAt).getTime() + sevenDays
-      const remaining = Math.ceil((trialEnd - now) / 86400000)
-      trialDaysRemaining = remaining
-      trialExpired = remaining <= 0
-    }
+      if (trialStartedAt) {
+        const trialEnd = new Date(trialStartedAt).getTime() + sevenDays
+        const remaining = Math.ceil((trialEnd - now) / 86400000)
+        trialDaysRemaining = remaining
+        trialExpired = remaining <= 0
+      }
 
-    const sub = subMap[p.id] ?? null
+      const sub = subMap[id] ?? null
 
-    return {
-      id: p.id as string,
-      name: (p.full_name as string | null) ?? '',
-      email: emailMap[p.id] ?? '',
-      phone: (p.phone as string | null) ?? null,
-      trialStartedAt,
-      trialDaysRemaining,
-      trialExpired,
-      plan: sub?.plan ?? null,
-      subStatus: sub?.status ?? null,
-      dogCount: dogCountMap[p.id] ?? 0,
-      activeWalkers: activeWalkerMap[p.id] ?? 0,
-      reportCount: reportCountMap[p.id] ?? 0,
-      lastReportDate: lastReportMap[p.id] ?? null,
-      createdAt: p.created_at as string,
-    }
-  })
+      return {
+        id,
+        name: profile?.full_name ?? '',
+        email: emailMap[id] ?? '',
+        phone: profile?.phone ?? null,
+        trialStartedAt,
+        trialDaysRemaining,
+        trialExpired,
+        plan: sub?.plan ?? null,
+        subStatus: sub?.status ?? null,
+        dogCount: dogCountMap[id] ?? 0,
+        activeWalkers: activeWalkerMap[id] ?? 0,
+        reportCount: reportCountMap[id] ?? 0,
+        lastReportDate: lastReportMap[id] ?? null,
+        createdAt: profile?.created_at ?? authCreatedMap[id] ?? new Date(0).toISOString(),
+      }
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 100)
 
   return NextResponse.json(result)
 }

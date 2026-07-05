@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { getEntitlement } from '@/lib/entitlement'
 import { sendGA4Event } from '@/lib/ga4'
+import { assessWalkPlausibility } from '@/lib/walkValidation'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -197,28 +198,47 @@ export async function POST(req: NextRequest) {
       .eq('owner_id', connection.owner_id),
   ])
 
-  const deliveryAllowed = entitlement.isEntitled
   const isGenuinelyFirstReportEver = (priorReportCount ?? 0) === 0
 
+  // Only start the trial clock on a genuinely-first-ever report for this
+  // owner — never on a lapsed account whose trial_started_at happens to be
+  // unset for some other reason (e.g. a subscription granted without ever
+  // going through the trial flow).
+  //
+  // This is AWAITED, not fire-and-forget: `entitlement` above was fetched
+  // before the trial starts, so on a first-ever report it would otherwise
+  // show as not-entitled — silently skipping this report's own email AND
+  // leaving a race window where anyone (the walker included) who opens the
+  // report link in the next moment sees the locked paywall screen, on the
+  // very first walk. Awaiting this write, then explicitly treating "this
+  // request just started the trial" as entitled below, closes both.
   if (isGenuinelyFirstReportEver) {
+    try {
+      await (db.from('profiles') as any)
+        .update({ trial_started_at: new Date().toISOString() })
+        .eq('id', connection.owner_id)
+    } catch { /* non-critical — entitlement fallback below still covers this request */ }
+
     // No browser session available here (the walker submits this, not the
     // parent), so we fall back to the owner's user_id as the GA4 client_id —
     // won't merge with their client-side session, but the event still counts.
     sendGA4Event(connection.owner_id, { name: 'trial_start' })
   }
 
-  // Only start the trial clock on a genuinely-first-ever report for this
-  // owner — never on a lapsed account whose trial_started_at happens to be
-  // unset for some other reason (e.g. a subscription granted without ever
-  // going through the trial flow).
-  if (isGenuinelyFirstReportEver) {
-    ;(db.from('profiles') as any)
-      .update({ trial_started_at: new Date().toISOString() })
-      .eq('id', connection.owner_id)
-      .then(() => {})
-      .catch(() => {})
-  }
+  const deliveryAllowed = entitlement.isEntitled || isGenuinelyFirstReportEver
   // --- End paywall gate setup ---
+
+  // --- GPS plausibility check (flag-only, never blocks) ---
+  // Server-side sanity check on the submitted route: catches the easiest
+  // fakes (no GPS at all on a real-length walk, or GPS present but showing
+  // essentially zero movement over a claimed 10+ minute walk). This never
+  // rejects or alters the response to the walker — it only records a flag
+  // for admin review (see app/api/admin/v2/reports/route.ts).
+  const walkPlausibility = assessWalkPlausibility(
+    Array.isArray(gps_route) ? gps_route : null,
+    duration_mins ?? 0
+  )
+  // --- End GPS plausibility check ---
 
   // Fire-and-forget — don't block the response on report creation
   ;(async () => {
@@ -241,6 +261,8 @@ export async function POST(req: NextRequest) {
         poop_events: poopEvents.length > 0 ? poopEvents : null,
         pee_events: peeEvents.length > 0 ? peeEvents : null,
         quality_score: qualityScore,
+        flagged_suspicious: walkPlausibility.suspicious,
+        flag_reason: walkPlausibility.reason,
       })
 
       // Only send the report email if the owner is within their trial or has an active subscription.

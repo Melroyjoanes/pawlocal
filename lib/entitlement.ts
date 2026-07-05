@@ -39,6 +39,15 @@ export type Entitlement = {
    * both currently have isEntitled === false.
    */
   hasHistory: boolean
+  /**
+   * True only if a real `subscriptions` row exists (any status) — i.e. this
+   * account has paid via Razorpay (or been admin-granted) at least once.
+   * Unlike `hasHistory`, this ignores trial activity: a user mid-trial or
+   * whose trial simply ran out without ever paying is `false` here. Used to
+   * decide "Pay Now" (never paid) vs "Upgrade"/"Resubscribe" (paid before)
+   * copy on /upgrade and /my-account.
+   */
+  hasEverPaid: boolean
 }
 
 export async function getEntitlement(db: AnySupabaseClient, userId: string): Promise<Entitlement> {
@@ -96,5 +105,6 @@ export async function getEntitlement(db: AnySupabaseClient, userId: string): Pro
     trialExpired,
     isEntitled: isPro || trialActive,
     hasHistory,
+    hasEverPaid: !!anySubData,
   }
 }

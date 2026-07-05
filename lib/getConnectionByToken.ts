@@ -19,6 +19,7 @@ export interface ConnectionInfo {
   ownerPhone: string | null
   careFocus: string
   expectedWalkerPhone: string | null
+  walkTimeBucket: string | null
 }
 
 /**
@@ -51,7 +52,8 @@ export async function getConnectionByToken(token: string): Promise<ConnectionInf
         photo_url,
         health_notes,
         owner_id,
-        care_focus
+        care_focus,
+        walk_time_bucket
       )
     `)
     .eq('token', token)
@@ -90,5 +92,6 @@ export async function getConnectionByToken(token: string): Promise<ConnectionInf
     ownerPhone: ownerProfilePhone || connection.owner_phone || null,
     careFocus: connection.dogs?.care_focus ?? 'normal',
     expectedWalkerPhone: connection.expected_walker_phone ?? null,
+    walkTimeBucket: connection.dogs?.walk_time_bucket ?? null,
   }
 }
