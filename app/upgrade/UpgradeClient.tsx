@@ -216,10 +216,10 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
       className="min-h-dvh"
       style={{ background: 'linear-gradient(180deg, #FFFBEB 0%, #FFF3C4 100%)' }}
     >
-      {/* Sticky app header */}
+      {/* App header — not sticky, scrolls with the page */}
       <header
-        className="sticky top-0 z-40 flex items-center justify-between px-4 h-14"
-        style={{ background: 'rgba(255,251,235,0.95)', borderBottom: '1px solid oklch(0.906 0.06 88)', backdropFilter: 'blur(8px)' }}
+        className="flex items-center justify-between px-4 h-14"
+        style={{ background: 'rgba(255,251,235,0.95)', borderBottom: '1px solid oklch(0.906 0.06 88)' }}
       >
         <Link href={isLoggedIn ? '/home' : '/'} className="flex items-center">
           <Image src="/logo.webp" alt="PupStep" width={120} height={44} className="h-9 w-auto" priority />
