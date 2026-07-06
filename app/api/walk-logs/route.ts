@@ -246,82 +246,85 @@ export async function POST(req: NextRequest) {
   )
   // --- End GPS plausibility check ---
 
-  // Fire-and-forget — don't block the response on report creation
-  ;(async () => {
-    try {
-      await (db.from('walk_reports') as any).insert({
-        provider_id: null,
-        walker_name: connection.walker_name ?? 'Your Walker',
-        connection_id: connection.id,
-        owner_id: connection.owner_id,
-        token: reportToken,
-        dog_name: dogName,
-        duration_mins: duration_mins ?? 0,
-        poop_count: finalPoopCount,
-        pee_count: finalPeeCount,
-        notes: reportNotes || null,
-        photo_url: photo_url ?? null,
-        walk_date: started_at ?? new Date().toISOString(),
-        route_points: gps_route ?? null,
-        distance_meters: distance_km != null ? Math.round(distance_km * 1000) : null,
-        poop_events: poopEvents.length > 0 ? poopEvents : null,
-        pee_events: peeEvents.length > 0 ? peeEvents : null,
-        quality_score: qualityScore,
-        flagged_suspicious: walkPlausibility.suspicious,
-        flag_reason: walkPlausibility.reason,
-      })
+  // Must complete before we respond — if this insert fails, the walker must NOT
+  // be handed back a report_url that points at a row that doesn't exist.
+  try {
+    await (db.from('walk_reports') as any).insert({
+      provider_id: null,
+      walker_name: connection.walker_name ?? 'Your Walker',
+      connection_id: connection.id,
+      owner_id: connection.owner_id,
+      token: reportToken,
+      dog_name: dogName,
+      duration_mins: duration_mins ?? 0,
+      poop_count: finalPoopCount,
+      pee_count: finalPeeCount,
+      notes: reportNotes || null,
+      photo_url: photo_url ?? null,
+      walk_date: started_at ?? new Date().toISOString(),
+      route_points: gps_route ?? null,
+      distance_meters: distance_km != null ? Math.round(distance_km * 1000) : null,
+      poop_events: poopEvents.length > 0 ? poopEvents : null,
+      pee_events: peeEvents.length > 0 ? peeEvents : null,
+      quality_score: qualityScore,
+      flagged_suspicious: walkPlausibility.suspicious,
+      flag_reason: walkPlausibility.reason,
+    })
+  } catch (err) {
+    console.error('[walk-logs] report creation failed:', err)
+    return NextResponse.json({ error: 'Failed to create walk report. Please try again.' }, { status: 500 })
+  }
 
-      // Only send the report email if the owner is within their trial or has an active subscription.
-      // This is the single email sent per walk — for the owner's very first-ever report, it
-      // includes an extra "your trial has started" banner at the top instead of a separate email.
-      if (deliveryAllowed) {
-        // Check notification preference and send email to parent
-        try {
-          // Get parent email
-          const { data: { user: ownerUser } } = await db.auth.admin.getUserById(connection.owner_id)
-          const ownerEmail = ownerUser?.email
+  // Only send the report email if the owner is within their trial or has an active subscription.
+  // This is the single email sent per walk — for the owner's very first-ever report, it
+  // includes an extra "your trial has started" banner at the top instead of a separate email.
+  // Fire-and-forget — a slow or failed email delivery shouldn't hold up the walker's response.
+  if (deliveryAllowed) {
+    ;(async () => {
+      // Check notification preference and send email to parent
+      try {
+        // Get parent email
+        const { data: { user: ownerUser } } = await db.auth.admin.getUserById(connection.owner_id)
+        const ownerEmail = ownerUser?.email
 
-          if (ownerEmail) {
-            // Use already-fetched notification_preferences from ownerProfile
-            const prefs = (ownerProfile?.notification_preferences ?? {}) as Record<string, boolean>
-            const reportEmailEnabled = prefs.report_email !== false // default true
+        if (ownerEmail) {
+          // Use already-fetched notification_preferences from ownerProfile
+          const prefs = (ownerProfile?.notification_preferences ?? {}) as Record<string, boolean>
+          const reportEmailEnabled = prefs.report_email !== false // default true
 
-            if (reportEmailEnabled) {
-              const isFirstReport = isGenuinelyFirstReportEver
-              const trialExpiryLabel = isFirstReport
-                ? new Date(Date.now() + 3 * 86400 * 1000)
-                    .toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
-                : undefined
+          if (reportEmailEnabled) {
+            const isFirstReport = isGenuinelyFirstReportEver
+            const trialExpiryLabel = isFirstReport
+              ? new Date(Date.now() + 3 * 86400 * 1000)
+                  .toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
+              : undefined
 
-              const { sendEmail, walkReportEmail } = await import('@/lib/email')
-              sendEmail({
-                to: ownerEmail,
-                subject: `🐾 ${dogName}'s walk report is ready`,
-                html: walkReportEmail({
-                  dogName,
-                  walkerName: connection.walker_name ?? 'Your walker',
-                  durationMins: duration_mins ?? null,
-                  distanceKm: distance_km ?? null,
-                  poopCount: finalPoopCount,
-                  peeCount: finalPeeCount,
-                  reportUrl,
-                  trialExpiryLabel,
-                }),
-              }).catch(() => {})
+            const { sendEmail, walkReportEmail } = await import('@/lib/email')
+            sendEmail({
+              to: ownerEmail,
+              subject: `🐾 ${dogName}'s walk report is ready`,
+              html: walkReportEmail({
+                dogName,
+                walkerName: connection.walker_name ?? 'Your walker',
+                durationMins: duration_mins ?? null,
+                distanceKm: distance_km ?? null,
+                poopCount: finalPoopCount,
+                peeCount: finalPeeCount,
+                reportUrl,
+                trialExpiryLabel,
+              }),
+            }).catch(() => {})
 
-              // Track email sent
-              await (db.from('walk_reports') as any)
-                .update({ email_sent_at: new Date().toISOString() })
-                .eq('token', reportToken)
-                .catch(() => {})
-            }
+            // Track email sent
+            await (db.from('walk_reports') as any)
+              .update({ email_sent_at: new Date().toISOString() })
+              .eq('token', reportToken)
+              .catch(() => {})
           }
-        } catch { /* non-critical */ }
-      }
-    } catch (err) {
-      console.error('[walk-logs] report creation failed:', err)
-    }
-  })()
+        }
+      } catch { /* non-critical */ }
+    })()
+  }
 
   // Build WhatsApp link — report URL for active subscribers/trial, upgrade prompt otherwise
   if (resolvedOwnerPhone) {

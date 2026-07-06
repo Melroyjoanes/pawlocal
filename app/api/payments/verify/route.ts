@@ -29,7 +29,55 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid payment signature' }, { status: 400 })
   }
 
-  const days = PLAN_DAYS[plan] ?? 30
+  const db = admin()
+
+  // Payment replay guard: if this exact razorpay_payment_id has already been
+  // used to grant access (by any user, not just this one), don't write again
+  // or extend anything further. Makes duplicate/retry calls idempotent.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: alreadyProcessed } = await (db.from('subscriptions') as any)
+    .select('expires_at')
+    .eq('razorpay_payment_id', razorpay_payment_id)
+    .maybeSingle()
+
+  if (alreadyProcessed) {
+    return NextResponse.json({ ok: true, alreadyProcessed: true, expires_at: alreadyProcessed.expires_at })
+  }
+
+  // Re-fetch the order from Razorpay's API server-side rather than trusting
+  // the client-supplied `plan` field — the client's `plan` param is advisory
+  // only from here on. Same fetch pattern as app/api/payments/webhook/route.ts.
+  const credentials = Buffer.from(
+    `${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`
+  ).toString('base64')
+
+  const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${razorpay_order_id}`, {
+    headers: { Authorization: `Basic ${credentials}` },
+  })
+
+  if (!orderRes.ok) {
+    console.error('[verify] Failed to fetch Razorpay order:', await orderRes.text())
+    return NextResponse.json({ error: 'Could not fetch order' }, { status: 500 })
+  }
+
+  const order = await orderRes.json() as {
+    status?: string
+    amount?: number
+    notes?: { user_id?: string; plan?: string }
+  }
+
+  if (order.status !== 'paid') {
+    return NextResponse.json({ error: 'Order is not paid' }, { status: 400 })
+  }
+
+  if (order.notes?.user_id !== user.id) {
+    return NextResponse.json({ error: 'Order does not belong to this user' }, { status: 400 })
+  }
+
+  const verifiedPlan = order.notes?.plan ?? 'monthly'
+  const verifiedAmountPaise = order.amount ?? (PLAN_PAISE[verifiedPlan] ?? 19900)
+
+  const days = PLAN_DAYS[verifiedPlan] ?? 30
   const expiresAt = new Date(Date.now() + days * 86400 * 1000).toISOString()
 
   // Extend the existing active row if one exists, else insert a new one.
@@ -41,7 +89,6 @@ export async function POST(req: NextRequest) {
   // was charged but the subscription never activated. This manual
   // check-then-write matches the same pattern already used in
   // app/api/admin/v2/parents/[userId]/action/route.ts's grant logic.
-  const db = admin()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: existingActive } = await (db.from('subscriptions') as any)
     .select('id')
@@ -50,12 +97,12 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
 
   const subPayload = {
-    plan,
+    plan: verifiedPlan,
     status: 'active',
     razorpay_order_id,
     razorpay_payment_id,
     razorpay_signature,
-    amount_paise: PLAN_PAISE[plan] ?? 19900,
+    amount_paise: verifiedAmountPaise,
     expires_at: expiresAt,
   }
 
@@ -75,9 +122,9 @@ export async function POST(req: NextRequest) {
     name: 'purchase',
     params: {
       currency: 'INR',
-      value: (PLAN_PAISE[plan] ?? 19900) / 100,
+      value: verifiedAmountPaise / 100,
       transaction_id: razorpay_payment_id,
-      plan,
+      plan: verifiedPlan,
     },
   })
 
