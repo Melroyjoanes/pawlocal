@@ -963,7 +963,16 @@ export default function LandingPage() {
             Set up your dog
           </Link>
           <Link href="/upgrade"
-            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '13px', borderRadius: 20, background: 'rgba(10,47,53,0.08)', color: C.dark, fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>
+            style={{
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '13px',
+              borderRadius: 20, background: '#fff', color: C.teal, fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none',
+              border: `1.5px solid ${C.teal}`,
+              boxShadow: [
+                'inset 0 1.5px 0 rgba(255,255,255,0.9)',
+                'inset 0 -2px 0 rgba(10,47,53,0.05)',
+                '0 4px 12px rgba(10,47,53,0.10)',
+              ].join(', '),
+            }}>
             See pricing
           </Link>
         </div>

@@ -70,8 +70,17 @@ export default function AuthNavItem() {
   return (
     <a
       href="/login?next=/home"
-      className="text-sm font-bold px-4 py-2 rounded-full whitespace-nowrap flex-shrink-0 transition-opacity hover:opacity-90"
-      style={{ background: '#FF8C52', color: '#fff', fontFamily: 'var(--font-nunito)' }}
+      className="text-sm font-bold px-4 py-2 rounded-full whitespace-nowrap flex-shrink-0 transition-transform active:scale-[0.97]"
+      style={{
+        background: 'linear-gradient(155deg,#FF8C52,#F56B22)',
+        color: '#451A03',
+        fontFamily: 'var(--font-nunito)',
+        boxShadow: [
+          'inset 0 1.5px 0 rgba(255,255,255,0.45)',
+          'inset 0 -2px 0 rgba(175,65,10,0.25)',
+          '0 4px 12px rgba(245,107,34,0.32)',
+        ].join(', '),
+      }}
     >
       Sign in
     </a>
