@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { parseCareFocus } from '@/lib/careFocus'
 import { LoadingButton } from '@/components/LoadingButton'
 import { loadGoogleMaps } from '@/lib/googleMapsLoader'
+import { SNAP_MAP_STYLE } from '@/lib/snapMapStyle'
 
 // ─── Motion tokens — mirrors components/LandingPage.tsx so walker-facing
 // motion feels consistent with the rest of the app ────────────────────────────
@@ -64,10 +65,7 @@ function LiveMap({
         center,
         zoom: 17,
         disableDefaultUI: true,
-        styles: [
-          { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-          { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-        ],
+        styles: SNAP_MAP_STYLE,
       })
       mapRef.current = map
 
