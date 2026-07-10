@@ -92,6 +92,7 @@ export default function TermsPage() {
               <li>PupStep does not guarantee the accuracy of GPS data — device GPS accuracy may vary.</li>
               <li>Walk reports are informational and not a substitute for direct communication between providers and dog parents.</li>
               <li>Poop photos uploaded during walks are stored in our secure cloud storage and are accessible only to the provider and the linked dog parent.</li>
+              <li>PupStep sends automated reminders to walkers to help build a consistent reporting habit, but a report can only be created once a walker logs their walk. We do not guarantee that a walker will log every walk or send every report — this depends on the walker&apos;s own action, not on PupStep.</li>
             </ul>
           </Section>
 

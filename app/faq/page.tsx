@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import { CLAY_SHADOW_CREAM, CLAY_SHADOW_TEAL, CLAY_SHADOW_ORANGE_SM } from '@/lib/clayShadows'
 
 const EASE_EXP = [0.16, 1, 0.3, 1] as const
 
@@ -43,7 +44,11 @@ const FAQS: { category: string; color: string; textColor: string; icon: string; 
       },
       {
         q: 'How does my walker send the report?',
-        a: 'Your walker logs the walk from their PupStep dashboard at pupstep.in/pro. It takes under 2 minutes — they tap start, walk your dog with GPS running, then add a photo and quick notes when they\'re done. The report appears in your account instantly.',
+        a: 'Your walker taps the link you shared with them — no app download, no account needed — and enters the 4-digit code you gave them. From there it takes under a minute: tap Start Walk, walk your dog with GPS running, then add a photo and quick notes when they\'re done. The report lands in your account and on WhatsApp within seconds.',
+      },
+      {
+        q: 'What if my walker doesn\'t send a report?',
+        a: 'We do our part to make it easy: logging a walk takes under a minute, and if your walker\'s usual walk time passes with nothing logged, we send them a gentle reminder automatically. That said, we can\'t make a walker pick up their phone — sending a report is ultimately their action, not something PupStep can do for them. If one\'s missing, it almost always just means the walk hasn\'t been logged yet. A quick nudge to your walker directly is usually the fastest fix.',
       },
       {
         q: 'Can I share walk reports with my vet?',
@@ -67,7 +72,7 @@ const FAQS: { category: string; color: string; textColor: string; icon: string; 
       },
       {
         q: 'What if my walker is not on PupStep yet?',
-        a: 'Ask them to create a free walker account at pupstep.in/pro — it takes 5 minutes to set up and costs them nothing, ever. Most walkers are happy to use it once they see how quick the logging is.',
+        a: 'No problem — just share your unique QR code or WhatsApp link with them from your dashboard. It takes about 30 seconds for them to connect: no app download, no account, and it\'s always free for them to use.',
       },
       {
         q: 'Can I have multiple dogs on one account?',
@@ -203,8 +208,8 @@ export default function FAQPage() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, ease: EASE_EXP, delay: si * 0.07 }}
-              className="rounded-2xl overflow-hidden"
-              style={{ border: '1.5px solid rgba(0,0,0,0.07)', background: '#fff' }}
+              className="rounded-3xl overflow-hidden"
+              style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}
             >
               {/* Category header */}
               <div className="flex items-center gap-3 px-6 py-4"
@@ -239,8 +244,8 @@ export default function FAQPage() {
         <motion.div
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: EASE_EXP, delay: 0.4 }}
-          className="mt-10 rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left"
-          style={{ background: 'linear-gradient(135deg, #0A2F35 0%, #0D3D45 100%)' }}
+          className="mt-10 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left"
+          style={{ background: 'linear-gradient(135deg, #0A2F35 0%, #0D3D45 100%)', boxShadow: CLAY_SHADOW_TEAL }}
         >
           <div className="flex-1">
             <p className="font-bold text-white text-lg mb-1">Still have questions?</p>
@@ -249,8 +254,8 @@ export default function FAQPage() {
             </p>
           </div>
           <Link href="/contact"
-            className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm transition-opacity hover:opacity-90"
-            style={{ background: '#F59E0B', color: '#451A03' }}>
+            className="flex-shrink-0 inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm transition-transform hover:opacity-90 active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F59E0B]"
+            style={{ background: '#F59E0B', color: '#451A03', boxShadow: CLAY_SHADOW_ORANGE_SM }}>
             Contact us →
           </Link>
         </motion.div>
