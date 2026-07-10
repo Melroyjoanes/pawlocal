@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { CLAY_SHADOW_CREAM, CLAY_SHADOW_TEAL, CLAY_SHADOW_ORANGE_SM } from '@/lib/clayShadows'
 
 const EASE_EXP = [0.16, 1, 0.3, 1] as const
 
@@ -107,8 +108,8 @@ export default function BlogPage() {
           className="mb-10"
         >
           <Link href={`/blog/${featured.slug}`} className="group block">
-            <div className="rounded-2xl overflow-hidden border transition-shadow hover:shadow-lg"
-              style={{ border: '1.5px solid rgba(0,0,0,0.07)', background: '#fff' }}>
+            <div className="rounded-3xl overflow-hidden"
+              style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
               {/* Cover image */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -151,8 +152,8 @@ export default function BlogPage() {
               transition={{ duration: 0.42, ease: EASE_EXP, delay: 0.15 + i * 0.07 }}
             >
               <Link href={`/blog/${post.slug}`} className="group block h-full">
-                <div className="rounded-2xl overflow-hidden border h-full flex flex-col transition-shadow hover:shadow-md"
-                  style={{ border: '1.5px solid rgba(0,0,0,0.07)', background: '#fff' }}>
+                <div className="rounded-3xl overflow-hidden h-full flex flex-col"
+                  style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={post.image}
@@ -189,8 +190,8 @@ export default function BlogPage() {
         <motion.div
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: EASE_EXP, delay: 0.5 }}
-          className="mt-12 rounded-2xl p-6 sm:p-8 text-center"
-          style={{ background: 'linear-gradient(135deg, #0A2F35 0%, #0D3D45 100%)' }}
+          className="mt-12 rounded-3xl p-6 sm:p-8 text-center"
+          style={{ background: 'linear-gradient(135deg, #0A2F35 0%, #0D3D45 100%)', boxShadow: CLAY_SHADOW_TEAL }}
         >
           <p className="text-2xl mb-2">🐾</p>
           <p className="font-bold text-white text-lg mb-1">More articles coming soon</p>
@@ -198,8 +199,8 @@ export default function BlogPage() {
             Written by our team and Juhu&apos;s verified pet care providers. Real advice, no fluff.
           </p>
           <Link href="/contact"
-            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-bold text-sm"
-            style={{ background: '#F59E0B', color: '#451A03' }}>
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full font-bold text-sm transition-transform active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F59E0B]"
+            style={{ background: '#F59E0B', color: '#451A03', boxShadow: CLAY_SHADOW_ORANGE_SM }}>
             Suggest a topic →
           </Link>
         </motion.div>

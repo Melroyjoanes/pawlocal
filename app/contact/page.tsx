@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { CLAY_SHADOW_CREAM, CLAY_SHADOW_TEAL, clayShadow } from '@/lib/clayShadows'
 
 const EASE_EXP = [0.16, 1, 0.3, 1] as const
 
@@ -24,6 +25,7 @@ const INFO_CARDS = [
     href: 'https://wa.me/919892620677?text=Hi%20PupStep%2C%20I%20have%20a%20question',
     color: '#F0FDF4',
     textColor: '#064E3B',
+    tint: '6,78,59',
   },
   {
     icon: '📧',
@@ -33,6 +35,7 @@ const INFO_CARDS = [
     href: 'mailto:melroy@verfolia.com',
     color: '#FEF3C7',
     textColor: '#78350F',
+    tint: '120,53,15',
   },
   {
     icon: '📍',
@@ -42,6 +45,7 @@ const INFO_CARDS = [
     href: null,
     color: '#E0F2FE',
     textColor: '#0C4A6E',
+    tint: '12,74,110',
   },
 ]
 
@@ -99,8 +103,8 @@ export default function ContactPage() {
                 key={card.title}
                 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.42, ease: EASE_EXP, delay: 0.1 + i * 0.08 }}
-                className="rounded-2xl p-5"
-                style={{ background: card.color, border: '1.5px solid rgba(0,0,0,0.06)' }}
+                className="rounded-3xl p-5"
+                style={{ background: card.color, boxShadow: clayShadow(card.tint) }}
               >
                 <div className="flex items-start gap-3">
                   <span className="text-2xl flex-shrink-0">{card.icon}</span>
@@ -123,8 +127,8 @@ export default function ContactPage() {
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               transition={{ duration: 0.4, ease: EASE_EXP, delay: 0.4 }}
-              className="rounded-2xl p-5 flex items-center gap-3"
-              style={{ background: 'linear-gradient(135deg, #0A2F35, #0D3D45)', border: '1px solid rgba(255,255,255,0.06)' }}
+              className="rounded-3xl p-5 flex items-center gap-3"
+              style={{ background: 'linear-gradient(135deg, #0A2F35, #0D3D45)', boxShadow: CLAY_SHADOW_TEAL }}
             >
               <span className="text-2xl">⚡</span>
               <div>
@@ -140,8 +144,8 @@ export default function ContactPage() {
             transition={{ duration: 0.5, ease: EASE_EXP, delay: 0.15 }}
             className="lg:col-span-3"
           >
-            <div className="rounded-2xl p-6 sm:p-8"
-              style={{ background: '#fff', border: '1.5px solid rgba(0,0,0,0.07)' }}>
+            <div className="rounded-3xl p-6 sm:p-8"
+              style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
 
               {state === 'sent' ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -228,8 +232,8 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={state === 'sending'}
-                    className="w-full py-3.5 rounded-xl font-bold text-sm transition-opacity disabled:opacity-60"
-                    style={{ background: 'linear-gradient(135deg, #0A8A96, #065A67)', color: '#F0FDFA' }}
+                    className="w-full py-3.5 rounded-2xl font-bold text-sm transition-transform disabled:opacity-60 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A8A96]"
+                    style={{ background: 'linear-gradient(135deg, #0A8A96, #065A67)', color: '#F0FDFA', boxShadow: clayShadow('10,138,150') }}
                   >
                     {state === 'sending' ? 'Sending…' : 'Send message →'}
                   </button>

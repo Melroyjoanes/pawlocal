@@ -6,6 +6,31 @@ import { parseCareFocus } from '@/lib/careFocus'
 import { LoadingButton } from '@/components/LoadingButton'
 import { loadGoogleMaps } from '@/lib/googleMapsLoader'
 import { SNAP_MAP_STYLE } from '@/lib/snapMapStyle'
+import {
+  CLAY_SHADOW_CREAM,
+  CLAY_SHADOW_TEAL,
+  CLAY_SHADOW_ORANGE,
+  CLAY_SHADOW_ORANGE_SM,
+  CLAY_SHADOW_TEAL_OUTLINE,
+  clayShadow,
+} from '@/lib/clayShadows'
+
+// ── Claymorphism shadows for surfaces not covered by the shared tokens above.
+// Built with the same clayShadow() factory (hue-matched, light-inset-top /
+// dark-inset-bottom, single outer drop shadow). Kept deliberately light/small
+// — this page is used mid-walk on modest Android phones, so no 60-80px blur
+// like the celebration/marketing screens elsewhere in the app. ─────────────────
+const CLAY_SHADOW_WHATSAPP = clayShadow('20,110,60', { outerOpacity: 0.26, insetOpacity: 0.18 })
+const CLAY_SHADOW_TEAL_ACCENT = clayShadow('15,118,110', { outerOpacity: 0.24, insetOpacity: 0.18 })
+const CLAY_SHADOW_AMBER = clayShadow('180,120,20', { outerOpacity: 0.20, insetOpacity: 0.15 })
+const CLAY_SHADOW_ORANGE_BANNER = clayShadow('194,90,20', { outerOpacity: 0.20, insetOpacity: 0.15 })
+const CLAY_SHADOW_GREEN_SUCCESS = clayShadow('30,120,60', { outerOpacity: 0.18, insetOpacity: 0.13 })
+const CLAY_SHADOW_BLUE = clayShadow('37,99,235', { outerOpacity: 0.20, insetOpacity: 0.15 })
+const CLAY_SHADOW_RED = clayShadow('185,28,28', { outerOpacity: 0.24, insetOpacity: 0.16 })
+const CLAY_SHADOW_RED_BANNER = clayShadow('185,28,28', { outerOpacity: 0.16, insetOpacity: 0.12 })
+// Very light neutral (brand-dark tinted, never gray/black) for muted secondary
+// panels/buttons — e.g. a disabled-looking "skip this step" dismiss action.
+const CLAY_SHADOW_NEUTRAL = clayShadow('10,47,53', { outerOpacity: 0.12, insetOpacity: 0.08 })
 
 // ─── Motion tokens — mirrors components/LandingPage.tsx so walker-facing
 // motion feels consistent with the rest of the app ────────────────────────────
@@ -209,12 +234,12 @@ function relativeTime(iso: string): string {
   return `${days}d ago`
 }
 
-const CARE_FOCUS_CONFIG: Record<string, { emoji: string; label: string; bg: string; border: string; color: string; walkerNote: string }> = {
-  stomach: { emoji: '💩', label: 'Stomach monitoring', bg: '#FEF9C3', border: '#FDE047', color: '#854D0E', walkerNote: 'Poop photo is especially important today. Please photograph every time.' },
-  recovery: { emoji: '🩹', label: 'Recovery mode', bg: '#FEE2E2', border: '#FECACA', color: '#991B1B', walkerNote: 'Gentle walk only. No running. Watch for limping or discomfort.' },
-  anxiety: { emoji: '😰', label: 'Anxiety watch', bg: '#EFF6FF', border: '#BFDBFE', color: '#1D4ED8', walkerNote: 'Stay calm. Avoid busy roads and loud areas. Short walk is fine.' },
-  senior: { emoji: '🐕', label: 'Senior dog', bg: '#F3E8FF', border: '#E9D5FF', color: '#7C3AED', walkerNote: 'Easy pace. Rest often. Do not push distance today.' },
-  puppy: { emoji: '🐶', label: 'Puppy', bg: '#F0FDF4', border: '#86EFAC', color: '#166534', walkerNote: 'Short walk. Lots of praise. Watch for tiredness.' },
+const CARE_FOCUS_CONFIG: Record<string, { emoji: string; label: string; bg: string; border: string; color: string; shadowTint: string; walkerNote: string }> = {
+  stomach: { emoji: '💩', label: 'Stomach monitoring', bg: '#FEF9C3', border: '#FDE047', color: '#854D0E', shadowTint: '133,77,14', walkerNote: 'Poop photo is especially important today. Please photograph every time.' },
+  recovery: { emoji: '🩹', label: 'Recovery mode', bg: '#FEE2E2', border: '#FECACA', color: '#991B1B', shadowTint: '153,27,27', walkerNote: 'Gentle walk only. No running. Watch for limping or discomfort.' },
+  anxiety: { emoji: '😰', label: 'Anxiety watch', bg: '#EFF6FF', border: '#BFDBFE', color: '#1D4ED8', shadowTint: '29,78,216', walkerNote: 'Stay calm. Avoid busy roads and loud areas. Short walk is fine.' },
+  senior: { emoji: '🐕', label: 'Senior dog', bg: '#F3E8FF', border: '#E9D5FF', color: '#7C3AED', shadowTint: '124,58,237', walkerNote: 'Easy pace. Rest often. Do not push distance today.' },
+  puppy: { emoji: '🐶', label: 'Puppy', bg: '#F0FDF4', border: '#86EFAC', color: '#166534', shadowTint: '22,101,52', walkerNote: 'Short walk. Lots of praise. Watch for tiredness.' },
 }
 
 interface WalkLog {
@@ -568,14 +593,14 @@ function WalkerLanguagePicker({ lang, onChange }: { lang: WalkerLang; onChange: 
           key={l.code}
           type="button"
           onClick={() => onChange(l.code)}
-          className="flex-1 py-1.5 rounded-full text-center transition-all"
+          className="flex-1 py-1.5 rounded-full text-center transition-all active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
           style={{
             background: lang === l.code ? 'oklch(0.48 0.17 196)' : 'transparent',
             color: lang === l.code ? '#ffffff' : '#4B5563',
             fontFamily: 'var(--font-nunito)',
             fontSize: 10.5,
             fontWeight: 700,
-            boxShadow: lang === l.code ? '0 2px 6px rgba(10,47,53,0.18)' : 'none',
+            boxShadow: lang === l.code ? CLAY_SHADOW_TEAL_ACCENT : 'none',
             transitionTimingFunction: 'cubic-bezier(0.25, 1, 0.5, 1)',
             whiteSpace: 'nowrap',
           }}
@@ -713,7 +738,7 @@ function SettingsTab({
     <div className="px-5 pt-2 pb-10 space-y-4">
 
       {/* ── Section 1: My Profile ── */}
-      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-5">
+      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
         {sectionHead(t.myProfile)}
         <div className="space-y-3">
           <div>
@@ -761,12 +786,13 @@ function SettingsTab({
                   key={opt.value}
                   type="button"
                   onClick={() => setProfileRole(opt.value)}
-                  className="py-2.5 px-3 rounded-xl border-2 text-sm font-bold transition-all active:scale-[0.97]"
+                  className="py-2.5 px-3 rounded-2xl border-2 text-sm font-bold transition-all active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
                   style={{
                     fontFamily: 'var(--font-nunito)',
                     borderColor: profileRole === opt.value ? 'oklch(0.48 0.17 196)' : '#E2E8F0',
                     background: profileRole === opt.value ? 'oklch(0.95 0.04 196)' : '#fff',
                     color: profileRole === opt.value ? 'oklch(0.40 0.17 196)' : '#64748B',
+                    boxShadow: profileRole === opt.value ? CLAY_SHADOW_TEAL_ACCENT : undefined,
                   }}
                 >
                   {opt.label}
@@ -778,7 +804,7 @@ function SettingsTab({
       </div>
 
       {/* ── Section 2: Connected Dog ── */}
-      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-5">
+      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
         {sectionHead(t.connectedDog)}
         {/* Dog identity row */}
         <div className="flex items-center gap-3 mb-3">
@@ -804,7 +830,7 @@ function SettingsTab({
         {careFocusKeys.filter(k => k !== 'normal' && CARE_FOCUS_CONFIG[k]).map(k => {
           const cfg = CARE_FOCUS_CONFIG[k]
           return (
-            <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 12, padding: '8px 12px', marginBottom: 10, marginRight: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 16, padding: '8px 12px', marginBottom: 10, marginRight: 8, display: 'inline-flex', alignItems: 'center', gap: 6, boxShadow: clayShadow(cfg.shadowTint, { outerOpacity: 0.16, insetOpacity: 0.12 }) }}>
               <span style={{ fontSize: 14 }}>{cfg.emoji}</span>
               <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 700, color: cfg.color }}>{cfg.label}</span>
             </div>
@@ -813,7 +839,7 @@ function SettingsTab({
 
         {/* Health notes */}
         {healthNotes && (
-          <div style={{ background: '#FFFBEB', border: '1.5px solid #FCD34D', borderRadius: 12, padding: '10px 12px', marginBottom: 12, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+          <div style={{ background: '#FFFBEB', border: '1.5px solid #FCD34D', borderRadius: 16, padding: '10px 12px', marginBottom: 12, display: 'flex', gap: 8, alignItems: 'flex-start', boxShadow: CLAY_SHADOW_AMBER }}>
             <span style={{ fontSize: 16, flexShrink: 0 }}>⚠️</span>
             <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#92400E', margin: 0, lineHeight: 1.5 }}>{healthNotes}</p>
           </div>
@@ -830,8 +856,8 @@ function SettingsTab({
             href={`https://wa.me/91${ownerPhone.replace(/\D/g, '')}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white text-sm active:scale-[0.97] transition-transform"
-            style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', textDecoration: 'none' }}
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-bold text-white text-sm active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+            style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', textDecoration: 'none', boxShadow: CLAY_SHADOW_WHATSAPP }}
           >
             💬 WhatsApp {dogName}&apos;s owner
           </a>
@@ -843,7 +869,7 @@ function SettingsTab({
       </div>
 
       {/* ── Section 3: Your Dashboard Link ── */}
-      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-5">
+      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
         {sectionHead('Your Dashboard Link')}
         <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', margin: '0 0 14px', lineHeight: 1.6 }}>
           Use this same link every time you walk {dogName}. Bookmark it or save to WhatsApp.
@@ -853,21 +879,22 @@ function SettingsTab({
             href={`https://wa.me/?text=${encodeURIComponent(`My PupStep dashboard for ${dogName} 🐾\nTap to log walks:\n${dashUrl}`)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white text-sm active:scale-[0.97] transition-transform"
-            style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', textDecoration: 'none' }}
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-bold text-white text-sm active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+            style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', textDecoration: 'none', boxShadow: CLAY_SHADOW_WHATSAPP }}
           >
             📲 Save link on WhatsApp
           </a>
           <button
             type="button"
             onClick={handleCopyLink}
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-sm active:scale-[0.97] transition-transform"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-bold text-sm active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
             style={{
               background: '#fff',
               border: '2px solid oklch(0.48 0.17 196)',
               color: 'oklch(0.48 0.17 196)',
               fontFamily: 'var(--font-fredoka)',
               cursor: 'pointer',
+              boxShadow: CLAY_SHADOW_TEAL_OUTLINE,
             }}
           >
             {linkCopied ? 'Copied! ✓' : 'Copy link'}
@@ -876,7 +903,7 @@ function SettingsTab({
       </div>
 
       {/* ── Section 4: Walk Help ── */}
-      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-5">
+      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
         {sectionHead('Walk Help')}
         <div className="space-y-3">
           {[
@@ -917,15 +944,15 @@ function SettingsTab({
       </div>
 
       {/* ── Section 5: Support ── */}
-      <div className="rounded-2xl bg-white border border-slate-100 shadow-sm px-5 py-5">
+      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
         {sectionHead('Support')}
         <div className="space-y-2">
           <a
             href="https://wa.me/919999999999"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white text-sm active:scale-[0.97] transition-transform"
-            style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', textDecoration: 'none' }}
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-bold text-white text-sm active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+            style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', textDecoration: 'none', boxShadow: CLAY_SHADOW_WHATSAPP }}
           >
             💬 WhatsApp PupStep support
           </a>
@@ -933,13 +960,14 @@ function SettingsTab({
             href={`https://wa.me/919999999999?text=${encodeURIComponent(`Problem with my PupStep dashboard [${token}]: `)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-sm active:scale-[0.97] transition-transform"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-bold text-sm active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
             style={{
               background: '#fff',
               border: '2px solid #E2E8F0',
               color: '#64748B',
               fontFamily: 'var(--font-fredoka)',
               textDecoration: 'none',
+              boxShadow: CLAY_SHADOW_TEAL_OUTLINE,
             }}
           >
             🚨 Report a problem
@@ -948,7 +976,7 @@ function SettingsTab({
       </div>
 
       {/* ── Section 6: Add another client ── */}
-      <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #E5E7EB', padding: '16px' }}>
+      <div className="rounded-[24px]" style={{ background: '#fff', padding: '16px', boxShadow: CLAY_SHADOW_CREAM }}>
         <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#0A2F35', margin: '0 0 4px' }}>
           Add another client
         </p>
@@ -957,7 +985,7 @@ function SettingsTab({
         </p>
 
         {addClientSuccess ? (
-          <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '12px 14px' }}>
+          <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 16, padding: '12px 14px', boxShadow: CLAY_SHADOW_GREEN_SUCCESS }}>
             <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, color: '#166534', margin: 0 }}>
               ✅ {addClientSuccess}
             </p>
@@ -1005,12 +1033,13 @@ function SettingsTab({
                 } catch { setAddClientError('Network error. Try again.') }
                 finally { setAddClientLoading(false) }
               }}
-              className="rounded-xl"
+              className="rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
               style={{
                 minHeight: 52,
                 fontSize: 16,
                 background: addClientOtp.length === 4 ? 'oklch(0.48 0.17 196)' : '#E5E7EB',
                 color: addClientOtp.length === 4 ? '#fff' : '#9CA3AF',
+                boxShadow: addClientOtp.length === 4 ? CLAY_SHADOW_TEAL_ACCENT : undefined,
               }}
             >
               Connect →
@@ -1601,8 +1630,8 @@ export default function WalkerClient({
     <div className="min-h-screen pb-24" style={{ background: '#FFFBEB', fontFamily: 'var(--font-nunito), sans-serif' }}>
       {/* Toast */}
       {toast && (
-        <div className="fixed top-4 left-4 right-4 z-50 bg-[#0A2F35] text-white rounded-2xl px-5 py-4 text-sm font-semibold text-center shadow-xl animate-bounce-once"
-          style={{ fontFamily: 'var(--font-nunito)' }}>
+        <div className="fixed top-4 left-4 right-4 z-50 bg-[#0A2F35] text-white rounded-[24px] px-5 py-4 text-sm font-semibold text-center animate-bounce-once"
+          style={{ fontFamily: 'var(--font-nunito)', boxShadow: CLAY_SHADOW_TEAL }}>
           {toast}
         </div>
       )}
@@ -1636,8 +1665,8 @@ export default function WalkerClient({
           <div style={{ paddingTop: 8, paddingBottom: 8 }}>
             <button
               onClick={() => { setPhase('idle'); setGpsError(null) }}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white shadow-md text-gray-700 active:opacity-60 transition-opacity"
-              style={{ fontFamily: 'var(--font-nunito)' }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white text-gray-700 active:opacity-60 active:scale-[0.97] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+              style={{ fontFamily: 'var(--font-nunito)', boxShadow: CLAY_SHADOW_CREAM }}
             >
               ← Back
             </button>
@@ -1686,10 +1715,10 @@ export default function WalkerClient({
           {/* Android steps */}
           <div style={{
             background: '#fff',
-            borderRadius: 16,
+            borderRadius: 24,
             padding: '16px 16px',
             marginBottom: 14,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            boxShadow: CLAY_SHADOW_CREAM,
           }}>
             <p style={{
               fontFamily: 'var(--font-fredoka)',
@@ -1730,10 +1759,10 @@ export default function WalkerClient({
           {/* iPhone steps */}
           <div style={{
             background: '#fff',
-            borderRadius: 16,
+            borderRadius: 24,
             padding: '16px 16px',
             marginBottom: 28,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            boxShadow: CLAY_SHADOW_CREAM,
           }}>
             <p style={{
               fontFamily: 'var(--font-fredoka)',
@@ -1774,10 +1803,10 @@ export default function WalkerClient({
           {/* Try again button */}
           <button
             onClick={retryGPS}
-            className="w-full active:scale-[0.97] transition-transform"
+            className="w-full active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
             style={{
               background: 'oklch(0.48 0.17 196)',
-              borderRadius: 16,
+              borderRadius: 20,
               minHeight: 56,
               border: 'none',
               fontFamily: 'var(--font-fredoka)',
@@ -1785,6 +1814,7 @@ export default function WalkerClient({
               fontWeight: 700,
               color: '#fff',
               cursor: 'pointer',
+              boxShadow: CLAY_SHADOW_TEAL_ACCENT,
             }}
           >
             {t.tryLocationAgain}
@@ -1844,10 +1874,10 @@ export default function WalkerClient({
                   setIsDemoWalk(true)
                   startWalk()
                 }}
-                className="w-full active:scale-[0.97] transition-transform"
+                className="w-full active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
                 style={{
                   background: '#FF8C52',
-                  borderRadius: 16,
+                  borderRadius: 20,
                   minHeight: 56,
                   border: 'none',
                   fontFamily: 'var(--font-fredoka)',
@@ -1855,6 +1885,7 @@ export default function WalkerClient({
                   fontWeight: 700,
                   color: '#fff',
                   cursor: 'pointer',
+                  boxShadow: CLAY_SHADOW_ORANGE,
                 }}
               >
                 Start practice walk
@@ -1865,10 +1896,10 @@ export default function WalkerClient({
                   setIsDemoWalk(false)
                   startWalk()
                 }}
-                className="w-full active:scale-[0.97] transition-transform"
+                className="w-full active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
                 style={{
-                  background: 'transparent',
-                  borderRadius: 16,
+                  background: '#fff',
+                  borderRadius: 20,
                   minHeight: 44,
                   border: '2px solid oklch(0.48 0.17 196)',
                   fontFamily: 'var(--font-fredoka)',
@@ -1876,6 +1907,7 @@ export default function WalkerClient({
                   fontWeight: 700,
                   color: 'oklch(0.48 0.17 196)',
                   cursor: 'pointer',
+                  boxShadow: CLAY_SHADOW_TEAL_OUTLINE,
                 }}
               >
                 Skip — start real walk
@@ -1927,7 +1959,7 @@ export default function WalkerClient({
             Practice complete! 🎉
           </h2>
           {/* What they accomplished */}
-          <div style={{ background: '#F0FDF4', border: '1.5px solid #86EFAC', borderRadius: 14, padding: '12px 16px', marginBottom: 24, width: '100%', maxWidth: 360 }}>
+          <div style={{ background: '#F0FDF4', border: '1.5px solid #86EFAC', borderRadius: 16, padding: '12px 16px', marginBottom: 24, width: '100%', maxWidth: 360, boxShadow: CLAY_SHADOW_GREEN_SUCCESS }}>
             <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 13, fontWeight: 700, color: '#166534', margin: '0 0 8px' }}>You practised:</p>
             {[
               { done: true, label: `Walked ${Math.round(distanceKm * 1000)}m with GPS tracking` },
@@ -1952,10 +1984,10 @@ export default function WalkerClient({
                 setIsDemoWalk(false)
                 setPhase('idle')
               }}
-              className="w-full active:scale-[0.97] transition-transform"
+              className="w-full active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
               style={{
                 background: '#FF8C52',
-                borderRadius: 16,
+                borderRadius: 20,
                 minHeight: 56,
                 border: 'none',
                 fontFamily: 'var(--font-fredoka)',
@@ -1963,6 +1995,7 @@ export default function WalkerClient({
                 fontWeight: 700,
                 color: '#fff',
                 cursor: 'pointer',
+                boxShadow: CLAY_SHADOW_ORANGE,
               }}
             >
               Start real walk now
@@ -2019,15 +2052,16 @@ export default function WalkerClient({
               loading={poopPhotoUploading}
               loadingText="Uploading photo…"
               onClick={() => poopPhotoInputRef.current?.click()}
-              style={{ padding: '14px', borderRadius: 16, background: '#FF8C52', fontSize: 16, marginBottom: 10 }}
+              className="focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+              style={{ padding: '14px', borderRadius: 20, background: '#FF8C52', fontSize: 16, marginBottom: 10, boxShadow: CLAY_SHADOW_ORANGE_SM }}
             >
               📷 Take photo
             </LoadingButton>
             <button
               onClick={handlePoopSkip}
               disabled={poopPhotoUploading}
-              className="disabled:opacity-60"
-              style={{ width: '100%', padding: '14px', borderRadius: 16, background: '#F3F4F6', color: '#6B7280', fontFamily: 'var(--font-nunito)', fontSize: 15, fontWeight: 700, border: 'none', cursor: poopPhotoUploading ? 'not-allowed' : 'pointer' }}>
+              className="disabled:opacity-60 active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+              style={{ width: '100%', padding: '14px', borderRadius: 20, background: '#F3F4F6', color: '#6B7280', fontFamily: 'var(--font-nunito)', fontSize: 15, fontWeight: 700, border: 'none', cursor: poopPhotoUploading ? 'not-allowed' : 'pointer', boxShadow: CLAY_SHADOW_NEUTRAL }}>
               Skip
             </button>
           </div>
@@ -2053,7 +2087,7 @@ export default function WalkerClient({
       {activeTab === 'walk' && (
         <>
           {/* Dog card */}
-          <div className="mx-5 mb-5 rounded-2xl bg-white border border-slate-100 px-4 py-4 flex items-center gap-4 shadow-sm">
+          <div className="mx-5 mb-5 rounded-[24px] px-4 py-4 flex items-center gap-4" style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
             <div className="w-14 h-14 rounded-full flex-shrink-0 overflow-hidden"
               style={{ background: '#FF8C52' }}>
               {activeDogPhoto ? (
@@ -2071,7 +2105,7 @@ export default function WalkerClient({
               {activeDogBreed && <p className="text-xs text-slate-400">{activeDogBreed}</p>}
             </div>
             {phase === 'walking' && (
-              <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1">
+              <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-3 py-1" style={{ boxShadow: CLAY_SHADOW_GREEN_SUCCESS }}>
                 <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                 <span className="text-xs font-bold text-green-700">{t.live}</span>
               </div>
@@ -2080,7 +2114,7 @@ export default function WalkerClient({
 
           {/* Health note */}
           {activeHealthNotes && (
-            <div className="mx-5 mb-4 rounded-2xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-start gap-2.5">
+            <div className="mx-5 mb-4 rounded-[20px] bg-amber-50 border border-amber-200 px-4 py-3 flex items-start gap-2.5" style={{ boxShadow: CLAY_SHADOW_AMBER }}>
               <span className="text-base flex-shrink-0 mt-0.5">⚠️</span>
               <p className="text-sm text-amber-800 font-medium"><strong>{t.healthNoteLabel}</strong> {activeHealthNotes}</p>
             </div>
@@ -2089,7 +2123,7 @@ export default function WalkerClient({
           {/* Don't-forget-today's-report nudge — only shown once the dog's usual
               walk window has clearly passed and nothing's been logged yet today. */}
           {showNoShowReminder && (
-            <div className="mx-5 mb-4 rounded-2xl bg-orange-50 border border-orange-200 px-4 py-3 flex items-start gap-2.5">
+            <div className="mx-5 mb-4 rounded-[20px] bg-orange-50 border border-orange-200 px-4 py-3 flex items-start gap-2.5" style={{ boxShadow: CLAY_SHADOW_ORANGE_BANNER }}>
               <span className="text-base flex-shrink-0 mt-0.5">🕐</span>
               <p className="text-sm font-medium" style={{ color: '#9A3412' }}>
                 Don&apos;t forget today&apos;s walk report for {activeDogName}!
@@ -2114,10 +2148,12 @@ export default function WalkerClient({
                       setSelectedToken(c.token)
                       setShowPicker(false)
                     }}
+                    className="active:scale-[0.98] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
                     style={{
-                      background: '#fff', borderRadius: 18, padding: '16px',
+                      background: '#fff', borderRadius: 24, padding: '16px',
                       border: `2px solid ${selectedToken === c.token ? 'oklch(0.48 0.17 196)' : '#E5E7EB'}`,
                       display: 'flex', alignItems: 'center', gap: 14, textAlign: 'left', cursor: 'pointer',
+                      boxShadow: CLAY_SHADOW_CREAM,
                     }}
                   >
                     {/* Dog photo */}
@@ -2157,8 +2193,8 @@ export default function WalkerClient({
               {/* First-time save notice */}
               {showSaveNotice && (
                 <div
-                  className="rounded-2xl px-4 py-4 flex gap-3 items-start"
-                  style={{ background: '#F0FDFA', border: '1.5px solid #99F6E4' }}
+                  className="rounded-[20px] px-4 py-4 flex gap-3 items-start"
+                  style={{ background: '#F0FDFA', border: '1.5px solid #99F6E4', boxShadow: CLAY_SHADOW_TEAL_ACCENT }}
                 >
                   <span className="text-xl flex-shrink-0 mt-0.5">💡</span>
                   <div className="flex-1 min-w-0">
@@ -2173,8 +2209,8 @@ export default function WalkerClient({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={dismissSaveNotice}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white"
-                      style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', textDecoration: 'none' }}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                      style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', textDecoration: 'none', boxShadow: CLAY_SHADOW_WHATSAPP }}
                     >
                       📲 Save my dashboard link
                     </a>
@@ -2194,8 +2230,8 @@ export default function WalkerClient({
                   not a scorecard. Only shown once they've actually built a streak. */}
               {walkerStreak >= 2 && (
                 <div
-                  className="rounded-2xl px-4 py-3 flex items-center gap-3"
-                  style={{ background: 'linear-gradient(135deg, #FFF3E0 0%, #FFE8CC 100%)', border: '1.5px solid #FFD8A8' }}
+                  className="rounded-[20px] px-4 py-3 flex items-center gap-3"
+                  style={{ background: 'linear-gradient(135deg, #FFF3E0 0%, #FFE8CC 100%)', border: '1.5px solid #FFD8A8', boxShadow: CLAY_SHADOW_ORANGE_BANNER }}
                 >
                   <span className="text-3xl leading-none">🔥</span>
                   <div>
@@ -2213,12 +2249,13 @@ export default function WalkerClient({
                 <div style={{
                   background: '#FFF7ED',
                   border: '1.5px solid #FED7AA',
-                  borderRadius: 14,
+                  borderRadius: 18,
                   padding: '12px 14px',
                   marginBottom: 16,
                   display: 'flex',
                   gap: 10,
                   alignItems: 'flex-start',
+                  boxShadow: CLAY_SHADOW_AMBER,
                 }}>
                   <span style={{ fontSize: 20, flexShrink: 0 }}>⚠️</span>
                   <div>
@@ -2234,7 +2271,7 @@ export default function WalkerClient({
               {careFocusKeys.filter(k => k !== 'normal' && CARE_FOCUS_CONFIG[k]).map(k => {
                 const cfg = CARE_FOCUS_CONFIG[k]
                 return (
-                  <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 14, padding: '12px 14px', marginBottom: 8 }}>
+                  <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 16, padding: '12px 14px', marginBottom: 8, boxShadow: clayShadow(cfg.shadowTint, { outerOpacity: 0.16, insetOpacity: 0.12 }) }}>
                     <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: cfg.color, margin: '0 0 4px' }}>
                       {cfg.emoji} {cfg.label}
                     </p>
@@ -2253,8 +2290,8 @@ export default function WalkerClient({
                   setIsDemoWalk(false)
                   startWalk()
                 }}
-                className="rounded-2xl text-2xl shadow-lg"
-                style={{ minHeight: 68, background: 'linear-gradient(135deg, #FF8C52 0%, #F07030 100%)', fontSize: 22 }}
+                className="rounded-[24px] text-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                style={{ minHeight: 68, background: 'linear-gradient(135deg, #FF8C52 0%, #F07030 100%)', fontSize: 22, boxShadow: CLAY_SHADOW_ORANGE }}
               >
                 {t.startWalk}
               </LoadingButton>
@@ -2282,8 +2319,8 @@ export default function WalkerClient({
               {/* First-time guide card — only shown before any walks are logged */}
               {logs.length === 0 && !logsLoading && (
                 <div
-                  className="rounded-2xl px-5 py-5 mt-2"
-                  style={{ background: '#FFF3E0' }}
+                  className="rounded-[24px] px-5 py-5 mt-2"
+                  style={{ background: '#FFF3E0', boxShadow: CLAY_SHADOW_ORANGE_BANNER }}
                 >
                   <p
                     className="font-bold text-[#0A2F35] text-base mb-4"
@@ -2355,14 +2392,14 @@ export default function WalkerClient({
                 {/* Back button — floating top-left */}
                 <button
                   onClick={() => setPhase('idle')}
-                  className="absolute top-4 left-4 z-10 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white shadow-md text-gray-700 active:opacity-60 transition-opacity"
-                  style={{ fontFamily: 'var(--font-nunito)' }}
+                  className="absolute top-4 left-4 z-10 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white text-gray-700 active:opacity-60 active:scale-[0.97] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                  style={{ fontFamily: 'var(--font-nunito)', boxShadow: CLAY_SHADOW_CREAM }}
                 >
                   ← Back
                 </button>
 
                 {/* Poop/pee live counts — floating top-right */}
-                <div className="absolute top-4 right-4 z-10 flex gap-2 bg-white bg-opacity-90 rounded-full px-3 py-1.5 shadow-md">
+                <div className="absolute top-4 right-4 z-10 flex gap-2 bg-white bg-opacity-90 rounded-full px-3 py-1.5" style={{ boxShadow: CLAY_SHADOW_CREAM }}>
                   <span className="text-sm font-bold text-gray-700">💩 {livePoopCount}</span>
                   <span className="text-slate-300">·</span>
                   <span className="text-sm font-bold text-gray-700">💧 {livePeeCount}</span>
@@ -2387,8 +2424,8 @@ export default function WalkerClient({
 
                 {/* GPS error overlay */}
                 {gpsError && (
-                  <div className="absolute top-14 left-4 right-4 z-10 px-3 py-2 rounded-xl text-xs text-amber-800 text-center"
-                    style={{ background: '#FFFBEB', border: '1px solid #FED7AA' }}>
+                  <div className="absolute top-14 left-4 right-4 z-10 px-3 py-2 rounded-2xl text-xs text-amber-800 text-center"
+                    style={{ background: '#FFFBEB', border: '1px solid #FED7AA', boxShadow: CLAY_SHADOW_AMBER }}>
                     ⚠️ {gpsError}
                   </div>
                 )}
@@ -2408,7 +2445,7 @@ export default function WalkerClient({
 
                 {/* PRACTICE banner */}
                 {isDemoWalk && (
-                  <div style={{ position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', zIndex: 20, background: '#FF8C52', borderRadius: 100, padding: '4px 14px' }}>
+                  <div style={{ position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', zIndex: 20, background: '#FF8C52', borderRadius: 100, padding: '4px 14px', boxShadow: CLAY_SHADOW_ORANGE_SM }}>
                     <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 12, fontWeight: 700, color: '#fff', margin: 0 }}>PRACTICE</p>
                   </div>
                 )}
@@ -2420,7 +2457,7 @@ export default function WalkerClient({
                 {careFocusKeys.filter(k => k !== 'normal' && CARE_FOCUS_CONFIG[k]).map(k => {
                   const cfg = CARE_FOCUS_CONFIG[k]
                   return (
-                    <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 14, padding: '12px 14px', marginBottom: 8 }}>
+                    <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 16, padding: '12px 14px', marginBottom: 8, boxShadow: clayShadow(cfg.shadowTint, { outerOpacity: 0.16, insetOpacity: 0.12 }) }}>
                       <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: cfg.color, margin: '0 0 4px' }}>
                         {cfg.emoji} {cfg.label}
                       </p>
@@ -2436,11 +2473,12 @@ export default function WalkerClient({
                   <div style={{
                     background: '#FFFBEB',
                     border: '2px solid #FCD34D',
-                    borderRadius: 14,
+                    borderRadius: 18,
                     padding: '10px 14px',
                     display: 'flex',
                     gap: 10,
                     alignItems: 'flex-start',
+                    boxShadow: CLAY_SHADOW_AMBER,
                   }}>
                     <span style={{ fontSize: 20, flexShrink: 0 }}>⚠️</span>
                     <div>
@@ -2481,7 +2519,7 @@ export default function WalkerClient({
                         ))}
                       </div>
                       {/* Active hint */}
-                      <div style={{ background: '#fff', border: `2px solid ${hint.border}`, borderRadius: 14, padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                      <div style={{ background: '#fff', border: `2px solid ${hint.border}`, borderRadius: 18, padding: '10px 14px', display: 'flex', gap: 10, alignItems: 'flex-start', boxShadow: CLAY_SHADOW_CREAM }}>
                         <span style={{ fontSize: 20, flexShrink: 0 }}>{hint.icon}</span>
                         <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: hint.color, margin: 0, lineHeight: 1.4 }}>
                           {demoNudge ?? hint.text}
@@ -2523,8 +2561,8 @@ export default function WalkerClient({
 
                 {/* Keep screen open banner — real walks only */}
                 {!isDemoWalk && (
-                <div className="rounded-xl px-3 py-2 flex items-center gap-2"
-                  style={{ background: 'oklch(0.97 0.02 196)', border: '1px solid oklch(0.88 0.06 196)' }}>
+                <div className="rounded-2xl px-3 py-2 flex items-center gap-2"
+                  style={{ background: 'oklch(0.97 0.02 196)', border: '1px solid oklch(0.88 0.06 196)', boxShadow: CLAY_SHADOW_TEAL_ACCENT }}>
                   <span className="text-base flex-shrink-0">📱</span>
                   <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: 'oklch(0.40 0.17 196)', margin: 0, fontWeight: 600 }}>
                     Keep this screen open during the walk to track GPS
@@ -2544,8 +2582,8 @@ export default function WalkerClient({
                       setTimeout(() => setPeeTapLocked(false), 700)
                     }}
                     disabled={peeTapLocked}
-                    className="rounded-2xl border-2 border-blue-200 bg-blue-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform disabled:opacity-70"
-                    style={{ minHeight: 80 }}
+                    className="rounded-[20px] border-2 border-blue-200 bg-blue-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform disabled:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                    style={{ minHeight: 80, boxShadow: CLAY_SHADOW_BLUE }}
                   >
                     <span className="text-3xl">{peeTapLocked ? '✅' : '💧'}</span>
                     <span className="text-sm font-bold text-blue-700" style={{ fontFamily: 'var(--font-fredoka)' }}>
@@ -2572,8 +2610,13 @@ export default function WalkerClient({
                         setTimeout(() => setPoopTapLocked(false), 700)
                       }}
                       disabled={poopTapLocked}
-                      className="rounded-2xl border-2 border-amber-200 bg-amber-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform disabled:opacity-70"
-                      style={{ minHeight: 80, boxShadow: (careFocusKeys.includes('stomach') || careFocusKeys.includes('recovery')) ? '0 0 0 3px rgba(255,140,82,0.4)' : undefined }}
+                      className="rounded-[20px] border-2 border-amber-200 bg-amber-50 flex flex-col items-center justify-center gap-1 active:scale-[0.96] transition-transform disabled:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                      style={{
+                        minHeight: 80,
+                        boxShadow: (careFocusKeys.includes('stomach') || careFocusKeys.includes('recovery'))
+                          ? `${CLAY_SHADOW_AMBER}, 0 0 0 3px rgba(255,140,82,0.4)`
+                          : CLAY_SHADOW_AMBER,
+                      }}
                     >
                       <span className="text-3xl">{poopTapLocked ? '✅' : '💩'}</span>
                       <span className="text-sm font-bold text-amber-700" style={{ fontFamily: 'var(--font-fredoka)' }}>
@@ -2609,7 +2652,7 @@ export default function WalkerClient({
                 {/* End Walk button */}
                 <div className="mt-auto">
                   {isDemoWalk && demoStep < 5 ? (
-                    <div style={{ background: '#F1F5F9', borderRadius: 18, padding: '14px 16px', textAlign: 'center' }}>
+                    <div style={{ background: '#F1F5F9', borderRadius: 20, padding: '14px 16px', textAlign: 'center', boxShadow: CLAY_SHADOW_NEUTRAL }}>
                       <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', margin: 0, fontWeight: 600 }}>
                         Complete the steps above first · {Math.max(0, Math.round(200 - distanceKm * 1000))}m remaining
                       </p>
@@ -2629,8 +2672,8 @@ export default function WalkerClient({
                           setEndingWalk(false)
                         }
                       }}
-                      className="rounded-2xl text-xl shadow-md"
-                      style={{ minHeight: 56, background: isDemoWalk ? '#FF8C52' : '#DC2626', fontSize: 20 }}
+                      className="rounded-[20px] text-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                      style={{ minHeight: 56, background: isDemoWalk ? '#FF8C52' : '#DC2626', fontSize: 20, boxShadow: isDemoWalk ? CLAY_SHADOW_ORANGE : CLAY_SHADOW_RED }}
                     >
                       {isDemoWalk ? t.endPracticeWalk : t.endWalk}
                     </LoadingButton>
@@ -2649,7 +2692,7 @@ export default function WalkerClient({
                   const finalPoopCount = walkEvents.filter(e => e.type === 'poop').length
                   const finalPeeCount = walkEvents.filter(e => e.type === 'pee').length
                   return (
-                    <div style={{ background: 'oklch(0.94 0.06 196)', borderRadius: 16, padding: '14px 16px' }}>
+                    <div style={{ background: 'oklch(0.94 0.06 196)', borderRadius: 24, padding: '14px 16px', boxShadow: CLAY_SHADOW_TEAL_ACCENT }}>
                       <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: 'oklch(0.40 0.17 196)', margin: '0 0 6px' }}>
                         This walk summary
                       </p>
@@ -2691,8 +2734,8 @@ export default function WalkerClient({
                       type="button"
                       onClick={() => photoInputRef.current?.click()}
                       disabled={uploading}
-                      className="w-full border-2 border-dashed rounded-xl py-6 flex flex-col items-center gap-2 transition-colors disabled:opacity-60"
-                      style={{ borderColor: 'oklch(0.70 0.13 196)', color: 'oklch(0.48 0.17 196)' }}
+                      className="w-full border-2 border-dashed rounded-2xl py-6 flex flex-col items-center gap-2 transition-colors disabled:opacity-60 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                      style={{ borderColor: 'oklch(0.70 0.13 196)', color: 'oklch(0.48 0.17 196)', background: '#fff', boxShadow: CLAY_SHADOW_TEAL_ACCENT }}
                     >
                       <span className="text-3xl">{uploading ? '⏳' : '📷'}</span>
                       <span className="text-sm font-bold">{uploading ? t.uploadingPhoto : t.tapToTakePhoto}</span>
@@ -2709,11 +2752,12 @@ export default function WalkerClient({
                     {MOOD_OPTIONS.map((opt) => (
                       <button key={opt.value} type="button"
                         onClick={() => setMood(mood === opt.value ? '' : opt.value)}
-                        className="flex flex-col items-center gap-1 py-3 rounded-2xl border-2 transition-all active:scale-[0.97]"
+                        className="flex flex-col items-center gap-1 py-3 rounded-2xl border-2 transition-all active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
                         style={{
                           borderColor: mood === opt.value ? 'oklch(0.48 0.17 196)' : '#E2E8F0',
                           background: mood === opt.value ? 'oklch(0.95 0.04 196)' : '#fff',
                           color: mood === opt.value ? 'oklch(0.40 0.17 196)' : '#64748B',
+                          boxShadow: mood === opt.value ? CLAY_SHADOW_TEAL_ACCENT : undefined,
                         }}>
                         <span className="text-2xl">{opt.emoji}</span>
                         <span className="text-xs font-bold" style={{ fontFamily: 'var(--font-fredoka)' }}>{moodLabel(t, opt.value)}</span>
@@ -2733,7 +2777,7 @@ export default function WalkerClient({
                 </div>
 
                 {submitError && (
-                  <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 flex flex-col gap-2">
+                  <div className="rounded-2xl bg-red-50 border border-red-200 px-4 py-3 flex flex-col gap-2" style={{ boxShadow: CLAY_SHADOW_RED_BANNER }}>
                     <p className="text-sm text-red-700">{submitError}</p>
                     <button
                       type="button"
@@ -2750,8 +2794,8 @@ export default function WalkerClient({
                   type="submit"
                   loading={submitting}
                   loadingText={t.sendingReport}
-                  className="rounded-2xl text-lg shadow-md"
-                  style={{ minHeight: 56, background: '#FF8C52' }}
+                  className="rounded-[20px] text-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                  style={{ minHeight: 56, background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE }}
                 >
                   {t.sendToOwner(dogName)}
                 </LoadingButton>
@@ -2804,8 +2848,8 @@ export default function WalkerClient({
                     href={parentWaLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-white text-base shadow-md"
-                    style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', fontSize: '17px' }}
+                    className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl font-bold text-white text-base focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                    style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', fontSize: '17px', boxShadow: CLAY_SHADOW_WHATSAPP }}
                   >
                     {t.sendReportButton(successDog)}
                   </a>
@@ -2820,8 +2864,8 @@ export default function WalkerClient({
                     // Re-show picker so walker chooses the next dog
                     if (connections.length > 1) setShowPicker(true)
                   }}
-                  className="w-full py-4 rounded-2xl font-bold text-lg text-white active:scale-[0.97] transition-transform"
-                  style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)' }}
+                  className="w-full py-4 rounded-2xl font-bold text-lg text-white active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                  style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)', boxShadow: CLAY_SHADOW_ORANGE }}
                 >
                   {t.logAnotherWalk}
                 </button>
@@ -2836,7 +2880,7 @@ export default function WalkerClient({
                   )
                   return (
                     <div className="rounded-2xl border-2 px-4 py-4 text-center"
-                      style={{ borderColor: 'oklch(0.88 0.06 196)', background: 'oklch(0.97 0.02 196)' }}>
+                      style={{ borderColor: 'oklch(0.88 0.06 196)', background: 'oklch(0.97 0.02 196)', boxShadow: CLAY_SHADOW_TEAL_ACCENT }}>
                       <p className="text-xs font-bold mb-2" style={{ color: 'oklch(0.40 0.17 196)', fontFamily: 'var(--font-fredoka)' }}>
                         📌 Save your dashboard link
                       </p>
@@ -2847,8 +2891,8 @@ export default function WalkerClient({
                         href={`https://wa.me/?text=${waText}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white text-sm"
-                        style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)' }}
+                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                        style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', boxShadow: CLAY_SHADOW_WHATSAPP }}
                       >
                         📲 Send link to myself on WhatsApp
                       </a>
@@ -2863,8 +2907,8 @@ export default function WalkerClient({
                     setParentWaLink(null)
                     if (connections.length > 1) setShowPicker(true)
                   }}
-                  className="w-full py-4 rounded-2xl font-bold text-lg text-white"
-                  style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)' }}
+                  className="w-full py-4 rounded-2xl font-bold text-lg text-white active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                  style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)', boxShadow: CLAY_SHADOW_ORANGE }}
                 >
                   {t.logAnotherWalk} →
                 </button>
@@ -2889,7 +2933,7 @@ export default function WalkerClient({
                   ))}
                 </div>
               ) : logs.length === 0 ? (
-                <div className="bg-white rounded-2xl px-5 py-8 text-center" style={{ border: '1px solid rgba(226,220,200,0.6)' }}>
+                <div className="bg-white rounded-[24px] px-5 py-8 text-center" style={{ boxShadow: CLAY_SHADOW_CREAM }}>
                   <p className="text-3xl mb-2">🐾</p>
                   <p className="text-sm text-slate-500" style={{ fontFamily: 'var(--font-nunito)' }}>
                     {t.noWalksYet(dogName)}
@@ -2904,7 +2948,7 @@ export default function WalkerClient({
                     if (log.poop_count > 0) statParts.push(`💩 ${log.poop_count} potty`)
                     if (log.pee_count > 0) statParts.push(`💧 ${log.pee_count} toilet`)
                     return (
-                      <div key={log.id} className="bg-white rounded-2xl px-4 py-4" style={{ border: '1px solid rgba(226,220,200,0.6)' }}>
+                      <div key={log.id} className="bg-white rounded-[24px] px-4 py-4" style={{ boxShadow: CLAY_SHADOW_CREAM }}>
                         {/* Title row: duration left, date right */}
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: '#0A2F35', margin: 0 }}>
@@ -2937,7 +2981,7 @@ export default function WalkerClient({
               )}
 
               {/* Bookmark hint */}
-              <div className="mt-6 rounded-2xl border px-4 py-3 text-center" style={{ background: 'rgba(10,47,53,0.05)', borderColor: 'rgba(10,47,53,0.10)' }}>
+              <div className="mt-6 rounded-2xl border px-4 py-3 text-center" style={{ background: 'rgba(10,47,53,0.05)', borderColor: 'rgba(10,47,53,0.10)', boxShadow: CLAY_SHADOW_NEUTRAL }}>
                 <p className="text-xs font-medium" style={{ color: '#0D3D45' }}>📌 Bookmark this page — it&apos;s your permanent walk log</p>
               </div>
             </div>

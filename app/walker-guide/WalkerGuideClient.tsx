@@ -3,6 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { CLAY_SHADOW_CREAM, CLAY_SHADOW_ORANGE, clayShadow } from '@/lib/clayShadows'
+
+// This is a static, mostly-instructional page (not used mid-walk), so unlike
+// WalkerClient.tsx we can afford the full-size shared tokens throughout —
+// no mobile-performance blur-radius caveat here.
+const CLAY_SHADOW_TEAL_ACCENT = clayShadow('15,118,110', { outerOpacity: 0.26, insetOpacity: 0.18 })
+const CLAY_SHADOW_GREEN_SUCCESS = clayShadow('30,120,60', { outerOpacity: 0.22, insetOpacity: 0.16 })
 
 type Lang = 'en' | 'hi' | 'mr'
 
@@ -133,14 +140,14 @@ export default function WalkerGuideClient({ token }: { token?: string } = {}) {
             <Link
               href={`/walker/${token}`}
               aria-label="Go back"
-              className="flex items-center justify-center flex-shrink-0"
+              className="flex items-center justify-center flex-shrink-0 active:scale-[0.94] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
               style={{
                 width: 36,
                 height: 36,
                 borderRadius: '50%',
                 background: '#ffffff',
                 color: '#0A2F35',
-                boxShadow: '0 1px 0 rgba(0,0,0,0.05), 0 4px 12px -2px rgba(10,47,53,0.12)',
+                boxShadow: CLAY_SHADOW_CREAM,
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -152,14 +159,14 @@ export default function WalkerGuideClient({ token }: { token?: string } = {}) {
               type="button"
               onClick={() => router.back()}
               aria-label="Go back"
-              className="flex items-center justify-center flex-shrink-0"
+              className="flex items-center justify-center flex-shrink-0 active:scale-[0.94] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
               style={{
                 width: 36,
                 height: 36,
                 borderRadius: '50%',
                 background: '#ffffff',
                 color: '#0A2F35',
-                boxShadow: '0 1px 0 rgba(0,0,0,0.05), 0 4px 12px -2px rgba(10,47,53,0.12)',
+                boxShadow: CLAY_SHADOW_CREAM,
               }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -184,12 +191,12 @@ export default function WalkerGuideClient({ token }: { token?: string } = {}) {
                 key={l}
                 type="button"
                 onClick={() => setLang(l)}
-                className="px-2.5 py-1 rounded-full text-xs font-bold transition-all"
+                className="px-2.5 py-1 rounded-full text-xs font-bold transition-all active:scale-[0.94] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
                 style={{
                   background: lang === l ? 'oklch(0.48 0.17 196)' : 'transparent',
                   color: lang === l ? '#ffffff' : '#4B5563',
                   fontFamily: 'var(--font-nunito)',
-                  boxShadow: lang === l ? '0 2px 6px rgba(10,47,53,0.18)' : 'none',
+                  boxShadow: lang === l ? CLAY_SHADOW_TEAL_ACCENT : 'none',
                   transitionTimingFunction: 'cubic-bezier(0.25, 1, 0.5, 1)',
                 }}
               >
@@ -215,8 +222,8 @@ export default function WalkerGuideClient({ token }: { token?: string } = {}) {
 
         {/* Share card — framed for the parent use case */}
         <div
-          className="rounded-2xl p-4 flex items-center gap-3"
-          style={{ background: '#ffffff', boxShadow: '0 4px 14px rgba(0,0,0,0.07)' }}
+          className="rounded-[28px] p-4 flex items-center gap-3"
+          style={{ background: '#ffffff', boxShadow: CLAY_SHADOW_CREAM }}
         >
           <div
             className="flex items-center justify-center flex-shrink-0"
@@ -233,12 +240,13 @@ export default function WalkerGuideClient({ token }: { token?: string } = {}) {
           <button
             type="button"
             onClick={handleShare}
-            className="flex-shrink-0 px-3.5 py-2 rounded-full text-xs font-bold transition-transform active:scale-95"
+            className="flex-shrink-0 px-3.5 py-2 rounded-full text-xs font-bold transition-transform active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
             style={{
               background: copied ? '#22c55e' : '#FF8C52',
               color: '#ffffff',
               fontFamily: 'var(--font-nunito)',
               transitionTimingFunction: 'cubic-bezier(0.25, 1, 0.5, 1)',
+              boxShadow: copied ? CLAY_SHADOW_GREEN_SUCCESS : CLAY_SHADOW_ORANGE,
             }}
           >
             {copied ? t.copiedButton : t.shareButton}
@@ -249,7 +257,8 @@ export default function WalkerGuideClient({ token }: { token?: string } = {}) {
         {STEPS.map((step, i) => (
           <div
             key={i}
-            className="bg-white rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.07)] p-5 flex gap-4 items-start"
+            className="bg-white rounded-[28px] p-5 flex gap-4 items-start"
+            style={{ boxShadow: CLAY_SHADOW_CREAM }}
           >
             {/* Step number pill */}
             <div className="flex flex-col items-center gap-2 flex-shrink-0">
@@ -284,8 +293,8 @@ export default function WalkerGuideClient({ token }: { token?: string } = {}) {
 
         {/* CTA */}
         <div
-          className="rounded-2xl p-5 text-center mt-2"
-          style={{ background: 'oklch(0.48 0.17 196)', color: '#ffffff' }}
+          className="rounded-[28px] p-5 text-center mt-2"
+          style={{ background: 'oklch(0.48 0.17 196)', color: '#ffffff', boxShadow: CLAY_SHADOW_TEAL_ACCENT }}
         >
           <p className="text-lg font-bold mb-1" style={{ fontFamily: 'var(--font-fredoka)' }}>
             {t.ctaTitle}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
+import { CLAY_SHADOW_ORANGE_SM } from '@/lib/clayShadows'
 
 export default function AuthNavItem() {
   const [user, setUser] = useState<User | null>(null)
@@ -75,11 +76,7 @@ export default function AuthNavItem() {
         background: 'linear-gradient(155deg,#FF8C52,#F56B22)',
         color: '#451A03',
         fontFamily: 'var(--font-nunito)',
-        boxShadow: [
-          'inset 0 1.5px 0 rgba(255,255,255,0.45)',
-          'inset 0 -2px 0 rgba(175,65,10,0.25)',
-          '0 4px 12px rgba(245,107,34,0.32)',
-        ].join(', '),
+        boxShadow: CLAY_SHADOW_ORANGE_SM,
       }}
     >
       Sign in

@@ -11,6 +11,7 @@ import {
   FileText, Share2, MessageCircle, Zap, Shield,
   PawPrint as LucidePaw, Sparkles, Bone,
 } from 'lucide-react'
+import { CLAY_SHADOW_TEAL_OUTLINE } from '@/lib/clayShadows'
 
 // ─── Tokens ──────────────────────────────────────────────────────────────────
 const EASE_EXP = [0.16, 1, 0.3, 1] as const
@@ -967,11 +968,7 @@ export default function LandingPage() {
               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '13px',
               borderRadius: 20, background: '#fff', color: C.teal, fontFamily: 'var(--font-nunito)', fontSize: 14, fontWeight: 700, textDecoration: 'none',
               border: `1.5px solid ${C.teal}`,
-              boxShadow: [
-                'inset 0 1.5px 0 rgba(255,255,255,0.9)',
-                'inset 0 -2px 0 rgba(10,47,53,0.05)',
-                '0 4px 12px rgba(10,47,53,0.10)',
-              ].join(', '),
+              boxShadow: CLAY_SHADOW_TEAL_OUTLINE,
             }}>
             See pricing
           </Link>

@@ -9,6 +9,7 @@ import { PawPrint, Sparkles } from 'lucide-react'
 import ParentBottomNav from '@/components/ParentBottomNav'
 import { LoadingButton } from '@/components/LoadingButton'
 import { useRazorpayCheckout } from '@/lib/useRazorpayCheckout'
+import { CLAY_SHADOW_CREAM, CLAY_SHADOW_TEAL, CLAY_SHADOW_ORANGE } from '@/lib/clayShadows'
 
 const SPRING = { type: 'spring', duration: 0.5, bounce: 0.3 } as const
 const AUTO_REDIRECT_SECONDS = 5
@@ -64,32 +65,6 @@ const FAQ = [
     a: 'Yes — cancel before your next billing date and you will not be charged again. Your reports remain visible until your current paid period ends.',
   },
 ]
-
-// 4-layer claymorphism shadow — cream cards
-const CLAY_SHADOW_CREAM = [
-  'inset 0 2px 0 rgba(255,255,255,0.95)',
-  'inset 0 -3px 0 rgba(0,0,0,0.10)',
-  '0 1px 0 rgba(0,0,0,0.06)',
-  '0 8px 24px -4px rgba(10,47,53,0.14)',
-  '0 32px 64px -12px rgba(10,47,53,0.10)',
-].join(', ')
-
-// 4-layer claymorphism shadow — teal cards
-const CLAY_SHADOW_TEAL = [
-  'inset 0 2px 0 rgba(255,255,255,0.18)',
-  'inset 0 -4px 0 rgba(0,0,0,0.28)',
-  '0 1px 0 rgba(0,0,0,0.12)',
-  '0 12px 32px -4px rgba(10,47,53,0.40)',
-  '0 40px 80px -16px rgba(10,47,53,0.30)',
-].join(', ')
-
-// Orange CTA shadow
-const CLAY_SHADOW_ORANGE = [
-  'inset 0 2px 0 rgba(255,200,120,0.60)',
-  'inset 0 -3px 0 rgba(180,60,0,0.25)',
-  '0 4px 14px rgba(255,140,82,0.45)',
-  '0 12px 28px rgba(255,140,82,0.20)',
-].join(', ')
 
 export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, trialStatus = 'no_trial', trialDaysRemaining, hasEverPaid = false, firstDogId, walkerToken, walkerName, walkerPhone, dogName, justPaid = false }: Props) {
   const [openFaq, setOpenFaq] = useState<number | null>(null)

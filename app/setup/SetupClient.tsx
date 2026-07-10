@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import AuthModal from '@/components/AuthModal'
 import { LoadingButton } from '@/components/LoadingButton'
 import { trackEvent } from '@/lib/analytics'
+import { CLAY_SHADOW_CREAM, CLAY_SHADOW_ORANGE, CLAY_SHADOW_ORANGE_SM, clayShadow } from '@/lib/clayShadows'
 
 interface Props {
   user: { id: string; fullName: string | null } | null
@@ -50,6 +51,33 @@ const WALK_TIME_OPTIONS = [
 // Teal brand color
 const TEAL = 'oklch(0.48 0.17 196)'
 const TEAL_LIGHT = 'oklch(0.95 0.04 196)'
+
+// Teal-tinted rgb (matches the dark teal #0A2F35 used across the app) — used
+// as the hue-matched tint for selectable clay chips below.
+const TEAL_TINT_RGB = '10,47,53'
+
+// Raised, unselected chip: light teal-tinted outer shadow + light sheen.
+const CLAY_CHIP_RAISED = clayShadow(TEAL_TINT_RGB, { outerOpacity: 0.10, insetOpacity: 0.08 })
+
+// Selected chip: intentionally "pressed in" (inset order reversed — dark on
+// top, light on bottom) so selection reads as a physical press, not just a
+// color change.
+const CLAY_CHIP_PRESSED = [
+  'inset 0 3px 6px rgba(10,47,53,0.20)',
+  'inset 0 -1px 0 rgba(255,255,255,0.55)',
+].join(', ')
+
+// Recessed "carved into clay" look for text inputs — the reverse of a raised
+// card. Subtle on purpose so dense forms don't look muddy.
+const CLAY_INPUT_RECESSED = [
+  'inset 0 2px 4px rgba(10,47,53,0.07)',
+  'inset 0 -1px 0 rgba(255,255,255,0.7)',
+].join(', ')
+const CLAY_INPUT_RECESSED_FOCUS = [
+  'inset 0 2px 4px rgba(10,47,53,0.07)',
+  'inset 0 -1px 0 rgba(255,255,255,0.7)',
+  '0 0 0 3px rgba(255,140,82,0.18)',
+].join(', ')
 
 export default function SetupClient({ user, justPaid, recover }: Props) {
   const router = useRouter()
@@ -308,15 +336,17 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
 
   const inputStyle: React.CSSProperties = {
     padding: '13px 16px',
-    borderRadius: 12,
+    borderRadius: 16,
     border: '2px solid #E5E7EB',
     fontSize: 16,
     fontFamily: 'var(--font-nunito)',
     color: '#0A2F35',
     outline: 'none',
-    background: '#fff',
+    background: '#FFFDF8',
+    boxShadow: CLAY_INPUT_RECESSED,
     width: '100%',
     boxSizing: 'border-box',
+    transition: 'box-shadow 0.15s, border-color 0.15s',
   }
 
   const labelStyle: React.CSSProperties = {
@@ -329,7 +359,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
     background: '#FF8C52',
     color: '#fff',
     border: 'none',
-    borderRadius: 14,
+    borderRadius: 18,
     padding: '16px 24px',
     fontSize: 17,
     fontWeight: 700,
@@ -341,7 +371,8 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
     gap: 8,
     minHeight: 56,
     width: '100%',
-    transition: 'background 0.15s',
+    boxShadow: CLAY_SHADOW_ORANGE,
+    transition: 'background 0.15s, transform 0.12s',
   }
 
   // ─── SCREEN 0: Welcome ───────────────────────────────────────────────────
@@ -371,9 +402,10 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
 
           {/* Three promise bullets */}
           <div style={{
-            background: '#fff',
-            borderRadius: 18,
+            background: '#FFFDF8',
+            borderRadius: 24,
             border: '1.5px solid #F3F4F6',
+            boxShadow: CLAY_SHADOW_CREAM,
             padding: '20px 24px',
             marginBottom: 32,
             display: 'flex',
@@ -396,12 +428,13 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
             <div style={{
               background: 'rgba(13,148,136,0.1)',
               border: '1.5px solid rgba(13,148,136,0.3)',
-              borderRadius: 14,
+              borderRadius: 16,
               padding: '12px 16px',
               marginBottom: 20,
               textAlign: 'center',
               fontSize: 14,
               color: '#0A2F35',
+              boxShadow: clayShadow('13,148,136', { outerOpacity: 0.16, insetOpacity: 0.10 }),
             }}>
               🎉 <strong>Payment successful!</strong> Now set up your dog.
             </div>
@@ -409,6 +442,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
 
           <button
             type="button"
+            className="clay-cta-btn"
             onClick={() => setStep(1)}
             style={ctaStyle}
             onMouseEnter={e => { e.currentTarget.style.background = '#e87a40' }}
@@ -421,7 +455,12 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
             Takes about 60 seconds
           </p>
         </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <style>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+          .clay-cta-btn { transition: transform 120ms ease, background 0.15s; }
+          .clay-cta-btn:active { transform: scale(0.97); }
+          .clay-cta-btn:focus-visible { outline: 3px solid #0A2F35; outline-offset: 3px; }
+        `}</style>
       </div>
     )
   }
@@ -540,8 +579,8 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
                 placeholder="Bruno, Max, Coco..."
                 autoFocus
                 style={inputStyle}
-                onFocus={e => (e.target.style.borderColor = '#FF8C52')}
-                onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+                onFocus={e => { e.target.style.borderColor = '#FF8C52'; e.target.style.boxShadow = CLAY_INPUT_RECESSED_FOCUS }}
+                onBlur={e => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = CLAY_INPUT_RECESSED }}
               />
             </div>
 
@@ -555,12 +594,14 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
                     <button
                       key={opt.key}
                       type="button"
+                      className="clay-toggle-chip"
                       onClick={() => toggleCareFocus(opt.key)}
                       style={{
                         padding: '12px 10px',
-                        borderRadius: 12,
+                        borderRadius: 18,
                         border: `2px solid ${selected ? TEAL : '#E5E7EB'}`,
-                        background: selected ? TEAL_LIGHT : '#fff',
+                        background: selected ? TEAL_LIGHT : '#FFFDF8',
+                        boxShadow: selected ? CLAY_CHIP_PRESSED : CLAY_CHIP_RAISED,
                         cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'column',
@@ -597,6 +638,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
                     <button
                       key={chip}
                       type="button"
+                      className="clay-toggle-chip"
                       onClick={() => toggleChip(chip)}
                       style={{
                         padding: '6px 12px',
@@ -604,7 +646,8 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
                         fontSize: 12,
                         fontWeight: 600,
                         border: `1.5px solid ${active ? '#FF8C52' : '#E5E7EB'}`,
-                        background: active ? '#FFF0E8' : '#fff',
+                        background: active ? '#FFF0E8' : '#FFFDF8',
+                        boxShadow: active ? CLAY_SHADOW_ORANGE_SM : CLAY_CHIP_RAISED,
                         color: active ? '#C05A20' : '#6B7280',
                         cursor: 'pointer',
                         fontFamily: 'var(--font-nunito)',
@@ -623,19 +666,21 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
                 rows={2}
                 style={{
                   padding: '12px 14px',
-                  borderRadius: 12,
+                  borderRadius: 16,
                   border: '2px solid #E5E7EB',
                   fontSize: 14,
                   fontFamily: 'var(--font-nunito)',
                   color: '#0A2F35',
                   outline: 'none',
                   resize: 'none',
-                  background: '#fff',
+                  background: '#FFFDF8',
+                  boxShadow: CLAY_INPUT_RECESSED,
                   boxSizing: 'border-box',
                   width: '100%',
+                  transition: 'box-shadow 0.15s, border-color 0.15s',
                 }}
-                onFocus={e => (e.target.style.borderColor = '#FF8C52')}
-                onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+                onFocus={e => { e.target.style.borderColor = '#FF8C52'; e.target.style.boxShadow = CLAY_INPUT_RECESSED_FOCUS }}
+                onBlur={e => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = CLAY_INPUT_RECESSED }}
               />
             </div>
 
@@ -651,8 +696,8 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
                 onChange={e => setWalkingInstructions(e.target.value)}
                 placeholder="e.g. Offer water after walk · Stay in Juhu lanes · Max 30 min"
                 style={inputStyle}
-                onFocus={e => (e.target.style.borderColor = '#FF8C52')}
-                onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+                onFocus={e => { e.target.style.borderColor = '#FF8C52'; e.target.style.boxShadow = CLAY_INPUT_RECESSED_FOCUS }}
+                onBlur={e => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = CLAY_INPUT_RECESSED }}
               />
             </div>
 
@@ -669,12 +714,14 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
                     <button
                       key={opt.key}
                       type="button"
+                      className="clay-toggle-chip"
                       onClick={() => toggleWalkTime(opt.key)}
                       style={{
                         padding: '12px 10px',
-                        borderRadius: 12,
+                        borderRadius: 18,
                         border: `2px solid ${selected ? TEAL : '#E5E7EB'}`,
-                        background: selected ? TEAL_LIGHT : '#fff',
+                        background: selected ? TEAL_LIGHT : '#FFFDF8',
+                        boxShadow: selected ? CLAY_CHIP_PRESSED : CLAY_CHIP_RAISED,
                         cursor: 'pointer',
                         display: 'flex',
                         flexDirection: 'column',
@@ -707,8 +754,9 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
                 border: '1px solid #FECACA',
                 color: '#DC2626',
                 padding: '12px 16px',
-                borderRadius: 10,
+                borderRadius: 16,
                 fontSize: 14,
+                boxShadow: clayShadow('185,28,28', { outerOpacity: 0.14, insetOpacity: 0.10 }),
               }}>
                 {error}
               </div>
@@ -717,6 +765,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
             {/* CTA */}
             <button
               type="button"
+              className="clay-cta-btn"
               onClick={handleStep1Continue}
               style={ctaStyle}
               onMouseEnter={e => { e.currentTarget.style.background = '#e87a40' }}
@@ -726,7 +775,15 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
             </button>
           </div>
         </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <style>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+          .clay-cta-btn { transition: transform 120ms ease, background 0.15s; }
+          .clay-cta-btn:active { transform: scale(0.97); }
+          .clay-cta-btn:focus-visible { outline: 3px solid #0A2F35; outline-offset: 3px; }
+          .clay-toggle-chip { transition: transform 120ms ease, all 0.15s; }
+          .clay-toggle-chip:active { transform: scale(0.97); }
+          .clay-toggle-chip:focus-visible { outline: 3px solid #0A2F35; outline-offset: 3px; }
+        `}</style>
       </div>
     )
   }
@@ -779,8 +836,8 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
               placeholder="Priya, Rohit, Ananya..."
               autoFocus
               style={inputStyle}
-              onFocus={e => (e.target.style.borderColor = '#FF8C52')}
-              onBlur={e => (e.target.style.borderColor = '#E5E7EB')}
+              onFocus={e => { e.target.style.borderColor = '#FF8C52'; e.target.style.boxShadow = CLAY_INPUT_RECESSED_FOCUS }}
+              onBlur={e => { e.target.style.borderColor = '#E5E7EB'; e.target.style.boxShadow = CLAY_INPUT_RECESSED }}
             />
           </div>
 
@@ -792,14 +849,18 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
             <p style={{ fontSize: 12, color: '#9CA3AF', margin: '0 0 6px' }}>
               Your walker&apos;s reports arrive here.
             </p>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              border: '2px solid #E5E7EB',
-              borderRadius: 12,
-              overflow: 'hidden',
-              background: '#fff',
-            }}
+            <div
+              className="clay-phone-wrap"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                border: '2px solid #E5E7EB',
+                borderRadius: 16,
+                overflow: 'hidden',
+                background: '#FFFDF8',
+                boxShadow: CLAY_INPUT_RECESSED,
+                transition: 'box-shadow 0.15s, border-color 0.15s',
+              }}
               onFocus={() => {}}
               onBlur={() => {}}
             >
@@ -842,8 +903,9 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
               border: '1px solid #FECACA',
               color: '#DC2626',
               padding: '12px 16px',
-              borderRadius: 10,
+              borderRadius: 16,
               fontSize: 14,
+              boxShadow: clayShadow('185,28,28', { outerOpacity: 0.14, insetOpacity: 0.10 }),
             }}>
               {error}
             </div>
@@ -866,7 +928,13 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
           )}
         </div>
       </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .clay-phone-wrap:focus-within {
+          border-color: #FF8C52;
+          box-shadow: inset 0 2px 4px rgba(10,47,53,0.07), inset 0 -1px 0 rgba(255,255,255,0.7), 0 0 0 3px rgba(255,140,82,0.18);
+        }
+      `}</style>
 
       <AuthModal
         open={authOpen}

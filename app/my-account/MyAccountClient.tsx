@@ -9,6 +9,7 @@ import ParentBottomNav from '@/components/ParentBottomNav'
 import { parseCareFocus } from '@/lib/careFocus'
 import { LoadingButton } from '@/components/LoadingButton'
 import { useRazorpayCheckout } from '@/lib/useRazorpayCheckout'
+import { CLAY_SHADOW_CREAM, CLAY_SHADOW_ORANGE, clayShadow } from '@/lib/clayShadows'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -102,10 +103,14 @@ function SectionDivider() {
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return (
     <div
-      className={`rounded-2xl p-4 ${className}`}
+      // Bumped from rounded-2xl (16px, borderline flat) to rounded-3xl (24px)
+      // and from a 2-layer shadow (highlight + single outer) to the shared
+      // 3-layer CLAY_SHADOW_CREAM token (adds the missing dark underside
+      // inset) — see @/lib/clayShadows for the recipe.
+      className={`rounded-3xl p-4 ${className}`}
       style={{
         background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
-        boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.85), 0 4px 16px rgba(15,45,50,0.07)',
+        boxShadow: CLAY_SHADOW_CREAM,
         border: '1px solid rgba(226,220,200,0.7)',
       }}
     >
@@ -130,6 +135,12 @@ function Toggle({
       aria-checked={checked}
       onClick={() => !disabled && onChange(!checked)}
       disabled={disabled}
+      // Track is a recessed groove, not a raised surface — so unlike cards/
+      // buttons its inset order is intentionally dark-on-top (the light
+      // hue-matched knob then "sits" inside it). Was a completely flat solid
+      // fill before; focus-visible was previously suppressed via outline:none
+      // with no replacement, which the clay recipe treats as a hard requirement.
+      className="active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[oklch(0.48_0.17_196)]"
       style={{
         width: 44,
         height: 26,
@@ -140,7 +151,9 @@ function Toggle({
         position: 'relative',
         flexShrink: 0,
         transition: 'background 0.2s',
-        outline: 'none',
+        boxShadow: checked
+          ? 'inset 0 2px 4px rgba(10,47,53,0.35), inset 0 -1px 0 rgba(255,255,255,0.15)'
+          : 'inset 0 2px 4px rgba(100,116,139,0.25), inset 0 -1px 0 rgba(255,255,255,0.5)',
         padding: 0,
         minWidth: 44,
         minHeight: 26,
@@ -155,7 +168,8 @@ function Toggle({
           height: 20,
           borderRadius: '50%',
           background: '#fff',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+          // Hue-matched to the brand's dark teal instead of flat black.
+          boxShadow: '0 1px 3px rgba(10,47,53,0.35), 0 1px 1px rgba(10,47,53,0.2)',
           transition: 'left 0.2s',
           display: 'block',
         }}
@@ -461,11 +475,11 @@ export default function MyAccountClient({
               loading={checkoutLoading === 'monthly'}
               disabled={checkoutLoading !== null}
               loadingText="Opening…"
-              className="flex-shrink-0 rounded-xl text-xs"
+              className="flex-shrink-0 rounded-2xl text-xs active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#451A03]"
               style={{
                 background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
                 color: '#451A03',
-                boxShadow: '0 4px 0 rgba(175,65,10,0.28)',
+                boxShadow: CLAY_SHADOW_ORANGE,
                 minHeight: 44,
                 paddingLeft: 16,
                 paddingRight: 16,
@@ -666,11 +680,11 @@ export default function MyAccountClient({
               <p className="text-xs text-slate-400 mb-4">Add your dog to start tracking walks.</p>
               <a
                 href="/setup?go=1"
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#451A03]"
                 style={{
                   background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
                   color: '#451A03',
-                  boxShadow: '0 4px 0 rgba(175,65,10,0.28)',
+                  boxShadow: CLAY_SHADOW_ORANGE,
                   minHeight: 44,
                 }}
               >
@@ -760,11 +774,11 @@ export default function MyAccountClient({
 
             <a
               href="/setup?go=1"
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm font-bold"
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm font-bold active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#451A03]"
               style={{
                 background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
                 color: '#451A03',
-                boxShadow: '0 4px 0 rgba(175,65,10,0.28)',
+                boxShadow: CLAY_SHADOW_ORANGE,
                 minHeight: 44,
               }}
             >
@@ -931,11 +945,11 @@ export default function MyAccountClient({
                   loading={checkoutLoading === 'monthly'}
                   disabled={checkoutLoading !== null}
                   loadingText="Opening…"
-                  className="rounded-2xl text-sm"
+                  className="rounded-2xl text-sm active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#451A03]"
                   style={{
                     background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
                     color: '#451A03',
-                    boxShadow: '0 4px 0px rgba(175,65,10,0.28)',
+                    boxShadow: CLAY_SHADOW_ORANGE,
                     minHeight: 44,
                     paddingLeft: 20,
                     paddingRight: 20,
@@ -951,12 +965,13 @@ export default function MyAccountClient({
                 <button
                   onClick={handleCancelPlan}
                   disabled={cancellingPlan}
-                  className="flex items-center gap-2 px-4 rounded-xl text-xs font-bold disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 rounded-2xl text-xs font-bold disabled:opacity-50 active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
                   style={{
                     background: '#F1F5F9',
                     color: '#475569',
                     border: '1px solid rgba(226,220,200,0.8)',
                     minHeight: 44,
+                    boxShadow: clayShadow('71,85,105', { outerOpacity: 0.12, insetOpacity: 0.10 }),
                   }}
                 >
                   {cancellingPlan ? 'Cancelling…' : 'Cancel subscription'}
@@ -971,7 +986,7 @@ export default function MyAccountClient({
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.97 }}
                   transition={{ type: 'spring', duration: 0.45, bounce: 0 }}
-                  className="mt-4 rounded-xl px-3 py-2.5" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}
+                  className="mt-4 rounded-2xl px-3 py-2.5" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', boxShadow: clayShadow('21,128,61', { outerOpacity: 0.12, insetOpacity: 0.10 }) }}
                 >
                   <p className="text-sm text-green-800 font-semibold">
                     Cancelled. Access continues until {expiryStr}.
@@ -1267,7 +1282,7 @@ export default function MyAccountClient({
                             key={opt.key}
                             type="button"
                             onClick={() => toggleDogCareFocus(opt.key)}
-                            className="flex items-center gap-2 px-3 rounded-xl text-sm font-semibold text-left transition-all"
+                            className="flex items-center gap-2 px-3 rounded-2xl text-sm font-semibold text-left transition-all active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[oklch(0.48_0.17_196)]"
                             style={{
                               minHeight: 44,
                               background: selected
@@ -1278,6 +1293,12 @@ export default function MyAccountClient({
                                 ? `2px solid ${TEAL}`
                                 : '2px solid transparent',
                               fontFamily: 'var(--font-nunito)',
+                              // Selected = teal-tinted clay lift (signals the
+                              // active toggle state); unselected stays a flat
+                              // neutral chip so it doesn't compete visually.
+                              boxShadow: selected
+                                ? clayShadow('10,71,79', { outerOpacity: 0.16, insetOpacity: 0.12 })
+                                : 'none',
                             }}
                           >
                             <span>{opt.emoji}</span>
@@ -1321,11 +1342,14 @@ export default function MyAccountClient({
                   <button
                     onClick={handleSaveDog}
                     disabled={savingDog || !dogName.trim()}
-                    className="w-full flex items-center justify-center font-bold text-sm rounded-2xl disabled:opacity-50"
+                    className="w-full flex items-center justify-center font-bold text-sm rounded-2xl disabled:opacity-50 active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                     style={{
                       background: `linear-gradient(160deg, oklch(0.52 0.17 196) 0%, oklch(0.44 0.16 196) 100%)`,
                       color: '#fff',
-                      boxShadow: `inset 0 1.5px 0 rgba(255,255,255,0.18), 0 8px 20px oklch(0.48 0.17 196 / 0.30)`,
+                      // Was missing the dark underside inset (light-sheen-only
+                      // + one outer shadow) — added it so the button reads as
+                      // inflated clay rather than a flat glow.
+                      boxShadow: `inset 0 1.5px 0 rgba(255,255,255,0.18), inset 0 -3px 0 rgba(10,47,53,0.35), 0 8px 20px oklch(0.48 0.17 196 / 0.30)`,
                       minHeight: 52,
                       fontFamily: 'var(--font-fredoka)',
                     }}
@@ -1378,7 +1402,7 @@ export default function MyAccountClient({
               </p>
 
               {deleteError && (
-                <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-3 py-2.5">
+                <div className="mb-4 rounded-2xl bg-red-50 border border-red-200 px-3 py-2.5" style={{ boxShadow: clayShadow('185,28,28', { outerOpacity: 0.12, insetOpacity: 0.10 }) }}>
                   <p className="text-sm text-red-700">{deleteError}</p>
                 </div>
               )}
@@ -1387,20 +1411,23 @@ export default function MyAccountClient({
                 <button
                   onClick={() => { setShowDeleteConfirm(false); setDeleteError(null) }}
                   disabled={deleting}
-                  className="flex-1 rounded-2xl font-bold text-sm disabled:opacity-50"
-                  style={{ background: '#F1F5F9', color: '#475569', fontFamily: 'var(--font-fredoka)', minHeight: 52 }}
+                  className="flex-1 rounded-2xl font-bold text-sm disabled:opacity-50 active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
+                  style={{ background: '#F1F5F9', color: '#475569', fontFamily: 'var(--font-fredoka)', minHeight: 52, boxShadow: clayShadow('71,85,105', { outerOpacity: 0.10, insetOpacity: 0.08 }) }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDeleteAccount}
                   disabled={deleting}
-                  className="flex-1 rounded-2xl font-bold text-sm disabled:opacity-60"
+                  className="flex-1 rounded-2xl font-bold text-sm disabled:opacity-60 active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                   style={{
                     background: 'linear-gradient(160deg, #F43F5E 0%, #BE123C 100%)',
                     color: '#fff',
                     fontFamily: 'var(--font-fredoka)',
-                    boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.2), inset 0 -3px 0 rgba(0,0,0,0.15)',
+                    // Previously insets-only with no outer lift shadow at all —
+                    // added a hue-matched (red/danger) outer drop shadow, using
+                    // the same tint formula as clayShadow() for a covered color.
+                    boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.2), inset 0 -3px 0 rgba(120,10,35,0.35), 0 12px 28px rgba(190,18,60,0.30)',
                     minHeight: 52,
                   }}
                 >

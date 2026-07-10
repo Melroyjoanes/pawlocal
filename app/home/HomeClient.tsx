@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { QRCodeSVG } from 'qrcode.react'
 import ParentBottomNav from '@/components/ParentBottomNav'
 import LiveBadge from './LiveBadge'
+import { CLAY_SHADOW_CREAM, CLAY_SHADOW_TEAL, CLAY_SHADOW_ORANGE, CLAY_SHADOW_TEAL_OUTLINE, clayShadow } from '@/lib/clayShadows'
 
 interface Dog {
   id: string
@@ -88,7 +89,12 @@ interface Props {
   latestReportToken?: string | null
 }
 
-const cardClass = 'rounded-2xl shadow-[0_4px_14px_rgba(0,0,0,0.08)] bg-white'
+// Cream card treatment — bumped from rounded-2xl/bg-white/single flat shadow
+// to a proper tinted-cream surface with the shared 3-layer clay shadow token
+// (see @/lib/clayShadows). Applied via cardShadowStyle since box-shadow this
+// layered isn't practical to express as a Tailwind arbitrary class.
+const cardClass = 'rounded-[28px] bg-[#FFFDF7]'
+const cardShadowStyle: React.CSSProperties = { boxShadow: CLAY_SHADOW_CREAM }
 
 function TrialDots({ daysRemaining }: { daysRemaining: number }) {
   const elapsed = Math.max(0, 3 - daysRemaining)
@@ -139,7 +145,7 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName, dogI
     if (isLastDay) {
       // Final 24h — live ticking clock
       return (
-        <div style={{ borderRadius: 14, background: 'rgba(220,38,38,0.07)', border: '1.5px solid rgba(220,38,38,0.3)', padding: '12px 16px' }}>
+        <div style={{ borderRadius: 16, background: 'rgba(220,38,38,0.07)', border: '1.5px solid rgba(220,38,38,0.3)', padding: '12px 16px', boxShadow: clayShadow('185,28,28', { outerOpacity: 0.14, insetOpacity: 0.10 }) }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8 }}>
             <div>
               <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: 13, fontWeight: 700, color: '#DC2626', margin: '0 0 2px' }}>
@@ -149,14 +155,14 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName, dogI
                 {totalReports > 0 ? `${totalReports} ${totalReports === 1 ? 'report' : 'reports'} will stop being delivered` : 'New reports will stop being delivered'}
               </p>
             </div>
-            <Link href="/upgrade" style={{ flexShrink: 0, backgroundColor: '#DC2626', color: '#fff', borderRadius: 100, padding: '8px 14px', minHeight: 36, display: 'flex', alignItems: 'center', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap' }}>Upgrade now</Link>
+            <Link href="/upgrade" className="active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" style={{ flexShrink: 0, backgroundColor: '#DC2626', color: '#fff', borderRadius: 100, padding: '8px 14px', minHeight: 36, display: 'flex', alignItems: 'center', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', whiteSpace: 'nowrap', boxShadow: clayShadow('153,27,27') }}>Upgrade now</Link>
           </div>
         </div>
       )
     }
     // Days 1-2 — ambient amber pill
     return (
-      <div style={{ borderRadius: 14, background: 'rgba(251,191,36,0.12)', border: '1.5px solid rgba(251,191,36,0.4)', padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <div style={{ borderRadius: 16, background: 'rgba(251,191,36,0.12)', border: '1.5px solid rgba(251,191,36,0.4)', padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, boxShadow: clayShadow('180,131,10', { outerOpacity: 0.14, insetOpacity: 0.10 }) }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <TrialDots daysRemaining={daysRemaining ?? 3} />
           <div>
@@ -191,7 +197,7 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName, dogI
       ? `${dogName}'s walker is still logging walks — but reports aren't being delivered to you.`
       : `${dogName}'s walker can still log walks, but new reports won't reach you until you resubscribe.`
     return (
-      <div style={{ borderRadius: 16, background: '#0A2F35', border: '1.5px solid rgba(255,255,255,0.06)', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ borderRadius: 20, background: '#0A2F35', border: '1.5px solid rgba(255,255,255,0.06)', padding: '16px', display: 'flex', flexDirection: 'column', gap: 12, boxShadow: CLAY_SHADOW_TEAL }}>
         {/* FOMO / welcome-back headline */}
         <div>
           <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#FFFBEB', margin: '0 0 4px' }}>
@@ -210,7 +216,7 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName, dogI
             </p>
           </div>
         )}
-        <Link href="/upgrade" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FF8C52', color: '#fff', borderRadius: 12, padding: '13px 16px', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }}>
+        <Link href="/upgrade" className="active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FF8C52', color: '#fff', borderRadius: 16, padding: '13px 16px', fontSize: 14, fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box', boxShadow: CLAY_SHADOW_ORANGE }}>
           {missed > 0 ? `See ${missed} missed ${missed === 1 ? 'report' : 'reports'} → ₹199/month` : 'Resubscribe → ₹199/month'}
         </Link>
       </div>
@@ -218,7 +224,7 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName, dogI
   }
   // No trial started yet (no walk report received)
   return (
-    <div style={{ borderRadius: '16px', background: 'rgba(255,140,82,0.08)', border: '1.5px solid rgba(255,140,82,0.3)', padding: '14px 16px' }}>
+    <div style={{ borderRadius: '18px', background: 'rgba(255,140,82,0.08)', border: '1.5px solid rgba(255,140,82,0.3)', padding: '14px 16px', boxShadow: clayShadow('204,89,29', { outerOpacity: 0.14, insetOpacity: 0.10 }) }}>
       <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#0A2F35', margin: '0 0 4px' }}>Your 3-day free trial starts with your first walk report.</p>
       <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: '#6B7280', margin: '0 0 10px' }}>PupStep delivers reports automatically. Reports depend on your walker logging each walk.</p>
       <Link href={dogId ? `/setup/qr?dog=${dogId}` : '/setup?go=1'} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'oklch(0.44 0.16 196)', fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none' }}>Connect your walker to receive your first report →</Link>
@@ -297,16 +303,18 @@ function DogChipRow({ dogs }: { dogs: OtherDog[] }) {
         <Link
           key={dog.id}
           href={`/home?dog=${dog.id}`}
+          className="active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 8,
             flexShrink: 0,
-            background: '#fff',
+            background: '#FFFDF7',
             border: '1.5px solid #E5E7EB',
             borderRadius: 100,
             padding: '6px 12px 6px 6px',
             textDecoration: 'none',
+            boxShadow: clayShadow('10,47,53', { outerOpacity: 0.10, insetOpacity: 0.08 }),
           }}
         >
           <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -325,7 +333,7 @@ function DogChipRow({ dogs }: { dogs: OtherDog[] }) {
 function WalkStreak({ streak }: { streak: number }) {
   if (streak === 0) return null
   return (
-    <motion.div variants={fadeUp} style={{ background: 'linear-gradient(135deg, #FF8C52 0%, #FF6B35 100%)', borderRadius: 16, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+    <motion.div variants={fadeUp} style={{ background: 'linear-gradient(135deg, #FF8C52 0%, #FF6B35 100%)', borderRadius: 20, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: CLAY_SHADOW_ORANGE }}>
       <span style={{ fontSize: 28 }}>🔥</span>
       <div>
         <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1 }}>{streak}-day streak</p>
@@ -346,7 +354,7 @@ function WeekCalendar({ weekData }: { weekData: WeekData }) {
   const monthLabel = now.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
 
   return (
-    <motion.div variants={fadeUp} className={cardClass} style={{ padding: '16px' }}>
+    <motion.div variants={fadeUp} className={cardClass} style={{ ...cardShadowStyle, padding: '16px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
         <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>This week</p>
         <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 13, fontWeight: 600, color: '#0A2F35', margin: 0 }}>{monthLabel}</p>
@@ -404,7 +412,7 @@ function WeekCalendar({ weekData }: { weekData: WeekData }) {
 function LastWalkCard({ log, reportToken }: { log: WalkLog; reportToken?: string | null }) {
   const reportHref = reportToken ? `/walk-report/${reportToken}` : '/my-reports'
   return (
-    <motion.div variants={fadeUp} className={cardClass} style={{ padding: '16px' }}>
+    <motion.div variants={fadeUp} className={cardClass} style={{ ...cardShadowStyle, padding: '16px' }}>
       <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px' }}>Last walk</p>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div>
@@ -501,7 +509,7 @@ function AddDogSheet({ open, onClose, onSaved }: { open: boolean; onClose: () =>
 function WalkerTeam({ connections }: { connections: WalkerConnection[] }) {
   if (connections.length === 0) return null
   return (
-    <motion.div variants={fadeUp} className={`${cardClass} p-4`}>
+    <motion.div variants={fadeUp} className={`${cardClass} p-4`} style={cardShadowStyle}>
       <p className="text-sm font-semibold text-gray-500 mb-3">Your Team</p>
       <div className="flex flex-wrap gap-2">
         {connections.map((c) => (
@@ -794,7 +802,7 @@ function StateA({ walk, displayName, firstDog }: { walk: WalkSession; displayNam
   const rm = useReducedMotion()
   return (
     <motion.div className="flex flex-col gap-4" variants={stagger} initial="hidden" animate="show">
-      <motion.div variants={popIn} className={`${cardClass} overflow-hidden`}>
+      <motion.div variants={popIn} className={`${cardClass} overflow-hidden`} style={cardShadowStyle}>
         <div className="bg-[#0A2F35] text-white px-4 py-3 flex items-center justify-between">
           <LiveBadge />
           <span className="text-xs text-white/60">Walk in progress</span>
@@ -812,13 +820,13 @@ function StateA({ walk, displayName, firstDog }: { walk: WalkSession; displayNam
             </div>
           </div>
           <motion.div className="mt-4" {...tapProps(rm)}>
-            <Link href={trackHref} className="flex items-center justify-center gap-2 w-full rounded-xl py-3 bg-[#FF8C52] text-white font-bold text-base shadow-[0_4px_14px_rgba(255,140,82,0.4)] hover:bg-[#e87a40] transition-colors">Open Live Map →</Link>
+            <Link href={trackHref} className="flex items-center justify-center gap-2 w-full rounded-2xl py-3 bg-[#FF8C52] text-white font-bold text-base hover:bg-[#e87a40] transition-colors active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" style={{ boxShadow: CLAY_SHADOW_ORANGE }}>Open Live Map →</Link>
           </motion.div>
         </div>
       </motion.div>
-      <motion.div variants={fadeUp} className={`${cardClass} p-4 flex gap-3`}>
-        <Link href="/setup?new=1" className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 border-2 border-[#0A2F35] text-[#0A2F35] font-semibold text-sm hover:bg-[#0A2F35] hover:text-white transition-colors">+ Add Dog</Link>
-        <Link href="/my-account" className="flex-1 flex items-center justify-center gap-2 rounded-xl py-3 border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors">⚙ Settings</Link>
+      <motion.div variants={fadeUp} className={`${cardClass} p-4 flex gap-3`} style={cardShadowStyle}>
+        <Link href="/setup?new=1" className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 border-2 border-[#0A2F35] text-[#0A2F35] font-semibold text-sm hover:bg-[#0A2F35] hover:text-white transition-colors active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]" style={{ boxShadow: CLAY_SHADOW_TEAL_OUTLINE }}>+ Add Dog</Link>
+        <Link href="/my-account" className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 border-2 border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition-colors active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-400" style={{ boxShadow: CLAY_SHADOW_TEAL_OUTLINE }}>⚙ Settings</Link>
       </motion.div>
     </motion.div>
   )
@@ -838,7 +846,7 @@ function StateB({ walk, connections, firstDog, isPro, onEditDog }: {
   const trackHref = walk.share_token ? `/track/${walk.share_token}` : `/my-reports`
   return (
     <motion.div className="flex flex-col gap-4" variants={stagger} initial="hidden" animate="show">
-      <motion.div variants={fadeUp} className={`${cardClass} p-5`}>
+      <motion.div variants={fadeUp} className={`${cardClass} p-5`} style={cardShadowStyle}>
         <div className="flex items-start gap-4">
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <DogAvatar dog={firstDog} size="lg" />
@@ -861,7 +869,7 @@ function StateB({ walk, connections, firstDog, isPro, onEditDog }: {
           {durationSec !== null && <div className="bg-amber-50 rounded-xl p-3 text-center"><p className="text-xs text-gray-400 mb-1">Duration</p><p className="font-[family-name:var(--font-fredoka)] text-xl font-bold text-[#0A2F35]">{formatDuration(durationSec)}</p></div>}
           {dist && <div className="bg-teal-50 rounded-xl p-3 text-center"><p className="text-xs text-gray-400 mb-1">Distance</p><p className="font-[family-name:var(--font-fredoka)] text-xl font-bold text-[#0A2F35]">{dist}</p></div>}
         </div>
-        <Link href={trackHref} className="mt-4 flex items-center justify-center gap-2 w-full rounded-xl py-2.5 border-2 border-[#0A2F35] text-[#0A2F35] font-semibold text-sm hover:bg-[#0A2F35] hover:text-white transition-colors">View Route →</Link>
+        <Link href={trackHref} className="mt-4 flex items-center justify-center gap-2 w-full rounded-2xl py-2.5 border-2 border-[#0A2F35] text-[#0A2F35] font-semibold text-sm hover:bg-[#0A2F35] hover:text-white transition-colors active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]" style={{ boxShadow: CLAY_SHADOW_TEAL_OUTLINE }}>View Route →</Link>
       </motion.div>
       <WalkerTeam connections={connections} />
     </motion.div>
@@ -896,7 +904,7 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
 
       {/* 2. Dog card */}
       {firstDog ? (
-        <motion.div variants={fadeUp} className={`${cardClass} p-5`}>
+        <motion.div variants={fadeUp} className={`${cardClass} p-5`} style={cardShadowStyle}>
           <div className="flex items-center gap-4">
             <div style={{ position: 'relative', flexShrink: 0 }}>
               <DogAvatar dog={firstDog} size="lg" />
@@ -926,17 +934,17 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
           )}
         </motion.div>
       ) : (
-        <motion.div variants={fadeUp} className={`${cardClass} p-5 text-center`}>
+        <motion.div variants={fadeUp} className={`${cardClass} p-5 text-center`} style={cardShadowStyle}>
           <div className="text-5xl mb-3">🐕</div>
           <h2 className="font-[family-name:var(--font-fredoka)] text-xl font-bold text-[#0A2F35]">No dog profile yet</h2>
           <p className="text-sm text-gray-400 mt-1 mb-4">Add your dog to start tracking walks.</p>
-          <Link href="/my-dogs" className="inline-flex items-center justify-center px-6 py-2.5 rounded-xl bg-[#FF8C52] text-white font-bold text-sm shadow-[0_4px_14px_rgba(255,140,82,0.4)] hover:bg-[#e87a40] transition-colors">Set up your dog →</Link>
+          <Link href="/my-dogs" className="inline-flex items-center justify-center px-6 py-2.5 rounded-2xl bg-[#FF8C52] text-white font-bold text-sm hover:bg-[#e87a40] transition-colors active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" style={{ boxShadow: CLAY_SHADOW_ORANGE }}>Set up your dog →</Link>
         </motion.div>
       )}
 
       {/* 3. Today status */}
       {todayWalked && todayLogs[0] ? (
-        <motion.div variants={fadeUp} style={{ background: '#F0FDF4', border: '1.5px solid #86EFAC', borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <motion.div variants={fadeUp} style={{ background: '#F0FDF4', border: '1.5px solid #86EFAC', borderRadius: 16, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: clayShadow('21,128,61', { outerOpacity: 0.14, insetOpacity: 0.10 }) }}>
           <span style={{ fontSize: 24 }}>✅</span>
           <div>
             <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#166534', margin: 0 }}>Walked today!</p>
@@ -944,7 +952,7 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
           </div>
         </motion.div>
       ) : connections.length > 0 ? (
-        <motion.div variants={fadeUp} style={{ background: '#FFFBEB', border: '1.5px solid #FDE68A', borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <motion.div variants={fadeUp} style={{ background: '#FFFBEB', border: '1.5px solid #FDE68A', borderRadius: 16, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, boxShadow: clayShadow('180,131,10', { outerOpacity: 0.14, insetOpacity: 0.10 }) }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 22 }}>⏳</span>
             <div>
@@ -953,7 +961,7 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
             </div>
           </div>
           {connections[0].walker_phone && (
-            <a href={`https://wa.me/91${connections[0].walker_phone.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer" style={{ background: '#25D366', color: '#fff', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-nunito)', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>💬 Remind</a>
+            <a href={`https://wa.me/91${connections[0].walker_phone.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer" className="active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]" style={{ background: '#25D366', color: '#fff', borderRadius: 100, padding: '6px 12px', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-nunito)', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0, boxShadow: clayShadow('21,135,68', { outerOpacity: 0.30, insetOpacity: 0.20 }) }}>💬 Remind</a>
           )}
         </motion.div>
       ) : null}
@@ -1068,7 +1076,7 @@ export default function HomeClient({ displayName, firstDog, otherDogs, activeWal
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96 }}
               transition={{ type: 'spring', duration: 0.45, bounce: 0 }}
-              style={{ borderRadius: '16px', background: 'oklch(0.48 0.17 196)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}
+              style={{ borderRadius: '20px', background: 'oklch(0.48 0.17 196)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', boxShadow: CLAY_SHADOW_TEAL }}
             >
               <div style={{ flex: 1 }}>
                 <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 700, color: '#ffffff', margin: '0 0 2px' }}>🎉 Your first walk report is in!</p>
@@ -1081,7 +1089,7 @@ export default function HomeClient({ displayName, firstDog, otherDogs, activeWal
 
         {/* Activation checklist — no walker connected, no walks yet */}
         {showActivationChecklist && (
-          <div style={{ background: '#ffffff', border: '1.5px solid oklch(0.48 0.17 196 / 0.25)', borderRadius: '16px', padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <div style={{ background: '#FFFDF7', border: '1.5px solid oklch(0.48 0.17 196 / 0.25)', borderRadius: '28px', padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', boxShadow: CLAY_SHADOW_CREAM }}>
             <span style={{ fontSize: 48 }}>🐕</span>
             <div style={{ textAlign: 'center' }}>
               <p style={{ fontFamily: 'var(--font-fredoka), sans-serif', fontSize: '20px', fontWeight: 700, color: '#0A2F35', margin: '0 0 4px' }}>Your dog&apos;s care diary is ready.</p>
@@ -1127,7 +1135,7 @@ export default function HomeClient({ displayName, firstDog, otherDogs, activeWal
           const walkerPhone = firstConn?.walker_phone?.replace(/\D/g, '') ?? ''
           const waHref = walkerPhone ? `https://wa.me/91${walkerPhone}?text=${waText}` : `https://wa.me/?text=${waText}`
           return (
-            <div style={{ background: '#ffffff', border: '1.5px solid oklch(0.48 0.17 196 / 0.2)', borderRadius: '16px', padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+            <div style={{ background: '#FFFDF7', border: '1.5px solid oklch(0.48 0.17 196 / 0.2)', borderRadius: '28px', padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', boxShadow: CLAY_SHADOW_CREAM }}>
               <span style={{ fontSize: 48 }}>🐾</span>
               <div style={{ textAlign: 'center' }}>
                 <p style={{ fontFamily: 'var(--font-fredoka), sans-serif', fontSize: '18px', fontWeight: 700, color: '#0A2F35', margin: '0 0 6px' }}>{walkerName} is connected. Waiting for the first walk.</p>
@@ -1138,7 +1146,8 @@ export default function HomeClient({ displayName, firstDog, otherDogs, activeWal
                 href={waHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', background: '#25D366', color: '#ffffff', borderRadius: '12px', padding: '13px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', boxSizing: 'border-box' }}
+                className="active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', background: '#25D366', color: '#ffffff', borderRadius: '16px', padding: '13px 16px', fontSize: '14px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none', boxSizing: 'border-box', boxShadow: clayShadow('21,135,68') }}
               >
                 💬 Ask {walkerName} to log a walk →
               </a>

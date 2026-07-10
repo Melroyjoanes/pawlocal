@@ -1,6 +1,7 @@
 'use client'
 
 import GoogleSignInButton from '@/components/GoogleSignInButton'
+import { CLAY_SHADOW_CREAM } from '@/lib/clayShadows'
 
 interface Props {
   next?: string
@@ -23,7 +24,10 @@ export default function AccountClient({ next }: Props) {
         </p>
       </div>
 
-      <div className="bg-white border border-border rounded-2xl p-6 shadow-sm">
+      <div
+        className="bg-white rounded-2xl p-6"
+        style={{ boxShadow: CLAY_SHADOW_CREAM }}
+      >
         <GoogleSignInButton
           redirectNext={redirectNext}
           label="Continue with Google"

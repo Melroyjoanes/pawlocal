@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import ParentBottomNav from '@/components/ParentBottomNav'
+import { CLAY_SHADOW_CREAM, CLAY_SHADOW_ORANGE, CLAY_SHADOW_ORANGE_SM, CLAY_SHADOW_TEAL } from '@/lib/clayShadows'
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 interface WalkReport {
@@ -149,26 +150,37 @@ function WalkCard({ report, onClick }: { report: WalkReport; onClick: () => void
 // ─── Empty state ──────────────────────────────────────────────────────────────
 function EmptyState() {
   return (
-    <div className="flex flex-col items-center justify-center pt-20 pb-10 text-center">
-      <span style={{ fontSize: 56, lineHeight: 1 }}>🐾</span>
-      <h3
-        className="mt-5"
-        style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#0A2F35' }}
-      >
-        No walks yet
-      </h3>
-      <p
-        className="mt-2"
+    <div className="flex flex-col items-center justify-center pt-8 pb-8 text-center">
+      <div
+        className="flex flex-col items-center"
         style={{
-          fontFamily: 'var(--font-nunito)',
-          fontSize: 13,
-          color: '#94a3b8',
-          maxWidth: 240,
-          lineHeight: 1.5,
+          background: 'oklch(0.995 0.005 85)',
+          borderRadius: 28,
+          boxShadow: CLAY_SHADOW_CREAM,
+          padding: '40px 28px',
+          width: '100%',
         }}
       >
-        Your first walk report will appear here after your walker logs a walk.
-      </p>
+        <span style={{ fontSize: 56, lineHeight: 1 }}>🐾</span>
+        <h3
+          className="mt-5"
+          style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#0A2F35' }}
+        >
+          No walks yet
+        </h3>
+        <p
+          className="mt-2"
+          style={{
+            fontFamily: 'var(--font-nunito)',
+            fontSize: 13,
+            color: '#94a3b8',
+            maxWidth: 240,
+            lineHeight: 1.5,
+          }}
+        >
+          Your first walk report will appear here after your walker logs a walk.
+        </p>
+      </div>
     </div>
   )
 }
@@ -195,10 +207,21 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, t
           </p>
         </header>
 
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 24px', textAlign: 'center', gap: 20 }}>
-          <div style={{ fontSize: 56 }}>🔒</div>
-          <div>
-            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 24, fontWeight: 700, color: '#0A2F35', margin: '0 0 8px' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 24px 40px', textAlign: 'center', gap: 20 }}>
+          <div
+            style={{
+              background: 'oklch(0.995 0.005 85)',
+              borderRadius: 28,
+              boxShadow: CLAY_SHADOW_CREAM,
+              padding: '32px 24px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              maxWidth: 340,
+            }}
+          >
+            <div style={{ fontSize: 56 }}>🔒</div>
+            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 24, fontWeight: 700, color: '#0A2F35', margin: '12px 0 8px' }}>
               {totalReports > 0 ? `${totalReports} walk ${totalReports === 1 ? 'report' : 'reports'} on record` : 'Your trial has ended'}
             </p>
             <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#6B7280', margin: 0, lineHeight: 1.6, maxWidth: 280 }}>
@@ -209,12 +232,13 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, t
           </div>
           <a
             href="/upgrade"
+            className="clay-cta-pill"
             style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               background: '#FF8C52', color: '#fff', borderRadius: 100,
               padding: '14px 32px', fontSize: 15, fontWeight: 700,
               fontFamily: 'var(--font-nunito)', textDecoration: 'none',
-              boxShadow: 'inset 0 2px 0 rgba(255,200,120,0.6), inset 0 -3px 0 rgba(180,60,0,0.25), 0 4px 14px rgba(255,140,82,0.45)'
+              boxShadow: CLAY_SHADOW_ORANGE,
             }}
           >
             Get reports delivered → ₹199/month
@@ -225,6 +249,11 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, t
         </div>
 
         <ParentBottomNav />
+        <style>{`
+          .clay-cta-pill { transition: transform 120ms ease; }
+          .clay-cta-pill:active { transform: scale(0.97); }
+          .clay-cta-pill:focus-visible { outline: 3px solid #0A2F35; outline-offset: 3px; }
+        `}</style>
       </div>
     )
   }
@@ -257,7 +286,7 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, t
           >
             Walk reports
             {isSubscribed && (
-              <span style={{ background: '#FF8C52', color: '#fff', fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-nunito)', borderRadius: 100, padding: '3px 8px', marginLeft: 8, verticalAlign: 'middle', letterSpacing: '0.05em' }}>PRO</span>
+              <span style={{ background: '#FF8C52', color: '#fff', fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-nunito)', borderRadius: 100, padding: '3px 8px', marginLeft: 8, verticalAlign: 'middle', letterSpacing: '0.05em', boxShadow: CLAY_SHADOW_ORANGE_SM }}>PRO</span>
             )}
           </h1>
           {dogName && (
@@ -289,7 +318,7 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, t
 
         {/* Pro unlock celebration banner */}
         {showUnlock && (
-          <div style={{ margin: '0 0 16px', borderRadius: 16, background: 'linear-gradient(135deg, oklch(0.48 0.17 196) 0%, oklch(0.38 0.15 196) 100%)', padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ margin: '0 0 16px', borderRadius: 20, background: 'linear-gradient(135deg, oklch(0.48 0.17 196) 0%, oklch(0.38 0.15 196) 100%)', boxShadow: CLAY_SHADOW_TEAL, padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div>
               <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 17, fontWeight: 700, color: '#fff', margin: '0 0 3px' }}>
                 Welcome to PupStep Pro!
@@ -300,7 +329,15 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, t
             </div>
             <button
               onClick={() => { setShowUnlock(false); localStorage.setItem('pupstep_pro_welcome_seen', '1') }}
-              style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', fontSize: 14, flexShrink: 0 }}
+              className="clay-close-btn"
+              style={{
+                background: 'rgba(255,255,255,0.15)',
+                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(0,0,0,0.15)',
+                border: 'none', borderRadius: '50%', width: 28, height: 28,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: '#fff', fontSize: 14, flexShrink: 0,
+                transition: 'transform 120ms ease',
+              }}
             >×</button>
           </div>
         )}
@@ -339,6 +376,10 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, t
       </main>
 
       <ParentBottomNav />
+      <style>{`
+        .clay-close-btn:active { transform: scale(0.9); }
+        .clay-close-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+      `}</style>
     </div>
   )
 }
