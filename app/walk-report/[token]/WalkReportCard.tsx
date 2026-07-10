@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRef, useEffect, useState } from 'react'
 import { loadGoogleMaps } from '@/lib/googleMapsLoader'
 import { trackEvent } from '@/lib/analytics'
+import { SNAP_MAP_STYLE } from '@/lib/snapMapStyle'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type WalkReport = {
@@ -326,20 +327,7 @@ function WalkMap({ routePoints, poopEvents, peeEvents, reducedMotion }: {
         center: cleanedRoutePoints[0],
         disableDefaultUI: true,
         gestureHandling: 'cooperative',
-        styles: [
-          { featureType: 'poi.park', elementType: 'geometry', stylers: [{ visibility: 'on' }, { color: '#e8ebe6' }] },
-          { featureType: 'poi.park', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-          { featureType: 'poi', stylers: [{ visibility: 'off' }] },
-          { featureType: 'transit', stylers: [{ visibility: 'off' }] },
-          { elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
-          { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
-          { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#e0e0e0' }] },
-          { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9CA3AF' }] },
-          { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
-          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#c9d3d6' }] },
-          { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f5f5f5' }] },
-          { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#eeeeee' }] },
-        ],
+        styles: SNAP_MAP_STYLE,
       })
 
       // Soft glow layer under the route — wider, translucent, same color.
