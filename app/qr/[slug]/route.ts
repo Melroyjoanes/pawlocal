@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getCampaign, buildWhatsAppUrl } from '@/lib/qrCampaigns'
 
@@ -12,23 +12,23 @@ function admin() {
 export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const campaign = getCampaign(slug)
+  const userAgent = req.headers.get('user-agent')
+  const referrer = req.headers.get('referer')
 
-  // Fire-and-forget: never let a logging failure block the redirect —
-  // someone standing at a vet clinic waiting for WhatsApp to open should
-  // never see a broken link because of our own analytics.
-  ;(async () => {
+  // Serverless functions (Vercel) freeze execution the instant a response is
+  // sent — a bare fire-and-forget async call gets killed mid-flight before
+  // the insert reaches Supabase, so scans silently never get logged. after()
+  // tells the platform to keep the function alive to finish this specific
+  // work, without delaying the redirect response itself.
+  after(async () => {
     try {
       await admin()
         .from('qr_campaign_scans')
-        .insert({
-          slug,
-          user_agent: req.headers.get('user-agent'),
-          referrer: req.headers.get('referer'),
-        })
+        .insert({ slug, user_agent: userAgent, referrer })
     } catch {
       // logging is best-effort only
     }
-  })()
+  })
 
   return NextResponse.redirect(buildWhatsAppUrl(campaign), { status: 302 })
 }
