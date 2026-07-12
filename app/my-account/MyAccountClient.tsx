@@ -52,7 +52,7 @@ interface Props {
   profilePhone?: string | null
   notificationPreferences?: { report_email?: boolean; weekly_summary?: boolean }
   subStatus: {
-    status: 'trial' | 'active' | 'expired' | 'no_trial'
+    status: 'trial' | 'active' | 'cancelled' | 'expired' | 'no_trial'
     trial_days_remaining: number | null
     expires_at: string | null
   } | null
@@ -226,6 +226,7 @@ export default function MyAccountClient({
   const [billingLoaded, setBillingLoaded]   = useState(false)
   const [cancellingPlan, setCancellingPlan] = useState(false)
   const [cancelSuccess, setCancelSuccess]   = useState(false)
+  const [cancelError, setCancelError]       = useState<string | null>(null)
 
   // ── Notification state
   const [notifReportEmail, setNotifReportEmail]     = useState(notificationPreferences?.report_email ?? true)
@@ -361,11 +362,17 @@ export default function MyAccountClient({
     const confirmed = window.confirm(`Cancel your PupStep subscription? You keep access until ${expiryStr}.`)
     if (!confirmed) return
     setCancellingPlan(true)
+    setCancelError(null)
     try {
       const res = await fetch('/api/payments/cancel', { method: 'POST' })
-      if (res.ok) setCancelSuccess(true)
+      if (res.ok) {
+        setCancelSuccess(true)
+      } else {
+        const body = await res.json().catch(() => null)
+        setCancelError(body?.error || 'Something went wrong. Please try again or contact us.')
+      }
     } catch {
-      // silent
+      setCancelError('Network error. Please check your connection and try again.')
     } finally {
       setCancellingPlan(false)
     }
@@ -399,9 +406,10 @@ export default function MyAccountClient({
 
   // ── Derived subscription values ───────────────────────────────────────────
 
-  const isActive  = subStatus?.status === 'active'
-  const isExpired = subStatus?.status === 'expired'
-  const hasPlan   = isActive || isExpired
+  const isActive    = subStatus?.status === 'active'
+  const isCancelled = subStatus?.status === 'cancelled'
+  const isExpired   = subStatus?.status === 'expired'
+  const hasPlan     = isActive || isCancelled || isExpired
   const expiryStr = subStatus?.expires_at
     ? new Date(subStatus.expires_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
     : null
@@ -990,6 +998,19 @@ export default function MyAccountClient({
                 >
                   <p className="text-sm text-green-800 font-semibold">
                     Cancelled. Access continues until {expiryStr}.
+                  </p>
+                </motion.div>
+              )}
+              {cancelError && (
+                <motion.div
+                  initial={reduceMotion ? undefined : { opacity: 0, scale: 0.95, y: -6 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.97 }}
+                  transition={{ type: 'spring', duration: 0.45, bounce: 0 }}
+                  className="mt-4 rounded-2xl px-3 py-2.5" style={{ background: '#FEF2F2', border: '1px solid #FECACA', boxShadow: clayShadow('185,28,28', { outerOpacity: 0.12, insetOpacity: 0.10 }) }}
+                >
+                  <p className="text-sm text-red-800 font-semibold">
+                    {cancelError} If this keeps happening, message us and we&apos;ll sort it out directly.
                   </p>
                 </motion.div>
               )}

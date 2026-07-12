@@ -27,16 +27,13 @@ export async function POST() {
     return NextResponse.json({ error: 'No active subscription' }, { status: 404 })
   }
 
-  const { error, count } = await adminClient
+  const { error } = await adminClient
     .from('subscriptions')
     .update({ status: 'cancelled' })
     .eq('user_id', user.id)
     .eq('status', 'active')
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  if (!count || count === 0) {
-    return NextResponse.json({ error: 'No active subscription' }, { status: 404 })
-  }
 
   const cookieStore = await cookies()
   const gaCookie = cookieStore.get('_ga')?.value

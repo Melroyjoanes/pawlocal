@@ -34,8 +34,10 @@ export default async function MyAccountPage() {
     safe((db.from('subscriptions') as any)
       .select('plan, status, expires_at')
       .eq('user_id', user.id)
-      .eq('status', 'active')
+      .in('status', ['active', 'cancelled'])
       .gt('expires_at', new Date().toISOString())
+      .order('expires_at', { ascending: false })
+      .limit(1)
       .maybeSingle()),
     safe((db.from('profiles') as any)
       .select('trial_started_at, phone, notification_preferences')
@@ -56,10 +58,11 @@ export default async function MyAccountPage() {
   const notificationPreferences: { report_email?: boolean; weekly_summary?: boolean } = (profileData as any)?.notification_preferences ?? {}
   const activeSub = subData ?? null
 
-  let subStatus: { status: 'trial' | 'active' | 'expired' | 'no_trial'; trial_days_remaining: number | null; expires_at: string | null }
+  let subStatus: { status: 'trial' | 'active' | 'cancelled' | 'expired' | 'no_trial'; trial_days_remaining: number | null; expires_at: string | null }
 
   if (activeSub) {
-    subStatus = { status: 'active', trial_days_remaining: null, expires_at: (activeSub as any).expires_at }
+    const realStatus = (activeSub as any).status === 'cancelled' ? 'cancelled' : 'active'
+    subStatus = { status: realStatus, trial_days_remaining: null, expires_at: (activeSub as any).expires_at }
   } else if (!trialStartedAt) {
     subStatus = { status: 'no_trial', trial_days_remaining: null, expires_at: null }
   } else {
