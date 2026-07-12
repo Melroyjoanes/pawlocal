@@ -1,8 +1,11 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { Nunito, Fredoka } from 'next/font/google'
 import Script from 'next/script'
 import MotionProvider from '@/components/MotionProvider'
 import ShellWrapper from '@/components/ShellWrapper'
+import InitialLoader from '@/components/InitialLoader'
+import RouteProgressBar from '@/components/RouteProgressBar'
 import './globals.css'
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
@@ -87,6 +90,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Script>
           </>
         )}
+        <InitialLoader />
+        <Suspense fallback={null}>
+          <RouteProgressBar />
+        </Suspense>
         <MotionProvider>
           <ShellWrapper>{children}</ShellWrapper>
         </MotionProvider>
