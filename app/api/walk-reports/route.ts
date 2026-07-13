@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { sendEmail, emailTemplate } from '@/lib/email'
@@ -103,9 +103,10 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
-  // Fire-and-forget email to dog owner via client_id → owner lookup
+  // Email to dog owner — via after() so it survives on Vercel (bare
+  // fire-and-forget gets frozen when the response returns).
   if (client_id) {
-    ;(async () => {
+    after(async () => {
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data: clientRow } = await (admin().from('provider_clients') as any)
@@ -134,7 +135,7 @@ export async function POST(req: NextRequest) {
       } catch {
         // swallow — never block the response
       }
-    })()
+    })
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'

@@ -1,5 +1,5 @@
 import { randomBytes } from 'crypto'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import { getEntitlement } from '@/lib/entitlement'
@@ -278,9 +278,13 @@ export async function POST(req: NextRequest) {
   // Only send the report email if the owner is within their trial or has an active subscription.
   // This is the single email sent per walk — for the owner's very first-ever report, it
   // includes an extra "your trial has started" banner at the top instead of a separate email.
-  // Fire-and-forget — a slow or failed email delivery shouldn't hold up the walker's response.
+  //
+  // Runs via after() so the email work is NOT held up in the response, but ALSO isn't killed:
+  // Vercel freezes the function the instant the response returns, so a bare fire-and-forget
+  // IIFE here was getting cut off before the email fetch completed (this is why every
+  // walk_reports row had email_sent_at = NULL). after() keeps the function alive to finish.
   if (deliveryAllowed) {
-    ;(async () => {
+    after(async () => {
       // Check notification preference and send email to parent
       try {
         // Get parent email
@@ -323,7 +327,7 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch { /* non-critical */ }
-    })()
+    })
   }
 
   // Build WhatsApp link — report URL for active subscribers/trial, upgrade prompt otherwise

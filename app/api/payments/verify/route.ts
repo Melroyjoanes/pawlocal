@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import crypto from 'crypto'
@@ -128,8 +128,10 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  // Fire-and-forget welcome / renewal email
-  ;(async () => {
+  // Welcome / renewal email — via after() so it survives on Vercel (a bare
+  // fire-and-forget block gets frozen when the response returns; see
+  // walk-logs route for the same fix and the NULL email_sent_at evidence).
+  after(async () => {
     const email = user.email
     if (!email || !process.env.RESEND_API_KEY) return
     const planLabel = '₹199/month'
@@ -144,7 +146,7 @@ export async function POST(req: NextRequest) {
         html: `<p>Hi!</p><p>You're now on PupStep Pro (${planLabel}). Your access runs until <strong>${expiryLabel}</strong>.</p><p>Enjoy unlimited walk reports, GPS tracking, and the full care diary. <a href="https://pupstep.in/home">Go to your dashboard →</a></p><p>Thanks,<br/>The PupStep Team</p>`,
       }),
     }).catch(() => {})
-  })()
+  })
 
   return NextResponse.json({ ok: true, expires_at: expiresAt })
 }
