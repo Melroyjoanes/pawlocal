@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createClient as createServerClient } from '@/lib/supabase/server'
+
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? ''
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -7,6 +10,12 @@ function admin() {
 
 // GET /api/admin/care-system — aggregate stats + recent data for admin dashboard
 export async function GET() {
+  // Admin-only: exposes walker names, phone numbers, and dog names. Without
+  // this gate it was publicly readable — a live data leak.
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.email !== ADMIN_EMAIL) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   const db = admin()
 
   // Fetch counts in parallel
