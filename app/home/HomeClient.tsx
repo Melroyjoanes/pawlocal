@@ -512,17 +512,22 @@ function WalkerTeam({ connections }: { connections: WalkerConnection[] }) {
     <motion.div variants={fadeUp} className={`${cardClass} p-4`} style={cardShadowStyle}>
       <p className="text-sm font-semibold text-gray-500 mb-3">Your Team</p>
       <div className="flex flex-wrap gap-2">
-        {connections.map((c) => (
+        {connections.map((c) => {
+          // Pending connections have no walker_name yet (walker hasn't scanned
+          // in) — fall back to a label so the dashboard never crashes on null.
+          const name = c.walker_name || 'Invited walker'
+          return (
           <div key={c.id} className="flex items-center gap-2 bg-teal-50 border border-teal-100 rounded-full px-3 py-1.5">
             <div className="w-7 h-7 rounded-full bg-[#0A2F35] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-              {c.walker_name.charAt(0).toUpperCase()}
+              {name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="text-xs font-semibold text-[#0A2F35] leading-tight">{c.walker_name}</p>
+              <p className="text-xs font-semibold text-[#0A2F35] leading-tight">{name}</p>
               {c.walker_role && <p className="text-[10px] text-gray-400 capitalize">{c.walker_role}</p>}
             </div>
           </div>
-        ))}
+          )
+        })}
       </div>
     </motion.div>
   )
@@ -594,7 +599,7 @@ function TeamSheet({ open, onClose, connections, dogName, dogId }: {
               {editingId === c.id ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'oklch(0.48 0.17 196)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15 }}>{c.walker_name.charAt(0).toUpperCase()}</div>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'oklch(0.48 0.17 196)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15 }}>{(c.walker_name || 'Invited walker').charAt(0).toUpperCase()}</div>
                     <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 600, color: '#9CA3AF' }}>Editing walker</span>
                   </div>
                   <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Walker name" style={{ padding: '10px 12px', borderRadius: 10, border: '2px solid #E5E7EB', fontSize: 14, fontFamily: 'var(--font-nunito)', color: '#0A2F35', outline: 'none' }} onFocus={e => (e.target.style.borderColor = 'oklch(0.48 0.17 196)')} onBlur={e => (e.target.style.borderColor = '#E5E7EB')} />
@@ -617,7 +622,7 @@ function TeamSheet({ open, onClose, connections, dogName, dogId }: {
                             <QRCodeSVG value={`https://pupstep.in/connect/${c.token}`} size={160} level="M" />
                           </div>
                           <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 28, fontWeight: 700, color: '#fff', margin: 0, letterSpacing: '0.15em' }}>{c.token.slice(0, 4).toUpperCase()}</p>
-                          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: 'rgba(255,255,255,0.85)', margin: 0, textAlign: 'center' }}>Share this QR with {c.walker_name}</p>
+                          <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: 'rgba(255,255,255,0.85)', margin: 0, textAlign: 'center' }}>Share this QR with {c.walker_name || 'your walker'}</p>
                           <a href={`https://wa.me/?text=${encodeURIComponent(`Scan this QR to log walks for ${dogName}: https://pupstep.in/connect/${c.token}`)}`} target="_blank" rel="noopener noreferrer" style={{ background: '#25D366', color: '#fff', borderRadius: 10, padding: '9px 18px', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font-nunito)', textDecoration: 'none' }}>💬 Share on WhatsApp</a>
                         </>
                       ) : (
@@ -635,9 +640,9 @@ function TeamSheet({ open, onClose, connections, dogName, dogId }: {
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#0A2F35', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>{c.walker_name.charAt(0).toUpperCase()}</div>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#0A2F35', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>{(c.walker_name || 'Invited walker').charAt(0).toUpperCase()}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#0A2F35', margin: 0 }}>{c.walker_name}</p>
+                    <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#0A2F35', margin: 0 }}>{c.walker_name || 'Invited walker'}</p>
                     <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 2, flexWrap: 'wrap' }}>
                       {c.walker_role && <span style={{ background: '#F0FDFA', color: '#0F766E', borderRadius: 100, padding: '2px 8px', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-nunito)', textTransform: 'capitalize' }}>{c.walker_role}</span>}
                       <span style={{ background: c.status === 'connected' ? '#F0FDF4' : '#FEF9C3', color: c.status === 'connected' ? '#166534' : '#92400E', borderRadius: 100, padding: '2px 8px', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font-nunito)' }}>{c.status === 'connected' ? '✓ Connected' : '⏳ Pending'}</span>
@@ -927,7 +932,7 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
               <span className="text-xl mt-0.5">🔗</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[#0A2F35]">Share your walker&apos;s QR</p>
-                <p className="text-xs text-gray-500 mt-0.5">Let {connections[0].walker_name} log walks from their phone.</p>
+                <p className="text-xs text-gray-500 mt-0.5">Let {connections[0].walker_name || 'your walker'} log walks from their phone.</p>
               </div>
               <span className="text-gray-400 text-sm mt-0.5">→</span>
             </Link>
@@ -957,7 +962,7 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
             <span style={{ fontSize: 22 }}>⏳</span>
             <div>
               <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, color: '#92400E', margin: 0 }}>No walk yet today</p>
-              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#B45309', margin: 0 }}>{connections[0].walker_name} hasn&apos;t logged yet</p>
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#B45309', margin: 0 }}>{connections[0].walker_name || 'Your walker'} hasn&apos;t logged yet</p>
             </div>
           </div>
           {connections[0].walker_phone && (

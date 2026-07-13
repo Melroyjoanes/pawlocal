@@ -51,7 +51,7 @@ export default async function HomePage({
   try {
     return await renderHome(user, requestedDogId)
   } catch (err) {
-    console.error('[home] render error:', err)
+    console.error('[home] render error:', err instanceof Error ? err.stack : err)
     return (
       <HomeClient
         displayName={user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? 'there'}
