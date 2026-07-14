@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { QRCodeSVG } from 'qrcode.react'
 import ParentBottomNav from '@/components/ParentBottomNav'
+import DesktopAmbientBackdrop from '@/components/DesktopAmbientBackdrop'
 import LiveBadge from './LiveBadge'
 import { CLAY_SHADOW_CREAM, CLAY_SHADOW_TEAL, CLAY_SHADOW_ORANGE, CLAY_SHADOW_TEAL_OUTLINE, clayShadow } from '@/lib/clayShadows'
 
@@ -1021,8 +1022,19 @@ export default function HomeClient({ displayName, firstDog, otherDogs, activeWal
 
   return (
     <div className="min-h-dvh" style={{ background: '#FFFBEB', fontFamily: 'var(--font-nunito), sans-serif' }}>
+      <DesktopAmbientBackdrop />
+
       {/* ── App header ─────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-[#FFFBEB]" style={{ borderBottom: '1px solid oklch(0.906 0.06 88)', borderTop: isPro ? '3px solid oklch(0.48 0.17 196)' : 'none' }}>
+      {/* Desktop (lg+): the mobile-width column becomes a floating "app panel"
+          on the ambient backdrop above — rounded top corners, its own shadow,
+          pulled down from the viewport edge. No wrapping container is used
+          (see DesktopAmbientBackdrop for why), so `sticky` below still sticks
+          to the real viewport exactly as it does on mobile — this only adds
+          cosmetic classes, it changes zero positioning behavior. */}
+      <header
+        className="sticky top-0 z-40 bg-[#FFFBEB] lg:top-8 lg:max-w-[480px] lg:mx-auto lg:rounded-t-[2rem] lg:border lg:border-b-0 lg:border-[oklch(0.906_0.06_88)] lg:shadow-[0_20px_60px_-15px_rgba(10,47,53,0.22)]"
+        style={{ borderBottom: '1px solid oklch(0.906 0.06 88)', borderTop: isPro ? '3px solid oklch(0.48 0.17 196)' : 'none' }}
+      >
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           <Link href="/home">
             <Image src="/logo.webp" alt="PupStep" width={130} height={48} className="h-9 w-auto" priority />
@@ -1054,7 +1066,9 @@ export default function HomeClient({ displayName, firstDog, otherDogs, activeWal
       </header>
 
       {/* ── Content ────────────────────────────────────────────────────────── */}
-      <main className="max-w-lg mx-auto px-4 pt-5 pb-28 flex flex-col gap-4">
+      <main
+        className="max-w-lg mx-auto px-4 pt-5 pb-28 flex flex-col gap-4 lg:max-w-[480px] lg:relative lg:z-10 lg:bg-[#FFFBEB] lg:rounded-b-[2rem] lg:border lg:border-t-0 lg:border-[oklch(0.906_0.06_88)] lg:shadow-[0_20px_60px_-15px_rgba(10,47,53,0.22)] lg:pb-16"
+      >
         {/* Other dogs — collapsed chip row, only shown for 2+ dog parents */}
         {otherDogs && otherDogs.length > 0 && <DogChipRow dogs={otherDogs} />}
 

@@ -6,10 +6,12 @@ import Link from 'next/link'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
 import ParentBottomNav from '@/components/ParentBottomNav'
+import DesktopAmbientBackdrop from '@/components/DesktopAmbientBackdrop'
 import { parseCareFocus } from '@/lib/careFocus'
 import { LoadingButton } from '@/components/LoadingButton'
 import { useRazorpayCheckout } from '@/lib/useRazorpayCheckout'
 import { CLAY_SHADOW_CREAM, CLAY_SHADOW_ORANGE, clayShadow } from '@/lib/clayShadows'
+import ReceiptModal from '@/components/ReceiptModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -100,22 +102,24 @@ function SectionDivider() {
   return <hr style={{ border: 'none', borderTop: '1px solid rgba(226,220,200,0.6)', margin: '24px 0' }} />
 }
 
-function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+function Card({ children, className = '', onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) {
+  const Tag = onClick ? 'button' : 'div'
   return (
-    <div
+    <Tag
       // Bumped from rounded-2xl (16px, borderline flat) to rounded-3xl (24px)
       // and from a 2-layer shadow (highlight + single outer) to the shared
       // 3-layer CLAY_SHADOW_CREAM token (adds the missing dark underside
       // inset) — see @/lib/clayShadows for the recipe.
-      className={`rounded-3xl p-4 ${className}`}
+      className={`rounded-3xl p-4 ${onClick ? 'text-left w-full active:scale-[0.98] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400' : ''} ${className}`}
       style={{
         background: 'linear-gradient(160deg, #ffffff 0%, #fffdf7 100%)',
         boxShadow: CLAY_SHADOW_CREAM,
         border: '1px solid rgba(226,220,200,0.7)',
       }}
+      onClick={onClick}
     >
       {children}
-    </div>
+    </Tag>
   )
 }
 
@@ -227,6 +231,7 @@ export default function MyAccountClient({
   const [cancellingPlan, setCancellingPlan] = useState(false)
   const [cancelSuccess, setCancelSuccess]   = useState(false)
   const [cancelError, setCancelError]       = useState<string | null>(null)
+  const [selectedReceipt, setSelectedReceipt] = useState<BillingRow | null>(null)
 
   // ── Notification state
   const [notifReportEmail, setNotifReportEmail]     = useState(notificationPreferences?.report_email ?? true)
@@ -425,10 +430,12 @@ export default function MyAccountClient({
 
   return (
     <div className="min-h-dvh" style={{ background: '#FFFBEB' }}>
+      <DesktopAmbientBackdrop />
 
-      {/* App header */}
+      {/* App header — see HomeClient.tsx for why the lg: frame classes here
+          are cosmetic-only and don't touch sticky positioning. */}
       <header
-        className="sticky top-0 z-40 bg-[#FFFBEB]"
+        className="sticky top-0 z-40 bg-[#FFFBEB] lg:top-8 lg:max-w-[480px] lg:mx-auto lg:rounded-t-[2rem] lg:border lg:border-b-0 lg:border-[oklch(0.906_0.06_88)] lg:shadow-[0_20px_60px_-15px_rgba(10,47,53,0.22)]"
         style={{ borderBottom: '1px solid oklch(0.906 0.06 88)' }}
       >
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
@@ -440,7 +447,7 @@ export default function MyAccountClient({
       </header>
 
       {/* ── Scroll body ── */}
-      <div className="max-w-[480px] mx-auto px-4 pb-32 pt-6">
+      <div className="max-w-[480px] mx-auto px-4 pb-32 pt-6 lg:relative lg:z-10 lg:bg-[#FFFBEB] lg:rounded-b-[2rem] lg:border lg:border-t-0 lg:border-[oklch(0.906_0.06_88)] lg:shadow-[0_20px_60px_-15px_rgba(10,47,53,0.22)] lg:pb-16">
 
         {/* ── Paused reports banner ── shown only when access was lost, not
              for a brand-new user who never had a trial/dog/subscription to
@@ -1039,7 +1046,11 @@ export default function MyAccountClient({
                     ? { bg: '#FFF1F2', color: '#BE123C' }
                     : { bg: '#F8FAFC', color: '#64748B' }
                   return (
-                    <Card key={row.id} className="flex items-center justify-between gap-3 py-3 px-4">
+                    <Card
+                      key={row.id}
+                      className="flex items-center justify-between gap-3 py-3 px-4"
+                      onClick={() => setSelectedReceipt(row)}
+                    >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-slate-900 capitalize">{row.plan} plan</p>
                         <p className="text-[10px] text-slate-400 mt-0.5">
@@ -1059,6 +1070,9 @@ export default function MyAccountClient({
                         >
                           {row.status === 'past_due' ? 'Failed' : row.status}
                         </span>
+                        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 6l6 6-6 6" />
+                        </svg>
                       </div>
                     </Card>
                   )
@@ -1461,6 +1475,13 @@ export default function MyAccountClient({
       </AnimatePresence>
 
       <ParentBottomNav />
+
+      <ReceiptModal
+        row={selectedReceipt}
+        customerName={userDisplay}
+        customerEmail={userEmail ?? null}
+        onClose={() => setSelectedReceipt(null)}
+      />
     </div>
   )
 }
