@@ -57,7 +57,7 @@ export const metadata: Metadata = {
       url: `${siteUrl}/api/og`,
       width: 1200,
       height: 630,
-      alt: "PupStep — Mumbai's verified pet people",
+      alt: 'PupStep — GPS-verified dog walk reports for Mumbai',
     }],
   },
   twitter: {
