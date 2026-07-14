@@ -11,7 +11,6 @@ import { parseCareFocus } from '@/lib/careFocus'
 import { LoadingButton } from '@/components/LoadingButton'
 import { useRazorpayCheckout } from '@/lib/useRazorpayCheckout'
 import { CLAY_SHADOW_CREAM, CLAY_SHADOW_ORANGE, clayShadow } from '@/lib/clayShadows'
-import ReceiptModal from '@/components/ReceiptModal'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -231,7 +230,6 @@ export default function MyAccountClient({
   const [cancellingPlan, setCancellingPlan] = useState(false)
   const [cancelSuccess, setCancelSuccess]   = useState(false)
   const [cancelError, setCancelError]       = useState<string | null>(null)
-  const [selectedReceipt, setSelectedReceipt] = useState<BillingRow | null>(null)
 
   // ── Notification state
   const [notifReportEmail, setNotifReportEmail]     = useState(notificationPreferences?.report_email ?? true)
@@ -1049,7 +1047,6 @@ export default function MyAccountClient({
                     <Card
                       key={row.id}
                       className="flex items-center justify-between gap-3 py-3 px-4"
-                      onClick={() => setSelectedReceipt(row)}
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-slate-900 capitalize">{row.plan} plan</p>
@@ -1475,13 +1472,6 @@ export default function MyAccountClient({
       </AnimatePresence>
 
       <ParentBottomNav />
-
-      <ReceiptModal
-        row={selectedReceipt}
-        customerName={userDisplay}
-        customerEmail={userEmail ?? null}
-        onClose={() => setSelectedReceipt(null)}
-      />
     </div>
   )
 }
