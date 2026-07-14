@@ -16,6 +16,102 @@ type BlogPost = {
 
 const POSTS: BlogPost[] = [
   {
+    slug: 'monsoon-dog-walking-mumbai',
+    category: 'Health',
+    categoryColor: '#E0F2FE',
+    categoryText: '#0C4A6E',
+    image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=1200&q=80',
+    title: 'Monsoon dog walking in Mumbai: what every pet parent should know',
+    date: 'Jul 13, 2026',
+    readTime: '6 min read',
+    author: 'PupStep Team',
+    content: (
+      <>
+        <p>Most pet parents brace for the mess of Mumbai&apos;s monsoon — wet paws on the sofa, a musty smell in the car. Fewer brace for the actual health risk. Vets across the western suburbs see a real spike in monsoon-specific illness every June through September, and almost all of it traces back to one thing: what happens during the daily walk.</p>
+        <p>Here&apos;s what&apos;s actually going on, and what to check for if your dog is walked by someone else while you&apos;re at work.</p>
+
+        <h2>The real risk: leptospirosis, not just a cold</h2>
+        <p>Leptospirosis is a bacterial infection that spreads through water contaminated with the urine of infected rats — and Mumbai&apos;s waterlogged streets during monsoon are exactly the environment it thrives in. Dogs that wade through standing water, drink from puddles, or sniff around flooded gutters are at real risk, not a theoretical one. Symptoms include fever, vomiting, and lethargy, usually appearing days after exposure — which is exactly why it&apos;s hard to connect back to a specific walk unless you know which route was taken and when.</p>
+        <p>Most vets recommend a leptospirosis vaccine booster before monsoon starts if your dog isn&apos;t already covered — ask at your next visit if you&apos;re not sure when your dog was last vaccinated for it.</p>
+
+        <h2>The paw problem: cuts, fungus, and infections</h2>
+        <p>Waterlogged streets hide broken glass, sharp debris, and construction rubble that&apos;s normally visible. Paws that stay wet for hours after a walk — especially between the toes — become a breeding ground for fungal and bacterial infections. Signs to watch for: excessive licking of one paw, a sour smell, redness between the toe pads, or limping that appears a day or two after a walk (not immediately).</p>
+        <p>A good routine after every monsoon walk: wipe all four paws with a clean towel, check between the toes specifically, and let paws air-dry before your dog settles onto furniture or bedding.</p>
+
+        <h2>What a good walker does differently in monsoon</h2>
+        <p>This is where the gap between an attentive walker and a rushed one shows up most. A walker who's paying attention will:</p>
+        <ul>
+          <li>Avoid visibly waterlogged lanes even if it means a longer route</li>
+          <li>Time the walk around the heaviest downpours rather than pushing through one</li>
+          <li>Wipe paws before bringing your dog back inside</li>
+          <li>Mention it if your dog drank from a puddle or waded through standing water</li>
+        </ul>
+        <p>The problem is that most pet parents have no way to confirm any of this happened. You&apos;re trusting a verbal "the walk was fine" from someone who was out of your sight for 30–45 minutes.</p>
+
+        <h2>How to actually know what happened on a monsoon walk</h2>
+        <p>This is the exact gap PupStep was built to close — not by replacing your walker, but by giving you proof of what they actually did. Every walk logged through PupStep includes the real GPS route (so you can see if a flooded lane was avoided), a timestamped photo, and notes the walker adds themselves. During monsoon specifically, that route map matters more than usual: it&apos;s the difference between trusting a description and seeing the actual path.</p>
+        <p>If your dog comes back from a walk and something feels off a day later, you can pull up exactly where they walked and when — instead of trying to reconstruct it from memory.</p>
+
+        <h2>A quick monsoon checklist for pet parents</h2>
+        <ul>
+          <li>Confirm your dog&apos;s leptospirosis vaccine is current before the season starts</li>
+          <li>Ask your walker to avoid known waterlogged stretches — most western suburb walkers already know which lanes flood first</li>
+          <li>Check paws yourself once a day, even on days someone else walks your dog</li>
+          <li>Watch for delayed symptoms — lethargy or vomiting 3–5 days after a walk is worth a vet call, even if the walk itself seemed uneventful</li>
+          <li>Keep a towel by the door specifically for monsoon paw-wipes</li>
+        </ul>
+
+        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Want to see exactly where your dog walked today? <Link href="/setup" className="underline text-sky-800">Set up PupStep for your dog</Link> — free 3-day trial, no app needed for your walker.</p>
+      </>
+    ),
+  },
+  {
+    slug: 'signs-good-dog-walker-mumbai',
+    category: 'Dog Walking',
+    categoryColor: '#FEF3C7',
+    categoryText: '#78350F',
+    image: 'https://images.unsplash.com/photo-1544568100-847a948585b9?auto=format&fit=crop&w=1200&q=80',
+    title: 'Is your dog walker actually doing a good job? 5 signs to check',
+    date: 'Jul 8, 2026',
+    readTime: '5 min read',
+    author: 'PupStep Team',
+    content: (
+      <>
+        <p>Most pet parents in Mumbai aren&apos;t looking to hire a new dog walker. Their dog is already walked — by the family maid, the building watchman, a college student next door, or someone recommended by a neighbour. The actual question isn&apos;t "who should I hire," it&apos;s quieter and harder to answer: <em>is the walk that&apos;s already happening every day actually a good one?</em></p>
+        <p>Here&apos;s how to tell, without needing to follow them yourself.</p>
+
+        <h2>1. The report is specific, not generic</h2>
+        <p>"Done, walk over" tells you nothing. A walker who's actually paying attention will mention something concrete — "he pulled toward the garbage bins near the gate again," "she was slower than usual on the way back," "peed twice, pooped once, normal." Specificity is the tell. Vague, identical messages every single day usually mean the walk itself is on autopilot too.</p>
+
+        <h2>2. The timing is consistent, not suspiciously fast</h2>
+        <p>If a 30-minute walk is reported as "done" eight minutes after it started, that's worth noticing. It doesn't always mean something's wrong, but a pattern of unusually short turnaround is one of the most common signs of a rushed, box-ticking walk rather than a real one.</p>
+
+        <h2>3. They flag things without being asked</h2>
+        <p>A good walker doesn't wait for you to interrogate them. If your dog limped, seemed unusually tired, or reacted oddly to another dog on the street, they bring it up unprompted. Walkers who only ever say "all good" — even on days your dog seems off at home — usually aren't watching closely enough to notice, or aren't reporting what they see.</p>
+
+        <h2>4. Your dog&apos;s mood at home matches what was reported</h2>
+        <p>If a walker reports "high energy, playful walk" but your dog comes home and collapses in a way that doesn't fit an energetic 40-minute outing, something doesn&apos;t line up. You know your dog's normal post-walk behaviour better than anyone — trust that instinct if the reported mood and the actual mood consistently don't match.</p>
+
+        <h2>5. There's a photo, and it actually looks like your walk</h2>
+        <p>A photo timestamped from the actual walk — not a random old picture reused — is a small thing that tells you a lot. It's the easiest way to confirm a walk happened at all, and over time you start noticing real details in them: the route, the weather, whether your dog looks alert or exhausted.</p>
+
+        <h2>Red flags worth taking seriously</h2>
+        <ul>
+          <li>Reports arrive at the exact same generic template every day, word for word</li>
+          <li>No photo, or the same photo reused across different days</li>
+          <li>Walk duration reported is always suspiciously round (always exactly "30 min," never 24 or 38)</li>
+          <li>Your dog has started resisting the leash or hiding when the walker arrives</li>
+          <li>You've asked a direct question about a specific walk and gotten a vague non-answer</li>
+        </ul>
+
+        <h2>You don't need to replace them — you need visibility</h2>
+        <p>Most of the time, the fix isn&apos;t finding a new walker. It&apos;s giving your existing one an easy way to show you what actually happened — a real GPS route, a timestamped photo, quick notes — instead of a one-line "done" text. Walkers who are already doing a good job usually don&apos;t mind this at all; the ones who resist it are telling you something too.</p>
+
+        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">PupStep is free for your walker to use — no app download, just a QR code and a WhatsApp link. <Link href="/setup" className="underline text-amber-800">Set it up for your dog</Link> and start seeing real reports after every walk.</p>
+      </>
+    ),
+  },
+  {
     slug: 'how-to-choose-dog-walker-mumbai',
     category: 'Dog Walking',
     categoryColor: '#FEF3C7',
@@ -191,7 +287,7 @@ const POSTS: BlogPost[] = [
         <h2>Grooming at home between sessions</h2>
         <p>Five minutes of brushing three times a week prevents most matting and keeps shedding manageable. Use a slicker brush for most breeds, a rubber curry brush for short coats. Check paws after every walk during monsoon — between the toes specifically. Keep a small bottle of diluted povidone-iodine near the door for paw soaks when you suspect contact with dirty puddle water.</p>
 
-        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Looking for a verified groomer in Juhu or Andheri West? <Link href="/grooming" className="underline text-purple-800">Browse verified groomers on PupStep</Link>.</p>
+        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Want a grooming record alongside your dog&apos;s walk history? <Link href="/upgrade" className="underline text-purple-800">See how PupStep&apos;s care diary works</Link>.</p>
       </>
     ),
   },
@@ -231,7 +327,7 @@ const POSTS: BlogPost[] = [
         <p>The demand for professional, accountable pet services in Juhu and the western suburbs has never been higher. At the same time, trust is still built on reputation and word-of-mouth. A walker who consistently sends care reports, responds to messages within an hour, and handles an emergency well becomes the person every pet parent recommends. The community is small enough that one bad experience travels fast — and one excellent one does too.</p>
         <p>PupStep exists to make this ecosystem easier to navigate. Instead of asking around in a building WhatsApp group, you can find a verified provider with real reviews and a clear service offering. The community&apos;s trust infrastructure, built neighbourhood by neighbourhood over years, is the thing we want to make accessible rather than replace.</p>
 
-        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Are you a pet parent in Juhu, Versova or Andheri West? <Link href="/broadcast" className="underline text-rose-800">Post a request</Link> and get responses from verified local providers.</p>
+        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Are you a pet parent in Juhu, Versova or Andheri West? <Link href="/setup" className="underline text-rose-800">Set up your dog on PupStep</Link> and get GPS-verified proof after every walk.</p>
       </>
     ),
   },
@@ -284,7 +380,7 @@ const POSTS: BlogPost[] = [
         <h2>A note on timing</h2>
         <p>The best time to visit most private vets in Juhu and Andheri West is Tuesday to Friday, 10 am to noon. Weekends and Monday mornings are their busiest periods. If it&apos;s a non-urgent visit, booking a midweek morning slot usually means more time with the vet and shorter waits.</p>
 
-        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Looking for a vet in the western suburbs? <Link href="/vet" className="underline text-sky-800">Browse verified vets on PupStep</Link> or WhatsApp us at <a href="https://wa.me/919892620677" className="underline text-sky-800">+91 98926 20677</a>.</p>
+        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Want your walk history ready to show any vet? <Link href="/faq" className="underline text-sky-800">See how PupStep&apos;s reports work</Link> or WhatsApp us at <a href="https://wa.me/919892620677" className="underline text-sky-800">+91 98926 20677</a>.</p>
       </>
     ),
   },
@@ -364,15 +460,15 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         {/* CTA strip */}
         <div className="mt-14 rounded-2xl p-6 sm:p-8"
           style={{ background: 'linear-gradient(135deg, #0A2F35, #0D3D45)' }}>
-          <p className="font-bold text-white text-lg mb-1">Find verified pet services near you</p>
+          <p className="font-bold text-white text-lg mb-1">Get GPS-verified proof of every walk</p>
           <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.55)' }}>
-            Every provider on PupStep is manually verified. Juhu · Versova · Andheri West · Santacruz West.
+            Share a QR code with your own walker — no app for them to download. 3-day free trial.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/search"
+            <Link href="/setup"
               className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full font-bold text-sm"
               style={{ background: '#F59E0B', color: '#451A03' }}>
-              Find providers →
+              Set up your dog →
             </Link>
             <Link href="/blog"
               className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full font-bold text-sm"

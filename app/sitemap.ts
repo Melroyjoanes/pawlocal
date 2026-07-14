@@ -11,6 +11,8 @@ export const revalidate = 86400 // rebuild sitemap once per day
 // copy stays alive in search results long after the product changed —
 // Google was being told those pages were current and important, daily.
 const BLOG_SLUGS = [
+  'monsoon-dog-walking-mumbai',
+  'signs-good-dog-walker-mumbai',
   'how-to-choose-dog-walker-mumbai',
   'what-is-a-care-report',
   'dog-grooming-guide-mumbai',

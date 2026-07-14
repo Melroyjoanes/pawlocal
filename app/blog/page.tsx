@@ -8,6 +8,32 @@ const EASE_EXP = [0.16, 1, 0.3, 1] as const
 
 const POSTS = [
   {
+    slug: 'monsoon-dog-walking-mumbai',
+    category: 'Health',
+    categoryColor: '#E0F2FE',
+    categoryText: '#0C4A6E',
+    emoji: '🌧️',
+    image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=900&q=80',
+    title: 'Monsoon dog walking in Mumbai: what every pet parent should know',
+    excerpt: 'Waterlogged streets, leptospirosis risk, and paw infections — Mumbai\'s monsoon is genuinely harder on dogs than most parents realise. Here\'s how to keep walks safe from June to September.',
+    readTime: '6 min read',
+    date: 'Jul 13, 2026',
+    featured: true,
+  },
+  {
+    slug: 'signs-good-dog-walker-mumbai',
+    category: 'Dog Walking',
+    categoryColor: '#FEF3C7',
+    categoryText: '#78350F',
+    emoji: '📍',
+    image: 'https://images.unsplash.com/photo-1544568100-847a948585b9?auto=format&fit=crop&w=900&q=80',
+    title: 'Is your dog walker actually doing a good job? 5 signs to check',
+    excerpt: 'You don\'t always need a new walker — you need a way to know what\'s happening on the walks you\'re already paying for. Here\'s what good (and bad) actually looks like.',
+    readTime: '5 min read',
+    date: 'Jul 8, 2026',
+    featured: false,
+  },
+  {
     slug: 'how-to-choose-dog-walker-mumbai',
     category: 'Dog Walking',
     categoryColor: '#FEF3C7',
@@ -18,7 +44,7 @@ const POSTS = [
     excerpt: 'Not all dog walkers are equal. Here\'s what to look for — experience, route safety, care reports, and red flags to avoid when hiring in Juhu and Andheri.',
     readTime: '5 min read',
     date: 'Jun 10, 2026',
-    featured: true,
+    featured: false,
   },
   {
     slug: 'what-is-a-care-report',
