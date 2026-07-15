@@ -10,7 +10,7 @@ import DesktopAmbientBackdrop from '@/components/DesktopAmbientBackdrop'
 import { parseCareFocus } from '@/lib/careFocus'
 import { LoadingButton } from '@/components/LoadingButton'
 import { useRazorpayCheckout } from '@/lib/useRazorpayCheckout'
-import { CLAY_SHADOW_CREAM, CLAY_SHADOW_ORANGE, clayShadow } from '@/lib/clayShadows'
+import { CLAY_SHADOW_CREAM, CLAY_SHADOW_ORANGE, CLAY_SHADOW_ORANGE_SM, clayShadow } from '@/lib/clayShadows'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -457,42 +457,44 @@ export default function MyAccountClient({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ type: 'spring', duration: 0.45, bounce: 0 }}
           >
-          <Card className="mb-5 flex items-center gap-3">
-            <div
-              className="relative w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0"
-              style={{ background: 'oklch(0.48 0.17 196 / 0.10)', minWidth: 40, minHeight: 40 }}
-            >
-              {!reduceMotion && (
-                <motion.span
-                  className="absolute inset-0 rounded-full"
-                  style={{ border: '1.5px solid oklch(0.48 0.17 196 / 0.4)' }}
-                  animate={{ opacity: [0.6, 0, 0.6], scale: [1, 1.25, 1] }}
-                  transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                />
-              )}
-              ⏸️
-            </div>
-            <div className="flex-1 min-w-0">
-              <p
-                className="font-bold text-slate-900"
-                style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14 }}
+          <Card className="mb-5 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex items-center gap-3">
+              <div
+                className="relative w-10 h-10 rounded-full flex items-center justify-center text-lg flex-shrink-0"
+                style={{ background: 'oklch(0.48 0.17 196 / 0.10)', minWidth: 40, minHeight: 40 }}
               >
-                Your walk reports are paused
-              </p>
-              <p className="text-xs text-slate-500 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
-                {hasEverPaid ? 'Upgrade to start receiving them again.' : 'Pay now to start receiving them.'}
-              </p>
+                {!reduceMotion && (
+                  <motion.span
+                    className="absolute inset-0 rounded-full"
+                    style={{ border: '1.5px solid oklch(0.48 0.17 196 / 0.4)' }}
+                    animate={{ opacity: [0.6, 0, 0.6], scale: [1, 1.25, 1] }}
+                    transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+                  />
+                )}
+                ⏸️
+              </div>
+              <div className="flex-1 min-w-0">
+                <p
+                  className="font-bold text-slate-900"
+                  style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14 }}
+                >
+                  Your walk reports are paused
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5" style={{ fontFamily: 'var(--font-nunito)' }}>
+                  {hasEverPaid ? 'Upgrade to start receiving them again.' : 'Pay now to start receiving them.'}
+                </p>
+              </div>
             </div>
             <LoadingButton
               onClick={() => checkout('monthly')}
               loading={checkoutLoading === 'monthly'}
               disabled={checkoutLoading !== null}
               loadingText="Opening…"
-              className="flex-shrink-0 rounded-2xl text-xs active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#451A03]"
+              className="w-full sm:w-auto flex-shrink-0 rounded-2xl text-xs active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#451A03]"
               style={{
                 background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)',
                 color: '#451A03',
-                boxShadow: CLAY_SHADOW_ORANGE,
+                boxShadow: CLAY_SHADOW_ORANGE_SM,
                 minHeight: 44,
                 paddingLeft: 16,
                 paddingRight: 16,

@@ -399,3 +399,20 @@
 /* Hide scrollbar for carousel — keeps scroll behaviour on all browsers */
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Loading-screen shimmer — the global reduced-motion rule above already
+   caps this to a static tint when the user prefers less motion. */
+@keyframes pupstepShimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.pupstep-skeleton {
+  background-image: linear-gradient(
+    100deg,
+    oklch(0.48 0.17 196 / 0.07) 30%,
+    oklch(0.48 0.17 196 / 0.14) 50%,
+    oklch(0.48 0.17 196 / 0.07) 70%
+  );
+  background-size: 200% 100%;
+  animation: pupstepShimmer 1.6s ease-in-out infinite;
+}

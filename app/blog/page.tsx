@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import Image from 'next/image'
 import { CLAY_SHADOW_CREAM, CLAY_SHADOW_TEAL, CLAY_SHADOW_ORANGE_SM } from '@/lib/clayShadows'
 
 const EASE_EXP = [0.16, 1, 0.3, 1] as const
@@ -163,13 +164,16 @@ export default function BlogPage() {
             <div className="rounded-3xl overflow-hidden"
               style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
               {/* Cover image */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={featured.image}
-                alt={featured.title}
-                className="w-full object-cover"
-                style={{ height: '260px' }}
-              />
+              <div className="relative w-full" style={{ height: '260px' }}>
+                <Image
+                  src={featured.image}
+                  alt={featured.title}
+                  fill
+                  priority
+                  sizes="(max-width: 768px) 100vw, 800px"
+                  className="object-cover"
+                />
+              </div>
               <div className="p-6 sm:p-8">
                 <div className="flex items-center gap-3 mb-4 flex-wrap">
                   <span className="text-xs font-bold px-3 py-1 rounded-full"
@@ -206,13 +210,15 @@ export default function BlogPage() {
               <Link href={`/blog/${post.slug}`} className="group block h-full">
                 <div className="rounded-3xl overflow-hidden h-full flex flex-col"
                   style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={post.image}
-                    alt={post.title}
-                    className="w-full object-cover"
-                    style={{ height: '180px' }}
-                  />
+                  <div className="relative w-full" style={{ height: '180px' }}>
+                    <Image
+                      src={post.image}
+                      alt={post.title}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover"
+                    />
+                  </div>
                   <div className="p-5 flex flex-col flex-1">
                     <div className="flex items-center gap-2 mb-3 flex-wrap">
                       <span className="text-xs font-bold px-2.5 py-0.5 rounded-full"

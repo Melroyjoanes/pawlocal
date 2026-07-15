@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { notFound } from 'next/navigation'
 
 type BlogPost = {
@@ -493,13 +494,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     <div className="min-h-screen" style={{ background: '#FFFBEB' }}>
 
       {/* Hero image */}
-      <div className="w-full overflow-hidden" style={{ maxHeight: '420px' }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+      <div className="w-full relative overflow-hidden" style={{ height: '420px' }}>
+        <Image
           src={post.image}
           alt={post.title}
-          className="w-full object-cover"
-          style={{ height: '420px' }}
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
         />
       </div>
 
