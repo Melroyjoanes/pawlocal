@@ -151,7 +151,7 @@ export default async function AreaPage({ params }: { params: Promise<{ area: str
             Get GPS-verified proof of every walk in {area.name}
           </p>
           <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.55)' }}>
-            Share a QR code with your own walker — no app for them to download. 3-day free trial.
+            Share a QR code or WhatsApp link with your own walker — no app for them to download. 3-day free trial.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link

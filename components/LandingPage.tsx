@@ -926,7 +926,7 @@ export default function LandingPage() {
               Your dog&apos;s first report,<br />in under 10 minutes.
             </h2>
             <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 15, color: 'rgba(69,26,3,0.65)', marginBottom: 28, lineHeight: 1.65 }}>
-              Add your dog, share a QR with your walker, and wait for the first proof on WhatsApp.
+              Add your dog, share a QR or WhatsApp link with your walker, and wait for the first proof on WhatsApp.
             </p>
             <motion.div whileHover={rm ? {} : { y: -3, scale: 1.03 }} whileTap={rm ? {} : { scale: 0.97 }} transition={SPRING} style={{ display: 'inline-block' }}>
               <Link href="/setup?go=1"

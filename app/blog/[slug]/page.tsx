@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 
 type BlogPost = {
   slug: string
@@ -108,7 +109,7 @@ const POSTS: BlogPost[] = [
         <h2>You don't need to replace them — you need visibility</h2>
         <p>Most of the time, the fix isn&apos;t finding a new walker. It&apos;s giving your existing one an easy way to show you what actually happened — a real GPS route, a timestamped photo, quick notes — instead of a one-line "done" text. Walkers who are already doing a good job usually don&apos;t mind this at all; the ones who resist it are telling you something too.</p>
 
-        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">PupStep is free for your walker to use — no app download, just a QR code and a WhatsApp link. <Link href="/setup" className="underline text-amber-800">Set it up for your dog</Link> and start seeing real reports after every walk.</p>
+        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">PupStep is free for your walker to use — no app download. They scan your QR code or tap a WhatsApp link, enter a 4-digit code, and they&apos;re set. <Link href="/setup" className="underline text-amber-800">Set it up for your dog</Link> and start seeing real reports after every walk.</p>
       </>
     ),
   },
@@ -163,9 +164,9 @@ const POSTS: BlogPost[] = [
           <li>No clear answer for what to do in an emergency</li>
         </ul>
 
-        <h2>How PupStep verifies walkers in Mumbai</h2>
-        <p>Every walker listed on PupStep goes through a manual review before getting a verified badge. We confirm their ID, check references from existing clients, and review their care report samples. We also do periodic spot-checks where we ask listed walkers to send a sample report from a real walk (names and details removed) so we know the quality is maintained.</p>
-        <p>If a walker on PupStep gets a complaint, we investigate — and if it&apos;s a serious issue, they&apos;re removed. It&apos;s not perfect, but it&apos;s far better than a Facebook group recommendation.</p>
+        <h2>How PupStep fits in, once you&apos;ve chosen</h2>
+        <p>PupStep doesn&apos;t list or supply walkers — the vetting above is yours to do, and honestly no app can do the meet-and-greet for you. What PupStep does is make every walk after that verifiable. Whoever you choose scans a QR code or taps a WhatsApp link, enters a 4-digit code, and from then on every walk they log comes with a GPS route, a timestamped photo, duration, and a potty note — delivered to your WhatsApp within seconds.</p>
+        <p>That changes the ongoing relationship too: the &quot;always ask for care reports&quot; advice above stops being something you have to chase. A walker who&apos;s doing the job well gets an effortless way to prove it after every single walk — and you get a permanent health log instead of a stack of one-line texts.</p>
 
         <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Have a question about finding a walker in your area? WhatsApp us at <a href="https://wa.me/919892620677" className="underline text-amber-700">+91 98926 20677</a> and we&apos;ll help personally.</p>
       </>
@@ -326,7 +327,7 @@ const POSTS: BlogPost[] = [
 
         <h2>What this means for pet services in the area</h2>
         <p>The demand for professional, accountable pet services in Juhu and the western suburbs has never been higher. At the same time, trust is still built on reputation and word-of-mouth. A walker who consistently sends care reports, responds to messages within an hour, and handles an emergency well becomes the person every pet parent recommends. The community is small enough that one bad experience travels fast — and one excellent one does too.</p>
-        <p>PupStep exists to make this ecosystem easier to navigate. Instead of asking around in a building WhatsApp group, you can find a verified provider with real reviews and a clear service offering. The community&apos;s trust infrastructure, built neighbourhood by neighbourhood over years, is the thing we want to make accessible rather than replace.</p>
+        <p>PupStep exists to strengthen exactly this trust infrastructure, not replace it. You keep the walker your building already knows and recommends — your maid, watchman, or the walker three families in your society use — and PupStep adds GPS-tracked proof to every walk they do. The reputation a good walker builds neighbourhood by neighbourhood becomes something they can actually show, not just something people say about them.</p>
 
         <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Are you a pet parent in Juhu, Versova or Andheri West? <Link href="/setup" className="underline text-rose-800">Set up your dog on PupStep</Link> and get GPS-verified proof after every walk.</p>
       </>
@@ -352,7 +353,7 @@ const POSTS: BlogPost[] = [
         <p>This should be a physical booklet, not a photo on your phone. The booklet has the vet&apos;s stamp, the batch number of the vaccine, and the date — all of which matter if your dog bites someone, is involved in a stray dog incident, or travels by air. Keep the original; bring it to every appointment. If you&apos;ve lost it, ask your current vet to issue a duplicate with what they have on file.</p>
 
         <h3>2. Care reports from the last 30 days</h3>
-        <p>If your dog walker uses PupStep, download the last month of reports as a PDF before you leave home. Energy levels, bathroom frequency, appetite notes from walks — this is the kind of contextual data your vet can&apos;t get from a 15-minute appointment. It also saves you from trying to remember whether your dog peed normally &quot;last Tuesday or the Tuesday before.&quot;</p>
+        <p>If your dog walker uses PupStep, pull up your dog&apos;s walk history before you leave home — every report is saved permanently, and you can forward any report&apos;s link straight to your vet on WhatsApp. Energy levels, bathroom frequency, mood notes from walks — this is the kind of contextual data your vet can&apos;t get from a 15-minute appointment. It also saves you from trying to remember whether your dog peed normally &quot;last Tuesday or the Tuesday before.&quot;</p>
 
         <h3>3. A fresh stool sample (for routine check-ups)</h3>
         <p>For any general wellness visit or if your dog has had loose stools, bring a stool sample collected within 2 hours of the appointment. A small container from your pharmacy works. This allows a fecal test on the spot if the vet suspects worms or Giardia — common in Mumbai dogs that walk near street dogs or water-logged areas during monsoon.</p>
@@ -426,7 +427,7 @@ const POSTS: BlogPost[] = [
         <p>Put together, these four things turn a walk from a claim into a record. You&apos;re no longer trusting a description after the fact, you&apos;re looking at what actually happened.</p>
 
         <h2>How PupStep gives you this, with the walker you already have</h2>
-        <p>This is the exact gap PupStep was built to close, and it&apos;s worth being specific about what it does and doesn&apos;t change. It doesn&apos;t replace your maid, your watchman, your neighbour&apos;s college-going son, or whoever currently walks your dog. It gives whoever that person is a dead-simple way, a QR code and a WhatsApp link, no app download, to log the walk properly: GPS route, timestamped photo, duration, and a quick potty note.</p>
+        <p>This is the exact gap PupStep was built to close, and it&apos;s worth being specific about what it does and doesn&apos;t change. It doesn&apos;t replace your maid, your watchman, your neighbour&apos;s college-going son, or whoever currently walks your dog. It gives whoever that person is a dead-simple way to log the walk properly — they scan a QR code or tap a WhatsApp link you send them, enter a 4-digit code, and that&apos;s the whole setup, no app download — after which every walk gets a GPS route, timestamped photo, duration, and a quick potty note.</p>
         <p>You get a real report after every walk instead of a one-line text, and it&apos;s tied to the same person your dog already trusts. If something feels off in a report, or a walk looks unusually short, you now have something concrete to ask about instead of a vague suspicion.</p>
 
         <h2>Frequently asked questions</h2>
@@ -435,7 +436,7 @@ const POSTS: BlogPost[] = [
         <h3>Does GPS tracking work indoors or in areas with low network?</h3>
         <p>Honestly, GPS accuracy can dip in dense urban canyons, deep basements, or covered parking areas, the same physical limitation any GPS-based app has, including the map app already on your phone. For an outdoor dog walk this rarely matters in practice, but we won&apos;t claim perfect accuracy in every condition. What you get is a genuine route logged in real time, not a guaranteed pixel-perfect trace in every environment.</p>
         <h3>Do I need to convince my walker to use a new app?</h3>
-        <p>No new app is required on their end. PupStep works over a QR code and WhatsApp, so a walker with basic smartphone literacy can log a walk in under a minute. Most walkers who are already doing a good job don&apos;t mind this at all, since it takes the guesswork off them too.</p>
+        <p>No new app is required on their end. Your walker scans a QR code or taps a WhatsApp link and enters a 4-digit code — that&apos;s the entire setup — so a walker with basic smartphone literacy can log a walk in under a minute. Most walkers who are already doing a good job don&apos;t mind this at all, since it takes the guesswork off them too.</p>
 
         <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Want proof after every walk, with the walker your dog already knows? <Link href="/setup" className="underline text-amber-800">Set up PupStep for your dog</Link>, free 3-day trial, no app needed for your walker.</p>
       </>
@@ -483,6 +484,41 @@ const POSTS: BlogPost[] = [
 
 export function generateStaticParams() {
   return POSTS.map(post => ({ slug: post.slug }))
+}
+
+// Meta descriptions mirror the excerpts shown on the /blog listing cards
+// (that array lives in app/blog/page.tsx — keep the two in sync when
+// adding a post).
+const META_DESCRIPTIONS: Record<string, string> = {
+  'monsoon-dog-walking-mumbai': 'Waterlogged streets, leptospirosis risk, and paw infections — Mumbai\'s monsoon is genuinely harder on dogs than most parents realise. How to keep walks safe from June to September.',
+  'signs-good-dog-walker-mumbai': 'You don\'t always need a new walker — you need a way to know what\'s happening on the walks you\'re already paying for. What good (and bad) actually looks like.',
+  'how-to-choose-dog-walker-mumbai': 'Not all dog walkers are equal. What to look for — experience, route safety, care reports, and red flags to avoid when hiring in Juhu and Andheri.',
+  'what-is-a-care-report': 'A care report captures every walk — GPS route, photo, poop count, mood. How pet parents in Juhu are using reports to catch health issues early.',
+  'dog-grooming-guide-mumbai': 'Mumbai\'s humidity is tough on coats. How often should you groom? What services matter most? Honest advice from groomers in Juhu.',
+  'juhu-pet-community': 'From beach morning walks to weekend playdates at Carter Road — how Mumbai\'s western suburb became one of India\'s most pet-friendly neighbourhoods.',
+  'vet-visit-checklist-mumbai': 'Vaccination records, food logs, walk history — vets in Mumbai say most pet parents come underprepared. A simple checklist to make every visit count.',
+  'how-to-verify-your-dog-walker-mumbai': 'A one-line WhatsApp text or a blurry gate photo isn\'t proof. What real proof of a dog walk actually looks like — GPS route, timestamped photo, duration, and potty log.',
+  'dog-walking-app-model-differences-mumbai': 'Marketplace-style apps and verification-style apps solve different problems. The structural difference worth understanding before you choose between them.',
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const post = POSTS.find(p => p.slug === slug)
+  if (!post) return {}
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
+  const description = META_DESCRIPTIONS[slug] ?? `${post.title} — practical guides for Mumbai dog parents from PupStep.`
+  return {
+    title: post.title,
+    description,
+    alternates: { canonical: `${siteUrl}/blog/${slug}` },
+    openGraph: {
+      title: post.title,
+      description,
+      type: 'article',
+      url: `${siteUrl}/blog/${slug}`,
+      images: [{ url: post.image }],
+    },
+  }
 }
 
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -558,7 +594,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           style={{ background: 'linear-gradient(135deg, #0A2F35, #0D3D45)' }}>
           <p className="font-bold text-white text-lg mb-1">Get GPS-verified proof of every walk</p>
           <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.55)' }}>
-            Share a QR code with your own walker — no app for them to download. 3-day free trial.
+            Share a QR code or WhatsApp link with your own walker — no app for them to download. 3-day free trial.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link href="/setup"

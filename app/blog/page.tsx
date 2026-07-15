@@ -147,7 +147,7 @@ export default function BlogPage() {
             Stories, guides &amp; tips<br />for Mumbai pet parents
           </h1>
           <p className="text-slate-500 text-lg max-w-xl mx-auto" style={{ lineHeight: 1.65 }}>
-            Practical advice from verified providers and real pet parents in Juhu, Andheri West and beyond.
+            Practical advice for real dog parents in Juhu, Versova, Andheri West and beyond.
           </p>
         </motion.div>
       </section>

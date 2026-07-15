@@ -76,14 +76,15 @@ export default function CookieConsent({ gaId }: { gaId?: string }) {
                 className="text-sm font-bold text-slate-900"
                 style={{ fontFamily: 'var(--font-fredoka)' }}
               >
-                We use cookies 🍪
+                A quick heads-up 🍪
               </p>
               <p
                 className="text-xs text-slate-600 mt-1.5 leading-relaxed"
                 style={{ fontFamily: 'var(--font-nunito)' }}
               >
-                We use Google Analytics to understand how PupStep is used, so we
-                can improve it. No data is sold or shared with advertisers.
+                Can we use anonymous analytics to see what&apos;s working and improve
+                PupStep? Nothing is sold or shared with advertisers — and either
+                way, everything on PupStep works exactly the same for you.
               </p>
               <div className="flex gap-2.5 mt-3.5">
                 <button
@@ -98,7 +99,7 @@ export default function CookieConsent({ gaId }: { gaId?: string }) {
                     minHeight: 44,
                   }}
                 >
-                  Decline
+                  No thanks
                 </button>
                 <button
                   onClick={() => choose('accepted')}
@@ -111,7 +112,7 @@ export default function CookieConsent({ gaId }: { gaId?: string }) {
                     minHeight: 44,
                   }}
                 >
-                  Accept
+                  Sure, okay
                 </button>
               </div>
             </div>

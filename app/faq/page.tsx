@@ -44,7 +44,7 @@ const FAQS: { category: string; color: string; textColor: string; icon: string; 
       },
       {
         q: 'How does my walker send the report?',
-        a: 'Your walker taps the link you shared with them — no app download, no account needed — and enters the 4-digit code you gave them. From there it takes under a minute: tap Start Walk, walk your dog with GPS running, then add a photo and quick notes when they\'re done. The report lands in your account and on WhatsApp within seconds.',
+        a: 'Your walker scans the QR code from your dashboard or taps the WhatsApp link you send them — no app download, no account needed — and enters the 4-digit code that comes with it. From there it takes under a minute: tap Start Walk, walk your dog with GPS running, then add a photo and quick notes when they\'re done. The report lands in your account and on WhatsApp within seconds.',
       },
       {
         q: 'What if my walker doesn\'t send a report?',
@@ -80,11 +80,11 @@ const FAQS: { category: string; color: string; textColor: string; icon: string; 
     items: [
       {
         q: 'How do I get started?',
-        a: 'Sign up at pupstep.in, add your dog\'s details (name, breed, age), and share the walker setup link with your dog walker. Once they connect, their walk logs automatically appear in your dashboard.',
+        a: 'Sign up at pupstep.in, add your dog\'s details (name, breed, age), then invite your walker: show them the QR code from your dashboard or send them the WhatsApp link. They enter the 4-digit code that comes with it and they\'re connected — every walk they log appears in your dashboard automatically.',
       },
       {
         q: 'What if my walker is not on PupStep yet?',
-        a: 'No problem — just share your unique QR code or WhatsApp link with them from your dashboard. It takes about 30 seconds for them to connect: no app download, no account, and it\'s always free for them to use.',
+        a: 'No problem — just share your unique QR code or WhatsApp link with them from your dashboard, along with the 4-digit code shown under it. They scan or tap, enter the code, and they\'re in. It takes about 30 seconds: no app download, no account, and it\'s always free for them to use.',
       },
       {
         q: 'Can I have multiple dogs on one account?',
@@ -108,7 +108,7 @@ const FAQS: { category: string; color: string; textColor: string; icon: string; 
       },
       {
         q: 'What is included in the plan?',
-        a: 'Your plan includes GPS-tagged walk logs, photo diary, grooming records, vet visit history, feeding and medication tracker, and vet-ready health PDFs.',
+        a: 'Your plan includes GPS-tagged walk logs, photo diary, grooming records, vet visit history, feeding and medication tracking, and shareable report links you can forward to your vet or family on WhatsApp.',
       },
       {
         q: 'Is there a free trial?',
@@ -132,11 +132,11 @@ const FAQS: { category: string; color: string; textColor: string; icon: string; 
       },
       {
         q: 'How do I send a walk report to my client?',
-        a: 'Sign in at pupstep.in/pro and go to your walker dashboard. After each walk, log the session with GPS route, a photo, and quick notes. The report generates in seconds and goes straight to your client\'s PupStep account.',
+        a: 'You don\'t need an account or an app. Once you\'re connected, you get your own dashboard link — save it or bookmark it. Open it before the walk, tap Start Walk, and GPS tracks the route as you go. When you\'re done, tap End Walk, add a photo and quick notes, and the report goes straight to the dog\'s parent automatically.',
       },
       {
         q: 'How do I connect with a dog parent on PupStep?',
-        a: 'Share your walker profile link with your client. Once they sign up and add their dog, they connect it to your walker profile. After that, every walk you log goes straight to their dashboard automatically.',
+        a: 'The dog\'s parent invites you — they\'ll show you a QR code to scan or send you a link on WhatsApp, along with a 4-digit code. Scan or tap, enter the code, and you\'re connected in under a minute. No account, no app download, and it\'s completely free for you. After that, every walk you log goes straight to their dashboard automatically.',
       },
       {
         q: 'What if I walk dogs for multiple different owners?',

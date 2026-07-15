@@ -114,6 +114,24 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
             ))}
           </div>
 
+          {/* Areas */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>Areas</p>
+            {[
+              { href: '/areas/juhu', label: 'Juhu' },
+              { href: '/areas/versova', label: 'Versova' },
+              { href: '/areas/andheri-west', label: 'Andheri West' },
+              { href: '/areas/santacruz-west', label: 'Santacruz West' },
+            ].map(({ href, label }) => (
+              <a key={href} href={href} className="block text-sm mb-2 transition-colors"
+                style={{ color: 'rgba(255,255,255,0.5)' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}>
+                {label}
+              </a>
+            ))}
+          </div>
+
           {/* Company */}
           <div>
             <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(255,255,255,0.3)' }}>Company</p>
@@ -142,7 +160,7 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
         <div className="max-w-7xl mx-auto px-5 sm:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3"
           style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
           <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            © {new Date().getFullYear()} PupStep · Juhu, Mumbai · Every listing manually verified.
+            © {new Date().getFullYear()} PupStep · Juhu, Mumbai · GPS-verified proof for every walk.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
             {[
