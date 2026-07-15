@@ -336,8 +336,14 @@ export default async function WalkReportPage({
   // Gate: this page has no login requirement to view, so resolve the report's
   // owning parent and check their entitlement (paid access, not who's currently
   // viewing) before rendering the full report content.
+  //
+  // Admin override: the admin must be able to open any report for support/QA
+  // purposes regardless of whether that report's owning parent currently has
+  // paid access — the paywall exists to gate parents from each other's data,
+  // not to gate the founder from his own product.
+  const isAdminViewer = !!user?.email && user.email === (process.env.ADMIN_EMAIL ?? '')
   const ownerId = await resolveReportOwnerId(report, adminCheck)
-  const isEntitled = ownerId ? (await getEntitlement(adminCheck, ownerId)).isEntitled : false
+  const isEntitled = isAdminViewer || (ownerId ? (await getEntitlement(adminCheck, ownerId)).isEntitled : false)
 
   if (!isEntitled) {
     return <LockedReportView dogName={report.dog_name} />
