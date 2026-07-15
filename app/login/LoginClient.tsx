@@ -25,6 +25,7 @@ export default function LoginClient({ next }: Props) {
   async function handleGoogle() {
     setLoading(true)
     setError('')
+    trackEvent('auth_started', { method: 'google' })
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -42,6 +43,7 @@ export default function LoginClient({ next }: Props) {
     if (!emailInput.trim()) { setError('Please enter your email'); return }
     setLoading(true)
     setError('')
+    trackEvent('auth_started', { method: 'email_otp' })
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email: emailInput.trim(),
       options: {

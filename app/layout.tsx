@@ -6,6 +6,7 @@ import MotionProvider from '@/components/MotionProvider'
 import ShellWrapper from '@/components/ShellWrapper'
 import InitialLoader from '@/components/InitialLoader'
 import RouteProgressBar from '@/components/RouteProgressBar'
+import FunnelTracker from '@/components/FunnelTracker'
 import './globals.css'
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
@@ -91,6 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </>
         )}
         <InitialLoader />
+        <FunnelTracker />
         <Suspense fallback={null}>
           <RouteProgressBar />
         </Suspense>

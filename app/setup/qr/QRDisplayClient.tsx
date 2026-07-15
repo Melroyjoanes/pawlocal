@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import Link from 'next/link'
+import { trackEvent } from '@/lib/analytics'
 
 type InviteLang = 'en' | 'hi' | 'mr'
 
@@ -91,6 +92,7 @@ export default function QRDisplayClient({
   }
 
   async function saveExpectedPhone(phone: string) {
+    trackEvent('walker_invite_shared', { method: 'whatsapp_direct' })
     // Fire-and-forget: save the walker's expected phone to the connection
     if (!dogId) return
     fetch(`/api/dogs/${dogId}/qr/expected-phone`, {
@@ -102,6 +104,7 @@ export default function QRDisplayClient({
 
   function handleCopyLink() {
     if (!walkerDashUrl) return
+    trackEvent('walker_invite_shared', { method: 'copy_link' })
     navigator.clipboard.writeText(walkerDashUrl).then(() => {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
@@ -447,6 +450,7 @@ export default function QRDisplayClient({
                 href={walkerDashWaUrl || '#'}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackEvent('walker_invite_shared', { method: 'whatsapp_dashboard' })}
                 style={{
                   display: 'block',
                   width: '100%',
@@ -619,6 +623,7 @@ export default function QRDisplayClient({
               href={shareUrl || '#'}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackEvent('walker_invite_shared', { method: 'whatsapp_generic' })}
               style={{
                 display: 'block',
                 width: '100%',

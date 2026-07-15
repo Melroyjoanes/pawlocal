@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { trackEvent } from '@/lib/analytics'
 
 interface AuthModalProps {
   open: boolean
@@ -40,6 +41,7 @@ export default function AuthModal({ open, onClose, redirectTo, message, onSigned
   async function handleGoogle() {
     setLoading(true)
     setError('')
+    trackEvent('auth_started', { method: 'google', surface: 'modal' })
     const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -54,6 +56,7 @@ export default function AuthModal({ open, onClose, redirectTo, message, onSigned
     if (!emailInput.trim()) { setError('Please enter your email'); return }
     setLoading(true)
     setError('')
+    trackEvent('auth_started', { method: 'email_otp', surface: 'modal' })
     const { error } = await supabase.auth.signInWithOtp({
       email: emailInput.trim(),
       options: {

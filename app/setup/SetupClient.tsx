@@ -109,6 +109,11 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
 
   const dogFirstName = name.trim().split(' ')[0] || 'your dog'
 
+  // Funnel: user reached the dog-setup form (fires once per visit)
+  useEffect(() => {
+    trackEvent('setup_viewed')
+  }, [])
+
   // Recover draft after Google OAuth redirect
   useEffect(() => {
     if (!recover || !user || autoSubmittedRef.current) return

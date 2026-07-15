@@ -1147,17 +1147,22 @@ export default function HomeClient({ displayName, firstDog, otherDogs, activeWal
         {/* Walker nudge — walker connected but no walks yet */}
         {showWalkerNudge && (() => {
           const firstConn = walkerConnections[0]
+          // Pending connections have no walker_name yet — use case-appropriate
+          // fallbacks so we never render "your walker is connected" (lowercase
+          // sentence start) or "Hi Your walker," (capitalised mid-greeting).
+          const headingName = firstConn?.walker_name ?? 'Your walker'
           const walkerName = firstConn?.walker_name ?? 'your walker'
           const dogName = firstDog?.name ?? 'your dog'
           const walkerToken = firstConn?.token ?? ''
-          const waText = encodeURIComponent(`Hi ${walkerName}, please use PupStep for today's walk with ${dogName}. Here's your dashboard link: pupstep.in/walker/${walkerToken}`)
+          const waGreeting = firstConn?.walker_name ? `Hi ${firstConn.walker_name}, please` : 'Hi, please'
+          const waText = encodeURIComponent(`${waGreeting} use PupStep for today's walk with ${dogName}. Here's your dashboard link: pupstep.in/walker/${walkerToken}`)
           const walkerPhone = firstConn?.walker_phone?.replace(/\D/g, '') ?? ''
           const waHref = walkerPhone ? `https://wa.me/91${walkerPhone}?text=${waText}` : `https://wa.me/?text=${waText}`
           return (
             <div style={{ background: '#FFFDF7', border: '1.5px solid oklch(0.48 0.17 196 / 0.2)', borderRadius: '28px', padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', boxShadow: CLAY_SHADOW_CREAM }}>
               <span style={{ fontSize: 48 }}>🐾</span>
               <div style={{ textAlign: 'center' }}>
-                <p style={{ fontFamily: 'var(--font-fredoka), sans-serif', fontSize: '18px', fontWeight: 700, color: '#0A2F35', margin: '0 0 6px' }}>{walkerName} is connected. Waiting for the first walk.</p>
+                <p style={{ fontFamily: 'var(--font-fredoka), sans-serif', fontSize: '18px', fontWeight: 700, color: '#0A2F35', margin: '0 0 6px' }}>{headingName} is connected. Waiting for the first walk.</p>
                 <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', color: '#6B7280', margin: '0 0 4px' }}>Your first walk report will appear here after your walker logs a walk.</p>
                 <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', color: '#6B7280', margin: 0 }}>Send them a reminder to use PupStep today.</p>
               </div>
