@@ -18,7 +18,11 @@ const BLOG_SLUGS = [
   'dog-grooming-guide-mumbai',
   'juhu-pet-community',
   'vet-visit-checklist-mumbai',
+  'how-to-verify-your-dog-walker-mumbai',
+  'dog-walking-app-model-differences-mumbai',
 ]
+
+const AREA_SLUGS = ['juhu', 'versova', 'andheri-west', 'santacruz-west']
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
@@ -41,5 +45,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }))
 
-  return [...staticRoutes, ...blogRoutes]
+  const areaRoutes: MetadataRoute.Sitemap = AREA_SLUGS.map(slug => ({
+    url: `${base}/areas/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }))
+
+  return [...staticRoutes, ...blogRoutes, ...areaRoutes]
 }

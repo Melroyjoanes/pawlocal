@@ -44,8 +44,23 @@ export default async function HomePage({
             "@context": "https://schema.org",
             "@type": "WebSite",
             "name": "PupStep",
-            "description": "GPS walk reports for Mumbai dogs. Your dog gets walked — now prove it.",
+            "alternateName": "PupStep GPS Dog Walk Tracker",
+            "description": "PupStep is a GPS dog walk verification app for Mumbai dog parents, not a directory or marketplace. Your own walker — maid, watchman, family friend, or regular walker — logs the walk, and you get a GPS-tracked proof-of-walk report on WhatsApp within seconds.",
             "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}`,
+          })
+        }}
+      />
+      {/* Organization schema — reinforces brand entity for Knowledge Panel / AI Overview */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "PupStep",
+            "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}`,
+            "description": "PupStep is a GPS walk-verification service for Mumbai dog parents. It is not a pet services directory or marketplace — dog parents keep their own walker and use PupStep to get a GPS-tracked, WhatsApp-delivered proof-of-walk report after every walk.",
+            "areaServed": { "@type": "City", "name": "Mumbai" },
           })
         }}
       />
@@ -57,6 +72,11 @@ export default async function HomePage({
             "@context": "https://schema.org",
             "@type": "FAQPage",
             "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Is PupStep a directory of dog walkers, vets, or groomers?",
+                "acceptedAnswer": { "@type": "Answer", "text": "No. PupStep is not a marketplace or directory and does not list or book providers. Dog parents keep the walker they already trust and use PupStep to get a GPS-tracked proof-of-walk report on WhatsApp after every walk." }
+              },
               {
                 "@type": "Question",
                 "name": "Does the walker need to download an app?",

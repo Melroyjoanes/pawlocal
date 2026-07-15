@@ -98,6 +98,32 @@ const POSTS = [
     date: 'May 12, 2026',
     featured: false,
   },
+  {
+    slug: 'how-to-verify-your-dog-walker-mumbai',
+    category: 'Dog Walking',
+    categoryColor: '#FEF3C7',
+    categoryText: '#78350F',
+    emoji: '🔍',
+    image: 'https://images.unsplash.com/photo-1587402092301-725e37c70fd8?auto=format&fit=crop&w=900&q=80',
+    title: 'How to know if your dog walker actually walked your dog',
+    excerpt: 'A one-line WhatsApp text or a blurry gate photo isn\'t proof. Here\'s what real proof of a walk actually looks like, and why it\'s harder to verify than most pet parents realise.',
+    readTime: '6 min read',
+    date: 'Jul 15, 2026',
+    featured: false,
+  },
+  {
+    slug: 'dog-walking-app-model-differences-mumbai',
+    category: 'Dog Walking',
+    categoryColor: '#FEF3C7',
+    categoryText: '#78350F',
+    emoji: '⚖️',
+    image: 'https://images.unsplash.com/photo-1601979031925-424e53b6caaa?auto=format&fit=crop&w=900&q=80',
+    title: 'Why some dog walking apps can\'t guarantee your walker shows up (and what to do instead)',
+    excerpt: 'Marketplace-style apps and verification-style apps solve different problems. Understanding the structural difference matters before you choose between them.',
+    readTime: '6 min read',
+    date: 'Jul 16, 2026',
+    featured: false,
+  },
 ]
 
 const CATEGORIES = ['All', 'Dog Walking', 'Care Reports', 'Grooming', 'Health', 'Community']

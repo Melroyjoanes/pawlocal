@@ -508,12 +508,16 @@ const PAW_PATTERN_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='84' heig
 
 // ─── FAQ ─────────────────────────────────────────────────────────────────────
 const FAQ_ITEMS = [
+  { q: 'Is PupStep a directory of dog walkers, vets, or groomers?', a: "No — PupStep isn't a marketplace or directory, and we don't list or book providers. Keep the walker you already trust — a maid, watchman, family friend, or your regular walker — and use PupStep to get a GPS-tracked proof-of-walk report on WhatsApp after every walk." },
   { q: 'Does my dog walker need to download an app?', a: 'No. Your walker opens a link from WhatsApp — no App Store, no signup, no account. Built for low-tech-literacy walkers across Mumbai.' },
   { q: 'How does GPS tracking work for dog walks?', a: 'Your walker\'s phone tracks the route live during the walk. You get the exact path, pee and poop locations, and timing — all mapped and sent to your WhatsApp.' },
   { q: 'How do I connect my walker?', a: 'Show them a QR code or send a WhatsApp link. They enter a 4-digit code you share. One-time setup, under a minute.' },
   { q: 'What proof do I actually get after each walk?', a: 'GPS route, pee and poop count with map markers, a dog photo, walk duration and distance, and walker notes — delivered on WhatsApp within seconds of the walk ending.' },
   { q: 'How much does PupStep cost?', a: '3-day free trial, no credit card needed. After that, ₹199/month for full walk history and unlimited walkers.' },
   { q: 'Can I share the walk report with my vet or family?', a: 'Yes. Every report has a shareable link you can forward to anyone — family, vets, or groomers — in one tap.' },
+  { q: 'How do I know if my dog walker actually walked my dog?', a: 'Every walk comes with a GPS route map, a photo, and quick notes from your walker — not just a text saying "walk done". It\'s reassurance, not surveillance: the proof is already in your report, so you never have to wonder.' },
+  { q: 'What if my walker says the walk happened but I\'m not sure?', a: 'A text saying "walk done" is easy to send from the couch. A GPS route on a map is much harder to fake — it shows exactly where your dog went, for how long, and when.' },
+  { q: 'Is this different from apps that provide their own dog walker?', a: 'Yes, and it\'s the biggest difference. Apps that supply their own walker fall apart if that walker doesn\'t show up. PupStep works with the walker you already trust, your maid, watchman, family friend, or regular walker, and just adds GPS-tracked proof to the walks they already do.' },
 ]
 
 function AccordionItem({ q, a }: { q: string; a: string }) {

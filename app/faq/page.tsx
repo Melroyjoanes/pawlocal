@@ -58,6 +58,18 @@ const FAQS: { category: string; color: string; textColor: string; icon: string; 
         q: 'How long are reports saved?',
         a: 'Walk reports are saved permanently and nothing is ever deleted. While your subscription is active, you can scroll back through your dog\'s entire history from day one.',
       },
+      {
+        q: 'How do I know if my dog walker actually walked my dog?',
+        a: 'This is exactly why PupStep exists. Every walk comes with a GPS route map, a photo of your dog, and quick notes from your walker — not just a text saying "walk done". You don\'t have to wonder or ask around; the proof is already sitting in your report. Think of it as reassurance, not surveillance — you\'re not checking up on anyone, you\'re just getting to see what your dog\'s walk actually looked like.',
+      },
+      {
+        q: 'What if my walker says the walk happened but I\'m not sure?',
+        a: 'A message saying "walk done" is easy to send from the couch. A GPS route on a map is much harder to fake — it shows exactly where your dog went, for how long, and when it happened. If something ever feels off, the walk report gives you something concrete to look at instead of just taking someone\'s word for it.',
+      },
+      {
+        q: 'Is this different from apps that provide their own dog walker?',
+        a: 'Yes, and it\'s the biggest difference. Apps that supply their own walker are only as reliable as whoever they send that day — if that person doesn\'t show up, the whole plan falls apart. PupStep works the other way around: keep the walker you already trust, your maid, watchman, family friend, or regular walker, and we simply add GPS-tracked proof to every walk they do. There\'s no one to book and no one to replace, so there\'s no risk of a stranger not turning up. You keep the relationship you already trust; we just make it verifiable.',
+      },
     ],
   },
   {

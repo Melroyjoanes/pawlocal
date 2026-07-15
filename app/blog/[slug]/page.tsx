@@ -384,6 +384,100 @@ const POSTS: BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: 'how-to-verify-your-dog-walker-mumbai',
+    category: 'Dog Walking',
+    categoryColor: '#FEF3C7',
+    categoryText: '#78350F',
+    image: 'https://images.unsplash.com/photo-1587402092301-725e37c70fd8?auto=format&fit=crop&w=1200&q=80',
+    title: 'How to know if your dog walker actually walked your dog',
+    date: 'Jul 15, 2026',
+    readTime: '6 min read',
+    author: 'PupStep Team',
+    content: (
+      <>
+        <p>&quot;Walk done, all good&quot; is the most common message a Mumbai pet parent gets during the workday. It&apos;s also, if you think about it for more than a few seconds, not proof of anything. A text can be sent from a lift lobby. A photo can be a day old. Even a real walk that happened can be too short, too rushed, or on a route you&apos;d never have approved if you&apos;d known.</p>
+        <p>This isn&apos;t a trust problem in the dramatic sense — most walkers, maids, and watchmen genuinely do the walk. It&apos;s a visibility problem. You&apos;re paying for something that happens entirely out of sight, for 30 to 45 minutes, and the only record of it is whatever the walker chooses to tell you afterward.</p>
+
+        <h2>Why this is genuinely hard to verify</h2>
+        <p>It&apos;s not that pet parents are being naive. There&apos;s just no natural mechanism for verification in a normal walk. Nobody photographs a receipt. There&apos;s no meter running. The dog can&apos;t tell you what happened, and even if it could, a tired, happy dog looks the same whether it did a full loop of the block or sat outside the building for twenty minutes.</p>
+        <p>So pet parents fall back on proxies: how fast the walker gets back, whether the dog seems tired, whether a photo shows up. All of these are weak signals. A dog can look tired from heat, not exercise. A walker can send yesterday&apos;s photo. None of it is proof, even though it feels like enough at the time.</p>
+
+        <h2>What a one-line text or a blurry gate photo doesn&apos;t tell you</h2>
+        <p>Think about what a typical &quot;done&quot; message actually confirms: that the walker typed a message. That&apos;s it. It doesn&apos;t confirm:</p>
+        <ul>
+          <li>How long the walk actually lasted</li>
+          <li>Which route was taken, or whether it avoided a hazard like a flooded lane or a busy road</li>
+          <li>Whether your dog actually relieved itself, and how many times</li>
+          <li>Whether the photo, if there is one, was taken during this walk or reused from an earlier one</li>
+          <li>Whether the walk happened at the time it was reported, or an hour later than promised</li>
+        </ul>
+        <p>None of this means the walker is doing anything wrong. It just means you have no way to know either way, and that gap is exactly where anxiety, and occasionally genuine problems, live.</p>
+
+        <h2>What actually counts as proof</h2>
+        <p>Real proof of a walk isn&apos;t a feeling, it&apos;s a small set of specific, checkable facts. At minimum:</p>
+        <ul>
+          <li><strong>A GPS route:</strong> the actual path walked, not a claimed one, showing distance covered and where the walk went</li>
+          <li><strong>A timestamped photo:</strong> taken during the walk itself, tied to the time the walk was logged, not pulled from a gallery</li>
+          <li><strong>Duration:</strong> the real start and end time, so a 10-minute walk can&apos;t be reported as a 40-minute one</li>
+          <li><strong>A potty log:</strong> whether your dog peed and pooped, how many times, and any notes on anything that looked off</li>
+        </ul>
+        <p>Put together, these four things turn a walk from a claim into a record. You&apos;re no longer trusting a description after the fact, you&apos;re looking at what actually happened.</p>
+
+        <h2>How PupStep gives you this, with the walker you already have</h2>
+        <p>This is the exact gap PupStep was built to close, and it&apos;s worth being specific about what it does and doesn&apos;t change. It doesn&apos;t replace your maid, your watchman, your neighbour&apos;s college-going son, or whoever currently walks your dog. It gives whoever that person is a dead-simple way, a QR code and a WhatsApp link, no app download, to log the walk properly: GPS route, timestamped photo, duration, and a quick potty note.</p>
+        <p>You get a real report after every walk instead of a one-line text, and it&apos;s tied to the same person your dog already trusts. If something feels off in a report, or a walk looks unusually short, you now have something concrete to ask about instead of a vague suspicion.</p>
+
+        <h2>Frequently asked questions</h2>
+        <h3>How can I tell if my dog walker skipped a walk?</h3>
+        <p>Without a GPS-logged report, the honest answer is: you often can&apos;t, not with certainty. A skipped walk and a rushed one can look identical from a text message alone. With a logged route and duration, a skipped or drastically shortened walk becomes visible immediately, since there&apos;s an actual record of distance and time to check against what was promised.</p>
+        <h3>Does GPS tracking work indoors or in areas with low network?</h3>
+        <p>Honestly, GPS accuracy can dip in dense urban canyons, deep basements, or covered parking areas, the same physical limitation any GPS-based app has, including the map app already on your phone. For an outdoor dog walk this rarely matters in practice, but we won&apos;t claim perfect accuracy in every condition. What you get is a genuine route logged in real time, not a guaranteed pixel-perfect trace in every environment.</p>
+        <h3>Do I need to convince my walker to use a new app?</h3>
+        <p>No new app is required on their end. PupStep works over a QR code and WhatsApp, so a walker with basic smartphone literacy can log a walk in under a minute. Most walkers who are already doing a good job don&apos;t mind this at all, since it takes the guesswork off them too.</p>
+
+        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Want proof after every walk, with the walker your dog already knows? <Link href="/setup" className="underline text-amber-800">Set up PupStep for your dog</Link>, free 3-day trial, no app needed for your walker.</p>
+      </>
+    ),
+  },
+  {
+    slug: 'dog-walking-app-model-differences-mumbai',
+    category: 'Dog Walking',
+    categoryColor: '#FEF3C7',
+    categoryText: '#78350F',
+    image: 'https://images.unsplash.com/photo-1601979031925-424e53b6caaa?auto=format&fit=crop&w=1200&q=80',
+    title: 'Why some dog walking apps can\'t guarantee your walker shows up (and what to do instead)',
+    date: 'Jul 16, 2026',
+    readTime: '6 min read',
+    author: 'PupStep Team',
+    content: (
+      <>
+        <p>If you&apos;ve spent any time comparing dog walking apps in Mumbai, you&apos;ve probably noticed they don&apos;t all work the same way underneath, even when the marketing looks similar. The difference isn&apos;t really about features or pricing. It&apos;s about a structural choice each app made early on, one that quietly determines what can and can&apos;t go wrong later.</p>
+        <p>It&apos;s worth understanding this distinction before you choose, because it explains a lot about why some walking arrangements feel fragile and others don&apos;t.</p>
+
+        <h2>Two different models, one honest distinction</h2>
+        <p>Broadly, dog-related apps in this space fall into two categories. The first is what you could call marketplace-style dog walking apps, apps that supply their own walker. You open the app, request a walk, and the platform assigns someone from its own pool to show up at your door. The service the app is selling is, in effect, the walker relationship itself.</p>
+        <p>The second model doesn&apos;t supply a walker at all. It works with whoever already walks your dog, a maid, a watchman, a family friend, a hired walker you found yourself, and gives that existing arrangement a way to produce verifiable proof: a GPS route, a timestamped photo, a duration, a potty log. The app&apos;s job here isn&apos;t to be your walker. It&apos;s to make an existing, trusted arrangement accountable.</p>
+
+        <h2>Why this distinction matters more than it first appears</h2>
+        <p>Here&apos;s the structural point worth sitting with: if an app&apos;s core promise depends on supplying and guaranteeing a specific walker, then a walker cancellation or no-show is a failure of the entire service. Not a minor hiccup, a failure of the exact thing you were paying for. That&apos;s because in that model, the walker relationship belongs to the platform, not to the family. If the platform&apos;s assigned person doesn&apos;t show up, there&apos;s no fallback the family controls directly, since the family was never in that relationship to begin with. They&apos;re waiting on the platform to fix its own supply problem.</p>
+        <p>This isn&apos;t a criticism of any specific company or a claim about how often it happens anywhere in particular. It&apos;s simply what the model implies, logically, whenever the walker is the product. A supply-and-guarantee model is only ever as reliable as the supply on a given day, in a given area, at a given time slot.</p>
+
+        <h2>Where the second model behaves differently, by design</h2>
+        <p>An app built on the second model has no equivalent failure mode, not because it&apos;s better run, but because it never promised a walker in the first place. It verifies whichever walker the family already trusts and already has, whoever that happens to be. If that person is unavailable on a given day, that&apos;s the same kind of ordinary scheduling problem a family already manages today, the same way they&apos;d manage their maid or watchman being unavailable. It&apos;s not a service outage, because the service was never &quot;a walker shows up.&quot; It was always &quot;here&apos;s proof of what happened with the person you already rely on.&quot;</p>
+        <p>Put another way: in the first model, the app sits between the family and the walker. In the second, the app sits alongside a relationship the family already owns.</p>
+
+        <h2>What this means when you&apos;re actually choosing</h2>
+        <p>Neither model is wrong on its face, they&apos;re solving different problems. If you don&apos;t currently have anyone to walk your dog and want the platform to find and supply someone, a marketplace model is doing the job it&apos;s designed for. If you already have someone your dog trusts, and what you actually want is visibility into what happens on the walks that are already happening, that&apos;s a different job, and it&apos;s worth being clear-eyed about which one you&apos;re hiring for.</p>
+        <p>The practical question to ask before signing up for anything is simple: if my usual walker is unavailable tomorrow, whose problem is that, mine, or the app&apos;s? Your answer to that tells you which model you&apos;re actually using.</p>
+
+        <h2>Where PupStep fits</h2>
+        <p>PupStep is built on the second model. We don&apos;t supply, assign, or guarantee a walker, and we&apos;re not trying to replace the maid, watchman, or friend your dog already knows. What we do is give that existing arrangement a GPS route, a timestamped photo, a duration, and a potty log after every walk, so the trust you&apos;ve already built with that person comes with proof attached.</p>
+
+        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Already have someone who walks your dog? <Link href="/setup" className="underline text-amber-800">Set up PupStep for your dog</Link> and get proof after every walk, whoever&apos;s holding the leash.</p>
+      </>
+    ),
+  },
 ]
 
 export function generateStaticParams() {
