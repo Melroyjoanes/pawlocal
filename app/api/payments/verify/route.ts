@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
 import crypto from 'crypto'
 import { sendGA4Event } from '@/lib/ga4'
+import { sendEmail, proWelcomeEmail } from '@/lib/email'
 
 function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
@@ -133,19 +134,14 @@ export async function POST(req: NextRequest) {
   // walk-logs route for the same fix and the NULL email_sent_at evidence).
   after(async () => {
     const email = user.email
-    if (!email || !process.env.RESEND_API_KEY) return
+    if (!email) return
     const planLabel = '₹199/month'
     const expiryLabel = new Date(expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Kolkata' })
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.RESEND_API_KEY}` },
-      body: JSON.stringify({
-        from: 'PupStep <hello@pupstep.in>',
-        to: [email],
-        subject: 'Welcome to PupStep Pro 🐾',
-        html: `<p>Hi!</p><p>You're now on PupStep Pro (${planLabel}). Your access runs until <strong>${expiryLabel}</strong>.</p><p>Enjoy unlimited walk reports, GPS tracking, and the full care diary. <a href="https://pupstep.in/home">Go to your dashboard →</a></p><p>Thanks,<br/>The PupStep Team</p>`,
-      }),
-    }).catch(() => {})
+    await sendEmail({
+      to: email,
+      subject: existingActive ? 'Your PupStep Pro plan has renewed 🐾' : "You're a Pro member now 🎉",
+      html: proWelcomeEmail({ planLabel, expiryLabel, isRenewal: !!existingActive }),
+    })
   })
 
   return NextResponse.json({ ok: true, expires_at: expiresAt })

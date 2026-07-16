@@ -318,6 +318,123 @@ export function walkReportEmail(opts: {
 }
 
 /**
+ * Sent right after a successful Razorpay payment activates Pro — the first
+ * "you paid us and it worked" moment a customer sees, so it should read as
+ * a welcome, not a receipt.
+ */
+export function proWelcomeEmail(opts: {
+  planLabel: string
+  expiryLabel: string
+  isRenewal?: boolean
+}): string {
+  const { planLabel, expiryLabel, isRenewal } = opts
+
+  const content =
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="background:#0A2F35;padding:32px 36px 26px;">
+          <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#FF8C52;
+                    text-transform:uppercase;letter-spacing:0.1em;
+                    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+            PupStep Pro
+          </p>
+          <p style="margin:0;font-size:26px;font-weight:700;color:#ffffff;line-height:1.25;
+                    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+            ${isRenewal ? "You're all set for another month 🐾" : "You're a Pro member now 🎉"}
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding:26px 36px 4px;">
+          <p style="margin:0;font-size:15px;color:#374151;line-height:1.75;
+                    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+            ${isRenewal
+              ? `Your ${planLabel} plan has renewed. Every walk report, GPS route, and photo keeps landing on your WhatsApp, automatically.`
+              : `Every walk report, GPS route, and photo is unlocked, and saved for good. No more wondering what happened on a walk you weren't there for.`}
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding:16px 36px 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                 style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;">
+            <tr>
+              <td style="padding:14px 18px;">
+                <p style="margin:0;font-size:13px;color:#78350F;font-weight:600;
+                          font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+                  ${planLabel} &middot; active until ${expiryLabel}
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding:0 36px 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="50%" style="padding:0 6px 8px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F9FAFB;border-radius:8px;">
+                  <tr><td style="padding:10px 12px;">
+                    <span style="font-size:13px;color:#374151;font-family:-apple-system,sans-serif;">📍 GPS route</span>
+                  </td></tr>
+                </table>
+              </td>
+              <td width="50%" style="padding:0 0 8px 6px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F9FAFB;border-radius:8px;">
+                  <tr><td style="padding:10px 12px;">
+                    <span style="font-size:13px;color:#374151;font-family:-apple-system,sans-serif;">📲 WhatsApp</span>
+                  </td></tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td width="50%" style="padding:0 6px 0 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F9FAFB;border-radius:8px;">
+                  <tr><td style="padding:10px 12px;">
+                    <span style="font-size:13px;color:#374151;font-family:-apple-system,sans-serif;">🗂️ Full history</span>
+                  </td></tr>
+                </table>
+              </td>
+              <td width="50%" style="padding:0 0 0 6px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F9FAFB;border-radius:8px;">
+                  <tr><td style="padding:10px 12px;">
+                    <span style="font-size:13px;color:#374151;font-family:-apple-system,sans-serif;">🩺 Vet-ready</span>
+                  </td></tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    ${cta('Go to your dashboard →', `${SITE_URL}/home`)}
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td style="padding:0 36px 28px;border-top:1px solid #F3F4F6;">
+          <p style="margin:16px 0 0;font-size:12px;color:#9CA3AF;line-height:1.6;
+                    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
+            Cancel anytime from My Account, no questions asked. Your walker keeps using PupStep for free either way.
+          </p>
+        </td>
+      </tr>
+    </table>`
+
+  return layout(content)
+}
+
+/**
  * Supabase OTP template HTML — paste this in Supabase Dashboard →
  * Authentication → Email Templates → Magic Link
  */
