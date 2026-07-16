@@ -47,6 +47,67 @@ const WHAT_HAPPENS = [
   { locked: false, text: 'You can upgrade anytime to resume delivery' },
 ]
 
+// Preview of the trial → billing timeline, shown as its own step before the
+// pricing card (not buried in a paragraph) — the same "explain before you
+// ask" sequencing a multi-page paywall achieves, without a real page nav.
+const TRIAL_STEPS = [
+  { icon: '🔓', label: 'Today', text: 'Your first walk report unlocks free — no payment needed' },
+  { icon: '🔔', label: 'Day 2', text: 'A reminder, in case you want to cancel before anything is charged' },
+  { icon: '🐾', label: 'Day 3', text: '₹199/month begins — cancel anytime before this, no questions asked' },
+] as const
+
+function TrialTimelineCard({ activeIndex }: { activeIndex?: number }) {
+  return (
+    <div
+      className="rounded-[24px] p-6 mb-4"
+      style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}
+    >
+      <p
+        className="text-xs font-bold uppercase tracking-widest mb-5"
+        style={{ color: 'rgba(10,47,53,0.4)', fontFamily: 'var(--font-nunito)' }}
+      >
+        How your free trial works
+      </p>
+      <div className="space-y-0">
+        {TRIAL_STEPS.map((step, i) => {
+          const isActive = activeIndex === i
+          const isLast = i === TRIAL_STEPS.length - 1
+          return (
+            <div key={step.label} className="flex gap-4">
+              <div className="flex flex-col items-center flex-shrink-0">
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-base"
+                  style={{
+                    background: isActive ? 'oklch(0.48 0.17 196 / 0.14)' : 'rgba(10,47,53,0.05)',
+                    border: isActive ? '1.5px solid oklch(0.48 0.17 196 / 0.5)' : 'none',
+                  }}
+                >
+                  {step.icon}
+                </div>
+                {!isLast && <div className="w-px flex-1 my-1" style={{ background: 'rgba(10,47,53,0.10)', minHeight: 20 }} />}
+              </div>
+              <div className={isLast ? 'pb-0' : 'pb-5'}>
+                <p
+                  className="text-xs font-bold mb-0.5"
+                  style={{ color: isActive ? 'oklch(0.48 0.17 196)' : '#0A2F35', opacity: isActive ? 1 : 0.55, fontFamily: 'var(--font-nunito)' }}
+                >
+                  {step.label}
+                </p>
+                <p
+                  className="text-sm leading-snug"
+                  style={{ color: '#0A2F35', opacity: 0.85, fontFamily: 'var(--font-nunito)' }}
+                >
+                  {step.text}
+                </p>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 const FAQ = [
   {
     q: 'What happens when my trial ends?',
@@ -222,22 +283,22 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
             className="text-4xl md:text-5xl font-bold leading-tight mb-4"
             style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}
           >
-            {trialStatus === 'no_trial' && 'Your 3-day free trial is waiting'}
-            {trialStatus === 'trial' && 'Keep receiving reports after your trial'}
-            {trialStatus === 'lapsed' && 'Welcome back!'}
+            {trialStatus === 'no_trial' && `Never wonder if ${dogName ?? 'your dog'} actually got walked`}
+            {trialStatus === 'trial' && 'Keep the proof coming after your trial'}
+            {trialStatus === 'lapsed' && 'Pick up right where you left off'}
             {trialStatus === 'active' && 'You\'re on PupStep Pro'}
           </h1>
           <p
             className="text-base max-w-sm mx-auto leading-relaxed"
             style={{ fontFamily: 'var(--font-nunito)', color: '#0A2F35', opacity: 0.65 }}
           >
-            Your walker logs every walk for free. Your subscription unlocks GPS report delivery to your WhatsApp — automatically, every time.
+            {walkerName ?? 'Your walker'} logs every walk for free. Your subscription turns that into real proof on your WhatsApp — a GPS route, a photo, a note — the moment each walk ends.
           </p>
           <p
             className="text-sm max-w-sm mx-auto leading-relaxed mt-3"
             style={{ fontFamily: 'var(--font-nunito)', color: '#0A2F35', opacity: 0.5 }}
           >
-            Every walk logged becomes a permanent part of {dogName ? `${dogName}'s` : 'your dog\'s'} health history — vet visits, grooming, and daily walks, all in one place.
+            Every report is saved for good, building into {dogName ? `${dogName}'s` : 'your dog\'s'} full health history — vet visits, grooming, and every walk, in one place.
           </p>
         </div>
 
@@ -257,6 +318,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
           {/* no_trial: trial hasn't started yet */}
           {trialStatus === 'no_trial' && (
             <>
+              <TrialTimelineCard activeIndex={0} />
               <div style={{ background: '#fff', borderRadius: 24, padding: 28, boxShadow: CLAY_SHADOW_CREAM, marginBottom: 16 }}>
                 <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 22, fontWeight: 700, color: '#0A2F35', marginBottom: 8 }}>
                   Your free trial starts with your first walk report.
@@ -349,6 +411,10 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
 
           {/* trial: active trial — show countdown + payment button */}
           {trialStatus === 'trial' && (
+            <>
+            <TrialTimelineCard
+              activeIndex={trialDaysRemaining == null ? undefined : trialDaysRemaining >= 3 ? 0 : trialDaysRemaining === 2 ? 1 : 2}
+            />
             <div
               className="rounded-[28px] p-7"
               style={{ background: '#0A2F35', boxShadow: CLAY_SHADOW_TEAL }}
@@ -412,10 +478,11 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                   loading={loading === 'monthly'}
                   disabled={loading !== null}
                   loadingText="Processing…"
-                  className="rounded-[18px] text-sm"
-                  style={{ padding: '16px', background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE }}
+                  className="rounded-[18px] text-sm flex flex-col items-center gap-0.5"
+                  style={{ padding: '14px 16px', background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE }}
                 >
-                  {hasEverPaid ? 'Upgrade to Pro — ₹199/month' : 'Pay Now — ₹199/month'}
+                  <span>{hasEverPaid ? 'Upgrade to Pro — ₹199/month' : 'Pay Now — ₹199/month'}</span>
+                  <span className="text-xs font-normal" style={{ opacity: 0.75 }}>Cancel anytime, no questions asked</span>
                 </LoadingButton>
               ) : (
                 <Link
@@ -427,6 +494,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                 </Link>
               )}
             </div>
+            </>
           )}
 
           {/* lapsed: had access before (trial ran out OR subscription
@@ -495,10 +563,11 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
                   loading={loading === 'monthly'}
                   disabled={loading !== null}
                   loadingText="Processing…"
-                  className="rounded-[18px] text-sm"
-                  style={{ padding: '16px', background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE }}
+                  className="rounded-[18px] text-sm flex flex-col items-center gap-0.5"
+                  style={{ padding: '14px 16px', background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE }}
                 >
-                  {hasEverPaid ? 'Resubscribe — ₹199/month' : 'Pay Now — ₹199/month'}
+                  <span>{hasEverPaid ? 'Resubscribe — ₹199/month' : 'Pay Now — ₹199/month'}</span>
+                  <span className="text-xs font-normal" style={{ opacity: 0.75 }}>Cancel anytime, no questions asked</span>
                 </LoadingButton>
               ) : (
                 <Link
@@ -552,7 +621,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
 
         {/* Feature pills */}
         <div className="flex flex-wrap gap-2 justify-center mb-12">
-          {['GPS every walk', 'Photos never deleted', 'Vet-ready PDF', 'Grooming history', 'Share with vets'].map((pill) => (
+          {['GPS every walk', 'Photos never deleted', 'Cancel anytime', 'Grooming history', 'Share with vets'].map((pill) => (
             <span
               key={pill}
               className="px-4 py-2 rounded-full text-xs font-semibold"
