@@ -283,7 +283,18 @@ function ParentsTab() {
                         <p style={{ margin: 0, fontSize: 11, color: '#9CA3AF' }}>{p.email}</p>
                       </div>
                     </Td>
-                    <Td>{p.phone ? '✅' : '❌'}</Td>
+                    <Td>
+                      {p.phone ? (
+                        <a
+                          href={`https://wa.me/91${p.phone.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#0A2F35', textDecoration: 'underline', fontSize: 12 }}
+                        >
+                          {p.phone}
+                        </a>
+                      ) : '❌'}
+                    </Td>
                     <Td>{p.dogCount}</Td>
                     <Td>{p.activeWalkers > 0 ? '✅' : '❌'}</Td>
                     <Td>{p.reportCount}</Td>

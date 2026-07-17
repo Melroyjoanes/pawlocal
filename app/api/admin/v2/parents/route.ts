@@ -42,14 +42,26 @@ export async function GET() {
   // 2-5. Batch fetch related data
   const [dogsRes, connectionsRes, reportsRes, subsRes, authRes] = await Promise.all([
     (client.from('dogs') as any).select('owner_id').in('owner_id', userIds),
-    (client.from('walker_connections') as any).select('owner_id, status').in('owner_id', userIds),
+    (client.from('walker_connections') as any).select('owner_id, status, owner_phone, created_at').in('owner_id', userIds),
     (client.from('walk_reports') as any).select('owner_id, created_at').in('owner_id', userIds).order('created_at', { ascending: false }),
     (client.from('subscriptions') as any).select('user_id, plan, status').in('user_id', userIds),
     client.auth.admin.listUsers({ perPage: 1000 }),
   ])
 
   const dogs: Array<{ owner_id: string }> = dogsRes.data ?? []
-  const connections: Array<{ owner_id: string; status: string }> = connectionsRes.data ?? []
+  const connections: Array<{ owner_id: string; status: string; owner_phone: string | null; created_at: string }> = connectionsRes.data ?? []
+
+  // Fallback phone map — profiles.phone is the source of truth when present
+  // (kept current via My Account/setup), but most owners never get a
+  // profiles row (see note above), so walker_connections.owner_phone is the
+  // number that's actually on file for them. Same fallback pattern already
+  // used in app/api/walk-logs/route.ts and lib/getConnectionByToken.ts —
+  // this admin view was the one place it had been missed, silently showing
+  // "no phone" for most real accounts.
+  const fallbackPhoneMap: Record<string, string> = {}
+  for (const c of [...connections].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())) {
+    if (c.owner_phone) fallbackPhoneMap[c.owner_id] = c.owner_phone
+  }
   const reports: Array<{ owner_id: string; created_at: string }> = reportsRes.data ?? []
   const subs: Array<{ user_id: string; plan: string; status: string }> = subsRes.data ?? []
   const authUsers = authRes.data?.users ?? []
@@ -119,7 +131,7 @@ export async function GET() {
         id,
         name: profile?.full_name ?? '',
         email: emailMap[id] ?? '',
-        phone: profile?.phone ?? null,
+        phone: profile?.phone ?? fallbackPhoneMap[id] ?? null,
         trialStartedAt,
         trialDaysRemaining,
         trialExpired,
