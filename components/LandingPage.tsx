@@ -570,8 +570,8 @@ export default function LandingPage() {
               <motion.div initial={rm ? {} : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: EASE_EXP }}>
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase px-4 py-1.5 mb-7"
                   style={{ background: 'linear-gradient(155deg,#FEF3C7,#FDE68A)', boxShadow: '0 4px 0 rgba(180,83,9,0.14),0 10px 28px rgba(253,230,138,0.48),inset 0 1.5px 0 rgba(255,255,255,0.95)', border: '1px solid rgba(253,230,138,0.6)', borderRadius: 100, color: '#78350F', display: 'inline-flex' }}>
-                  <MapPin size={11} strokeWidth={2.5} />
-                  India's GPS dog walk tracker
+                  <Check size={11} strokeWidth={2.5} />
+                  Know how every walk went
                 </span>
               </motion.div>
 
