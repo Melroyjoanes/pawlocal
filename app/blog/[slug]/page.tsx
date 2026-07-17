@@ -51,7 +51,7 @@ const POSTS: BlogPost[] = [
         <p>The problem is that most pet parents have no way to confirm any of this happened. You&apos;re trusting a verbal "the walk was fine" from someone who was out of your sight for 30–45 minutes.</p>
 
         <h2>How to actually know what happened on a monsoon walk</h2>
-        <p>This is the exact gap PupStep was built to close — not by replacing your walker, but by giving you proof of what they actually did. Every walk logged through PupStep includes the real GPS route (so you can see if a flooded lane was avoided), a timestamped photo, and notes the walker adds themselves. During monsoon specifically, that route map matters more than usual: it&apos;s the difference between trusting a description and seeing the actual path.</p>
+        <p>This is the exact gap PupStep was built to close — not by replacing your walker, but by letting you check in on exactly how the walk went. Every walk logged through PupStep includes the real GPS route (so you can see if a flooded lane was avoided), a timestamped photo, and notes the walker adds themselves. During monsoon specifically, that route map matters more than usual: it&apos;s the difference between trusting a description and seeing the actual path.</p>
         <p>If your dog comes back from a walk and something feels off a day later, you can pull up exactly where they walked and when — instead of trying to reconstruct it from memory.</p>
 
         <h2>A quick monsoon checklist for pet parents</h2>
@@ -260,7 +260,7 @@ const POSTS: BlogPost[] = [
         <ul>
           <li>Nail trimming — overgrown nails affect posture and can curl into the paw pad</li>
           <li>Ear cleaning — especially for floppy-eared breeds in Mumbai humidity</li>
-          <li>Anal gland expression — most owners don&apos;t realise this is needed until the dog starts scooting</li>
+          <li>Anal gland expression — most pet parents don&apos;t realise this is needed until the dog starts scooting</li>
           <li>Tick check and removal — Mumbai dogs walk near gardens and are at real risk</li>
         </ul>
         <p><strong>Genuinely useful in Mumbai:</strong></p>
@@ -318,7 +318,7 @@ const POSTS: BlogPost[] = [
         <p>The Facebook groups for Mumbai pet parents have tens of thousands of members, but the active, trusted conversations still happen in the smaller groups — the building WhatsApp, the 20-person morning walk crew.</p>
 
         <h2>The challenges this community navigates</h2>
-        <p>Pet ownership in a dense urban area creates friction that rural pet owners rarely face. Dogs that bark annoy neighbours in adjoining flats. Stray dog interactions on morning walks can be dangerous if handled poorly. Not every building society is pet-friendly, and the rules can change with a new committee chairman.</p>
+        <p>Pet ownership in a dense urban area creates friction that rural pet parents rarely face. Dogs that bark annoy neighbours in adjoining flats. Stray dog interactions on morning walks can be dangerous if handled poorly. Not every building society is pet-friendly, and the rules can change with a new committee chairman.</p>
         <p>There&apos;s also the service problem. Finding a reliable dog walker who won&apos;t cancel at 6 am. Finding a groomer who won&apos;t handle your anxious rescue roughly. Finding a vet who has after-hours emergency access. These aren&apos;t solved problems in Juhu — they&apos;re recurring frustrations that most pet parents solve by leaning on their personal networks.</p>
 
         <h2>What&apos;s growing</h2>
@@ -327,9 +327,9 @@ const POSTS: BlogPost[] = [
 
         <h2>What this means for pet services in the area</h2>
         <p>The demand for professional, accountable pet services in Juhu and the western suburbs has never been higher. At the same time, trust is still built on reputation and word-of-mouth. A walker who consistently sends care reports, responds to messages within an hour, and handles an emergency well becomes the person every pet parent recommends. The community is small enough that one bad experience travels fast — and one excellent one does too.</p>
-        <p>PupStep exists to strengthen exactly this trust infrastructure, not replace it. You keep the walker your building already knows and recommends — your maid, watchman, or the walker three families in your society use — and PupStep adds GPS-tracked proof to every walk they do. The reputation a good walker builds neighbourhood by neighbourhood becomes something they can actually show, not just something people say about them.</p>
+        <p>PupStep exists to strengthen exactly this trust infrastructure, not replace it. You keep the walker your building already knows and recommends — your maid, watchman, or the walker three families in your society use — and PupStep lets you keep a realtime check on every walk they do, GPS route and photo included. The reputation a good walker builds neighbourhood by neighbourhood becomes something they can actually show, not just something people say about them.</p>
 
-        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Are you a pet parent in Juhu, Versova or Andheri West? <Link href="/setup" className="underline text-rose-800">Set up your dog on PupStep</Link> and get GPS-verified proof after every walk.</p>
+        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Are you a pet parent in Juhu, Versova or Andheri West? <Link href="/setup" className="underline text-rose-800">Set up your dog on PupStep</Link> and get a realtime check-in after every walk.</p>
       </>
     ),
   },
@@ -398,12 +398,12 @@ const POSTS: BlogPost[] = [
     author: 'PupStep Team',
     content: (
       <>
-        <p>&quot;Walk done, all good&quot; is the most common message a Mumbai pet parent gets during the workday. It&apos;s also, if you think about it for more than a few seconds, not proof of anything. A text can be sent from a lift lobby. A photo can be a day old. Even a real walk that happened can be too short, too rushed, or on a route you&apos;d never have approved if you&apos;d known.</p>
+        <p>&quot;Walk done, all good&quot; is the most common message a Mumbai pet parent gets during the workday. It&apos;s also, if you think about it for more than a few seconds, not much to go on. A text can be sent from a lift lobby. A photo can be a day old. Even a real walk that happened can be too short, too rushed, or on a route you&apos;d never have approved if you&apos;d known.</p>
         <p>This isn&apos;t a trust problem in the dramatic sense — most walkers, maids, and watchmen genuinely do the walk. It&apos;s a visibility problem. You&apos;re paying for something that happens entirely out of sight, for 30 to 45 minutes, and the only record of it is whatever the walker chooses to tell you afterward.</p>
 
         <h2>Why this is genuinely hard to verify</h2>
         <p>It&apos;s not that pet parents are being naive. There&apos;s just no natural mechanism for verification in a normal walk. Nobody photographs a receipt. There&apos;s no meter running. The dog can&apos;t tell you what happened, and even if it could, a tired, happy dog looks the same whether it did a full loop of the block or sat outside the building for twenty minutes.</p>
-        <p>So pet parents fall back on proxies: how fast the walker gets back, whether the dog seems tired, whether a photo shows up. All of these are weak signals. A dog can look tired from heat, not exercise. A walker can send yesterday&apos;s photo. None of it is proof, even though it feels like enough at the time.</p>
+        <p>So pet parents fall back on proxies: how fast the walker gets back, whether the dog seems tired, whether a photo shows up. All of these are weak signals. A dog can look tired from heat, not exercise. A walker can send yesterday&apos;s photo. None of it really tells you how the walk went, even though it feels like enough at the time.</p>
 
         <h2>What a one-line text or a blurry gate photo doesn&apos;t tell you</h2>
         <p>Think about what a typical &quot;done&quot; message actually confirms: that the walker typed a message. That&apos;s it. It doesn&apos;t confirm:</p>
@@ -416,8 +416,8 @@ const POSTS: BlogPost[] = [
         </ul>
         <p>None of this means the walker is doing anything wrong. It just means you have no way to know either way, and that gap is exactly where anxiety, and occasionally genuine problems, live.</p>
 
-        <h2>What actually counts as proof</h2>
-        <p>Real proof of a walk isn&apos;t a feeling, it&apos;s a small set of specific, checkable facts. At minimum:</p>
+        <h2>What a real walk check-in actually looks like</h2>
+        <p>Being able to properly check in on a walk isn&apos;t a feeling, it&apos;s a small set of specific, checkable facts. At minimum:</p>
         <ul>
           <li><strong>A GPS route:</strong> the actual path walked, not a claimed one, showing distance covered and where the walk went</li>
           <li><strong>A timestamped photo:</strong> taken during the walk itself, tied to the time the walk was logged, not pulled from a gallery</li>
@@ -438,7 +438,7 @@ const POSTS: BlogPost[] = [
         <h3>Do I need to convince my walker to use a new app?</h3>
         <p>No new app is required on their end. Your walker scans a QR code or taps a WhatsApp link and enters a 4-digit code — that&apos;s the entire setup — so a walker with basic smartphone literacy can log a walk in under a minute. Most walkers who are already doing a good job don&apos;t mind this at all, since it takes the guesswork off them too.</p>
 
-        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Want proof after every walk, with the walker your dog already knows? <Link href="/setup" className="underline text-amber-800">Set up PupStep for your dog</Link>, free 3-day trial, no app needed for your walker.</p>
+        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Want a realtime check-in after every walk, with the walker your dog already knows? <Link href="/setup" className="underline text-amber-800">Set up PupStep for your dog</Link>, free 3-day trial, no app needed for your walker.</p>
       </>
     ),
   },
@@ -459,14 +459,14 @@ const POSTS: BlogPost[] = [
 
         <h2>Two different models, one honest distinction</h2>
         <p>Broadly, dog-related apps in this space fall into two categories. The first is what you could call marketplace-style dog walking apps, apps that supply their own walker. You open the app, request a walk, and the platform assigns someone from its own pool to show up at your door. The service the app is selling is, in effect, the walker relationship itself.</p>
-        <p>The second model doesn&apos;t supply a walker at all. It works with whoever already walks your dog, a maid, a watchman, a family friend, a hired walker you found yourself, and gives that existing arrangement a way to produce verifiable proof: a GPS route, a timestamped photo, a duration, a potty log. The app&apos;s job here isn&apos;t to be your walker. It&apos;s to make an existing, trusted arrangement accountable.</p>
+        <p>The second model doesn&apos;t supply a walker at all. It works with whoever already walks your dog, a maid, a watchman, a family friend, a hired walker you found yourself, and gives that existing arrangement a way to show exactly what happened: a GPS route, a timestamped photo, a duration, a potty log. The app&apos;s job here isn&apos;t to be your walker. It&apos;s to make an existing, trusted arrangement accountable.</p>
 
         <h2>Why this distinction matters more than it first appears</h2>
         <p>Here&apos;s the structural point worth sitting with: if an app&apos;s core promise depends on supplying and guaranteeing a specific walker, then a walker cancellation or no-show is a failure of the entire service. Not a minor hiccup, a failure of the exact thing you were paying for. That&apos;s because in that model, the walker relationship belongs to the platform, not to the family. If the platform&apos;s assigned person doesn&apos;t show up, there&apos;s no fallback the family controls directly, since the family was never in that relationship to begin with. They&apos;re waiting on the platform to fix its own supply problem.</p>
         <p>This isn&apos;t a criticism of any specific company or a claim about how often it happens anywhere in particular. It&apos;s simply what the model implies, logically, whenever the walker is the product. A supply-and-guarantee model is only ever as reliable as the supply on a given day, in a given area, at a given time slot.</p>
 
         <h2>Where the second model behaves differently, by design</h2>
-        <p>An app built on the second model has no equivalent failure mode, not because it&apos;s better run, but because it never promised a walker in the first place. It verifies whichever walker the family already trusts and already has, whoever that happens to be. If that person is unavailable on a given day, that&apos;s the same kind of ordinary scheduling problem a family already manages today, the same way they&apos;d manage their maid or watchman being unavailable. It&apos;s not a service outage, because the service was never &quot;a walker shows up.&quot; It was always &quot;here&apos;s proof of what happened with the person you already rely on.&quot;</p>
+        <p>An app built on the second model has no equivalent failure mode, not because it&apos;s better run, but because it never promised a walker in the first place. It verifies whichever walker the family already trusts and already has, whoever that happens to be. If that person is unavailable on a given day, that&apos;s the same kind of ordinary scheduling problem a family already manages today, the same way they&apos;d manage their maid or watchman being unavailable. It&apos;s not a service outage, because the service was never &quot;a walker shows up.&quot; It was always &quot;here&apos;s a realtime check-in on what happened with the person you already rely on.&quot;</p>
         <p>Put another way: in the first model, the app sits between the family and the walker. In the second, the app sits alongside a relationship the family already owns.</p>
 
         <h2>What this means when you&apos;re actually choosing</h2>
@@ -474,9 +474,9 @@ const POSTS: BlogPost[] = [
         <p>The practical question to ask before signing up for anything is simple: if my usual walker is unavailable tomorrow, whose problem is that, mine, or the app&apos;s? Your answer to that tells you which model you&apos;re actually using.</p>
 
         <h2>Where PupStep fits</h2>
-        <p>PupStep is built on the second model. We don&apos;t supply, assign, or guarantee a walker, and we&apos;re not trying to replace the maid, watchman, or friend your dog already knows. What we do is give that existing arrangement a GPS route, a timestamped photo, a duration, and a potty log after every walk, so the trust you&apos;ve already built with that person comes with proof attached.</p>
+        <p>PupStep is built on the second model. We don&apos;t supply, assign, or guarantee a walker, and we&apos;re not trying to replace the maid, watchman, or friend your dog already knows. What we do is give that existing arrangement a GPS route, a timestamped photo, a duration, and a potty log after every walk, so the trust you&apos;ve already built with that person now comes with a real-time check-in attached.</p>
 
-        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Already have someone who walks your dog? <Link href="/setup" className="underline text-amber-800">Set up PupStep for your dog</Link> and get proof after every walk, whoever&apos;s holding the leash.</p>
+        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Already have someone who walks your dog? <Link href="/setup" className="underline text-amber-800">Set up PupStep for your dog</Link> and get a realtime check-in after every walk, whoever&apos;s holding the leash.</p>
       </>
     ),
   },
@@ -497,7 +497,7 @@ const META_DESCRIPTIONS: Record<string, string> = {
   'dog-grooming-guide-mumbai': 'Mumbai\'s humidity is tough on coats. How often should you groom? What services matter most? Honest advice from groomers in Juhu.',
   'juhu-pet-community': 'From beach morning walks to weekend playdates at Carter Road — how Mumbai\'s western suburb became one of India\'s most pet-friendly neighbourhoods.',
   'vet-visit-checklist-mumbai': 'Vaccination records, food logs, walk history — vets in Mumbai say most pet parents come underprepared. A simple checklist to make every visit count.',
-  'how-to-verify-your-dog-walker-mumbai': 'A one-line WhatsApp text or a blurry gate photo isn\'t proof. What real proof of a dog walk actually looks like — GPS route, timestamped photo, duration, and potty log.',
+  'how-to-verify-your-dog-walker-mumbai': 'A one-line WhatsApp text or a blurry gate photo doesn\'t tell you much. What actually lets you check in on a dog walk — GPS route, timestamped photo, duration, and potty log.',
   'dog-walking-app-model-differences-mumbai': 'Marketplace-style apps and verification-style apps solve different problems. The structural difference worth understanding before you choose between them.',
 }
 
@@ -506,7 +506,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const post = POSTS.find(p => p.slug === slug)
   if (!post) return {}
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
-  const description = META_DESCRIPTIONS[slug] ?? `${post.title} — practical guides for Mumbai dog parents from PupStep.`
+  const description = META_DESCRIPTIONS[slug] ?? `${post.title} — practical guides for dog parents across India from PupStep.`
   return {
     title: post.title,
     description,
@@ -592,7 +592,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         {/* CTA strip */}
         <div className="mt-14 rounded-2xl p-6 sm:p-8"
           style={{ background: 'linear-gradient(135deg, #0A2F35, #0D3D45)' }}>
-          <p className="font-bold text-white text-lg mb-1">Get GPS-verified proof of every walk</p>
+          <p className="font-bold text-white text-lg mb-1">See exactly how your dog&apos;s walk went, in real time</p>
           <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.55)' }}>
             Share a QR code or WhatsApp link with your own walker — no app for them to download. 3-day free trial.
           </p>

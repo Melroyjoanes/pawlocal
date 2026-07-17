@@ -24,6 +24,7 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
     pathname.startsWith('/my-dogs') ||
     pathname === '/setup' ||
     pathname.startsWith('/setup/') ||
+    pathname.startsWith('/walk/self') ||
     pathname === '/upgrade' ||
     pathname.startsWith('/walker-guide') ||
     pathname === '/install' ||
@@ -93,7 +94,7 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
               <Image src="/logo.webp" alt="PupStep" width={130} height={48} className="h-10 w-auto" />
             </div>
             <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.45)' }}>
-              GPS walk reports for Mumbai dog parents. Share with your walker, get a WhatsApp report after every walk.
+              GPS walk reports for dog parents across India, with roots in Mumbai. Share with your walker, get a WhatsApp report after every walk.
             </p>
           </div>
 
@@ -160,7 +161,7 @@ export default function ShellWrapper({ children }: { children: React.ReactNode }
         <div className="max-w-7xl mx-auto px-5 sm:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3"
           style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
           <p className="text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-            © {new Date().getFullYear()} PupStep · Juhu, Mumbai · GPS-verified proof for every walk.
+            © {new Date().getFullYear()} PupStep · Juhu, Mumbai · A GPS-tracked check-in on your dog, after every walk.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
             {[

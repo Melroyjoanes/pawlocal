@@ -32,7 +32,7 @@ export default async function WalkerPage({ params }: WalkerPageProps) {
           Invalid Link
         </h1>
         <p className="text-slate-500 text-sm">
-          This link is invalid or has expired. Ask the pet owner for the correct link.
+          This link is invalid or has expired. Ask the pet parent for the correct link.
         </p>
       </div>
     )

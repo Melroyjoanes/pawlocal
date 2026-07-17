@@ -16,11 +16,11 @@ const FAQS: { category: string; color: string; textColor: string; icon: string; 
     items: [
       {
         q: 'What is PupStep?',
-        a: 'PupStep is a GPS walk reporting app for Mumbai dog parents. Every time your walker takes your dog out, they log the session through PupStep — GPS route, photo, duration, and health notes. You get a detailed report after every single walk.',
+        a: 'PupStep is a GPS walk reporting app for dog parents across India — we started in Mumbai and have grown from there. Every time your walker takes your dog out, they log the session through PupStep — GPS route, photo, duration, and health notes. You get a detailed report after every single walk.',
       },
       {
         q: 'Which areas does PupStep work in?',
-        a: 'We focus on Juhu, Versova, Andheri West, and Santacruz West in Mumbai. Your walker can use PupStep from anywhere in the city, and we\'re expanding coverage as we grow.',
+        a: 'We started in Juhu, Versova, Andheri West, and Santacruz West in Mumbai, and today pet parents use PupStep in cities across India. Your walker can use PupStep from anywhere in the country — there\'s no location lock-in.',
       },
       {
         q: 'Is PupStep free to use?',
@@ -60,7 +60,7 @@ const FAQS: { category: string; color: string; textColor: string; icon: string; 
       },
       {
         q: 'How do I know if my dog walker actually walked my dog?',
-        a: 'This is exactly why PupStep exists. Every walk comes with a GPS route map, a photo of your dog, and quick notes from your walker — not just a text saying "walk done". You don\'t have to wonder or ask around; the proof is already sitting in your report. Think of it as reassurance, not surveillance — you\'re not checking up on anyone, you\'re just getting to see what your dog\'s walk actually looked like.',
+        a: 'This is exactly why PupStep exists. Every walk comes with a GPS route map, a photo of your dog, and quick notes from your walker — not just a text saying "walk done". You don\'t have to wonder or ask around; you can just open your report and see exactly how your furry baby\'s walk went. Think of it as reassurance, not surveillance — you\'re not checking up on anyone, you\'re just getting to see what your dog\'s walk actually looked like.',
       },
       {
         q: 'What if my walker says the walk happened but I\'m not sure?',
@@ -68,7 +68,7 @@ const FAQS: { category: string; color: string; textColor: string; icon: string; 
       },
       {
         q: 'Is this different from apps that provide their own dog walker?',
-        a: 'Yes, and it\'s the biggest difference. Apps that supply their own walker are only as reliable as whoever they send that day — if that person doesn\'t show up, the whole plan falls apart. PupStep works the other way around: keep the walker you already trust, your maid, watchman, family friend, or regular walker, and we simply add GPS-tracked proof to every walk they do. There\'s no one to book and no one to replace, so there\'s no risk of a stranger not turning up. You keep the relationship you already trust; we just make it verifiable.',
+        a: 'Yes, and it\'s the biggest difference. Apps that supply their own walker are only as reliable as whoever they send that day — if that person doesn\'t show up, the whole plan falls apart. PupStep works the other way around: keep the walker you already trust, your maid, watchman, family friend, or regular walker, and we simply let you keep a real-time check on how your furry baby did on every walk, with GPS tracking built in. There\'s no one to book and no one to replace, so there\'s no risk of a stranger not turning up. You keep the relationship you already trust; we just make it easy to check in.',
       },
     ],
   },
@@ -139,7 +139,7 @@ const FAQS: { category: string; color: string; textColor: string; icon: string; 
         a: 'The dog\'s parent invites you — they\'ll show you a QR code to scan or send you a link on WhatsApp, along with a 4-digit code. Scan or tap, enter the code, and you\'re connected in under a minute. No account, no app download, and it\'s completely free for you. After that, every walk you log goes straight to their dashboard automatically.',
       },
       {
-        q: 'What if I walk dogs for multiple different owners?',
+        q: 'What if I walk dogs for multiple different pet parents?',
         a: 'Each client has their own PupStep account. When you log a walk for a specific dog, the report automatically goes to that dog\'s parent. You can manage all your clients from one dashboard.',
       },
     ],

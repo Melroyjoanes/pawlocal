@@ -284,7 +284,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
             style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}
           >
             {trialStatus === 'no_trial' && `Never wonder if ${dogName ?? 'your dog'} actually got walked`}
-            {trialStatus === 'trial' && 'Keep the proof coming after your trial'}
+            {trialStatus === 'trial' && 'Keep checking in on your furry baby after your trial'}
             {trialStatus === 'lapsed' && 'Pick up right where you left off'}
             {trialStatus === 'active' && 'You\'re on PupStep Pro'}
           </h1>
@@ -292,7 +292,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
             className="text-base max-w-sm mx-auto leading-relaxed"
             style={{ fontFamily: 'var(--font-nunito)', color: '#0A2F35', opacity: 0.65 }}
           >
-            {walkerName ?? 'Your walker'} logs every walk for free. Your subscription turns that into real proof on your WhatsApp — a GPS route, a photo, a note — the moment each walk ends.
+            {walkerName ?? 'Your walker'} logs every walk for free. Your subscription lets you keep a real-time check on how your furry baby did — a GPS route, a photo, a note — sent straight to your WhatsApp the moment each walk ends.
           </p>
           <p
             className="text-sm max-w-sm mx-auto leading-relaxed mt-3"
@@ -616,7 +616,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
           className="text-center text-xs mb-10"
           style={{ color: 'rgba(10,47,53,0.45)', fontFamily: 'var(--font-nunito)' }}
         >
-          Dog parents in Juhu, Versova &amp; Andheri use PupStep Pro every day
+          Dog parents from Mumbai to cities across India use PupStep Pro every day
         </p>
 
         {/* Feature pills */}

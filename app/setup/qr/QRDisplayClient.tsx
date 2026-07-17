@@ -28,18 +28,18 @@ function buildInviteText(lang: InviteLang, parentFirstName: string | null, dogNa
   const owner = parentFirstName ? parentFirstName : null
   if (lang === 'hi') {
     const intro = owner
-      ? `नमस्ते! मैं ${owner} बोल रहा/रही हूँ, ${dogName} का मालिक।`
-      : `नमस्ते! मैं ${dogName} का मालिक बोल रहा/रही हूँ।`
-    return `${intro} PupStep ऐप से मुझे हर वॉक के बाद सबूत मिलता है — यह मुफ़्त है और बस 30 सेकंड लगते हैं। नीचे दिया लिंक खोलें।\n\nआपका कोड: ${otp}\n\n${link}`
+      ? `नमस्ते! मैं ${owner} बोल रहा/रही हूँ, ${dogName} का पालक।`
+      : `नमस्ते! मैं ${dogName} का पालक बोल रहा/रही हूँ।`
+    return `${intro} PupStep ऐप से मुझे हर वॉक के बाद ${dogName} का पूरा अपडेट मिलता है — यह मुफ़्त है और बस 30 सेकंड लगते हैं। नीचे दिया लिंक खोलें।\n\nआपका कोड: ${otp}\n\n${link}`
   }
   if (lang === 'mr') {
     const intro = owner
-      ? `नमस्कार! मी ${owner}, ${dogName}चा मालक.`
-      : `नमस्कार! मी ${dogName}चा मालक.`
-    return `${intro} PupStep अ‍ॅपमुळे मला दर वेळी पुरावा मिळतो — हे मोफत आहे आणि फक्त 30 सेकंद लागतात. खालील लिंक उघडा.\n\nतुमचा कोड: ${otp}\n\n${link}`
+      ? `नमस्कार! मी ${owner}, ${dogName}चा पालक.`
+      : `नमस्कार! मी ${dogName}चा पालक.`
+    return `${intro} PupStep अ‍ॅपमुळे मला दर वेळी ${dogName}च्या वॉकचा अपडेट मिळतो — हे मोफत आहे आणि फक्त 30 सेकंद लागतात. खालील लिंक उघडा.\n\nतुमचा कोड: ${otp}\n\n${link}`
   }
-  const intro = owner ? `Hi! This is ${owner}, ${dogName}'s owner.` : `Hi! This is ${dogName}'s owner.`
-  return `${intro} I'm using an app called PupStep so I get proof every time you walk ${dogName} — it's free and takes 30 seconds. Tap the link below.\n\nYour code: ${otp}\n\n${link}`
+  const intro = owner ? `Hi! This is ${owner}, ${dogName}'s parent.` : `Hi! This is ${dogName}'s parent.`
+  return `${intro} I'm using an app called PupStep so I can keep a real-time check on how ${dogName} did on every walk — it's free and takes 30 seconds. Tap the link below.\n\nYour code: ${otp}\n\n${link}`
 }
 
 export default function QRDisplayClient({

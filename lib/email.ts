@@ -60,7 +60,7 @@ function layout(content: string): string {
         <td align="center" style="padding:24px 16px 0;">
           <p style="margin:0;font-size:12px;color:#9CA3AF;line-height:1.7;
                     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;">
-            PupStep &middot; GPS walk reports for Mumbai dogs<br/>
+            PupStep &middot; GPS walk reports for dogs across India, starting in Mumbai<br/>
             <a href="${SITE_URL}" style="color:#9CA3AF;text-decoration:underline;">pupstep.in</a>
             &nbsp;&middot;&nbsp;
             <a href="${SITE_URL}/privacy-policy" style="color:#9CA3AF;text-decoration:underline;">Privacy</a>

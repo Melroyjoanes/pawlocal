@@ -40,7 +40,7 @@ const INFO_CARDS = [
   {
     icon: '📍',
     title: 'Location',
-    desc: 'Juhu, Mumbai, Maharashtra — serving western suburbs.',
+    desc: 'Juhu, Mumbai, Maharashtra — our home base, serving dog parents across India.',
     action: null,
     href: null,
     color: '#E0F2FE',

@@ -23,7 +23,7 @@ export default async function ConnectPage({ params }: ConnectPageProps) {
           QR Code Not Found
         </h1>
         <p className="text-slate-500 text-sm">
-          This QR code is invalid or has expired. Ask the pet owner to generate a new one.
+          This QR code is invalid or has expired. Ask the pet parent to generate a new one.
         </p>
       </div>
     )

@@ -197,7 +197,7 @@ export async function GET(
 
           {/* Footer */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 17, color: BROWN_M, opacity: 0.55 }}>📍 Juhu, Mumbai</span>
+            <span style={{ fontSize: 17, color: BROWN_M, opacity: 0.55 }}>📍 Mumbai, India</span>
             {dateStr && (<>
               <span style={{ color: BROWN_M, fontSize: 17, opacity: 0.35 }}>·</span>
               <span style={{ fontSize: 17, color: BROWN_M, opacity: 0.55 }}>{dateStr}</span>

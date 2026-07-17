@@ -46,7 +46,7 @@ export default function PrivacyPolicyPage() {
                 <li>Your dog&apos;s name, breed, date of birth, and health notes when you create a dog profile</li>
                 <li>Business information (name, address, working hours, pricing) if you register as a service provider</li>
                 <li>Walk session data including GPS coordinates, distance, and events (pee/poop logs and photos) captured during walks</li>
-                <li>Walker information: when a dog walker connects via a QR code, we collect the walker&apos;s name, phone number, and role as provided during connection. This information is shared with the dog owner they are connected to, and is used to identify the walker in walk reports. Walkers do not create accounts; they may request correction or deletion of their data by contacting us at the address below.</li>
+                <li>Walker information: when a dog walker connects via a QR code, we collect the walker&apos;s name, phone number, and role as provided during connection. This information is shared with the dog parent they are connected to, and is used to identify the walker in walk reports. Walkers do not create accounts; they may request correction or deletion of their data by contacting us at the address below.</li>
                 <li>Payment information — processed exclusively by Razorpay. PupStep does not store your card number or banking credentials.</li>
                 <li>Messages, requests, and feedback submitted through our platform</li>
               </ul>

@@ -22,6 +22,7 @@ type WalkReport = {
   notes: string | null
   photo_url: string | null
   provider_name: string
+  logged_by?: 'walker' | 'parent'
   is_verified: boolean
   verification_tier: string
   start_location: string | null
@@ -455,7 +456,7 @@ export default function WalkReportCard({
     if (burst) { const t = setTimeout(() => setBurst(false), 1200); return () => clearTimeout(t) }
   }, [burst])
   useEffect(() => {
-    trackEvent('report_viewed', { is_first_report: isFirstReport })
+    trackEvent('report_viewed', { is_first_report: isFirstReport, logged_by: report.logged_by ?? 'walker' })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -468,11 +469,11 @@ export default function WalkReportCard({
       : `${Math.round(report.distance_meters)}m`
     : null
 
-  const waText = encodeURIComponent(`${report.dog_name} just had a walk! 🐾\nFull GPS report:\n${shareUrl}`)
+  const waText = encodeURIComponent(`${report.dog_name} just had a walk! 🐾\nSee how it went:\n${shareUrl}`)
 
   async function handleCopy() {
     try { await navigator.clipboard.writeText(shareUrl) } catch { void 0 }
-    trackEvent('report_shared', { method: 'copy_link' })
+    trackEvent('report_shared', { method: 'copy_link', logged_by: report.logged_by ?? 'walker' })
     setCopied(true); setTimeout(() => setCopied(false), 2200)
   }
 
@@ -530,8 +531,14 @@ export default function WalkReportCard({
               </h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
                 <span style={{ color: 'oklch(0.48 0.17 196)', display: 'flex' }}><IconPerson /></span>
-                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 600, color: '#6B7280' }}>Walker: </span>
-                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: 'oklch(0.48 0.17 196)' }}>{report.provider_name}</span>
+                {report.logged_by === 'parent' ? (
+                  <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: 'oklch(0.48 0.17 196)' }}>Walked by you 🧡</span>
+                ) : (
+                  <>
+                    <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 600, color: '#6B7280' }}>Walker: </span>
+                    <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: 'oklch(0.48 0.17 196)' }}>{report.provider_name}</span>
+                  </>
+                )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ color: '#9CA3AF', display: 'flex' }}><IconCalendar /></span>
@@ -695,12 +702,12 @@ export default function WalkReportCard({
               {/* Walker avatar */}
               <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, oklch(0.48 0.17 196) 0%, oklch(0.38 0.15 196) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.2), 0 4px 10px oklch(0.48 0.17 196 / 0.3)' }}>
                 <span style={{ fontFamily: 'var(--font-fredoka)', fontSize: 18, fontWeight: 700, color: '#fff' }}>
-                  {report.provider_name.charAt(0).toUpperCase()}
+                  {report.logged_by === 'parent' ? '🧡' : report.provider_name.charAt(0).toUpperCase()}
                 </span>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, color: 'oklch(0.48 0.17 196)', margin: '0 0 6px' }}>
-                  Walker&apos;s note
+                  {report.logged_by === 'parent' ? 'Your note' : "Walker's note"}
                 </p>
                 <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#374151', lineHeight: 1.65, margin: 0 }}>
                   {cleanNotes}
@@ -719,7 +726,7 @@ export default function WalkReportCard({
           <motion.a
             href={`https://wa.me/?text=${waText}`}
             target="_blank" rel="noopener noreferrer"
-            onClick={() => trackEvent('report_shared', { method: 'whatsapp' })}
+            onClick={() => trackEvent('report_shared', { method: 'whatsapp', logged_by: report.logged_by ?? 'walker' })}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '15px', borderRadius: 18, background: 'linear-gradient(160deg, #25D366 0%, #1aad54 100%)', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.22), inset 0 -4px 0 rgba(14,100,55,0.5), 0 8px 20px rgba(37,211,102,0.28)', color: '#fff', fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, textDecoration: 'none' }}
             whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
             <IconWA />
@@ -745,7 +752,7 @@ export default function WalkReportCard({
             <img src="/logo.webp" alt="PupStep" style={{ height: 16, width: 'auto', opacity: 0.35 }} />
           </Link>
           <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, color: '#CBD5E1', margin: '5px 0 0' }}>
-            GPS-verified walk reports · Mumbai
+            Real-time GPS check-ins for your furry baby · Mumbai & India
           </p>
         </div>
 

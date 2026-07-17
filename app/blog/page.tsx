@@ -107,7 +107,7 @@ const POSTS = [
     emoji: '🔍',
     image: 'https://images.unsplash.com/photo-1587402092301-725e37c70fd8?auto=format&fit=crop&w=900&q=80',
     title: 'How to know if your dog walker actually walked your dog',
-    excerpt: 'A one-line WhatsApp text or a blurry gate photo isn\'t proof. Here\'s what real proof of a walk actually looks like, and why it\'s harder to verify than most pet parents realise.',
+    excerpt: 'A one-line WhatsApp text or a blurry gate photo doesn\'t tell you much. Here\'s what actually lets you check in on how a walk went, and why that\'s harder to know than most pet parents realise.',
     readTime: '6 min read',
     date: 'Jul 15, 2026',
     featured: false,
@@ -144,10 +144,10 @@ export default function BlogPage() {
             🐾 PupStep journal
           </span>
           <h1 className="font-display text-slate-900 mb-4" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', lineHeight: 1.1, letterSpacing: '-0.02em' }}>
-            Stories, guides &amp; tips<br />for Mumbai pet parents
+            Stories, guides &amp; tips<br />for pet parents across India
           </h1>
           <p className="text-slate-500 text-lg max-w-xl mx-auto" style={{ lineHeight: 1.65 }}>
-            Practical advice for real dog parents in Juhu, Versova, Andheri West and beyond.
+            Practical advice for real dog parents in Juhu, Versova, Andheri West — and everywhere else in India.
           </p>
         </motion.div>
       </section>

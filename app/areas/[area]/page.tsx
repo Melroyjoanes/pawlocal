@@ -28,7 +28,7 @@ const AREAS: Area[] = [
     metroLabel: 'Versova, Mumbai',
     landmark: 'Versova Beach',
     blurb:
-      'Versova’s beachside lanes and the streets around Yari Road are walked by dogs every morning and evening. If your dog’s walker is a family friend, maid, or watchman rather than a hired professional, PupStep adds GPS-tracked proof to the walk that’s already happening — no new person, no marketplace.',
+      'Versova’s beachside lanes and the streets around Yari Road are walked by dogs every morning and evening. If your dog’s walker is a family friend, maid, or watchman rather than a hired professional, PupStep lets you keep a real-time check on how the walk that’s already happening went — no new person, no marketplace.',
     icon: '🌊',
   },
   {
@@ -46,7 +46,7 @@ const AREAS: Area[] = [
     metroLabel: 'Santacruz West, Mumbai',
     landmark: 'the western suburbs',
     blurb:
-      'Santacruz West’s residential lanes and building societies see a steady flow of dog walks every day. If you’re trusting a maid, watchman, or family friend to walk your dog while you’re at work, PupStep gives you GPS-verified proof of that walk — route, photo, and notes — without replacing anyone.',
+      'Santacruz West’s residential lanes and building societies see a steady flow of dog walks every day. If you’re trusting a maid, watchman, or family friend to walk your dog while you’re at work, PupStep lets you keep a real-time check on how that walk went — route, photo, and notes — without replacing anyone.',
     icon: '🌳',
   },
 ]
@@ -62,7 +62,7 @@ export async function generateMetadata(
   const area = AREAS.find(a => a.slug === areaSlug)
   if (!area) return { title: 'Area not found | PupStep' }
 
-  const title = `GPS Dog Walking Proof in ${area.name}, Mumbai | PupStep`
+  const title = `GPS-Tracked Dog Walks in ${area.name}, Mumbai | PupStep`
   const description = `Get GPS-verified walk reports for your dog in ${area.name}, Mumbai. Works with the walker you already trust — maid, watchman, or family friend. No marketplace, no supplied walker. Free for walkers, 3-day free trial for parents.`
 
   return {
@@ -101,7 +101,7 @@ export default async function AreaPage({ params }: { params: Promise<{ area: str
             className="font-display text-slate-900 mb-4"
             style={{ fontSize: 'clamp(1.9rem, 5vw, 3rem)', lineHeight: 1.1, letterSpacing: '-0.02em' }}
           >
-            GPS Dog Walking Proof in {area.name}
+            A Real-Time Check on Your Dog’s Walks in {area.name}
           </h1>
           <p className="text-slate-600" style={{ lineHeight: 1.7, fontSize: '1.0625rem' }}>
             {area.blurb}
@@ -148,7 +148,7 @@ export default async function AreaPage({ params }: { params: Promise<{ area: str
           style={{ background: 'linear-gradient(135deg, #0A2F35, #0D3D45)' }}
         >
           <p className="font-bold text-white text-lg mb-1">
-            Get GPS-verified proof of every walk in {area.name}
+            Keep a real-time check on how your furry baby’s walk went in {area.name}
           </p>
           <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.55)' }}>
             Share a QR code or WhatsApp link with your own walker — no app for them to download. 3-day free trial.
@@ -172,7 +172,7 @@ export default async function AreaPage({ params }: { params: Promise<{ area: str
         </div>
 
         <p className="text-xs text-slate-400 mt-8 text-center">
-          PupStep also covers Juhu, Versova, Andheri West, and Santacruz West across Mumbai.
+          PupStep also covers Juhu, Versova, Andheri West, and Santacruz West — and works with dog parents across India.
         </p>
       </div>
     </div>

@@ -31,6 +31,7 @@ type WalkReport = {
   distance_meters: number | null
   poop_events: {lat: number, lng: number, time: string}[] | null
   pee_events: {lat: number, lng: number, time: string}[] | null
+  logged_by: 'walker' | 'parent'
 }
 
 // cache() dedupes this across generateMetadata + the page body within the
@@ -82,6 +83,7 @@ const getReport = cache(async (token: string): Promise<WalkReport | null> => {
     distance_meters: data.distance_meters ?? null,
     poop_events: data.poop_events ?? null,
     pee_events: data.pee_events ?? null,
+    logged_by: data.logged_by ?? 'walker',
   }
 })
 
@@ -110,7 +112,7 @@ export async function generateMetadata({
   // WhatsApp / iMessage preview: emoji-rich, warm, parent-friendly
   const title = `🐾 ${dogName}'s Walk Report`
   const description = [
-    `${dogName} just had a great walk with ${walkerName} in Juhu, Mumbai!`,
+    `${dogName} just had a great walk with ${walkerName} in Mumbai, India!`,
     stats && `Stats: ${stats}`,
     distance && `📏 ${distance} covered`,
   ].filter(Boolean).join(' ')
@@ -263,7 +265,7 @@ function LockedReportView({ dogName }: { dogName: string }) {
 
       <div style={{ textAlign: 'center', padding: '16px 0 24px' }}>
         <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, color: '#CBD5E1', margin: 0 }}>
-          GPS-verified walk reports · Mumbai
+          Real-time GPS check-ins for your furry baby · Mumbai & India
         </p>
       </div>
     </div>
@@ -342,8 +344,13 @@ export default async function WalkReportPage({
   // paid access — the paywall exists to gate parents from each other's data,
   // not to gate the founder from his own product.
   const isAdminViewer = !!user?.email && user.email === (process.env.ADMIN_EMAIL ?? '')
+  // Self-walk reports are always free to view — the parent logged this
+  // themselves, there's no walker delivery to pay for. See docs/PRD.md's
+  // "payment comes after the parent feels the value" principle: the paid
+  // value here is specifically walker-report delivery, not self-logging.
+  const isSelfWalk = report.logged_by === 'parent'
   const ownerId = await resolveReportOwnerId(report, adminCheck)
-  const isEntitled = isAdminViewer || (ownerId ? (await getEntitlement(adminCheck, ownerId)).isEntitled : false)
+  const isEntitled = isAdminViewer || isSelfWalk || (ownerId ? (await getEntitlement(adminCheck, ownerId)).isEntitled : false)
 
   if (!isEntitled) {
     return <LockedReportView dogName={report.dog_name} />

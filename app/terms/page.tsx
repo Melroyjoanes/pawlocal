@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Terms & Conditions — PupStep',
-  description: 'Terms and conditions governing use of the PupStep platform for dog parents and service providers in Mumbai.',
+  description: 'Terms and conditions governing use of the PupStep platform for dog parents and service providers.',
 }
 
 const LAST_UPDATED = '21 June 2025'
@@ -33,7 +33,7 @@ export default function TermsPage() {
 
           <Section title="1. Who We Are">
             <p>
-              PupStep is a hyperlocal pet services platform connecting Mumbai dog parents with verified local service
+              PupStep is a pet services platform connecting dog parents with verified local service
               providers (walkers, groomers, vets, trainers, and pet stores). We operate as an intermediary under the
               Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021.
             </p>

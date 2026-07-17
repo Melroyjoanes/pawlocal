@@ -508,16 +508,16 @@ const PAW_PATTERN_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='84' heig
 
 // ─── FAQ ─────────────────────────────────────────────────────────────────────
 const FAQ_ITEMS = [
-  { q: 'Is PupStep a directory of dog walkers, vets, or groomers?', a: "No — PupStep isn't a marketplace or directory, and we don't list or book providers. Keep the walker you already trust — a maid, watchman, family friend, or your regular walker — and use PupStep to get a GPS-tracked proof-of-walk report on WhatsApp after every walk." },
-  { q: 'Does my dog walker need to download an app?', a: 'No. Your walker opens a link from WhatsApp — no App Store, no signup, no account. Built for low-tech-literacy walkers across Mumbai.' },
+  { q: 'Is PupStep a directory of dog walkers, vets, or groomers?', a: "No — PupStep isn't a marketplace or directory, and we don't list or book providers. Keep the walker you already trust — a maid, watchman, family friend, or your regular walker — and use PupStep to get a GPS-tracked walk report on WhatsApp after every walk, so you can check in on how it went." },
+  { q: 'Does my dog walker need to download an app?', a: 'No. Your walker opens a link from WhatsApp — no App Store, no signup, no account. Built for low-tech-literacy walkers across India.' },
   { q: 'How does GPS tracking work for dog walks?', a: 'Your walker\'s phone tracks the route live during the walk. You get the exact path, pee and poop locations, and timing — all mapped and sent to your WhatsApp.' },
   { q: 'How do I connect my walker?', a: 'Show them a QR code or send a WhatsApp link. They enter a 4-digit code you share. One-time setup, under a minute.' },
-  { q: 'What proof do I actually get after each walk?', a: 'GPS route, pee and poop count with map markers, a dog photo, walk duration and distance, and walker notes — delivered on WhatsApp within seconds of the walk ending.' },
+  { q: 'What do I get to see after each walk?', a: 'GPS route, pee and poop count with map markers, a dog photo, walk duration and distance, and walker notes — delivered on WhatsApp within seconds of the walk ending.' },
   { q: 'How much does PupStep cost?', a: '3-day free trial, no credit card needed. After that, ₹199/month for full walk history and unlimited walkers.' },
   { q: 'Can I share the walk report with my vet or family?', a: 'Yes. Every report has a shareable link you can forward to anyone — family, vets, or groomers — in one tap.' },
-  { q: 'How do I know if my dog walker actually walked my dog?', a: 'Every walk comes with a GPS route map, a photo, and quick notes from your walker — not just a text saying "walk done". It\'s reassurance, not surveillance: the proof is already in your report, so you never have to wonder.' },
+  { q: 'How do I know if my dog walker actually walked my dog?', a: 'Every walk comes with a GPS route map, a photo, and quick notes from your walker — not just a text saying "walk done". It\'s reassurance, not surveillance: you can check in on exactly how the walk went, right there in your report, so you never have to wonder.' },
   { q: 'What if my walker says the walk happened but I\'m not sure?', a: 'A text saying "walk done" is easy to send from the couch. A GPS route on a map is much harder to fake — it shows exactly where your dog went, for how long, and when.' },
-  { q: 'Is this different from apps that provide their own dog walker?', a: 'Yes, and it\'s the biggest difference. Apps that supply their own walker fall apart if that walker doesn\'t show up. PupStep works with the walker you already trust, your maid, watchman, family friend, or regular walker, and just adds GPS-tracked proof to the walks they already do.' },
+  { q: 'Is this different from apps that provide their own dog walker?', a: 'Yes, and it\'s the biggest difference. Apps that supply their own walker fall apart if that walker doesn\'t show up. PupStep works with the walker you already trust, your maid, watchman, family friend, or regular walker, and just adds a GPS-tracked check-in to the walks they already do, so you can see how it went.' },
 ]
 
 function AccordionItem({ q, a }: { q: string; a: string }) {
@@ -571,7 +571,7 @@ export default function LandingPage() {
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-wider uppercase px-4 py-1.5 mb-7"
                   style={{ background: 'linear-gradient(155deg,#FEF3C7,#FDE68A)', boxShadow: '0 4px 0 rgba(180,83,9,0.14),0 10px 28px rgba(253,230,138,0.48),inset 0 1.5px 0 rgba(255,255,255,0.95)', border: '1px solid rgba(253,230,138,0.6)', borderRadius: 100, color: '#78350F', display: 'inline-flex' }}>
                   <MapPin size={11} strokeWidth={2.5} />
-                  Mumbai's GPS dog walk tracker
+                  India's GPS dog walk tracker, from Mumbai
                 </span>
               </motion.div>
 
@@ -582,7 +582,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.6, ease: EASE_EXP, delay: 0.07 }}
                 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(2.6rem,6.5vw,5rem)', lineHeight: 1.04, letterSpacing: '-0.02em', color: C.dark, marginBottom: 20 }}>
                 Your dog gets walked.<br />
-                <span style={{ color: C.orange }}>Now prove it.</span>
+                <span style={{ color: C.orange }}>Now you'll know how it went.</span>
               </motion.h1>
 
               {/* Sub */}
@@ -592,7 +592,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.5, ease: EASE_EXP, delay: 0.16 }}
                 style={{ fontFamily: 'var(--font-nunito)', fontSize: 'clamp(1rem,2vw,1.15rem)', lineHeight: 1.7, color: '#64748B', maxWidth: 460, marginBottom: 32, marginLeft: 'auto', marginRight: 'auto' }}
                 className="lg:mx-0">
-                No more wondering if the walk actually happened. GPS route, pee and poop map, dog photo — on your WhatsApp within seconds of every walk.
+                No more wondering how the walk went. GPS route, pee and poop map, dog photo — on your WhatsApp within seconds of every walk.
               </motion.p>
 
               {/* CTAs */}
@@ -663,7 +663,7 @@ export default function LandingPage() {
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
             {[
               { icon: <Shield size={14} />, text: 'GPS-verified every walk' },
-              { icon: <LucidePaw size={14} />, text: 'Mumbai dog parents trust PupStep' },
+              { icon: <LucidePaw size={14} />, text: 'Trusted by dog parents, Mumbai to India' },
               { icon: <MessageCircle size={14} />, text: 'Reports on WhatsApp in seconds' },
               { icon: <Zap size={14} />, text: 'Walker needs no app download' },
             ].map(({ icon, text }) => (
@@ -705,7 +705,7 @@ export default function LandingPage() {
           <Reveal variant="up" className="text-center mb-16">
             <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.orange, marginBottom: 12 }}>4 steps, zero friction</p>
             <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(1.9rem,4vw,3rem)', color: C.dark, marginBottom: 10 }}>How dog walk GPS tracking works</h2>
-            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 16, color: '#64748B', maxWidth: 380, margin: '0 auto' }}>Set it up once. Proof arrives automatically after every single walk.</p>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 16, color: '#64748B', maxWidth: 380, margin: '0 auto' }}>Set it up once. Get a real-time check-in on your dog after every single walk.</p>
           </Reveal>
 
           {/* Desktop timeline */}
@@ -740,7 +740,7 @@ export default function LandingPage() {
               { num: 1, icon: <LucidePaw size={18} strokeWidth={1.5} />, title: 'Add your dog', body: 'Name, breed, and health notes. 2 minutes.', delay: 0, last: false },
               { num: 2, icon: <QrCode size={18} strokeWidth={1.5} />, title: 'Connect your walker', body: 'Share QR or WhatsApp link. Walker enters a 4-digit code. No app download needed.', delay: 0.08, last: false },
               { num: 3, icon: <Navigation size={18} strokeWidth={1.5} />, title: 'Walker logs the walk', body: 'Start Walk, mark pee and poop, take photo, End Walk. GPS tracked throughout.', delay: 0.16, last: false },
-              { num: 4, icon: <MessageCircle size={18} strokeWidth={1.5} />, title: 'Report on WhatsApp', body: 'GPS proof, photos, and health markers delivered to your phone automatically.', delay: 0.24, last: true },
+              { num: 4, icon: <MessageCircle size={18} strokeWidth={1.5} />, title: 'Report on WhatsApp', body: 'GPS route, photos, and health markers — a real-time check-in delivered automatically.', delay: 0.24, last: true },
             ].map(({ num, icon, title, body, delay, last }) => (
               <div key={title} className="flex gap-4">
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
@@ -777,8 +777,8 @@ export default function LandingPage() {
             <div className="flex-1 w-full">
               <Reveal variant="right">
                 <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.orange, marginBottom: 12 }}>Every walk, every time</p>
-                <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(1.9rem,4vw,2.8rem)', color: C.dark, marginBottom: 8 }}>Real proof of your dog&apos;s walk</h2>
-                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 15, color: '#64748B', marginBottom: 28, lineHeight: 1.65, maxWidth: 380 }}>Not a screenshot from the walker. Not a guess. A GPS-tagged report delivered to WhatsApp in seconds.</p>
+                <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(1.9rem,4vw,2.8rem)', color: C.dark, marginBottom: 8 }}>See exactly how your dog&apos;s walk went</h2>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 15, color: '#64748B', marginBottom: 28, lineHeight: 1.65, maxWidth: 380 }}>Not a screenshot from the walker. Not a guess. A GPS-tagged update on how your furry baby's walk went — delivered to WhatsApp in seconds.</p>
               </Reveal>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -815,7 +815,7 @@ export default function LandingPage() {
         className="py-16 sm:py-20">
         <div className="max-w-6xl mx-auto">
           <Reveal variant="up" className="text-center mb-10 px-5 sm:px-8">
-            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.orange, marginBottom: 10 }}>Mumbai dog parents</p>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.orange, marginBottom: 10 }}>From Mumbai to across India</p>
             <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(1.9rem,4vw,2.8rem)', color: C.dark }}>Peace of mind, every day</h2>
           </Reveal>
 
@@ -926,7 +926,7 @@ export default function LandingPage() {
               Your dog&apos;s first report,<br />in under 10 minutes.
             </h2>
             <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 15, color: 'rgba(69,26,3,0.65)', marginBottom: 28, lineHeight: 1.65 }}>
-              Add your dog, share a QR or WhatsApp link with your walker, and wait for the first proof on WhatsApp.
+              Add your dog, share a QR or WhatsApp link with your walker, and get your first walk update on WhatsApp.
             </p>
             <motion.div whileHover={rm ? {} : { y: -3, scale: 1.03 }} whileTap={rm ? {} : { scale: 0.97 }} transition={SPRING} style={{ display: 'inline-block' }}>
               <Link href="/setup?go=1"
