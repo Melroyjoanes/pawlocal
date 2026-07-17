@@ -166,7 +166,7 @@ const POSTS: BlogPost[] = [
 
         <h2>How PupStep fits in, once you&apos;ve chosen</h2>
         <p>PupStep doesn&apos;t list or supply walkers — the vetting above is yours to do, and honestly no app can do the meet-and-greet for you. What PupStep does is make every walk after that verifiable. Whoever you choose scans a QR code or taps a WhatsApp link, enters a 4-digit code, and from then on every walk they log comes with a GPS route, a timestamped photo, duration, and a potty note — delivered to your WhatsApp within seconds.</p>
-        <p>That changes the ongoing relationship too: the &quot;always ask for care reports&quot; advice above stops being something you have to chase. A walker who&apos;s doing the job well gets an effortless way to prove it after every single walk — and you get a permanent health log instead of a stack of one-line texts.</p>
+        <p>That changes the ongoing relationship too: the &quot;always ask for care reports&quot; advice above stops being something you have to chase. A walker who&apos;s doing the job well gets an effortless way to show it after every single walk — and you get a permanent health log instead of a stack of one-line texts.</p>
 
         <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Have a question about finding a walker in your area? WhatsApp us at <a href="https://wa.me/919892620677" className="underline text-amber-700">+91 98926 20677</a> and we&apos;ll help personally.</p>
       </>
