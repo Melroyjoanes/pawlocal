@@ -43,7 +43,7 @@ export default function TermsPage() {
             <ul>
               <li>You must be at least 18 years of age to use PupStep.</li>
               <li>By using the Platform, you represent that all information you provide is accurate and current.</li>
-              <li>PupStep is currently available only within Mumbai, India.</li>
+              <li>PupStep is available to dog parents and walkers across India.</li>
             </ul>
           </Section>
 

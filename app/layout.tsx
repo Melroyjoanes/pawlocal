@@ -43,9 +43,9 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: { default: 'PupStep — GPS Walk Reports for Mumbai Dogs', template: '%s | PupStep' },
-  description: 'GPS-verified walk reports straight to your WhatsApp. The walk log your Mumbai dog deserves. Know every walk happened. Every time.',
-  keywords: ['dog walk tracker Mumbai', 'GPS walk report Mumbai', 'dog walker Juhu', 'dog grooming Mumbai', 'walk accountability Mumbai', 'verified dog walker Mumbai', 'dog care Mumbai'],
+  title: { default: 'PupStep — GPS Walk Reports for Dogs Across India', template: '%s | PupStep' },
+  description: 'GPS-verified walk reports straight to your WhatsApp. The walk log your dog deserves — trusted by pet parents from Mumbai to across India. Know every walk happened. Every time.',
+  keywords: ['dog walk tracker India', 'GPS walk report India', 'dog walk tracker Mumbai', 'dog walker Juhu', 'dog grooming Mumbai', 'walk accountability app', 'verified dog walker India', 'dog care app India'],
   authors: [{ name: 'PupStep' }],
   creator: 'PupStep',
   openGraph: {
@@ -53,19 +53,19 @@ export const metadata: Metadata = {
     locale: 'en_IN',
     url: siteUrl,
     siteName: 'PupStep',
-    title: 'PupStep — GPS Walk Reports for Mumbai Dogs',
-    description: 'GPS-verified walk reports to your WhatsApp. Know your dog got walked. Trusted by Mumbai dog parents.',
+    title: 'PupStep — GPS Walk Reports for Dogs Across India',
+    description: 'GPS-verified walk reports to your WhatsApp. Know your dog got walked. Trusted by pet parents from Mumbai to across India.',
     images: [{
       url: `${siteUrl}/api/og`,
       width: 1200,
       height: 630,
-      alt: 'PupStep — GPS-verified dog walk reports for Mumbai',
+      alt: 'PupStep — GPS-verified dog walk reports for pet parents across India',
     }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'PupStep — GPS Walk Reports for Mumbai Dogs',
-    description: 'GPS-verified walk reports to your WhatsApp. Know your dog got walked. Trusted by Mumbai dog parents.',
+    title: 'PupStep — GPS Walk Reports for Dogs Across India',
+    description: 'GPS-verified walk reports to your WhatsApp. Know your dog got walked. Trusted by pet parents from Mumbai to across India.',
     images: [`${siteUrl}/api/og`],
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },

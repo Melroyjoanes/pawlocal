@@ -5,9 +5,9 @@ import { createClient } from '@/lib/supabase/server'
 import LandingPage from '@/components/LandingPage'
 
 export const metadata: Metadata = {
-  title: "PupStep — GPS Walk Reports for Mumbai Dogs",
+  title: "PupStep — GPS Walk Reports for Dogs Across India",
   description:
-    "Your dog gets walked. Now prove it. GPS route, pee/poop map, dog photo — sent to you on WhatsApp after every walk.",
+    "Your dog gets walked. Now you'll know how it went. GPS route, pee/poop map, dog photo — sent to you on WhatsApp after every walk.",
 }
 
 export default async function HomePage({
@@ -45,7 +45,7 @@ export default async function HomePage({
             "@type": "WebSite",
             "name": "PupStep",
             "alternateName": "PupStep GPS Dog Walk Tracker",
-            "description": "PupStep is a GPS dog walk verification app for Mumbai dog parents, not a directory or marketplace. Your own walker — maid, watchman, family friend, or regular walker — logs the walk, and you get a GPS-tracked proof-of-walk report on WhatsApp within seconds.",
+            "description": "PupStep is a GPS dog walk verification app for pet parents across India, not a directory or marketplace. Your own walker — maid, watchman, family friend, or regular walker — logs the walk, and you get a GPS-tracked walk report on WhatsApp within seconds.",
             "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}`,
           })
         }}
@@ -59,8 +59,8 @@ export default async function HomePage({
             "@type": "Organization",
             "name": "PupStep",
             "url": `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'}`,
-            "description": "PupStep is a GPS walk-verification service for Mumbai dog parents. It is not a pet services directory or marketplace — dog parents keep their own walker and use PupStep to get a GPS-tracked, WhatsApp-delivered proof-of-walk report after every walk.",
-            "areaServed": { "@type": "City", "name": "Mumbai" },
+            "description": "PupStep is a GPS walk-verification service for pet parents across India, founded in Mumbai. It is not a pet services directory or marketplace — dog parents keep their own walker and use PupStep to get a GPS-tracked, WhatsApp-delivered walk report after every walk.",
+            "areaServed": { "@type": "Country", "name": "India" },
           })
         }}
       />
@@ -75,7 +75,7 @@ export default async function HomePage({
               {
                 "@type": "Question",
                 "name": "Is PupStep a directory of dog walkers, vets, or groomers?",
-                "acceptedAnswer": { "@type": "Answer", "text": "No. PupStep is not a marketplace or directory and does not list or book providers. Dog parents keep the walker they already trust and use PupStep to get a GPS-tracked proof-of-walk report on WhatsApp after every walk." }
+                "acceptedAnswer": { "@type": "Answer", "text": "No. PupStep is not a marketplace or directory and does not list or book providers. Dog parents keep the walker they already trust and use PupStep to check in on how every walk went, with a GPS-tracked report on WhatsApp." }
               },
               {
                 "@type": "Question",
