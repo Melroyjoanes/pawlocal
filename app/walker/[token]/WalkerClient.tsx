@@ -1149,9 +1149,43 @@ export default function WalkerClient({
   const [currentPos, setCurrentPos] = useState<{ lat: number; lng: number } | null>(null)
   const routePointsRef = useRef<{ lat: number; lng: number }[]>([])
   const walkStartRef = useRef<Date | null>(null)
+  // Captured the moment End Walk is tapped — duration must be start→end of
+  // the WALK, not start→submit (the form-filling minutes don't count).
+  const walkEndRef = useRef<Date | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const watchIdRef = useRef<number | null>(null)
   const lastPointRef = useRef<GpsPoint | null>(null)
+
+  // Screen Wake Lock — keeps the screen on during an active walk. Without
+  // this, the phone locks mid-walk, the browser suspends JS, and the timer/
+  // GPS freeze — walkers were coming back to a glitched screen and couldn't
+  // end the walk or send the report. Same pattern as LiveWalkClient.tsx.
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null)
+
+  const requestWakeLock = useCallback(async () => {
+    if (!('wakeLock' in navigator)) return
+    try {
+      wakeLockRef.current = await navigator.wakeLock.request('screen')
+    } catch {
+      // Not supported / denied — the visibilitychange resync below still
+      // keeps the timer honest if the screen does lock.
+    }
+  }, [])
+
+  // On returning to the tab mid-walk (screen unlocked, app switch, etc.):
+  // re-acquire the wake lock (it auto-releases when the page hides) and
+  // snap the elapsed timer straight to the true wall-clock value instead of
+  // waiting for the next tick.
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible' || phase !== 'walking') return
+      if (wakeLockRef.current?.released ?? true) requestWakeLock()
+      const start = walkStartRef.current
+      if (start) setElapsed(Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000)))
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [phase, requestWakeLock])
 
   // Keep routePointsRef in sync with gpsRoute state (for LiveMap polyline)
   useEffect(() => {
@@ -1304,6 +1338,10 @@ export default function WalkerClient({
               if (last) {
                 const delta = haversineKm(last.lat, last.lng, pt.lat, pt.lng)
                 const elapsedSec = (new Date(pt.ts).getTime() - new Date(last.ts).getTime()) / 1000
+                // Suspension gap (30s+ with no fixes): append without counting
+                // the unobserved straight-line distance — same rule as the main
+                // watch callback in resumeTracking().
+                if (elapsedSec > 30) return [...prev, pt]
                 // Reject implausible jumps: a dog walk never exceeds ~15 km/h (4.2 m/s).
                 // Allow generous margin (20 m/s ≈ 72 km/h) to avoid rejecting valid fast segments,
                 // but still catch GPS teleport artifacts (jumping 200m in 1 second = 200 m/s).
@@ -1383,36 +1421,101 @@ export default function WalkerClient({
     return () => { if (demoNudgeTimer.current) clearTimeout(demoNudgeTimer.current) }
   }, [isDemoWalk, phase, demoStep]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  function startWalk() {
-    setGpsRoute([])
-    setDistanceKm(0)
-    setElapsed(0)
-    setGpsError(null)
-    setCurrentPos(null)
-    setWalkEvents([])
-    setDemoStep(1)
-    setDemoToiletDone(false)
-    setDemoPottyDone(false)
-    setDemoNudge(null)
-    setPhase('walking')
-    walkStartRef.current = new Date()
+  // ── Active-walk persistence ──────────────────────────────────────────────
+  // iOS Safari (and low-memory Androids) can silently RELOAD a backgrounded
+  // tab while the phone is locked mid-walk. Without persistence, the whole
+  // walk lived only in React state — the walker unlocked their phone to a
+  // fresh idle screen with the walk gone, and could never end it or send
+  // the report. Every active walk is checkpointed to localStorage and
+  // restored on mount. Demo walks are never persisted.
+  const activeWalkKey = `pup-active-walk-${token}`
 
-    // Notify parent via server-side email (fire-and-forget — never blocks the walker)
-    if (!isDemoWalk) {
-      fetch('/api/walks/notify-start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ connection_token: selectedToken }),
-      }).catch(() => {})
+  useEffect(() => {
+    if (isDemoWalk) return
+    if (phase !== 'walking' && phase !== 'logging') return
+    const start = walkStartRef.current
+    if (!start) return
+    try {
+      localStorage.setItem(activeWalkKey, JSON.stringify({
+        v: 1,
+        phase,
+        startedAt: start.toISOString(),
+        endedAt: walkEndRef.current?.toISOString() ?? null,
+        selectedToken,
+        gpsRoute,
+        distanceKm,
+        walkEvents,
+      }))
+    } catch { /* storage full/blocked — checkpointing is best-effort */ }
+  }, [phase, gpsRoute, distanceKm, walkEvents, selectedToken, isDemoWalk, activeWalkKey])
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(activeWalkKey)
+      if (!raw) return
+      const saved = JSON.parse(raw) as {
+        v?: number; phase?: string; startedAt?: string; endedAt?: string | null; selectedToken?: string
+        gpsRoute?: GpsPoint[]; distanceKm?: number; walkEvents?: WalkEvent[]
+      }
+      if (saved?.v !== 1 || !saved.startedAt) { localStorage.removeItem(activeWalkKey); return }
+      const started = new Date(saved.startedAt)
+      // A "walk" started over 6 hours ago is an abandoned session, not a
+      // live one — drop it rather than resurrecting a zombie walk.
+      if (isNaN(started.getTime()) || Date.now() - started.getTime() > 6 * 3600 * 1000) {
+        localStorage.removeItem(activeWalkKey)
+        return
+      }
+      walkStartRef.current = started
+      if (Array.isArray(saved.gpsRoute) && saved.gpsRoute.length > 0) {
+        setGpsRoute(saved.gpsRoute)
+        const lastPt = saved.gpsRoute[saved.gpsRoute.length - 1]
+        lastPointRef.current = lastPt
+        setCurrentPos({ lat: lastPt.lat, lng: lastPt.lng })
+      }
+      if (typeof saved.distanceKm === 'number') setDistanceKm(saved.distanceKm)
+      if (Array.isArray(saved.walkEvents)) setWalkEvents(saved.walkEvents)
+      if (saved.selectedToken) setSelectedToken(saved.selectedToken)
+      if (saved.phase === 'logging') {
+        // Restore the true end-of-walk moment so duration isn't inflated by
+        // whatever happened between the reload and the eventual submit.
+        const ended = saved.endedAt ? new Date(saved.endedAt) : null
+        walkEndRef.current = ended && !isNaN(ended.getTime()) ? ended : new Date()
+        setElapsed(Math.max(0, Math.floor(((walkEndRef.current.getTime()) - started.getTime()) / 1000)))
+        setPhase('logging')
+      } else {
+        setElapsed(Math.max(0, Math.floor((Date.now() - started.getTime()) / 1000)))
+        setPhase('walking')
+        resumeTracking()
+      }
+    } catch {
+      // Corrupted blob — discard rather than crash the walker screen
+      try { localStorage.removeItem(activeWalkKey) } catch { /* noop */ }
     }
+    // Mount-only: rehydration must run exactly once, before any user action.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-    // Start timer
+  // Starts (or restarts) the timer + GPS watch + wake lock WITHOUT resetting
+  // walk state — used both by startWalk (fresh walk) and by rehydration
+  // after a mid-walk page reload.
+  function resumeTracking() {
+    // Keep the screen awake for the whole walk — see wakeLockRef above.
+    requestWakeLock()
+
+    // Timer — recomputed from the wall-clock start time every tick, NOT an
+    // incrementing counter. setInterval pauses whenever the screen locks or
+    // the tab is backgrounded, so `prev + 1` silently lost all that time:
+    // walkers returned to a frozen timer and a duration that contradicted
+    // started_at/ended_at (which were always wall-clock).
+    if (timerRef.current) clearInterval(timerRef.current)
     timerRef.current = setInterval(() => {
-      setElapsed((prev) => prev + 1)
+      const start = walkStartRef.current
+      if (start) setElapsed(Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000)))
     }, 1000)
 
-    // Start GPS
+    // GPS
     if (navigator.geolocation) {
+      if (watchIdRef.current !== null) navigator.geolocation.clearWatch(watchIdRef.current)
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
           // Reject only genuine multipath garbage (100m+). Dense Mumbai neighbourhoods
@@ -1434,6 +1537,12 @@ export default function WalkerClient({
             if (last) {
               const delta = haversineKm(last.lat, last.lng, point.lat, point.lng)
               const elapsedSec = (new Date(point.ts).getTime() - new Date(last.ts).getTime()) / 1000
+              // No fixes for 30s+ means the tab was suspended (screen lock,
+              // app switch) — keep the route continuous by appending the
+              // point, but do NOT count the straight-line "chord" as walked
+              // distance: that movement was never observed, and counting it
+              // would silently mis-measure the walk.
+              if (elapsedSec > 30) return [...prev, point]
               // Reject implausible jumps: a dog walk never exceeds ~15 km/h (4.2 m/s).
               // Allow generous margin (20 m/s ≈ 72 km/h) to avoid rejecting valid fast segments,
               // but still catch GPS teleport artifacts (jumping 200m in 1 second = 200 m/s).
@@ -1462,6 +1571,33 @@ export default function WalkerClient({
     }
   }
 
+  function startWalk() {
+    setGpsRoute([])
+    setDistanceKm(0)
+    setElapsed(0)
+    setGpsError(null)
+    setCurrentPos(null)
+    setWalkEvents([])
+    setDemoStep(1)
+    setDemoToiletDone(false)
+    setDemoPottyDone(false)
+    setDemoNudge(null)
+    setPhase('walking')
+    walkStartRef.current = new Date()
+    walkEndRef.current = null
+
+    // Notify parent via server-side email (fire-and-forget — never blocks the walker)
+    if (!isDemoWalk) {
+      fetch('/api/walks/notify-start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ connection_token: selectedToken }),
+      }).catch(() => {})
+    }
+
+    resumeTracking()
+  }
+
   function endWalk() {
     // Demo mode: gate on 200m
     if (isDemoWalk && distanceKm * 1000 < 200) {
@@ -1480,6 +1616,10 @@ export default function WalkerClient({
       navigator.geolocation.clearWatch(watchIdRef.current)
       watchIdRef.current = null
     }
+    // Screen can sleep again — the walk itself is over
+    wakeLockRef.current?.release().catch(() => {})
+    wakeLockRef.current = null
+    walkEndRef.current = new Date()
     setPhase('logging')
     // Camera is optional — walker taps the photo button themselves
   }
@@ -1545,7 +1685,15 @@ export default function WalkerClient({
     setSubmitting(true)
     setSubmitError(null)
 
-    const durationMins = Math.max(1, Math.round(elapsed / 60))
+    // Belt-and-suspenders: derive duration from wall-clock start→end (the
+    // moment End Walk was tapped, NOT submit time — form-filling minutes
+    // don't count as walk time), so it always agrees with started_at even
+    // if the tab was suspended mid-walk and the ticking counter froze.
+    const walkEndTime = walkEndRef.current ?? new Date()
+    const wallClockSecs = walkStartRef.current
+      ? Math.floor((walkEndTime.getTime() - walkStartRef.current.getTime()) / 1000)
+      : 0
+    const durationMins = Math.max(1, Math.round((wallClockSecs > 0 ? wallClockSecs : elapsed) / 60))
 
     const finalPoopCount = walkEvents.filter(e => e.type === 'poop').length
     const finalPeeCount = walkEvents.filter(e => e.type === 'pee').length
@@ -1565,7 +1713,7 @@ export default function WalkerClient({
           mood: mood || null,
           notes: notes.trim() || null,
           started_at: walkStartRef.current?.toISOString() ?? null,
-          ended_at: new Date().toISOString(),
+          ended_at: walkEndTime.toISOString(),
           walk_events: walkEvents,
         }),
       })
@@ -1598,6 +1746,10 @@ export default function WalkerClient({
       setDistanceKm(0)
       setGpsRoute([])
       setWalkEvents([])
+      walkStartRef.current = null
+      walkEndRef.current = null
+      // Walk submitted — drop the crash-recovery checkpoint
+      try { localStorage.removeItem(activeWalkKey) } catch { /* noop */ }
       setPhase('success')
       fetchLogs()
       // Auto-open WhatsApp to owner with report link — walker just taps Send
@@ -1616,6 +1768,7 @@ export default function WalkerClient({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
       if (watchIdRef.current !== null) navigator.geolocation?.clearWatch(watchIdRef.current)
+      wakeLockRef.current?.release().catch(() => {})
     }
   }, [])
 
@@ -2452,7 +2605,21 @@ export default function WalkerClient({
               </div>
 
               {/* ── Controls — bottom section ── */}
-              <div className="flex-1 flex flex-col px-5 pt-4 pb-6 gap-3" style={{ background: '#FFFBEB' }}>
+              {/* Bottom padding must clear the fixed bottom tab bar (z-40,
+                  ~64px + safe-area) — with only pb-6 the mt-auto End Walk
+                  button rendered UNDERNEATH the bar and couldn't be tapped. */}
+              <div className="flex-1 flex flex-col px-5 pt-4 gap-3" style={{ background: '#FFFBEB', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)' }}>
+                {/* Older browsers (iOS Safari < 16.4) have no Wake Lock API —
+                    ask the walker to keep the screen on manually there. The
+                    walk still survives a lock (localStorage checkpoint), but
+                    GPS points during the lock are lost. */}
+                {typeof window !== 'undefined' && !('wakeLock' in navigator) && (
+                  <div style={{ background: '#FEF3C7', border: '1.5px solid #FDE68A', borderRadius: 14, padding: '10px 14px' }}>
+                    <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 700, color: '#92400E', margin: 0 }}>
+                      🔆 {lang === 'hi' ? 'वॉक के दौरान स्क्रीन चालू रखें' : lang === 'mr' ? 'वॉक दरम्यान स्क्रीन चालू ठेवा' : 'Keep your screen on during the walk'}
+                    </p>
+                  </div>
+                )}
                 {/* Care Focus banners — walking phase, one per selected care focus */}
                 {careFocusKeys.filter(k => k !== 'normal' && CARE_FOCUS_CONFIG[k]).map(k => {
                   const cfg = CARE_FOCUS_CONFIG[k]
