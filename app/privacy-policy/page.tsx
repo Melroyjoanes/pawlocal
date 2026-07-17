@@ -138,11 +138,9 @@ export default function PrivacyPolicyPage() {
 
           <Section title="7. Cookies">
             <p>
-              We use essential cookies for authentication (Supabase session management), which are required for the
-              site to function. Analytics cookies (Google Analytics 4) are optional and are only set if you accept
-              the cookie banner shown on your first visit — if you decline, no analytics cookies are set and every
-              feature of PupStep works exactly the same. You can also clear or block cookies through your browser
-              settings at any time.
+              We use essential cookies for authentication (Supabase session management) and analytics cookies via
+              Google Analytics 4 to understand how PupStep is used, so we can improve it. No data is sold or shared
+              with advertisers. You can clear or block cookies through your browser settings at any time.
             </p>
           </Section>
 

@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
 import { Nunito, Fredoka } from 'next/font/google'
+import Script from 'next/script'
 import MotionProvider from '@/components/MotionProvider'
 import ShellWrapper from '@/components/ShellWrapper'
 import InitialLoader from '@/components/InitialLoader'
 import RouteProgressBar from '@/components/RouteProgressBar'
 import FunnelTracker from '@/components/FunnelTracker'
-import CookieConsent from '@/components/CookieConsent'
 import OfflineBanner from '@/components/OfflineBanner'
 import './globals.css'
 
@@ -76,7 +76,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${fredoka.variable} ${nunito.variable}`}>
       <body className="font-sans antialiased bg-background text-foreground">
-        <CookieConsent gaId={GA_MEASUREMENT_ID} />
+        {GA_MEASUREMENT_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_MEASUREMENT_ID}', { anonymize_ip: true });
+              `}
+            </Script>
+          </>
+        )}
         <OfflineBanner />
         <InitialLoader />
         <FunnelTracker />
