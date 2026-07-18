@@ -202,7 +202,7 @@ function OverviewTab() {
 
 interface Parent {
   id: string; name: string; email: string; phone: string | null
-  trialStartedAt: string | null; trialDaysRemaining: number | null; trialExpired: boolean
+  trialStartedAt: string | null; trialDaysRemaining: number | null; trialExpired: boolean; trialDay: number | null
   plan: string | null; subStatus: string | null
   dogCount: number; activeWalkers: number; reportCount: number; lastReportDate: string | null; createdAt: string
 }
@@ -250,8 +250,8 @@ function ParentsTab() {
 
   const trialBadge = (p: Parent) => {
     if (p.subStatus === 'active') return <Badge text={`${p.plan ?? 'Pro'}`} type="active" />
-    if (p.trialExpired) return <Badge text="Expired" type="expired" />
-    if (p.trialDaysRemaining !== null) return <Badge text={`${p.trialDaysRemaining}d left`} type="trial" />
+    if (p.trialExpired) return <Badge text={`Expired (day ${p.trialDay ?? '?'})`} type="expired" />
+    if (p.trialDay !== null) return <Badge text={`Day ${p.trialDay}/3 · ${p.trialDaysRemaining}d left`} type="trial" />
     return <Badge text="No trial" type="none" />
   }
 

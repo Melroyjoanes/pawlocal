@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
+import { TRIAL_DAYS } from '@/lib/entitlement'
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? ''
 
@@ -109,7 +110,7 @@ export async function GET() {
   }
 
   const now = Date.now()
-  const sevenDays = 7 * 86400000
+  const trialLengthMs = TRIAL_DAYS * 86400000
 
   const result = userIds
     .map((id) => {
@@ -117,12 +118,16 @@ export async function GET() {
       const trialStartedAt: string | null = profile?.trial_started_at ?? null
       let trialDaysRemaining: number | null = null
       let trialExpired = false
+      let trialDay: number | null = null
 
       if (trialStartedAt) {
-        const trialEnd = new Date(trialStartedAt).getTime() + sevenDays
+        const trialEnd = new Date(trialStartedAt).getTime() + trialLengthMs
         const remaining = Math.ceil((trialEnd - now) / 86400000)
         trialDaysRemaining = remaining
         trialExpired = remaining <= 0
+        // Day 1 on the day it started, counting up to TRIAL_DAYS, capped so an
+        // expired trial still reads as "day 3 of 3" rather than climbing forever.
+        trialDay = Math.min(TRIAL_DAYS, Math.floor((now - new Date(trialStartedAt).getTime()) / 86400000) + 1)
       }
 
       const sub = subMap[id] ?? null
@@ -135,6 +140,7 @@ export async function GET() {
         trialStartedAt,
         trialDaysRemaining,
         trialExpired,
+        trialDay,
         plan: sub?.plan ?? null,
         subStatus: sub?.status ?? null,
         dogCount: dogCountMap[id] ?? 0,

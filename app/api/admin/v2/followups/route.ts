@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
+import { TRIAL_DAYS } from '@/lib/entitlement'
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? ''
 
@@ -15,6 +16,7 @@ interface Parent {
   phone: string | null
   createdAt: string
   trialDaysRemaining: number | null
+  trialDay: number | null
   reportCount: number
 }
 
@@ -87,7 +89,7 @@ export async function GET() {
   const paidSet = new Set(activeSubs.map((s) => s.user_id))
 
   const now = Date.now()
-  const sevenDays = 7 * 86400000
+  const trialLengthMs = TRIAL_DAYS * 86400000
 
   const buckets: FollowupBuckets = {
     no_dog: [],
@@ -105,13 +107,15 @@ export async function GET() {
     let trialDaysRemaining: number | null = null
     let trialExpired = false
     let trialActive = false
+    let trialDay: number | null = null
 
     if (trialStartedAt) {
-      const trialEnd = new Date(trialStartedAt).getTime() + sevenDays
+      const trialEnd = new Date(trialStartedAt).getTime() + trialLengthMs
       const remaining = Math.ceil((trialEnd - now) / 86400000)
       trialDaysRemaining = remaining
       trialExpired = remaining <= 0
       trialActive = remaining > 0
+      trialDay = Math.min(TRIAL_DAYS, Math.floor((now - new Date(trialStartedAt).getTime()) / 86400000) + 1)
     }
 
     const rCount = reportCountMap[uid] ?? 0
@@ -123,6 +127,7 @@ export async function GET() {
       phone: (p.phone as string | null) ?? null,
       createdAt: p.created_at as string,
       trialDaysRemaining,
+      trialDay,
       reportCount: rCount,
     }
 
@@ -135,7 +140,7 @@ export async function GET() {
       buckets.no_walker.push(parent)
     } else if (rCount === 0) {
       buckets.no_report.push(parent)
-    } else if (trialActive && trialDaysRemaining !== null && trialDaysRemaining <= 5) {
+    } else if (trialActive && trialDaysRemaining !== null && trialDaysRemaining <= TRIAL_DAYS) {
       buckets.trial_ending.push(parent)
     } else if (trialExpired) {
       buckets.ask_payment.push(parent)

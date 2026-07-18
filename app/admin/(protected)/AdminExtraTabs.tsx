@@ -344,6 +344,7 @@ interface Parent {
   phone: string | null
   createdAt: string
   trialDaysRemaining: number | null
+  trialDay: number | null
   reportCount: number
 }
 
@@ -365,7 +366,7 @@ const COLUMNS: {
   { key: 'no_dog',       label: '🐕 No dog yet',        color: '#E5E7EB', textColor: '#374151' },
   { key: 'no_walker',    label: '🦮 No walker',          color: '#DBEAFE', textColor: '#1E40AF' },
   { key: 'no_report',    label: '📋 No report yet',      color: '#FEF3C7', textColor: '#92400E' },
-  { key: 'trial_ending', label: '⏰ Trial ending (≤5d)', color: '#FEE2E2', textColor: '#991B1B' },
+  { key: 'trial_ending', label: '⏰ Trial ending',       color: '#FEE2E2', textColor: '#991B1B' },
   { key: 'ask_payment',  label: '💳 Ask for payment',    color: '#FEE2E2', textColor: '#991B1B' },
   { key: 'paid',         label: '✅ Paid',               color: '#DCFCE7', textColor: '#166534' },
 ]
@@ -459,14 +460,14 @@ export function AdminFollowupsTab() {
                       <div style={{ color: '#6B7280', fontSize: 11, marginBottom: 2 }}>
                         Joined {relativeDate(parent.createdAt)}
                       </div>
-                      {parent.trialDaysRemaining != null && (
+                      {parent.trialDay != null && (
                         <div style={{
                           fontSize: 11,
-                          color: parent.trialDaysRemaining <= 2 ? '#991B1B' : '#92400E',
+                          color: (parent.trialDaysRemaining ?? 0) <= 1 ? '#991B1B' : '#92400E',
                           fontWeight: 600,
                           marginBottom: 4,
                         }}>
-                          ⏰ {parent.trialDaysRemaining}d left
+                          ⏰ Day {parent.trialDay}/3 · {parent.trialDaysRemaining}d left
                         </div>
                       )}
                       {parent.phone && (
