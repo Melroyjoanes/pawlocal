@@ -1221,11 +1221,15 @@ export default function WalkerClient({
     if (!file) return
     setUploading(true)
     try {
-      const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `walk-photos/${token}/${Date.now()}.${ext}`
+      // Compress before upload — see handlePoopPhotoTaken for why
+      const { compressImage } = await import('@/lib/compressImage')
+      const compressed = await compressImage(file)
+      const path = `walk-photos/${token}/${Date.now()}.jpg`
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
-      const { error } = await supabase.storage.from('provider-photos').upload(path, file)
+      const { error } = await supabase.storage
+        .from('provider-photos')
+        .upload(path, compressed, { contentType: 'image/jpeg' })
       if (!error) {
         const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
         setPhotoUrl(data.publicUrl)
@@ -1240,11 +1244,21 @@ export default function WalkerClient({
     if (!file || !pendingPoopEvent) return
     setPoopPhotoUploading(true)
     try {
-      const ext = file.name.split('.').pop() ?? 'jpg'
-      const path = `poop-photos/${token}/${Date.now()}.${ext}`
+      // Compress before upload — raw camera JPEGs are 5-12MB and took 1min+
+      // on mobile data (often failing outright). ~1280px JPEG is 150-400KB.
+      const { compressImage } = await import('@/lib/compressImage')
+      const compressed = await compressImage(file)
+      const path = `poop-photos/${token}/${Date.now()}.jpg`
       const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
-      await supabase.storage.from('provider-photos').upload(path, file)
+      // MUST check the error — supabase upload() returns { error }, it does
+      // not throw. The old code ignored it and attached a public URL for a
+      // file that was never created, producing broken images on live
+      // reports (confirmed: storage 404 behind a stored photo_url).
+      const { error: uploadError } = await supabase.storage
+        .from('provider-photos')
+        .upload(path, compressed, { contentType: 'image/jpeg' })
+      if (uploadError) throw uploadError
       const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
       setWalkEvents(prev => [...prev, {
         type: 'poop' as const,
@@ -1254,7 +1268,8 @@ export default function WalkerClient({
         photoUrl: data.publicUrl,
       }])
     } catch {
-      // photo failed — still add event without photo
+      // photo failed — still add event, but WITHOUT a photo URL (never point
+      // the report at a file that doesn't exist)
       setWalkEvents(prev => [...prev, {
         type: 'poop' as const,
         lat: pendingPoopEvent.lat,

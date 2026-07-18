@@ -162,7 +162,22 @@ function PoopStat({ count, poopEvents }: {
   poopEvents: { lat: number; lng: number; time: string; photo_url?: string | null }[]
 }) {
   const [showPhotos, setShowPhotos] = useState(false)
-  const photosWithImages = poopEvents.filter(e => e.photo_url)
+  // Some historical reports carry photo_urls whose upload silently failed
+  // (the file never existed in storage) — hide any image that 404s instead
+  // of showing a broken-image icon on the parent's report. Probed eagerly on
+  // mount (not just in the sheet) so the "View photos" chip disappears too
+  // when every photo is broken, instead of opening an empty sheet.
+  const [brokenUrls, setBrokenUrls] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    poopEvents.forEach(e => {
+      if (!e.photo_url) return
+      const probe = new window.Image()
+      probe.onerror = () => setBrokenUrls(prev => new Set(prev).add(e.photo_url!))
+      probe.src = e.photo_url
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const photosWithImages = poopEvents.filter(e => e.photo_url && !brokenUrls.has(e.photo_url))
 
   return (
     <>
@@ -199,7 +214,12 @@ function PoopStat({ count, poopEvents }: {
               {photosWithImages.map((e, i) => (
                 <div key={i} style={{ borderRadius: 16, overflow: 'hidden', background: '#F9F6EF', border: '1px solid rgba(10,47,53,0.08)' }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={e.photo_url!} alt={`Poop ${i + 1}`} style={{ width: '100%', maxHeight: 280, objectFit: 'cover', display: 'block' }} />
+                  <img
+                    src={e.photo_url!}
+                    alt={`Poop ${i + 1}`}
+                    style={{ width: '100%', maxHeight: 280, objectFit: 'cover', display: 'block' }}
+                    onError={() => setBrokenUrls(prev => new Set(prev).add(e.photo_url!))}
+                  />
                   <div style={{ padding: '8px 12px' }}>
                     <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#9CA3AF', margin: 0 }}>
                       {new Date(e.time).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })}
