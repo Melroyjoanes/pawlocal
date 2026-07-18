@@ -193,12 +193,23 @@ export async function POST(req: NextRequest) {
     // whose profile row is missing/incomplete. Using null trial_started_at
     // as a proxy for "first ever report" would let a lapsed subscriber's
     // data gap silently re-grant a fresh trial and bypass the paywall.
+    // NOTE for self-walk launch: once migration 058 adds the logged_by
+    // column, add .eq('logged_by', 'walker') here so a parent's self-logged
+    // walk doesn't suppress the trial start on the walker's first real
+    // report. Adding it BEFORE the migration runs makes this query error
+    // against the live schema — count comes back null, which (with the old
+    // `?? 0` fallback) made EVERY report look like the first ever and
+    // re-sent the "your trial has started" email on each one.
     (db.from('walk_reports') as any)
       .select('id', { count: 'exact', head: true })
       .eq('owner_id', connection.owner_id),
   ])
 
-  const isGenuinelyFirstReportEver = (priorReportCount ?? 0) === 0
+  // Strict === 0, never `?? 0`: if the count query errors, count is null —
+  // fail safe as "not first" (worst case: a genuinely-new owner misses the
+  // trial banner) rather than re-starting trials and re-sending trial
+  // emails on every report.
+  const isGenuinelyFirstReportEver = priorReportCount === 0
 
   // Only start the trial clock on a genuinely-first-ever report for this
   // owner — never on a lapsed account whose trial_started_at happens to be

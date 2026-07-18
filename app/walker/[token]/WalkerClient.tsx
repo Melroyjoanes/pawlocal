@@ -6,31 +6,27 @@ import { parseCareFocus } from '@/lib/careFocus'
 import { LoadingButton } from '@/components/LoadingButton'
 import { loadGoogleMaps } from '@/lib/googleMapsLoader'
 import { SNAP_MAP_STYLE } from '@/lib/snapMapStyle'
-import {
-  CLAY_SHADOW_CREAM,
-  CLAY_SHADOW_TEAL,
-  CLAY_SHADOW_ORANGE,
-  CLAY_SHADOW_ORANGE_SM,
-  CLAY_SHADOW_TEAL_OUTLINE,
-  clayShadow,
-} from '@/lib/clayShadows'
 
-// ── Claymorphism shadows for surfaces not covered by the shared tokens above.
-// Built with the same clayShadow() factory (hue-matched, light-inset-top /
-// dark-inset-bottom, single outer drop shadow). Kept deliberately light/small
-// — this page is used mid-walk on modest Android phones, so no 60-80px blur
-// like the celebration/marketing screens elsewhere in the app. ─────────────────
-const CLAY_SHADOW_WHATSAPP = clayShadow('20,110,60', { outerOpacity: 0.26, insetOpacity: 0.18 })
-const CLAY_SHADOW_TEAL_ACCENT = clayShadow('15,118,110', { outerOpacity: 0.24, insetOpacity: 0.18 })
-const CLAY_SHADOW_AMBER = clayShadow('180,120,20', { outerOpacity: 0.20, insetOpacity: 0.15 })
-const CLAY_SHADOW_ORANGE_BANNER = clayShadow('194,90,20', { outerOpacity: 0.20, insetOpacity: 0.15 })
-const CLAY_SHADOW_GREEN_SUCCESS = clayShadow('30,120,60', { outerOpacity: 0.18, insetOpacity: 0.13 })
-const CLAY_SHADOW_BLUE = clayShadow('37,99,235', { outerOpacity: 0.20, insetOpacity: 0.15 })
-const CLAY_SHADOW_RED = clayShadow('185,28,28', { outerOpacity: 0.24, insetOpacity: 0.16 })
-const CLAY_SHADOW_RED_BANNER = clayShadow('185,28,28', { outerOpacity: 0.16, insetOpacity: 0.12 })
-// Very light neutral (brand-dark tinted, never gray/black) for muted secondary
-// panels/buttons — e.g. a disabled-looking "skip this step" dismiss action.
-const CLAY_SHADOW_NEUTRAL = clayShadow('10,47,53', { outerOpacity: 0.12, insetOpacity: 0.08 })
+// ── This screen is used mid-walk by walkers on modest Android phones, often
+// outdoors and one-handed — it intentionally does NOT use the claymorphism
+// look from lib/clayShadows (that's reserved for the parent-facing brand
+// surfaces). Flat white background, plain borders, no decorative shadow.
+// Every CLAY_SHADOW_* name below is kept so the ~80 call sites throughout
+// this file don't need touching — they all now resolve to "no shadow."
+const CLAY_SHADOW_CREAM = ''
+const CLAY_SHADOW_TEAL = ''
+const CLAY_SHADOW_ORANGE = ''
+const CLAY_SHADOW_ORANGE_SM = ''
+const CLAY_SHADOW_TEAL_OUTLINE = ''
+const CLAY_SHADOW_WHATSAPP = ''
+const CLAY_SHADOW_TEAL_ACCENT = ''
+const CLAY_SHADOW_AMBER = ''
+const CLAY_SHADOW_ORANGE_BANNER = ''
+const CLAY_SHADOW_GREEN_SUCCESS = ''
+const CLAY_SHADOW_BLUE = ''
+const CLAY_SHADOW_RED = ''
+const CLAY_SHADOW_RED_BANNER = ''
+const CLAY_SHADOW_NEUTRAL = ''
 
 // ─── Motion tokens — mirrors components/LandingPage.tsx so walker-facing
 // motion feels consistent with the rest of the app ────────────────────────────
@@ -350,6 +346,7 @@ interface WalkerTranslations {
   tapToTakePhoto: string
   uploadingPhoto: string
   photoUploadFailed: string
+  photoStillUploading: string
   howWasDog: (dog: string) => string
   moodGreat: string
   moodOkay: string
@@ -402,6 +399,7 @@ const WALKER_T: Record<WalkerLang, WalkerTranslations> = {
     tapToTakePhoto: 'Tap to take a photo',
     uploadingPhoto: 'Uploading…',
     photoUploadFailed: 'Upload failed — tap to try again',
+    photoStillUploading: 'Photo is still uploading — wait a moment then try again',
     howWasDog: (dog: string) => `How was ${dog}?`,
     moodGreat: 'Great',
     moodOkay: 'Okay',
@@ -452,6 +450,7 @@ const WALKER_T: Record<WalkerLang, WalkerTranslations> = {
     tapToTakePhoto: 'Photo lene ke liye tap karein',
     uploadingPhoto: 'Upload ho raha hai…',
     photoUploadFailed: 'Upload fail ho gaya — dobara try karein',
+    photoStillUploading: 'Photo abhi upload ho raha hai — thoda ruk kar phir try karein',
     howWasDog: (dog: string) => `${dog} kaisa tha?`,
     moodGreat: 'Bahut Achha',
     moodOkay: 'Theek-Thaak',
@@ -502,6 +501,7 @@ const WALKER_T: Record<WalkerLang, WalkerTranslations> = {
     tapToTakePhoto: 'फोटो लेने के लिए टैप करें',
     uploadingPhoto: 'अपलोड हो रहा है…',
     photoUploadFailed: 'अपलोड नहीं हुआ — फिर से टैप करें',
+    photoStillUploading: 'फोटो अभी अपलोड हो रहा है — थोड़ा रुककर फिर कोशिश करें',
     howWasDog: (dog: string) => `${dog} कैसा था?`,
     moodGreat: 'बहुत अच्छा',
     moodOkay: 'ठीक-ठाक',
@@ -552,6 +552,7 @@ const WALKER_T: Record<WalkerLang, WalkerTranslations> = {
     tapToTakePhoto: 'फोटो घेण्यासाठी टॅप करा',
     uploadingPhoto: 'अपलोड होत आहे…',
     photoUploadFailed: 'अपलोड झाले नाही — पुन्हा टॅप करा',
+    photoStillUploading: 'फोटो अजून अपलोड होत आहे — थोडा वेळ थांबून पुन्हा प्रयत्न करा',
     howWasDog: (dog: string) => `${dog} कसा होता?`,
     moodGreat: 'खूप छान',
     moodOkay: 'ठीक-ठाक',
@@ -835,7 +836,7 @@ function SettingsTab({
         {careFocusKeys.filter(k => k !== 'normal' && CARE_FOCUS_CONFIG[k]).map(k => {
           const cfg = CARE_FOCUS_CONFIG[k]
           return (
-            <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 16, padding: '8px 12px', marginBottom: 10, marginRight: 8, display: 'inline-flex', alignItems: 'center', gap: 6, boxShadow: clayShadow(cfg.shadowTint, { outerOpacity: 0.16, insetOpacity: 0.12 }) }}>
+            <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 16, padding: '8px 12px', marginBottom: 10, marginRight: 8, display: 'inline-flex', alignItems: 'center', gap: 6, boxShadow: undefined }}>
               <span style={{ fontSize: 14 }}>{cfg.emoji}</span>
               <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 700, color: cfg.color }}>{cfg.label}</span>
             </div>
@@ -1077,7 +1078,6 @@ export default function WalkerClient({
   const [logsLoading, setLogsLoading] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<WalkerTab>('walk')
-  const [showSaveNotice, setShowSaveNotice] = useState(false)
   const careFocusKeys = parseCareFocus(careFocus)
 
   // Walker's preferred language — persisted to localStorage so a walker returning
@@ -1125,11 +1125,6 @@ export default function WalkerClient({
   const demoNudgeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    const dismissed = localStorage.getItem(`pup-saved-${token}`)
-    if (!dismissed) setShowSaveNotice(true)
-  }, [token])
-
-  useEffect(() => {
     fetch(`/api/walker/${token}/connections`)
       .then(r => r.json())
       .then((data: ClientConnection[]) => {
@@ -1140,11 +1135,6 @@ export default function WalkerClient({
       })
       .catch(() => {})
   }, [token])
-
-  function dismissSaveNotice() {
-    localStorage.setItem(`pup-saved-${token}`, '1')
-    setShowSaveNotice(false)
-  }
 
   // Walk tracking state
   const [elapsed, setElapsed] = useState(0)
@@ -1231,15 +1221,18 @@ export default function WalkerClient({
       // Compress before upload — see handlePoopPhotoTaken for why
       const { compressImage } = await import('@/lib/compressImage')
       const compressed = await compressImage(file)
-      const path = `walk-photos/${token}/${Date.now()}.jpg`
-      const { createClient } = await import('@/lib/supabase/client')
-      const supabase = createClient()
-      const { error } = await supabase.storage
-        .from('provider-photos')
-        .upload(path, compressed, { contentType: 'image/jpeg' })
-      if (error) throw error
-      const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
-      setPhotoUrl(data.publicUrl)
+      // Upload via our API, NOT directly to Supabase Storage — the walker
+      // page has no auth session, so direct uploads run as `anon` and are
+      // rejected by storage RLS (403). This was the root cause of every
+      // missing walker photo on live reports.
+      const form = new FormData()
+      form.append('token', selectedToken)
+      form.append('kind', 'walk')
+      form.append('file', compressed, 'photo.jpg')
+      const res = await fetch('/api/walker/photo', { method: 'POST', body: form })
+      const json = await res.json()
+      if (!res.ok || !json.url) throw new Error(json.error ?? 'Upload failed')
+      setPhotoUrl(json.url)
     } catch {
       // Previously a failed upload just silently reset with no feedback —
       // the walker would tap "take photo", nothing would happen, and the
@@ -1261,28 +1254,28 @@ export default function WalkerClient({
       // on mobile data (often failing outright). ~1280px JPEG is 150-400KB.
       const { compressImage } = await import('@/lib/compressImage')
       const compressed = await compressImage(file)
-      const path = `poop-photos/${token}/${Date.now()}.jpg`
-      const { createClient } = await import('@/lib/supabase/client')
-      const supabase = createClient()
-      // MUST check the error — supabase upload() returns { error }, it does
-      // not throw. The old code ignored it and attached a public URL for a
-      // file that was never created, producing broken images on live
-      // reports (confirmed: storage 404 behind a stored photo_url).
-      const { error: uploadError } = await supabase.storage
-        .from('provider-photos')
-        .upload(path, compressed, { contentType: 'image/jpeg' })
-      if (uploadError) throw uploadError
-      const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
+      // Upload via our API — see handlePhotoCapture for why direct storage
+      // uploads always failed (anon RLS 403).
+      const form = new FormData()
+      form.append('token', selectedToken)
+      form.append('kind', 'poop')
+      form.append('file', compressed, 'photo.jpg')
+      const res = await fetch('/api/walker/photo', { method: 'POST', body: form })
+      const json = await res.json()
+      if (!res.ok || !json.url) throw new Error(json.error ?? 'Upload failed')
       setWalkEvents(prev => [...prev, {
         type: 'poop' as const,
         lat: pendingPoopEvent.lat,
         lng: pendingPoopEvent.lng,
         ts: pendingPoopEvent.ts,
-        photoUrl: data.publicUrl,
+        photoUrl: json.url,
       }])
     } catch {
       // photo failed — still add event, but WITHOUT a photo URL (never point
-      // the report at a file that doesn't exist)
+      // the report at a file that doesn't exist), and tell the walker so a
+      // missing photo isn't a silent surprise on the parent's report
+      setToast(t.photoUploadFailed)
+      setTimeout(() => setToast(null), 3000)
       setWalkEvents(prev => [...prev, {
         type: 'poop' as const,
         lat: pendingPoopEvent.lat,
@@ -1696,6 +1689,18 @@ export default function WalkerClient({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
+    // Photo upload is async (compress + storage upload) and was racing the
+    // submit button — a walker who tapped the camera then immediately hit
+    // "Send to owner" would submit before photoUrl state ever got set,
+    // silently dropping a photo that looked like it captured fine. The
+    // button below is disabled while uploading, but a native Enter-key form
+    // submit can bypass a disabled button, so this guard is the real fix.
+    if (uploading) {
+      setToast(t.photoStillUploading)
+      setTimeout(() => setToast(null), 3000)
+      return
+    }
+
     // Demo walk — skip API, go straight to demo success screen
     if (isDemoWalk) {
       setMood('')
@@ -1808,7 +1813,7 @@ export default function WalkerClient({
   const poopPhotos = walkEvents.filter(ev => ev.type === 'poop' && ev.photoUrl)
 
   return (
-    <div className="min-h-screen pb-24" style={{ background: '#FFFBEB', fontFamily: 'var(--font-nunito), sans-serif' }}>
+    <div className="min-h-screen pb-24" style={{ background: '#fff', fontFamily: 'var(--font-nunito), sans-serif' }}>
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 left-4 right-4 z-50 bg-[#0A2F35] text-white rounded-[24px] px-5 py-4 text-sm font-semibold text-center animate-bounce-once"
@@ -1823,7 +1828,7 @@ export default function WalkerClient({
           position: 'fixed',
           inset: 0,
           zIndex: 50,
-          background: '#FFFBEB',
+          background: '#fff',
           display: 'flex',
           flexDirection: 'column',
           padding: '0 20px 40px',
@@ -2018,7 +2023,7 @@ export default function WalkerClient({
         >
           <div
             style={{
-              background: '#FFFBEB',
+              background: '#fff',
               borderRadius: '20px 20px 0 0',
               padding: '12px 20px 40px',
               width: '100%',
@@ -2104,7 +2109,7 @@ export default function WalkerClient({
           position: 'fixed',
           inset: 0,
           zIndex: 50,
-          background: '#FFFBEB',
+          background: '#fff',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -2371,41 +2376,6 @@ export default function WalkerClient({
                   {t.changeDog}
                 </button>
               )}
-              {/* First-time save notice */}
-              {showSaveNotice && (
-                <div
-                  className="rounded-[20px] px-4 py-4 flex gap-3 items-start"
-                  style={{ background: '#F0FDFA', border: '1.5px solid #99F6E4', boxShadow: CLAY_SHADOW_TEAL_ACCENT }}
-                >
-                  <span className="text-xl flex-shrink-0 mt-0.5">💡</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-[#0D9488] mb-0.5" style={{ fontFamily: 'var(--font-fredoka)' }}>
-                      Save your dashboard link
-                    </p>
-                    <p className="text-xs text-teal-700 mb-3 leading-relaxed" style={{ fontFamily: 'var(--font-nunito)' }}>
-                      Your client will send you this link on WhatsApp. Tap the button below to save it yourself too.
-                    </p>
-                    <a
-                      href={`https://wa.me/?text=${encodeURIComponent(`My PupStep dashboard for ${dogName} 🐾\nTap to log walks:\n${typeof window !== 'undefined' ? window.location.href : ''}`)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={dismissSaveNotice}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-bold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
-                      style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', textDecoration: 'none', boxShadow: CLAY_SHADOW_WHATSAPP }}
-                    >
-                      📲 Save my dashboard link
-                    </a>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={dismissSaveNotice}
-                    className="text-teal-400 hover:text-teal-600 flex-shrink-0 text-lg leading-none"
-                    aria-label="Dismiss"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
 
               {/* Walker's own logging streak — a warm nod to their own consistency,
                   not a scorecard. Only shown once they've actually built a streak. */}
@@ -2452,7 +2422,7 @@ export default function WalkerClient({
               {careFocusKeys.filter(k => k !== 'normal' && CARE_FOCUS_CONFIG[k]).map(k => {
                 const cfg = CARE_FOCUS_CONFIG[k]
                 return (
-                  <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 16, padding: '12px 14px', marginBottom: 8, boxShadow: clayShadow(cfg.shadowTint, { outerOpacity: 0.16, insetOpacity: 0.12 }) }}>
+                  <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 16, padding: '12px 14px', marginBottom: 8, boxShadow: undefined }}>
                     <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: cfg.color, margin: '0 0 4px' }}>
                       {cfg.emoji} {cfg.label}
                     </p>
@@ -2636,7 +2606,7 @@ export default function WalkerClient({
               {/* Bottom padding must clear the fixed bottom tab bar (z-40,
                   ~64px + safe-area) — with only pb-6 the mt-auto End Walk
                   button rendered UNDERNEATH the bar and couldn't be tapped. */}
-              <div className="flex-1 flex flex-col px-5 pt-4 gap-3" style={{ background: '#FFFBEB', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)' }}>
+              <div className="flex-1 flex flex-col px-5 pt-4 gap-3" style={{ background: '#fff', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)' }}>
                 {/* Older browsers (iOS Safari < 16.4) have no Wake Lock API —
                     ask the walker to keep the screen on manually there. The
                     walk still survives a lock (localStorage checkpoint), but
@@ -2652,7 +2622,7 @@ export default function WalkerClient({
                 {careFocusKeys.filter(k => k !== 'normal' && CARE_FOCUS_CONFIG[k]).map(k => {
                   const cfg = CARE_FOCUS_CONFIG[k]
                   return (
-                    <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 16, padding: '12px 14px', marginBottom: 8, boxShadow: clayShadow(cfg.shadowTint, { outerOpacity: 0.16, insetOpacity: 0.12 }) }}>
+                    <div key={k} style={{ background: cfg.bg, border: `2px solid ${cfg.border}`, borderRadius: 16, padding: '12px 14px', marginBottom: 8, boxShadow: undefined }}>
                       <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: cfg.color, margin: '0 0 4px' }}>
                         {cfg.emoji} {cfg.label}
                       </p>
@@ -2666,7 +2636,7 @@ export default function WalkerClient({
                 {/* FEATURE 2: Health notes pinned during walk */}
                 {healthNotes && (
                   <div style={{
-                    background: '#FFFBEB',
+                    background: '#fff',
                     border: '2px solid #FCD34D',
                     borderRadius: 18,
                     padding: '10px 14px',
@@ -2993,8 +2963,8 @@ export default function WalkerClient({
 
                 <LoadingButton
                   type="submit"
-                  loading={submitting}
-                  loadingText={t.sendingReport}
+                  loading={submitting || uploading}
+                  loadingText={uploading ? t.uploadingPhoto : t.sendingReport}
                   className="rounded-[20px] text-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
                   style={{ minHeight: 56, background: '#FF8C52', boxShadow: CLAY_SHADOW_ORANGE }}
                 >
@@ -3071,35 +3041,6 @@ export default function WalkerClient({
                   {t.logAnotherWalk}
                 </button>
 
-                {/* Save dashboard link to WhatsApp */}
-                {(() => {
-                  const dashUrl = typeof window !== 'undefined'
-                    ? `${window.location.origin}/walker/${token}`
-                    : `https://pupstep.in/walker/${token}`
-                  const waText = encodeURIComponent(
-                    `My PupStep walker dashboard for ${dogName} 🐾\nReturn here anytime:\n${dashUrl}`
-                  )
-                  return (
-                    <div className="rounded-2xl border-2 px-4 py-4 text-center"
-                      style={{ borderColor: 'oklch(0.88 0.06 196)', background: 'oklch(0.97 0.02 196)', boxShadow: CLAY_SHADOW_TEAL_ACCENT }}>
-                      <p className="text-xs font-bold mb-2" style={{ color: 'oklch(0.40 0.17 196)', fontFamily: 'var(--font-fredoka)' }}>
-                        📌 Save your dashboard link
-                      </p>
-                      <p className="text-xs text-slate-500 mb-3" style={{ fontFamily: 'var(--font-nunito)' }}>
-                        Bookmark this page or send the link to yourself — you need it to log future walks
-                      </p>
-                      <a
-                        href={`https://wa.me/?text=${waText}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
-                        style={{ background: '#25D366', fontFamily: 'var(--font-fredoka)', boxShadow: CLAY_SHADOW_WHATSAPP }}
-                      >
-                        📲 Send link to myself on WhatsApp
-                      </a>
-                    </div>
-                  )
-                })()}
 
                 <button
                   onClick={() => {
