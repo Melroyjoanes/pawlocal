@@ -14,13 +14,25 @@ export async function sendEmail(opts: EmailOpts): Promise<void> {
   const resendKey = process.env.RESEND_API_KEY
   if (!resendKey) return
   try {
-    await fetch('https://api.resend.com/emails', {
+    const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${resendKey}` },
       body: JSON.stringify({ from: 'PupStep <hello@pupstep.in>', ...opts }),
     })
+    // fetch() only throws on network failure, NOT on a non-2xx response —
+    // a rejected send (bad key, rate limit, invalid recipient) previously
+    // fell through here silently and was reported as a success to every
+    // caller. Every call site across the app assumes sendEmail() either
+    // works or throws, so surfacing this as a thrown error is what actually
+    // makes those call sites' error handling (and now Sentry) mean anything.
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      throw new Error(`Resend API ${res.status}: ${body}`)
+    }
   } catch (err) {
     console.error('[email] send failed', err)
+    const { captureException } = await import('@sentry/nextjs')
+    captureException(err, { extra: { to: opts.to, subject: opts.subject } })
   }
 }
 

@@ -47,12 +47,16 @@ export async function POST(req: NextRequest) {
       .from('provider-photos')
       .upload(path, bytes, { contentType: 'image/jpeg' })
     if (uploadError) {
+      const { captureException } = await import('@sentry/nextjs')
+      captureException(uploadError, { extra: { token, kind } })
       return NextResponse.json({ error: uploadError.message }, { status: 500 })
     }
 
     const { data } = db.storage.from('provider-photos').getPublicUrl(path)
     return NextResponse.json({ url: data.publicUrl })
-  } catch {
+  } catch (err) {
+    const { captureException } = await import('@sentry/nextjs')
+    captureException(err)
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
   }
 }

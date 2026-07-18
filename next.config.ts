@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   // Optimize barrel imports — avoids Turbopack chunk-loading issues with large icon libs
@@ -102,4 +103,10 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Silence noisy Sentry build logs — the actual error capture doesn't need this
+  silent: true,
+  // No org/project auto-upload of source maps unless SENTRY_AUTH_TOKEN is set —
+  // keeps the build working without requiring that secret right away. Stack
+  // traces will just be minified until a token's added later.
+});
