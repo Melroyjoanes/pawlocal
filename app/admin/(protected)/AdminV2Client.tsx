@@ -423,20 +423,31 @@ function DogsTab() {
 interface Walker {
   id: string; name: string; phone: string; totalWalks: number
   firstSeenAt: string; lastSeenAt: string
-  connections: Array<{ dogName: string; ownerName: string | null; status: string; reportCount: number; avgQuality: number | null }>
+  connections: Array<{ dogName: string; ownerName: string | null; status: string; reportCount: number; avgQuality: number | null; token: string }>
 }
 
 function WalkersTab() {
   const [walkers, setWalkers] = useState<Walker[]>([])
   const [loading, setLoading] = useState(true)
+  const [copiedToken, setCopiedToken] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/admin/v2/walkers').then(r => r.json()).then(d => { setWalkers(Array.isArray(d) ? d : []); setLoading(false) }).catch(() => setLoading(false))
   }, [])
 
+  function copyLink(token: string) {
+    const url = `https://pupstep.in/walker/${token}`
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedToken(token)
+      setTimeout(() => setCopiedToken(t => (t === token ? null : t)), 1500)
+    })
+  }
+
   return (
     <div>
-      <p style={{ margin: '0 0 16px', fontSize: 13, color: '#6B7280', fontFamily: 'var(--font-nunito)' }}>{walkers.length} walkers registered</p>
+      <p style={{ margin: '0 0 16px', fontSize: 13, color: '#6B7280', fontFamily: 'var(--font-nunito)' }}>
+        {walkers.length} walkers registered — copy a dog's dashboard link here to send it manually until Twilio auto-send is wired up.
+      </p>
       {loading ? <Spinner /> : (
         <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid #E5E7EB' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
@@ -452,7 +463,26 @@ function WalkersTab() {
                   <tr key={w.id} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}>
                     <Td><span style={{ fontWeight: 700 }}>{w.name}</span></Td>
                     <Td mono>{w.phone}</Td>
-                    <Td>{w.connections.map(c => c.dogName).join(', ') || '—'}</Td>
+                    <Td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {w.connections.length ? w.connections.map((c) => (
+                          <div key={c.token} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 13 }}>{c.dogName || '—'}</span>
+                            {c.token && (
+                              <button
+                                type="button"
+                                onClick={() => copyLink(c.token)}
+                                style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
+                                  border: '1px solid #E5E7EB', background: copiedToken === c.token ? '#DCFCE7' : '#F9FAFB',
+                                  color: copiedToken === c.token ? '#166534' : '#6B7280', cursor: 'pointer' }}
+                              >
+                                {copiedToken === c.token ? 'Copied ✓' : 'Copy link'}
+                              </button>
+                            )}
+                          </div>
+                        )) : '—'}
+                      </div>
+                    </Td>
                     <Td>{w.totalWalks}</Td>
                     <Td>{avgQ !== null ? <Badge text={`${avgQ}`} type={qType as any} /> : '—'}</Td>
                     <Td>{rel(w.lastSeenAt)}</Td>

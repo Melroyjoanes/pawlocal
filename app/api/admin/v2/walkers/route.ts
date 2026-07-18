@@ -39,11 +39,11 @@ export async function GET() {
   // 2. Fetch walker_connections for these walkers (by walker_id or phone)
   const [connByIdRes, connByPhoneRes] = await Promise.all([
     (client.from('walker_connections') as any)
-      .select('id, walker_id, owner_id, dog_name, status')
+      .select('id, walker_id, owner_id, dog_name, status, token')
       .in('walker_id', walkerIds),
     walkerPhones.length > 0
       ? (client.from('walker_connections') as any)
-          .select('id, walker_phone, owner_id, dog_name, status')
+          .select('id, walker_phone, owner_id, dog_name, status, token')
           .in('walker_phone', walkerPhones)
       : Promise.resolve({ data: [] }),
   ])
@@ -56,6 +56,7 @@ export async function GET() {
     owner_id: string
     dog_name: string | null
     status: string
+    token: string
   }> = []
   const seenConnIds = new Set<string>()
   for (const c of [...(connByIdRes.data ?? []), ...(connByPhoneRes.data ?? [])]) {
@@ -114,6 +115,7 @@ export async function GET() {
         status: c.status,
         reportCount: connReports.length,
         avgQuality,
+        token: c.token,
       }
     })
 
