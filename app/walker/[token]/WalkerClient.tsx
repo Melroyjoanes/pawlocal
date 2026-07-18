@@ -322,6 +322,59 @@ export const WALKER_LANGUAGES: { code: WalkerLang; label: string }[] = [
   { code: 'mr', label: 'मराठी' },
 ]
 
+// One-tap note phrases — inserted into the notes textarea instead of typed.
+// Deliberately excludes anything that reads like a health/behavior diagnosis
+// ("seemed sick", "limping") — a vague auto-note like that could either
+// needlessly alarm a parent or, worse, get trusted over an actual call when
+// something's really wrong. Kept to routine/positive + a few honest minor
+// observations + weather context.
+const QUICK_NOTES: Record<WalkerLang, string[]> = {
+  en: [
+    'Had a great walk today 🐾',
+    'Walked well, no issues',
+    'Happy and energetic the whole time',
+    'Calm, easy walk today',
+    'A little tired today, walked slower than usual',
+    'Was a bit hesitant at first, settled in after a few minutes',
+    'Stayed close, a little cautious today',
+    'Walked a shorter route due to heat',
+    'Rained a little, cut the walk a bit short',
+  ],
+  hinglish: [
+    'Aaj bahut achhi walk hui 🐾',
+    'Achhe se walk hui, koi problem nahi',
+    'Poori walk mein khush aur energetic tha',
+    'Aaj shaant aur aasan walk thi',
+    'Aaj thoda tired tha, dheere chala',
+    'Shuru mein thoda hesitant tha, phir theek ho gaya',
+    'Aaj thoda careful raha, paas hi raha',
+    'Garmi ki wajah se chhoti route li',
+    'Thodi baarish hui, walk jaldi khatam ki',
+  ],
+  hi: [
+    'आज बहुत अच्छी वॉक हुई 🐾',
+    'अच्छे से वॉक हुई, कोई दिक्कत नहीं',
+    'पूरी वॉक में खुश और एनर्जेटिक था',
+    'आज शांत और आसान वॉक थी',
+    'आज थोड़ा थका हुआ था, धीरे चला',
+    'शुरुआत में थोड़ा हिचकिचाया, फिर ठीक हो गया',
+    'आज थोड़ा सतर्क रहा, पास ही रहा',
+    'गर्मी की वजह से छोटा रास्ता लिया',
+    'थोड़ी बारिश हुई, वॉक जल्दी खत्म की',
+  ],
+  mr: [
+    'आज खूप छान वॉक झाली 🐾',
+    'चांगली वॉक झाली, काही अडचण नाही',
+    'संपूर्ण वॉकमध्ये आनंदी आणि उत्साही होता',
+    'आज शांत आणि सोपी वॉक होती',
+    'आज थोडा थकलेला होता, हळू चालला',
+    'सुरुवातीला थोडा घाबरला, नंतर ठीक झाला',
+    'आज थोडा सावध राहिला, जवळच राहिला',
+    'उष्णतेमुळे लहान रस्ता घेतला',
+    'थोडा पाऊस पडला, वॉक लवकर संपवली',
+  ],
+}
+
 interface WalkerTranslations {
   tabWalk: string
   tabSettings: string
@@ -744,7 +797,7 @@ function SettingsTab({
     <div className="px-5 pt-2 pb-10 space-y-4">
 
       {/* ── Section 1: My Profile ── */}
-      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
+      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', border: '1px solid #E5E7EB', boxShadow: CLAY_SHADOW_CREAM }}>
         {sectionHead(t.myProfile)}
         <div className="space-y-3">
           <div>
@@ -810,7 +863,7 @@ function SettingsTab({
       </div>
 
       {/* ── Section 2: Connected Dog ── */}
-      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
+      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', border: '1px solid #E5E7EB', boxShadow: CLAY_SHADOW_CREAM }}>
         {sectionHead(t.connectedDog)}
         {/* Dog identity row */}
         <div className="flex items-center gap-3 mb-3">
@@ -875,7 +928,7 @@ function SettingsTab({
       </div>
 
       {/* ── Section 3: Your Dashboard Link ── */}
-      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
+      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', border: '1px solid #E5E7EB', boxShadow: CLAY_SHADOW_CREAM }}>
         {sectionHead('Your Dashboard Link')}
         <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', margin: '0 0 14px', lineHeight: 1.6 }}>
           Use this same link every time you walk {dogName}. Bookmark it or save to WhatsApp.
@@ -909,7 +962,7 @@ function SettingsTab({
       </div>
 
       {/* ── Section 4: Walk Help ── */}
-      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
+      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', border: '1px solid #E5E7EB', boxShadow: CLAY_SHADOW_CREAM }}>
         {sectionHead('Walk Help')}
         <div className="space-y-3">
           {[
@@ -950,7 +1003,7 @@ function SettingsTab({
       </div>
 
       {/* ── Section 5: Support ── */}
-      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
+      <div className="rounded-[24px] px-5 py-5" style={{ background: '#fff', border: '1px solid #E5E7EB', boxShadow: CLAY_SHADOW_CREAM }}>
         {sectionHead('Support')}
         <div className="space-y-2">
           <a
@@ -982,7 +1035,7 @@ function SettingsTab({
       </div>
 
       {/* ── Section 6: Add another client ── */}
-      <div className="rounded-[24px]" style={{ background: '#fff', padding: '16px', boxShadow: CLAY_SHADOW_CREAM }}>
+      <div className="rounded-[24px]" style={{ background: '#fff', border: '1px solid #E5E7EB', padding: '16px', boxShadow: CLAY_SHADOW_CREAM }}>
         <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#0A2F35', margin: '0 0 4px' }}>
           Add another client
         </p>
@@ -1851,7 +1904,7 @@ export default function WalkerClient({
           <div style={{ paddingTop: 8, paddingBottom: 8 }}>
             <button
               onClick={() => { setPhase('idle'); setGpsError(null) }}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white text-gray-700 active:opacity-60 active:scale-[0.97] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white text-gray-700 border border-gray-200 active:opacity-60 active:scale-[0.97] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
               style={{ fontFamily: 'var(--font-nunito)', boxShadow: CLAY_SHADOW_CREAM }}
             >
               ← Back
@@ -1901,6 +1954,7 @@ export default function WalkerClient({
           {/* Android steps */}
           <div style={{
             background: '#fff',
+            border: '1px solid #E5E7EB',
             borderRadius: 24,
             padding: '16px 16px',
             marginBottom: 14,
@@ -1945,6 +1999,7 @@ export default function WalkerClient({
           {/* iPhone steps */}
           <div style={{
             background: '#fff',
+            border: '1px solid #E5E7EB',
             borderRadius: 24,
             padding: '16px 16px',
             marginBottom: 28,
@@ -2273,7 +2328,7 @@ export default function WalkerClient({
       {activeTab === 'walk' && (
         <>
           {/* Dog card */}
-          <div className="mx-5 mb-5 rounded-[24px] px-4 py-4 flex items-center gap-4" style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
+          <div className="mx-5 mb-5 rounded-[24px] px-4 py-4 flex items-center gap-4" style={{ background: '#fff', border: '1px solid #E5E7EB', boxShadow: CLAY_SHADOW_CREAM }}>
             <div className="w-14 h-14 rounded-full flex-shrink-0 overflow-hidden"
               style={{ background: '#FF8C52' }}>
               {activeDogPhoto ? (
@@ -2543,14 +2598,14 @@ export default function WalkerClient({
                 {/* Back button — floating top-left */}
                 <button
                   onClick={() => setPhase('idle')}
-                  className="absolute top-4 left-4 z-10 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white text-gray-700 active:opacity-60 active:scale-[0.97] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                  className="absolute top-4 left-4 z-10 flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium bg-white text-gray-700 border border-gray-200 active:opacity-60 active:scale-[0.97] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
                   style={{ fontFamily: 'var(--font-nunito)', boxShadow: CLAY_SHADOW_CREAM }}
                 >
                   ← Back
                 </button>
 
                 {/* Poop/pee live counts — floating top-right */}
-                <div className="absolute top-4 right-4 z-10 flex gap-2 bg-white bg-opacity-90 rounded-full px-3 py-1.5" style={{ boxShadow: CLAY_SHADOW_CREAM }}>
+                <div className="absolute top-4 right-4 z-10 flex gap-2 bg-white bg-opacity-90 rounded-full px-3 py-1.5 border border-gray-200" style={{ boxShadow: CLAY_SHADOW_CREAM }}>
                   <span className="text-sm font-bold text-gray-700">💩 {livePoopCount}</span>
                   <span className="text-slate-300">·</span>
                   <span className="text-sm font-bold text-gray-700">💧 {livePeeCount}</span>
@@ -2945,6 +3000,20 @@ export default function WalkerClient({
                     className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 resize-none"
                     style={{ outlineColor: 'oklch(0.48 0.17 196)' }}
                   />
+                  {/* Tap-to-insert phrases — typing is friction for a walker
+                      standing outside with a dog on a leash; tapping isn't. */}
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {QUICK_NOTES[lang].map((phrase) => (
+                      <button
+                        key={phrase}
+                        type="button"
+                        onClick={() => setNotes((prev) => (prev.trim() ? `${prev.trim()} ${phrase}` : phrase))}
+                        className="text-xs font-medium px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                      >
+                        {phrase}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {submitError && (
@@ -3040,20 +3109,6 @@ export default function WalkerClient({
                 >
                   {t.logAnotherWalk}
                 </button>
-
-
-                <button
-                  onClick={() => {
-                    setPhase('idle')
-                    setReportUrl(null)
-                    setParentWaLink(null)
-                    if (connections.length > 1) setShowPicker(true)
-                  }}
-                  className="w-full py-4 rounded-2xl font-bold text-lg text-white active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
-                  style={{ background: '#FF8C52', fontFamily: 'var(--font-fredoka)', boxShadow: CLAY_SHADOW_ORANGE }}
-                >
-                  {t.logAnotherWalk} →
-                </button>
               </div>
                   </>
                 )
@@ -3075,7 +3130,7 @@ export default function WalkerClient({
                   ))}
                 </div>
               ) : logs.length === 0 ? (
-                <div className="bg-white rounded-[24px] px-5 py-8 text-center" style={{ boxShadow: CLAY_SHADOW_CREAM }}>
+                <div className="bg-white rounded-[24px] px-5 py-8 text-center border border-gray-200" style={{ boxShadow: CLAY_SHADOW_CREAM }}>
                   <p className="text-3xl mb-2">🐾</p>
                   <p className="text-sm text-slate-500" style={{ fontFamily: 'var(--font-nunito)' }}>
                     {t.noWalksYet(dogName)}
@@ -3090,7 +3145,7 @@ export default function WalkerClient({
                     if (log.poop_count > 0) statParts.push(`💩 ${log.poop_count} potty`)
                     if (log.pee_count > 0) statParts.push(`💧 ${log.pee_count} toilet`)
                     return (
-                      <div key={log.id} className="bg-white rounded-[24px] px-4 py-4" style={{ boxShadow: CLAY_SHADOW_CREAM }}>
+                      <div key={log.id} className="bg-white rounded-[24px] px-4 py-4 border border-gray-200" style={{ boxShadow: CLAY_SHADOW_CREAM }}>
                         {/* Title row: duration left, date right */}
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: '#0A2F35', margin: 0 }}>
