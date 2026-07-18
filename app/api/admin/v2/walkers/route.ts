@@ -39,11 +39,11 @@ export async function GET() {
   // 2. Fetch walker_connections for these walkers (by walker_id or phone)
   const [connByIdRes, connByPhoneRes] = await Promise.all([
     (client.from('walker_connections') as any)
-      .select('id, walker_id, owner_id, dog_name, status, token')
+      .select('id, walker_id, owner_id, dog_name, status, token, otp')
       .in('walker_id', walkerIds),
     walkerPhones.length > 0
       ? (client.from('walker_connections') as any)
-          .select('id, walker_phone, owner_id, dog_name, status, token')
+          .select('id, walker_phone, owner_id, dog_name, status, token, otp')
           .in('walker_phone', walkerPhones)
       : Promise.resolve({ data: [] }),
   ])
@@ -57,6 +57,7 @@ export async function GET() {
     dog_name: string | null
     status: string
     token: string
+    otp: string | null
   }> = []
   const seenConnIds = new Set<string>()
   for (const c of [...(connByIdRes.data ?? []), ...(connByPhoneRes.data ?? [])]) {
@@ -82,17 +83,24 @@ export async function GET() {
     reportsByConn[r.connection_id].push({ quality_score: r.quality_score ?? null })
   }
 
-  // 4. Fetch owner profiles for names
+  // 4. Fetch owner profiles for names, with auth email as fallback — most
+  // owners never get a profiles row (lazy creation), so full_name is usually
+  // missing and the email is the only human-readable identity we have.
   const ownerIds: string[] = [...new Set(allConnections.map((c) => c.owner_id).filter(Boolean))]
-  const { data: ownerProfiles } = ownerIds.length > 0
-    ? await (client.from('profiles') as any)
-        .select('id, full_name')
-        .in('id', ownerIds)
-    : { data: [] }
+  const [profilesRes, authRes] = await Promise.all([
+    ownerIds.length > 0
+      ? (client.from('profiles') as any).select('id, full_name').in('id', ownerIds)
+      : Promise.resolve({ data: [] }),
+    client.auth.admin.listUsers({ perPage: 1000 }),
+  ])
 
   const ownerNameMap: Record<string, string | null> = {}
-  for (const o of (ownerProfiles ?? [])) {
+  for (const o of (profilesRes.data ?? [])) {
     ownerNameMap[o.id] = o.full_name ?? null
+  }
+  const ownerEmailMap: Record<string, string> = {}
+  for (const u of (authRes.data?.users ?? [])) {
+    if (u.email) ownerEmailMap[u.id] = u.email
   }
 
   // Build result
@@ -112,10 +120,12 @@ export async function GET() {
       return {
         dogName: c.dog_name ?? '',
         ownerName: ownerNameMap[c.owner_id] ?? null,
+        ownerEmail: ownerEmailMap[c.owner_id] ?? null,
         status: c.status,
         reportCount: connReports.length,
         avgQuality,
         token: c.token,
+        otp: c.otp ?? null,
       }
     })
 

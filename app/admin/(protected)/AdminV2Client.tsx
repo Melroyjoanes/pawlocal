@@ -423,7 +423,7 @@ function DogsTab() {
 interface Walker {
   id: string; name: string; phone: string; totalWalks: number
   firstSeenAt: string; lastSeenAt: string
-  connections: Array<{ dogName: string; ownerName: string | null; status: string; reportCount: number; avgQuality: number | null; token: string }>
+  connections: Array<{ dogName: string; ownerName: string | null; ownerEmail: string | null; status: string; reportCount: number; avgQuality: number | null; token: string; otp: string | null }>
 }
 
 function WalkersTab() {
@@ -452,7 +452,7 @@ function WalkersTab() {
         <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid #E5E7EB' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
             <thead>
-              <tr><Th>Walker</Th><Th>Phone</Th><Th>Dogs</Th><Th>Total walks</Th><Th>Avg quality</Th><Th>Last active</Th><Th>Since</Th></tr>
+              <tr><Th>Walker</Th><Th>Phone</Th><Th>Dogs &amp; parents</Th><Th>Total walks</Th><Th>Avg quality</Th><Th>Last active</Th><Th>Since</Th></tr>
             </thead>
             <tbody>
               {walkers.map((w, i) => {
@@ -466,19 +466,25 @@ function WalkersTab() {
                     <Td>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {w.connections.length ? w.connections.map((c) => (
-                          <div key={c.token} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span style={{ fontSize: 13 }}>{c.dogName || '—'}</span>
-                            {c.token && (
-                              <button
-                                type="button"
-                                onClick={() => copyLink(c.token)}
-                                style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
-                                  border: '1px solid #E5E7EB', background: copiedToken === c.token ? '#DCFCE7' : '#F9FAFB',
-                                  color: copiedToken === c.token ? '#166534' : '#6B7280', cursor: 'pointer' }}
-                              >
-                                {copiedToken === c.token ? 'Copied ✓' : 'Copy link'}
-                              </button>
-                            )}
+                          <div key={c.token} style={{ display: 'flex', flexDirection: 'column', gap: 1, paddingBottom: 4 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontSize: 13, fontWeight: 600 }}>{c.dogName || '—'}</span>
+                              {c.otp && <span style={{ fontSize: 10, color: '#6B7280', background: '#F3F4F6', borderRadius: 4, padding: '1px 5px', fontFamily: 'monospace' }}>OTP {c.otp}</span>}
+                              {c.token && (
+                                <button
+                                  type="button"
+                                  onClick={() => copyLink(c.token)}
+                                  style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 6,
+                                    border: '1px solid #E5E7EB', background: copiedToken === c.token ? '#DCFCE7' : '#F9FAFB',
+                                    color: copiedToken === c.token ? '#166534' : '#6B7280', cursor: 'pointer' }}
+                                >
+                                  {copiedToken === c.token ? 'Copied ✓' : 'Copy link'}
+                                </button>
+                              )}
+                            </div>
+                            <span style={{ fontSize: 11, color: '#9CA3AF' }}>
+                              {c.ownerName || c.ownerEmail || 'Unknown parent'}
+                            </span>
                           </div>
                         )) : '—'}
                       </div>
