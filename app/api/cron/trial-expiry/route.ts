@@ -26,6 +26,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // ?dry_run=true runs the exact same query + eligibility logic against
+  // real data, but sends no email and writes nothing to the database.
+  // Built after a real user got an unexpected email during manual testing —
+  // this is how this route should always be verified going forward, not by
+  // hitting production and hoping.
+  const dryRun = req.nextUrl.searchParams.get('dry_run') === 'true'
+
   const supabase = adminClient()
   const now = new Date()
 
@@ -45,6 +52,7 @@ export async function GET(req: NextRequest) {
   }
 
   let sent = { started: 0, ending: 0, ended: 0 }
+  const preview: Array<{ email: string; type: 'started' | 'ending' | 'ended' }> = []
 
   for (const profile of (profiles ?? []) as Profile[]) {
     // Nothing left to send for this profile — skip before the subscription
@@ -77,50 +85,59 @@ export async function GET(req: NextRequest) {
     if (!email) continue
 
     if (needsStarted) {
-      sendEmail({
-        to: email,
-        subject: 'Your PupStep free trial has started',
-        html: emailTemplate(
-          'Your free trial has started',
-          `You have ${TRIAL_DAYS} days of full access to walk reports and your dog's care diary. Upgrade any time to keep access after your trial ends.`,
-          'See plans',
-          'https://pupstep.in/upgrade',
-        ),
-      }).catch(() => {})
-      await (supabase.from('profiles') as any).update({ trial_started_email_sent_at: now.toISOString() }).eq('id', profile.id)
+      preview.push({ email, type: 'started' })
+      if (!dryRun) {
+        sendEmail({
+          to: email,
+          subject: 'Your PupStep free trial has started',
+          html: emailTemplate(
+            'Your free trial has started',
+            `You have ${TRIAL_DAYS} days of full access to walk reports and your dog's care diary. Upgrade any time to keep access after your trial ends.`,
+            'See plans',
+            'https://pupstep.in/upgrade',
+          ),
+        }).catch(() => {})
+        await (supabase.from('profiles') as any).update({ trial_started_email_sent_at: now.toISOString() }).eq('id', profile.id)
+      }
       sent.started++
     }
 
     if (needsEnding) {
-      sendEmail({
-        to: email,
-        subject: 'Your PupStep trial ends in a few hours',
-        html: emailTemplate(
-          'Your trial ends soon',
-          'Your free trial expires in a few hours. Upgrade now to keep your walk reports and care diary.',
-          'Upgrade now',
-          'https://pupstep.in/upgrade',
-        ),
-      }).catch(() => {})
-      await (supabase.from('profiles') as any).update({ trial_ending_email_sent_at: now.toISOString() }).eq('id', profile.id)
+      preview.push({ email, type: 'ending' })
+      if (!dryRun) {
+        sendEmail({
+          to: email,
+          subject: 'Your PupStep trial ends in a few hours',
+          html: emailTemplate(
+            'Your trial ends soon',
+            'Your free trial expires in a few hours. Upgrade now to keep your walk reports and care diary.',
+            'Upgrade now',
+            'https://pupstep.in/upgrade',
+          ),
+        }).catch(() => {})
+        await (supabase.from('profiles') as any).update({ trial_ending_email_sent_at: now.toISOString() }).eq('id', profile.id)
+      }
       sent.ending++
     }
 
     if (needsEnded) {
-      sendEmail({
-        to: email,
-        subject: 'Your PupStep trial has ended',
-        html: emailTemplate(
-          'Your trial has ended',
-          'Your free trial has ended. Upgrade to restore access to your walk reports and care diary.',
-          'Upgrade now',
-          'https://pupstep.in/upgrade',
-        ),
-      }).catch(() => {})
-      await (supabase.from('profiles') as any).update({ trial_ended_email_sent_at: now.toISOString() }).eq('id', profile.id)
+      preview.push({ email, type: 'ended' })
+      if (!dryRun) {
+        sendEmail({
+          to: email,
+          subject: 'Your PupStep trial has ended',
+          html: emailTemplate(
+            'Your trial has ended',
+            'Your free trial has ended. Upgrade to restore access to your walk reports and care diary.',
+            'Upgrade now',
+            'https://pupstep.in/upgrade',
+          ),
+        }).catch(() => {})
+        await (supabase.from('profiles') as any).update({ trial_ended_email_sent_at: now.toISOString() }).eq('id', profile.id)
+      }
       sent.ended++
     }
   }
 
-  return NextResponse.json({ ok: true, sent })
+  return NextResponse.json({ ok: true, dryRun, sent, preview })
 }
