@@ -349,6 +349,7 @@ interface WalkerTranslations {
   takePhotoOf: (dog: string) => string
   tapToTakePhoto: string
   uploadingPhoto: string
+  photoUploadFailed: string
   howWasDog: (dog: string) => string
   moodGreat: string
   moodOkay: string
@@ -400,6 +401,7 @@ const WALKER_T: Record<WalkerLang, WalkerTranslations> = {
     takePhotoOf: (dog: string) => `Take a photo of ${dog} 📸`,
     tapToTakePhoto: 'Tap to take a photo',
     uploadingPhoto: 'Uploading…',
+    photoUploadFailed: 'Upload failed — tap to try again',
     howWasDog: (dog: string) => `How was ${dog}?`,
     moodGreat: 'Great',
     moodOkay: 'Okay',
@@ -449,6 +451,7 @@ const WALKER_T: Record<WalkerLang, WalkerTranslations> = {
     takePhotoOf: (dog: string) => `${dog} ki photo lein 📸`,
     tapToTakePhoto: 'Photo lene ke liye tap karein',
     uploadingPhoto: 'Upload ho raha hai…',
+    photoUploadFailed: 'Upload fail ho gaya — dobara try karein',
     howWasDog: (dog: string) => `${dog} kaisa tha?`,
     moodGreat: 'Bahut Achha',
     moodOkay: 'Theek-Thaak',
@@ -498,6 +501,7 @@ const WALKER_T: Record<WalkerLang, WalkerTranslations> = {
     takePhotoOf: (dog: string) => `${dog} की फोटो लें 📸`,
     tapToTakePhoto: 'फोटो लेने के लिए टैप करें',
     uploadingPhoto: 'अपलोड हो रहा है…',
+    photoUploadFailed: 'अपलोड नहीं हुआ — फिर से टैप करें',
     howWasDog: (dog: string) => `${dog} कैसा था?`,
     moodGreat: 'बहुत अच्छा',
     moodOkay: 'ठीक-ठाक',
@@ -547,6 +551,7 @@ const WALKER_T: Record<WalkerLang, WalkerTranslations> = {
     takePhotoOf: (dog: string) => `${dog} चा फोटो घ्या 📸`,
     tapToTakePhoto: 'फोटो घेण्यासाठी टॅप करा',
     uploadingPhoto: 'अपलोड होत आहे…',
+    photoUploadFailed: 'अपलोड झाले नाही — पुन्हा टॅप करा',
     howWasDog: (dog: string) => `${dog} कसा होता?`,
     moodGreat: 'खूप छान',
     moodOkay: 'ठीक-ठाक',
@@ -1204,6 +1209,7 @@ export default function WalkerClient({
   const [notes, setNotes] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [photoUploadError, setPhotoUploadError] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -1220,6 +1226,7 @@ export default function WalkerClient({
     const file = e.target.files?.[0]
     if (!file) return
     setUploading(true)
+    setPhotoUploadError(false)
     try {
       // Compress before upload — see handlePoopPhotoTaken for why
       const { compressImage } = await import('@/lib/compressImage')
@@ -1230,12 +1237,18 @@ export default function WalkerClient({
       const { error } = await supabase.storage
         .from('provider-photos')
         .upload(path, compressed, { contentType: 'image/jpeg' })
-      if (!error) {
-        const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
-        setPhotoUrl(data.publicUrl)
-      }
+      if (error) throw error
+      const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
+      setPhotoUrl(data.publicUrl)
+    } catch {
+      // Previously a failed upload just silently reset with no feedback —
+      // the walker would tap "take photo", nothing would happen, and the
+      // report would go out with no photo and no indication anything failed.
+      setPhotoUploadError(true)
     } finally {
       setUploading(false)
+      // Reset input so the same file can be retried
+      if (photoInputRef.current) photoInputRef.current.value = ''
     }
   }
 
@@ -2917,10 +2930,16 @@ export default function WalkerClient({
                       onClick={() => photoInputRef.current?.click()}
                       disabled={uploading}
                       className="w-full border-2 border-dashed rounded-2xl py-6 flex flex-col items-center gap-2 transition-colors disabled:opacity-60 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
-                      style={{ borderColor: 'oklch(0.70 0.13 196)', color: 'oklch(0.48 0.17 196)', background: '#fff', boxShadow: CLAY_SHADOW_TEAL_ACCENT }}
+                      style={
+                        photoUploadError
+                          ? { borderColor: '#DC2626', color: '#B91C1C', background: '#FEF2F2' }
+                          : { borderColor: 'oklch(0.70 0.13 196)', color: 'oklch(0.48 0.17 196)', background: '#fff', boxShadow: CLAY_SHADOW_TEAL_ACCENT }
+                      }
                     >
-                      <span className="text-3xl">{uploading ? '⏳' : '📷'}</span>
-                      <span className="text-sm font-bold">{uploading ? t.uploadingPhoto : t.tapToTakePhoto}</span>
+                      <span className="text-3xl">{uploading ? '⏳' : photoUploadError ? '⚠️' : '📷'}</span>
+                      <span className="text-sm font-bold">
+                        {uploading ? t.uploadingPhoto : photoUploadError ? t.photoUploadFailed : t.tapToTakePhoto}
+                      </span>
                     </button>
                   )}
                 </div>
