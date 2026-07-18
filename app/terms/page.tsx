@@ -33,9 +33,11 @@ export default function TermsPage() {
 
           <Section title="1. Who We Are">
             <p>
-              PupStep is a pet services platform connecting dog parents with verified local service
-              providers (walkers, groomers, vets, trainers, and pet stores). We operate as an intermediary under the
-              Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021.
+              PupStep is a GPS dog-walk tracking and reporting tool. A dog parent connects their own walker to their
+              PupStep account (via a QR code or OTP shared directly by the parent), and the walker uses PupStep to log
+              each walk, capture GPS routes and photos, and send an automated report back to the parent. We operate as
+              an intermediary under the Information Technology (Intermediary Guidelines and Digital Media Ethics Code)
+              Rules, 2021.
             </p>
           </Section>
 
@@ -55,13 +57,13 @@ export default function TermsPage() {
             </ul>
           </Section>
 
-          <Section title="4. Service Providers">
+          <Section title="4. Walkers">
             <ul>
-              <li>Providers listed on PupStep are independent professionals, not employees of PupStep.</li>
-              <li>All service agreements, pricing, and scheduling are directly between the provider and the dog parent.</li>
-              <li>PupStep does not charge a booking commission or take a cut from service transactions.</li>
-              <li>Provider listings are manually reviewed before approval. We reserve the right to reject or remove listings at our discretion.</li>
-              <li>Providers using the GPS walk tracking feature must obtain explicit consent from dog parents before starting a session.</li>
+              <li>A walker is connected to a dog parent&apos;s PupStep account only via a QR code or OTP shared directly by that parent — PupStep does not list, advertise, introduce, or recommend walkers.</li>
+              <li>Walkers are independent individuals, not employees, contractors, or agents of PupStep.</li>
+              <li>Any agreement about pay, schedule, or duties for dog walking is directly between the walker and the dog parent. PupStep is not a party to that agreement and does not process any payment between them.</li>
+              <li>PupStep does not charge walkers any fee to use the app.</li>
+              <li>By connecting a walker to their account, a dog parent authorises that walker to record GPS location and photos during logged walks for the purpose of generating walk reports.</li>
             </ul>
           </Section>
 
@@ -78,11 +80,12 @@ export default function TermsPage() {
             </ul>
           </Section>
 
-          <Section title="6. Provider Listing (Free)">
+          <Section title="6. Walker App Access (Free)">
             <p>
-              Listing a business on PupStep is free. There are no charges for providers to appear in the directory,
-              receive client connections, or use GPS walk tracking features. We reserve the right to introduce
-              premium provider features in the future with advance notice.
+              There is no cost for a walker to use PupStep to log walks, upload photos, or use GPS tracking. PupStep
+              does not operate a public directory or listing of walkers — a walker only gets access once a dog parent
+              connects them to their account. We reserve the right to introduce premium walker-side features in the
+              future with advance notice.
             </p>
           </Section>
 
