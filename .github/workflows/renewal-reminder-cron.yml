@@ -1,0 +1,15 @@
+name: Renewal reminder cron
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  call-renewal-reminder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call renewal-reminder endpoint
+        run: |
+          curl -sf -X GET "https://pupstep.in/api/cron/renewal-reminder" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

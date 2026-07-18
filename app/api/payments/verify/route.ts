@@ -105,6 +105,11 @@ export async function POST(req: NextRequest) {
     razorpay_signature,
     amount_paise: verifiedAmountPaise,
     expires_at: expiresAt,
+    // Reset on every renewal — this reuses the same subscription row (see
+    // note above on why this isn't an upsert), so without clearing this the
+    // renewal-reminder cron would only ever email this person once, ever,
+    // instead of once per billing cycle.
+    renewal_reminder_sent_at: null,
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

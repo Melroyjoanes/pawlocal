@@ -1,0 +1,15 @@
+name: Walker no-show cron
+
+on:
+  schedule:
+    - cron: '30 14 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  call-walker-noshow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call walker-noshow endpoint
+        run: |
+          curl -sf -X GET "https://pupstep.in/api/cron/walker-noshow" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

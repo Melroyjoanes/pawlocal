@@ -1,0 +1,15 @@
+name: Weekly summary cron
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch: {}
+
+jobs:
+  call-weekly-summary:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call weekly-summary endpoint
+        run: |
+          curl -sf -X GET "https://pupstep.in/api/cron/weekly-summary" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
