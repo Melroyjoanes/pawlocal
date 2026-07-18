@@ -14,6 +14,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // ?dry_run=true — same safety pattern as the other crons: runs the real
+  // query and grouping logic, sends nothing.
+  const dryRun = req.nextUrl.searchParams.get('dry_run') === 'true'
+
   const db = adminClient()
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400 * 1000).toISOString()
 
@@ -34,6 +38,7 @@ export async function GET(req: NextRequest) {
   }
 
   let processed = 0
+  const preview: string[] = []
 
   for (const [ownerId, ownerLogs] of byOwner) {
     if (!ownerLogs.length) continue
@@ -65,19 +70,22 @@ export async function GET(req: NextRequest) {
       totalPoops > 0 ? `💩 ${totalPoops}` : null,
     ].filter(Boolean).join(' · ')
 
-    sendEmail({
-      to: email,
-      subject: `${dogName}'s weekly walk summary 🐾`,
-      html: emailTemplate(
-        `${dogName}'s week in review`,
-        `Here's what ${dogName} got up to this week:\n\n${statsLine}\n\nKeep up the great work! Consistent walks make for a happy, healthy dog.`,
-        'View all reports',
-        'https://pupstep.in/my-reports',
-      ),
-    }).catch(() => {})
+    preview.push(email)
+    if (!dryRun) {
+      sendEmail({
+        to: email,
+        subject: `${dogName}'s weekly walk summary 🐾`,
+        html: emailTemplate(
+          `${dogName}'s week in review`,
+          `Here's what ${dogName} got up to this week:\n\n${statsLine}\n\nKeep up the great work! Consistent walks make for a happy, healthy dog.`,
+          'View all reports',
+          'https://pupstep.in/my-reports',
+        ),
+      }).catch(() => {})
+    }
 
     processed++
   }
 
-  return NextResponse.json({ ok: true, processed })
+  return NextResponse.json({ ok: true, dryRun, processed, preview })
 }

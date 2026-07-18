@@ -36,6 +36,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // ?dry_run=true — same safety pattern as the other crons: runs the real
+  // query logic, sends nothing.
+  const dryRun = req.nextUrl.searchParams.get('dry_run') === 'true'
+
   const db = adminClient()
 
   // "Now", expressed as IST wall-clock time (via a fixed UTC+5:30 shift so
@@ -85,6 +89,7 @@ export async function GET(req: NextRequest) {
 
   let processed = 0
   let checked = 0
+  const preview: string[] = []
 
   type ConnRow = {
     id: string
@@ -126,17 +131,20 @@ export async function GET(req: NextRequest) {
     const dogName = conn.dogs?.name ?? 'your dog'
     const walkerName = conn.walker_name ?? 'your walker'
 
-    sendEmail({
-      to: email,
-      subject: `No walk report from ${walkerName} today`,
-      html: emailTemplate(
-        'No walk report yet today',
-        `We haven't seen a walk report from ${walkerName} for ${dogName} today. This could just mean the walk is running later than usual — but if you haven't heard from ${walkerName} either, it might be worth checking in.`,
-      ),
-    }).catch(() => {})
+    preview.push(email)
+    if (!dryRun) {
+      sendEmail({
+        to: email,
+        subject: `No walk report from ${walkerName} today`,
+        html: emailTemplate(
+          'No walk report yet today',
+          `We haven't seen a walk report from ${walkerName} for ${dogName} today. This could just mean the walk is running later than usual — but if you haven't heard from ${walkerName} either, it might be worth checking in.`,
+        ),
+      }).catch(() => {})
+    }
 
     processed++
   }
 
-  return NextResponse.json({ ok: true, checked, processed })
+  return NextResponse.json({ ok: true, dryRun, checked, processed, preview })
 }
