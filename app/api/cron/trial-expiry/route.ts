@@ -3,6 +3,11 @@ import { createClient } from '@supabase/supabase-js'
 import { sendEmail, emailTemplate } from '@/lib/email'
 import { TRIAL_DAYS } from '@/lib/entitlement'
 
+// Force fresh execution on every invocation — this is a cron target, never
+// safe to serve a cached/stale response.
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Runs HOURLY (see vercel.json) so the "ending soon" email can land in a
 // tight 3-4h-before-expiry window instead of just "sometime during the
 // right day." The three *_email_sent_at columns on profiles (migration 059)
