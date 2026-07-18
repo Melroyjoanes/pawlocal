@@ -1,0 +1,19 @@
+name: Trial expiry cron
+
+# Vercel's free (Hobby) plan only runs cron jobs once a day, but the
+# trial-expiry email logic needs to check hourly to catch the "ending soon"
+# email in its 3-4 hour window before real expiry. This workflow calls the
+# same endpoint on GitHub's own scheduler instead, which has no such limit.
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  call-trial-expiry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call trial-expiry endpoint
+        run: |
+          curl -sf -X GET "https://pupstep.in/api/cron/trial-expiry" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
