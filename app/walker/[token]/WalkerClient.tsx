@@ -400,6 +400,7 @@ interface WalkerTranslations {
   uploadingPhoto: string
   photoUploadFailed: string
   photoStillUploading: string
+  notesLabel: string
   howWasDog: (dog: string) => string
   moodGreat: string
   moodOkay: string
@@ -453,6 +454,7 @@ const WALKER_T: Record<WalkerLang, WalkerTranslations> = {
     uploadingPhoto: 'Uploading…',
     photoUploadFailed: 'Upload failed — tap to try again',
     photoStillUploading: 'Photo is still uploading — wait a moment then try again',
+    notesLabel: 'Notes for the owner',
     howWasDog: (dog: string) => `How was ${dog}?`,
     moodGreat: 'Great',
     moodOkay: 'Okay',
@@ -504,6 +506,7 @@ const WALKER_T: Record<WalkerLang, WalkerTranslations> = {
     uploadingPhoto: 'Upload ho raha hai…',
     photoUploadFailed: 'Upload fail ho gaya — dobara try karein',
     photoStillUploading: 'Photo abhi upload ho raha hai — thoda ruk kar phir try karein',
+    notesLabel: 'Owner ke liye notes',
     howWasDog: (dog: string) => `${dog} kaisa tha?`,
     moodGreat: 'Bahut Achha',
     moodOkay: 'Theek-Thaak',
@@ -555,6 +558,7 @@ const WALKER_T: Record<WalkerLang, WalkerTranslations> = {
     uploadingPhoto: 'अपलोड हो रहा है…',
     photoUploadFailed: 'अपलोड नहीं हुआ — फिर से टैप करें',
     photoStillUploading: 'फोटो अभी अपलोड हो रहा है — थोड़ा रुककर फिर कोशिश करें',
+    notesLabel: 'मालिक के लिए नोट्स',
     howWasDog: (dog: string) => `${dog} कैसा था?`,
     moodGreat: 'बहुत अच्छा',
     moodOkay: 'ठीक-ठाक',
@@ -606,6 +610,7 @@ const WALKER_T: Record<WalkerLang, WalkerTranslations> = {
     uploadingPhoto: 'अपलोड होत आहे…',
     photoUploadFailed: 'अपलोड झाले नाही — पुन्हा टॅप करा',
     photoStillUploading: 'फोटो अजून अपलोड होत आहे — थोडा वेळ थांबून पुन्हा प्रयत्न करा',
+    notesLabel: 'मालकासाठी नोट्स',
     howWasDog: (dog: string) => `${dog} कसा होता?`,
     moodGreat: 'खूप छान',
     moodOkay: 'ठीक-ठाक',
@@ -1250,6 +1255,24 @@ export default function WalkerClient({
   // Log form state
   const [mood, setMood] = useState('')
   const [notes, setNotes] = useState('')
+  // Quick-note chips are tracked separately from free-typed `notes` so
+  // tapping a chip is a clean toggle (select → appears, deselect → removed)
+  // instead of fragile find-and-remove string surgery on a shared textarea.
+  // Kept in selection order; rendered as its own bullet list, then combined
+  // with any free-typed text at submit time.
+  const [selectedQuickNotes, setSelectedQuickNotes] = useState<string[]>([])
+  function toggleQuickNote(phrase: string) {
+    setSelectedQuickNotes((prev) =>
+      prev.includes(phrase) ? prev.filter((p) => p !== phrase) : [...prev, phrase]
+    )
+  }
+  // Bulleted quick notes first, then any freely-typed text — this is what
+  // actually gets submitted, so the parent's report shows real bullet
+  // points instead of one run-on sentence.
+  const composedNotes = [
+    ...selectedQuickNotes.map((p) => `• ${p}`),
+    ...(notes.trim() ? [notes.trim()] : []),
+  ].join('\n')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [photoUploadError, setPhotoUploadError] = useState(false)
@@ -1797,7 +1820,7 @@ export default function WalkerClient({
           poop_count: finalPoopCount,
           pee_count: finalPeeCount,
           mood: mood || null,
-          notes: notes.trim() || null,
+          notes: composedNotes || null,
           started_at: walkStartRef.current?.toISOString() ?? null,
           ended_at: walkEndTime.toISOString(),
           walk_events: walkEvents,
@@ -2658,10 +2681,10 @@ export default function WalkerClient({
               </div>
 
               {/* ── Controls — bottom section ── */}
-              {/* Bottom padding must clear the fixed bottom tab bar (z-40,
-                  ~64px + safe-area) — with only pb-6 the mt-auto End Walk
-                  button rendered UNDERNEATH the bar and couldn't be tapped. */}
-              <div className="flex-1 flex flex-col px-5 pt-4 gap-3" style={{ background: '#fff', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 96px)' }}>
+              {/* The bottom tab bar is hidden during an active walk (see the
+                  BOTTOM NAV block below), so this only needs to clear the
+                  device's own safe area now, not a fixed 64px bar on top of it. */}
+              <div className="flex-1 flex flex-col px-5 pt-4 gap-3" style={{ background: '#fff', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
                 {/* Older browsers (iOS Safari < 16.4) have no Wake Lock API —
                     ask the walker to keep the screen on manually there. The
                     walk still survives a lock (localStorage checkpoint), but
@@ -2994,26 +3017,51 @@ export default function WalkerClient({
 
                 {/* D) Notes — small, optional */}
                 <div>
+                  <label className="block text-sm font-bold text-[#0A2F35] mb-2" style={{ fontFamily: 'var(--font-fredoka)' }}>
+                    {t.notesLabel}
+                  </label>
+                  {/* Tap-to-toggle phrases — typing is friction for a walker
+                      standing outside with a dog on a leash; tapping isn't.
+                      Selected chips highlight and their bullet appears in the
+                      list below; tapping again removes it — both directions
+                      driven by the same selectedQuickNotes array, no fragile
+                      text-matching against freely-typed content. */}
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {QUICK_NOTES[lang].map((phrase) => {
+                      const selected = selectedQuickNotes.includes(phrase)
+                      return (
+                        <button
+                          key={phrase}
+                          type="button"
+                          onClick={() => toggleQuickNote(phrase)}
+                          aria-pressed={selected}
+                          className="text-xs font-medium px-3 py-1.5 rounded-full border active:scale-[0.97] transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
+                          style={selected
+                            ? { borderColor: 'oklch(0.48 0.17 196)', background: 'oklch(0.95 0.04 196)', color: 'oklch(0.40 0.17 196)', fontWeight: 700 }
+                            : { borderColor: '#E2E8F0', background: '#fff', color: '#64748B' }
+                          }
+                        >
+                          {phrase}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {selectedQuickNotes.length > 0 && (
+                    <ul className="list-none m-0 mb-2 px-0 space-y-1">
+                      {selectedQuickNotes.map((phrase) => (
+                        <li key={phrase} className="text-sm text-slate-700 flex items-start gap-1.5">
+                          <span style={{ color: 'oklch(0.48 0.17 196)' }}>•</span>
+                          {phrase}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   <textarea value={notes} onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Anything to tell the owner? (optional)"
+                    placeholder="Anything else to tell the owner? (optional)"
                     rows={2}
                     className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 resize-none"
                     style={{ outlineColor: 'oklch(0.48 0.17 196)' }}
                   />
-                  {/* Tap-to-insert phrases — typing is friction for a walker
-                      standing outside with a dog on a leash; tapping isn't. */}
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {QUICK_NOTES[lang].map((phrase) => (
-                      <button
-                        key={phrase}
-                        type="button"
-                        onClick={() => setNotes((prev) => (prev.trim() ? `${prev.trim()} ${phrase}` : phrase))}
-                        className="text-xs font-medium px-3 py-1.5 rounded-full border border-slate-200 text-slate-600 active:scale-[0.97] transition-transform focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]"
-                      >
-                        {phrase}
-                      </button>
-                    ))}
-                  </div>
                 </div>
 
                 {submitError && (
@@ -3216,7 +3264,13 @@ export default function WalkerClient({
         />
       )}
 
-      {/* ─── BOTTOM NAV ─── */}
+      {/* ─── BOTTOM NAV ───
+          Hidden once a walk actually starts (walking/logging) — a walker
+          mid-task doesn't need Settings one tap away, and the always-on bar
+          read as an interruption sitting over the live map/form. The
+          floating "← Back" button already on the walking screen covers
+          exiting back to idle if needed. Nav returns for idle/success. */}
+      {(phase === 'idle' || phase === 'success') && (
       <nav
         className="fixed bottom-0 left-0 right-0 bg-white border-t flex"
         style={{
@@ -3255,6 +3309,7 @@ export default function WalkerClient({
           </button>
         ))}
       </nav>
+      )}
     </div>
   )
 }

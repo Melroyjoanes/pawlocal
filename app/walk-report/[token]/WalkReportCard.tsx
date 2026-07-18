@@ -729,9 +729,11 @@ export default function WalkReportCard({
                 <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, color: 'oklch(0.48 0.17 196)', margin: '0 0 6px' }}>
                   {report.logged_by === 'parent' ? 'Your note' : "Walker's note"}
                 </p>
-                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#374151', lineHeight: 1.65, margin: 0 }}>
-                  {cleanNotes}
-                </p>
+                <div style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#374151', lineHeight: 1.65 }}>
+                  {cleanNotes.split('\n').filter(Boolean).map((line, i) => (
+                    <p key={i} style={{ margin: i === 0 ? 0 : '4px 0 0' }}>{line}</p>
+                  ))}
+                </div>
               </div>
               <span style={{ color: '#FF8C52', opacity: 0.4, flexShrink: 0, marginTop: 2 }}><IconPaw /></span>
             </div>
