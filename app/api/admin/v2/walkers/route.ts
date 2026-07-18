@@ -36,14 +36,19 @@ export async function GET() {
   const walkerIds: string[] = walkerList.map((w) => w.id)
   const walkerPhones: string[] = walkerList.map((w) => w.phone).filter(Boolean)
 
-  // 2. Fetch walker_connections for these walkers (by walker_id or phone)
+  // 2. Fetch walker_connections for these walkers (by walker_id or phone).
+  // NOTE: walker_connections has dog_id (a FK), not a dog_name column — a
+  // select('dog_name') here was silently erroring (Postgres 42703) on every
+  // request, which zeroed out `allConnections` and made the entire per-dog
+  // block (dogs, links, OTP, avg quality) invisible in the admin panel this
+  // whole time. Fixed by selecting dog_id and joining dog names separately.
   const [connByIdRes, connByPhoneRes] = await Promise.all([
     (client.from('walker_connections') as any)
-      .select('id, walker_id, owner_id, dog_name, status, token, otp')
+      .select('id, walker_id, owner_id, dog_id, status, token, otp')
       .in('walker_id', walkerIds),
     walkerPhones.length > 0
       ? (client.from('walker_connections') as any)
-          .select('id, walker_phone, owner_id, dog_name, status, token, otp')
+          .select('id, walker_phone, owner_id, dog_id, status, token, otp')
           .in('walker_phone', walkerPhones)
       : Promise.resolve({ data: [] }),
   ])
@@ -54,7 +59,7 @@ export async function GET() {
     walker_id?: string
     walker_phone?: string
     owner_id: string
-    dog_name: string | null
+    dog_id: string | null
     status: string
     token: string
     otp: string | null
@@ -68,6 +73,14 @@ export async function GET() {
   }
 
   const connIds: string[] = allConnections.map((c) => c.id)
+  const dogIds: string[] = [...new Set(allConnections.map((c) => c.dog_id).filter(Boolean))] as string[]
+  const { data: dogRows } = dogIds.length > 0
+    ? await (client.from('dogs') as any).select('id, name').in('id', dogIds)
+    : { data: [] }
+  const dogNameMap: Record<string, string> = {}
+  for (const d of (dogRows ?? [])) {
+    dogNameMap[d.id] = d.name
+  }
 
   // 3. Fetch report counts and avg quality per connection
   const { data: reportRows } = connIds.length > 0
@@ -118,7 +131,7 @@ export async function GET() {
         : null
 
       return {
-        dogName: c.dog_name ?? '',
+        dogName: (c.dog_id && dogNameMap[c.dog_id]) ?? '',
         ownerName: ownerNameMap[c.owner_id] ?? null,
         ownerEmail: ownerEmailMap[c.owner_id] ?? null,
         status: c.status,
