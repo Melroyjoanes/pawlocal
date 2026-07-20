@@ -1240,19 +1240,14 @@ export default function WalkerClient({
   // end the walk or send the report. Same pattern as LiveWalkClient.tsx.
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
 
-  // Cumulative seconds lost to tracking gaps (30s+ with no GPS fix) this
-  // walk — surfaced to the walker in real time (see trackingGapBanner
-  // below) instead of only showing up as a mysteriously low distance on
-  // the finished report. Real walks were losing the majority of their
-  // duration to repeated gaps (one report: 28 of 33 minutes untracked),
-  // with zero signal to the walker that it was even happening.
-  const [totalGapSeconds, setTotalGapSeconds] = useState(0)
+  // Tracks GPS gaps (30s+ with no fix) so the walker gets a real-time nudge
+  // to keep the screen on, and so we get Sentry telemetry on how often this
+  // happens in the field — not surfaced anywhere after the walk ends.
   const [lastGapSeconds, setLastGapSeconds] = useState<number | null>(null)
   const [showGapWarning, setShowGapWarning] = useState(false)
   const gapWarningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const reportTrackingGap = useCallback((gapSec: number) => {
-    setTotalGapSeconds((s) => s + gapSec)
     setLastGapSeconds(gapSec)
     setShowGapWarning(true)
     if (gapWarningTimerRef.current) clearTimeout(gapWarningTimerRef.current)
@@ -3035,11 +3030,6 @@ export default function WalkerClient({
                         {finalPoopCount > 0 && <span style={{ fontSize: 14, color: '#0A2F35', fontWeight: 600 }}>💩 {finalPoopCount} potty</span>}
                         {finalPeeCount > 0 && <span style={{ fontSize: 14, color: '#0A2F35', fontWeight: 600 }}>💧 {finalPeeCount} toilet</span>}
                       </div>
-                      {totalGapSeconds > 60 && (
-                        <p style={{ fontSize: 11, color: '#991B1B', margin: '8px 0 0', fontWeight: 600 }}>
-                          ⚠️ Tracking was paused for about {Math.round(totalGapSeconds / 60)} min during this walk (screen may have locked) — distance may be lower than the real walk.
-                        </p>
-                      )}
                     </div>
                   )
                 })()}
