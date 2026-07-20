@@ -6,6 +6,7 @@ import { parseCareFocus } from '@/lib/careFocus'
 import { LoadingButton } from '@/components/LoadingButton'
 import { loadGoogleMaps } from '@/lib/googleMapsLoader'
 import { SNAP_MAP_STYLE } from '@/lib/snapMapStyle'
+import { haversineKm, estimateGapDistanceKm as estimateGapDistanceKmShared } from '@/lib/gapDistanceEstimate'
 
 // ── This screen is used mid-walk by walkers on modest Android phones, often
 // outdoors and one-handed — it intentionally does NOT use the claymorphism
@@ -293,38 +294,11 @@ const MOOD_OPTIONS = [
   { value: 'issue', emoji: '😟', label: 'Had a problem' },
 ]
 
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371
-  const dLat = (lat2 - lat1) * Math.PI / 180
-  const dLng = (lng2 - lng1) * Math.PI / 180
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-}
-
-// ── Gap-distance estimation ─────────────────────────────────────────────
-// When GPS drops for 30s+ (screen lock, backgrounded tab), we previously
-// counted zero distance for that whole span — technically safe (never
-// overcounts) but produces wildly wrong totals when gaps dominate a walk
-// (one real report: 28 of 33 minutes untracked, showing 260m instead of the
-// real distance). Zero is not a neutral choice — it's a strong, usually
-// false, claim that no movement happened.
-//
-// Instead, estimate gap distance as pace × gap duration, where pace is
-// calibrated from THIS walk's own confirmed (non-gap, non-jitter) GPS
-// segments — not a generic constant. Clamped to a plausible dog-walk speed
-// band so one unusually fast tracked burst can't blow up the estimate.
-const MIN_WALK_PACE_MPS = 0.3   // very slow / lots of sniffing
-const MAX_WALK_PACE_MPS = 2.2   // a light trot
-const DEFAULT_WALK_PACE_MPS = 1.0 // used only before any pace is confirmed this walk
-const MIN_CONFIRMED_SEC_FOR_PACE = 30 // don't trust a pace derived from a few seconds of data
-// Cap how much of any single gap gets extrapolated. Without this, a phone
-// left locked for hours (walker forgets to tap End Walk) would extrapolate
-// tens of kilometres of phantom distance — a worse, opposite-direction
-// version of the bug this feature fixes. 10 minutes covers a normal screen
-// lock or app switch; anything beyond that stops accruing estimated distance.
-const MAX_GAP_ESTIMATE_SEC = 600
+// haversineKm and the gap-distance estimator (pace-calibrated-from-this-walk,
+// clamped and capped) now live in lib/gapDistanceEstimate.ts, shared with
+// StartWalkPanel.tsx and LiveWalkClient.tsx — the other two clients that
+// track a live walk via watchPosition — so the policy can't drift out of
+// sync between them.
 
 function formatElapsed(seconds: number): string {
   const m = Math.floor(seconds / 60)
@@ -1270,16 +1244,9 @@ export default function WalkerClient({
   const confirmedSecRef = useRef(0)
 
   // Estimates the distance covered during a tracking gap using this walk's
-  // own measured pace so far (falls back to a generic default before any
-  // pace has been confirmed). See the constants above for the reasoning.
+  // own measured pace so far — see lib/gapDistanceEstimate.ts for the logic.
   const estimateGapDistanceKm = useCallback((gapSec: number) => {
-    const pace =
-      confirmedSecRef.current >= MIN_CONFIRMED_SEC_FOR_PACE
-        ? (confirmedDistanceKmRef.current * 1000) / confirmedSecRef.current
-        : DEFAULT_WALK_PACE_MPS
-    const clampedPace = Math.min(MAX_WALK_PACE_MPS, Math.max(MIN_WALK_PACE_MPS, pace))
-    const effectiveGapSec = Math.min(gapSec, MAX_GAP_ESTIMATE_SEC)
-    return (clampedPace * effectiveGapSec) / 1000
+    return estimateGapDistanceKmShared(gapSec, confirmedDistanceKmRef.current, confirmedSecRef.current)
   }, [])
 
   // Tracks GPS gaps (30s+ with no fix) so the walker gets a real-time nudge

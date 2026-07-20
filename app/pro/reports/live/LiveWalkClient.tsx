@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import ClientSelector, { type ProviderClient } from '@/components/ClientSelector'
 import { loadGoogleMaps } from '@/lib/googleMapsLoader'
+import { estimateGapDistanceKm } from '@/lib/gapDistanceEstimate'
 
 type WalkState = 'ready' | 'walking' | 'summary' | 'done'
 
@@ -178,7 +179,12 @@ export default function LiveWalkClient({
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [gpsError, setGpsError] = useState<string | null>(null)
   const [currentPos, setCurrentPos] = useState<{ lat: number; lng: number } | null>(null)
-  const routePointsRef = useRef<{ lat: number; lng: number }[]>([])
+  const routePointsRef = useRef<{ lat: number; lng: number; ts?: string }[]>([])
+  // Running totals from this walk's own confirmed (non-gap) GPS segments —
+  // used to self-calibrate the pace used for gap-distance estimation. See
+  // lib/gapDistanceEstimate.ts for the reasoning.
+  const confirmedDistanceKmRef = useRef(0)
+  const confirmedSecRef = useRef(0)
   const watchIdRef = useRef<number | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
@@ -230,6 +236,8 @@ export default function LiveWalkClient({
     setWalkState('walking')
     setElapsed(0)
     setDistance(0)
+    confirmedDistanceKmRef.current = 0
+    confirmedSecRef.current = 0
     setPoopEvents([])
     setPeeEvents([])
     setPhotos([])
@@ -241,12 +249,36 @@ export default function LiveWalkClient({
     // Start GPS
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
-        const point = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        const point = { lat: pos.coords.latitude, lng: pos.coords.longitude, ts: new Date().toISOString() }
         routePointsRef.current.push(point)
         setCurrentPos(point)
         if (routePointsRef.current.length >= 2) {
           const prev = routePointsRef.current[routePointsRef.current.length - 2]
-          setDistance((d) => d + haversineDistance(prev, point))
+          const deltaMeters = haversineDistance(prev, point)
+          const elapsedSec = prev.ts ? (new Date(point.ts).getTime() - new Date(prev.ts).getTime()) / 1000 : 0
+          // Tracking gap (30s+ with no fix): estimate the unobserved distance
+          // from this walk's own confirmed pace instead of counting the raw
+          // straight-line jump, which can wildly overstate a wandering dog's
+          // actual path. See lib/gapDistanceEstimate.ts.
+          if (elapsedSec > 30) {
+            const estimatedMeters = estimateGapDistanceKm(elapsedSec, confirmedDistanceKmRef.current, confirmedSecRef.current) * 1000
+            if (estimatedMeters > 0) setDistance((d) => d + estimatedMeters)
+          } else {
+            // Reject implausible jumps (GPS teleport artifacts) before they
+            // corrupt either the displayed distance or the pace used to
+            // calibrate future gap estimates. The point still stays on the
+            // map (pushed above) — only its distance contribution is skipped.
+            const impliedSpeed = elapsedSec > 0 ? deltaMeters / elapsedSec : 0
+            if (impliedSpeed > 20) {
+              // no-op — discard this segment's distance contribution
+            } else {
+              setDistance((d) => d + deltaMeters)
+              if (elapsedSec > 0) {
+                confirmedDistanceKmRef.current += deltaMeters / 1000
+                confirmedSecRef.current += elapsedSec
+              }
+            }
+          }
         }
       },
       (err) => {
@@ -401,6 +433,8 @@ export default function LiveWalkClient({
     setWalkState('ready')
     setElapsed(0)
     setDistance(0)
+    confirmedDistanceKmRef.current = 0
+    confirmedSecRef.current = 0
     setPoopEvents([])
     setPeeEvents([])
     setPhotos([])

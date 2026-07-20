@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LoadingButton } from '@/components/LoadingButton'
+import { estimateGapDistanceKm, haversineKm } from '@/lib/gapDistanceEstimate'
 
 interface WalkerConnection {
   id: string
@@ -39,15 +40,6 @@ function formatElapsed(seconds: number): string {
   return `${m}:${String(s).padStart(2, '0')}`
 }
 
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371
-  const dLat = (lat2 - lat1) * Math.PI / 180
-  const dLng = (lng2 - lng1) * Math.PI / 180
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-}
 
 const SPRING = { type: 'spring', stiffness: 420, damping: 36 } as const
 const EASE_OUT = { duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] } as const
@@ -63,10 +55,15 @@ export default function StartWalkPanel({ walkerName, walkerPhone }: { walkerName
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const watchIdRef = useRef<number | null>(null)
-  const lastPointRef = useRef<{ lat: number; lng: number } | null>(null)
+  const lastPointRef = useRef<{ lat: number; lng: number; ts: number } | null>(null)
   const rafRef = useRef<number | null>(null)
   const activeWalkRef = useRef<ActiveWalk | null>(null)
   activeWalkRef.current = activeWalk
+  // Running totals from this walk's own confirmed (non-gap) GPS segments —
+  // used to self-calibrate the pace used for gap-distance estimation. See
+  // lib/gapDistanceEstimate.ts for the reasoning.
+  const confirmedDistanceKmRef = useRef(0)
+  const confirmedSecRef = useRef(0)
 
   useEffect(() => {
     if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
@@ -146,7 +143,9 @@ export default function StartWalkPanel({ walkerName, walkerPhone }: { walkerName
         }
 
         // Seed first point
-        lastPointRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        lastPointRef.current = { lat: pos.coords.latitude, lng: pos.coords.longitude, ts: Date.now() }
+        confirmedDistanceKmRef.current = 0
+        confirmedSecRef.current = 0
 
         const walk: ActiveWalk = {
           sessionId,
@@ -169,11 +168,29 @@ export default function StartWalkPanel({ walkerName, walkerPhone }: { walkerName
         // GPS watch
         watchIdRef.current = navigator.geolocation.watchPosition(
           (p) => {
-            const newPt = { lat: p.coords.latitude, lng: p.coords.longitude }
+            const newPt = { lat: p.coords.latitude, lng: p.coords.longitude, ts: Date.now() }
             const last = lastPointRef.current
             if (last) {
               const delta = haversineKm(last.lat, last.lng, newPt.lat, newPt.lng)
-              setActiveWalk((prev) => prev ? { ...prev, distanceKm: +(prev.distanceKm + delta).toFixed(3) } : prev)
+              const elapsedSec = (newPt.ts - last.ts) / 1000
+              // Tracking gap (30s+ with no fix): estimate the unobserved
+              // distance from this walk's own confirmed pace instead of the
+              // raw straight-line jump. See lib/gapDistanceEstimate.ts.
+              if (elapsedSec > 30) {
+                const estimatedKm = estimateGapDistanceKm(elapsedSec, confirmedDistanceKmRef.current, confirmedSecRef.current)
+                if (estimatedKm > 0) setActiveWalk((prev) => prev ? { ...prev, distanceKm: +(prev.distanceKm + estimatedKm).toFixed(3) } : prev)
+              } else {
+                // Reject implausible jumps (GPS teleport artifacts) before
+                // they corrupt either the displayed distance or the pace
+                // used to calibrate future gap estimates.
+                const impliedSpeed = elapsedSec > 0 ? (delta * 1000) / elapsedSec : 0
+                if (impliedSpeed > 20) return
+                setActiveWalk((prev) => prev ? { ...prev, distanceKm: +(prev.distanceKm + delta).toFixed(3) } : prev)
+                if (elapsedSec > 0) {
+                  confirmedDistanceKmRef.current += delta
+                  confirmedSecRef.current += elapsedSec
+                }
+              }
             }
             lastPointRef.current = newPt
           },
