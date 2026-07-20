@@ -303,6 +303,29 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
+// ── Gap-distance estimation ─────────────────────────────────────────────
+// When GPS drops for 30s+ (screen lock, backgrounded tab), we previously
+// counted zero distance for that whole span — technically safe (never
+// overcounts) but produces wildly wrong totals when gaps dominate a walk
+// (one real report: 28 of 33 minutes untracked, showing 260m instead of the
+// real distance). Zero is not a neutral choice — it's a strong, usually
+// false, claim that no movement happened.
+//
+// Instead, estimate gap distance as pace × gap duration, where pace is
+// calibrated from THIS walk's own confirmed (non-gap, non-jitter) GPS
+// segments — not a generic constant. Clamped to a plausible dog-walk speed
+// band so one unusually fast tracked burst can't blow up the estimate.
+const MIN_WALK_PACE_MPS = 0.3   // very slow / lots of sniffing
+const MAX_WALK_PACE_MPS = 2.2   // a light trot
+const DEFAULT_WALK_PACE_MPS = 1.0 // used only before any pace is confirmed this walk
+const MIN_CONFIRMED_SEC_FOR_PACE = 30 // don't trust a pace derived from a few seconds of data
+// Cap how much of any single gap gets extrapolated. Without this, a phone
+// left locked for hours (walker forgets to tap End Walk) would extrapolate
+// tens of kilometres of phantom distance — a worse, opposite-direction
+// version of the bug this feature fixes. 10 minutes covers a normal screen
+// lock or app switch; anything beyond that stops accruing estimated distance.
+const MAX_GAP_ESTIMATE_SEC = 600
+
 function formatElapsed(seconds: number): string {
   const m = Math.floor(seconds / 60)
   const s = seconds % 60
@@ -1240,6 +1263,25 @@ export default function WalkerClient({
   // end the walk or send the report. Same pattern as LiveWalkClient.tsx.
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
 
+  // Running totals from this walk's own confirmed (non-gap) GPS segments —
+  // used to self-calibrate the pace used for gap-distance estimation below.
+  // Refs, not state: updated on every GPS fix, don't need to trigger renders.
+  const confirmedDistanceKmRef = useRef(0)
+  const confirmedSecRef = useRef(0)
+
+  // Estimates the distance covered during a tracking gap using this walk's
+  // own measured pace so far (falls back to a generic default before any
+  // pace has been confirmed). See the constants above for the reasoning.
+  const estimateGapDistanceKm = useCallback((gapSec: number) => {
+    const pace =
+      confirmedSecRef.current >= MIN_CONFIRMED_SEC_FOR_PACE
+        ? (confirmedDistanceKmRef.current * 1000) / confirmedSecRef.current
+        : DEFAULT_WALK_PACE_MPS
+    const clampedPace = Math.min(MAX_WALK_PACE_MPS, Math.max(MIN_WALK_PACE_MPS, pace))
+    const effectiveGapSec = Math.min(gapSec, MAX_GAP_ESTIMATE_SEC)
+    return (clampedPace * effectiveGapSec) / 1000
+  }, [])
+
   // Tracks GPS gaps (30s+ with no fix) so the walker gets a real-time nudge
   // to keep the screen on, and so we get Sentry telemetry on how often this
   // happens in the field — not surfaced anywhere after the walk ends.
@@ -1496,10 +1538,15 @@ export default function WalkerClient({
               if (last) {
                 const delta = haversineKm(last.lat, last.lng, pt.lat, pt.lng)
                 const elapsedSec = (new Date(pt.ts).getTime() - new Date(last.ts).getTime()) / 1000
-                // Suspension gap (30s+ with no fixes): append without counting
-                // the unobserved straight-line distance — same rule as the main
-                // watch callback in resumeTracking().
-                if (elapsedSec > 30) { reportTrackingGap(elapsedSec); return [...prev, pt] }
+                // Suspension gap (30s+ with no fixes): append the point, and
+                // estimate (not skip) the unobserved distance using this
+                // walk's own confirmed pace — see estimateGapDistanceKm above.
+                if (elapsedSec > 30) {
+                  reportTrackingGap(elapsedSec)
+                  const estimatedKm = estimateGapDistanceKm(elapsedSec)
+                  if (estimatedKm > 0) setDistanceKm((d) => +(d + estimatedKm).toFixed(3))
+                  return [...prev, pt]
+                }
                 // Reject implausible jumps: a dog walk never exceeds ~15 km/h (4.2 m/s).
                 // Allow generous margin (20 m/s ≈ 72 km/h) to avoid rejecting valid fast segments,
                 // but still catch GPS teleport artifacts (jumping 200m in 1 second = 200 m/s).
@@ -1510,6 +1557,8 @@ export default function WalkerClient({
                 // jagged "spider web" from GPS noise alone, not real movement.
                 if (delta * 1000 < 3 && elapsedSec < 5) return prev
                 setDistanceKm((d) => +(d + delta).toFixed(3))
+                confirmedDistanceKmRef.current += delta
+                confirmedSecRef.current += elapsedSec
               }
               return [...prev, pt]
             })
@@ -1603,6 +1652,8 @@ export default function WalkerClient({
         gpsRoute,
         distanceKm,
         walkEvents,
+        confirmedDistanceKm: confirmedDistanceKmRef.current,
+        confirmedSec: confirmedSecRef.current,
       }))
     } catch { /* storage full/blocked — checkpointing is best-effort */ }
   }, [phase, gpsRoute, distanceKm, walkEvents, selectedToken, isDemoWalk, activeWalkKey])
@@ -1614,6 +1665,7 @@ export default function WalkerClient({
       const saved = JSON.parse(raw) as {
         v?: number; phase?: string; startedAt?: string; endedAt?: string | null; selectedToken?: string
         gpsRoute?: GpsPoint[]; distanceKm?: number; walkEvents?: WalkEvent[]
+        confirmedDistanceKm?: number; confirmedSec?: number
       }
       if (saved?.v !== 1 || !saved.startedAt) { localStorage.removeItem(activeWalkKey); return }
       const started = new Date(saved.startedAt)
@@ -1631,6 +1683,8 @@ export default function WalkerClient({
         setCurrentPos({ lat: lastPt.lat, lng: lastPt.lng })
       }
       if (typeof saved.distanceKm === 'number') setDistanceKm(saved.distanceKm)
+      if (typeof saved.confirmedDistanceKm === 'number') confirmedDistanceKmRef.current = saved.confirmedDistanceKm
+      if (typeof saved.confirmedSec === 'number') confirmedSecRef.current = saved.confirmedSec
       if (Array.isArray(saved.walkEvents)) setWalkEvents(saved.walkEvents)
       if (saved.selectedToken) setSelectedToken(saved.selectedToken)
       if (saved.phase === 'logging') {
@@ -1697,10 +1751,14 @@ export default function WalkerClient({
               const elapsedSec = (new Date(point.ts).getTime() - new Date(last.ts).getTime()) / 1000
               // No fixes for 30s+ means the tab was suspended (screen lock,
               // app switch) — keep the route continuous by appending the
-              // point, but do NOT count the straight-line "chord" as walked
-              // distance: that movement was never observed, and counting it
-              // would silently mis-measure the walk.
-              if (elapsedSec > 30) { reportTrackingGap(elapsedSec); return [...prev, point] }
+              // point, and estimate the unobserved distance using this
+              // walk's own confirmed pace instead of counting zero.
+              if (elapsedSec > 30) {
+                reportTrackingGap(elapsedSec)
+                const estimatedKm = estimateGapDistanceKm(elapsedSec)
+                if (estimatedKm > 0) setDistanceKm((d) => +(d + estimatedKm).toFixed(3))
+                return [...prev, point]
+              }
               // Reject implausible jumps: a dog walk never exceeds ~15 km/h (4.2 m/s).
               // Allow generous margin (20 m/s ≈ 72 km/h) to avoid rejecting valid fast segments,
               // but still catch GPS teleport artifacts (jumping 200m in 1 second = 200 m/s).
@@ -1711,6 +1769,8 @@ export default function WalkerClient({
               // jagged "spider web" from GPS noise alone, not real movement.
               if (delta * 1000 < 3 && elapsedSec < 5) return prev
               setDistanceKm((d) => +(d + delta).toFixed(3))
+              confirmedDistanceKmRef.current += delta
+              confirmedSecRef.current += elapsedSec
             }
             return [...prev, point]
           })
@@ -1732,6 +1792,8 @@ export default function WalkerClient({
   function startWalk() {
     setGpsRoute([])
     setDistanceKm(0)
+    confirmedDistanceKmRef.current = 0
+    confirmedSecRef.current = 0
     setElapsed(0)
     setGpsError(null)
     setCurrentPos(null)
@@ -1845,6 +1907,8 @@ export default function WalkerClient({
       setPhotoUrl(null)
       setElapsed(0)
       setDistanceKm(0)
+      confirmedDistanceKmRef.current = 0
+      confirmedSecRef.current = 0
       setGpsRoute([])
       setWalkEvents([])
       setPhase('idle')
@@ -1914,6 +1978,8 @@ export default function WalkerClient({
       setPhotoUrl(null)
       setElapsed(0)
       setDistanceKm(0)
+      confirmedDistanceKmRef.current = 0
+      confirmedSecRef.current = 0
       setGpsRoute([])
       setWalkEvents([])
       walkStartRef.current = null
