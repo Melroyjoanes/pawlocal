@@ -38,6 +38,26 @@ function useReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
+// Best-effort in-app-browser detection. These stripped-down WebViews (opened
+// when a walker taps a link directly inside another app instead of their
+// real browser) are the single most likely cause of GPS tracking dropping
+// out repeatedly mid-walk — they often don't honor the Wake Lock API even
+// when it appears to be supported, and get suspended by the OS far more
+// aggressively than a real Chrome/Safari tab. Not every in-app browser
+// leaves a detectable signature (WhatsApp's Android WebView notably does
+// not reliably), so this catches what it can (Facebook/Messenger,
+// Instagram, Line, Twitter/X) — a real fix for the undetectable cases is
+// the general "keep this screen on" guidance shown regardless.
+function detectInAppBrowser(): string | null {
+  if (typeof navigator === 'undefined') return null
+  const ua = navigator.userAgent || ''
+  if (/FBAN|FBAV|FB_IAB/.test(ua)) return 'Facebook'
+  if (/Instagram/.test(ua)) return 'Instagram'
+  if (/Line\//.test(ua)) return 'Line'
+  if (/Twitter/.test(ua)) return 'Twitter/X'
+  return null
+}
+
 // ── "Something is happening" live indicator — a gentle breathing dot used
 // wherever we need to signal "walk in progress / recording". Isolated in its
 // own memoized component so the continuous loop never re-renders the rest of
@@ -1132,6 +1152,11 @@ export default function WalkerClient({
   walkTimeBucket = null,
 }: WalkerClientProps) {
   const [phase, setPhase] = useState<WalkPhase>('idle')
+  // Detected once on mount (SSR has no navigator) — flags the small set of
+  // in-app browsers we can reliably identify via UA string. See
+  // detectInAppBrowser() above for why WhatsApp can't be caught this way.
+  const [inAppBrowserName, setInAppBrowserName] = useState<string | null>(null)
+  useEffect(() => { setInAppBrowserName(detectInAppBrowser()) }, [])
   const [logs, setLogs] = useState<WalkLog[]>([])
   const [logsLoading, setLogsLoading] = useState(true)
   const [toast, setToast] = useState<string | null>(null)
@@ -1215,15 +1240,56 @@ export default function WalkerClient({
   // end the walk or send the report. Same pattern as LiveWalkClient.tsx.
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
 
+  // Cumulative seconds lost to tracking gaps (30s+ with no GPS fix) this
+  // walk — surfaced to the walker in real time (see trackingGapBanner
+  // below) instead of only showing up as a mysteriously low distance on
+  // the finished report. Real walks were losing the majority of their
+  // duration to repeated gaps (one report: 28 of 33 minutes untracked),
+  // with zero signal to the walker that it was even happening.
+  const [totalGapSeconds, setTotalGapSeconds] = useState(0)
+  const [lastGapSeconds, setLastGapSeconds] = useState<number | null>(null)
+  const [showGapWarning, setShowGapWarning] = useState(false)
+  const gapWarningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const reportTrackingGap = useCallback((gapSec: number) => {
+    setTotalGapSeconds((s) => s + gapSec)
+    setLastGapSeconds(gapSec)
+    setShowGapWarning(true)
+    if (gapWarningTimerRef.current) clearTimeout(gapWarningTimerRef.current)
+    gapWarningTimerRef.current = setTimeout(() => setShowGapWarning(false), 8000)
+    import('@sentry/nextjs').then(({ captureMessage }) =>
+      captureMessage('GPS tracking gap during walk', {
+        level: 'info',
+        tags: { walker_token: token },
+        extra: { gapSeconds: Math.round(gapSec), userAgent: navigator.userAgent, hasWakeLock: !!wakeLockRef.current && !wakeLockRef.current.released },
+      })
+    ).catch(() => {})
+  }, [token])
+
   const requestWakeLock = useCallback(async () => {
-    if (!('wakeLock' in navigator)) return
+    if (!('wakeLock' in navigator)) {
+      // Report this via Sentry too, not just the UI banner further down —
+      // this is the single biggest lever on GPS accuracy (distance is
+      // silently undercounted during any period tracking drops), so we need
+      // real data on which devices/browsers actually lack this API, not
+      // just a user-facing "your browser doesn't support this" message.
+      import('@sentry/nextjs').then(({ captureMessage }) =>
+        captureMessage('wakeLock API unavailable', { level: 'warning', tags: { walker_token: token }, extra: { userAgent: navigator.userAgent } })
+      ).catch(() => {})
+      return
+    }
     try {
       wakeLockRef.current = await navigator.wakeLock.request('screen')
-    } catch {
+    } catch (err) {
       // Not supported / denied — the visibilitychange resync below still
-      // keeps the timer honest if the screen does lock.
+      // keeps the timer honest if the screen does lock, but GPS tracking
+      // itself still drops during that time. Report it so we can see how
+      // often this actually happens in the field, not just guess.
+      import('@sentry/nextjs').then(({ captureException }) =>
+        captureException(err, { tags: { walker_token: token, context: 'wakeLock_request_failed' }, extra: { userAgent: navigator.userAgent } })
+      ).catch(() => {})
     }
-  }, [])
+  }, [token])
 
   // On returning to the tab mid-walk (screen unlocked, app switch, etc.):
   // re-acquire the wake lock (it auto-releases when the page hides) and
@@ -1438,7 +1504,7 @@ export default function WalkerClient({
                 // Suspension gap (30s+ with no fixes): append without counting
                 // the unobserved straight-line distance — same rule as the main
                 // watch callback in resumeTracking().
-                if (elapsedSec > 30) return [...prev, pt]
+                if (elapsedSec > 30) { reportTrackingGap(elapsedSec); return [...prev, pt] }
                 // Reject implausible jumps: a dog walk never exceeds ~15 km/h (4.2 m/s).
                 // Allow generous margin (20 m/s ≈ 72 km/h) to avoid rejecting valid fast segments,
                 // but still catch GPS teleport artifacts (jumping 200m in 1 second = 200 m/s).
@@ -1639,7 +1705,7 @@ export default function WalkerClient({
               // point, but do NOT count the straight-line "chord" as walked
               // distance: that movement was never observed, and counting it
               // would silently mis-measure the walk.
-              if (elapsedSec > 30) return [...prev, point]
+              if (elapsedSec > 30) { reportTrackingGap(elapsedSec); return [...prev, point] }
               // Reject implausible jumps: a dog walk never exceeds ~15 km/h (4.2 m/s).
               // Allow generous margin (20 m/s ≈ 72 km/h) to avoid rejecting valid fast segments,
               // but still catch GPS teleport artifacts (jumping 200m in 1 second = 200 m/s).
@@ -2510,6 +2576,19 @@ export default function WalkerClient({
                   </div>
                 )
               })}
+              {/* In-app-browser warning — GPS tracking is far less reliable inside
+                  a WebView (Facebook/Instagram detectable via UA; WhatsApp is not,
+                  so this fires only for what's detectable, and the "keep this
+                  screen open" banner during the walk covers the rest). */}
+              {inAppBrowserName && (
+                <div className="rounded-2xl px-3 py-2 flex items-center gap-2"
+                  style={{ background: '#FFF7ED', border: '1.5px solid #FED7AA', boxShadow: CLAY_SHADOW_AMBER }}>
+                  <span className="text-base flex-shrink-0">⚠️</span>
+                  <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#92400E', margin: 0, fontWeight: 600, lineHeight: 1.4 }}>
+                    You&apos;re in {inAppBrowserName}&apos;s in-app browser — GPS tracking works best in Chrome or Safari. Tap the ⋯ menu and choose &quot;Open in browser&quot; for an accurate walk report.
+                  </p>
+                </div>
+              )}
               <LoadingButton
                 loading={startingWalk}
                 loadingText="Starting walk…"
@@ -2656,6 +2735,17 @@ export default function WalkerClient({
                   <div className="absolute top-14 left-4 right-4 z-10 px-3 py-2 rounded-2xl text-xs text-amber-800 text-center"
                     style={{ background: '#FFFBEB', border: '1px solid #FED7AA', boxShadow: CLAY_SHADOW_AMBER }}>
                     ⚠️ {gpsError}
+                  </div>
+                )}
+
+                {/* Tracking-gap warning — tells the walker in real time when
+                    GPS was lost (screen locked, app switched away), instead
+                    of them only finding out afterward as a mysteriously low
+                    distance on the finished report. Auto-hides after 8s. */}
+                {showGapWarning && lastGapSeconds != null && (
+                  <div className="absolute top-14 left-4 right-4 z-10 px-3 py-2 rounded-2xl text-xs text-red-800 text-center"
+                    style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
+                    ⚠️ Tracking paused for {Math.round(lastGapSeconds)}s — keep this screen on for an accurate route
                   </div>
                 )}
 
@@ -2945,6 +3035,11 @@ export default function WalkerClient({
                         {finalPoopCount > 0 && <span style={{ fontSize: 14, color: '#0A2F35', fontWeight: 600 }}>💩 {finalPoopCount} potty</span>}
                         {finalPeeCount > 0 && <span style={{ fontSize: 14, color: '#0A2F35', fontWeight: 600 }}>💧 {finalPeeCount} toilet</span>}
                       </div>
+                      {totalGapSeconds > 60 && (
+                        <p style={{ fontSize: 11, color: '#991B1B', margin: '8px 0 0', fontWeight: 600 }}>
+                          ⚠️ Tracking was paused for about {Math.round(totalGapSeconds / 60)} min during this walk (screen may have locked) — distance may be lower than the real walk.
+                        </p>
+                      )}
                     </div>
                   )
                 })()}
