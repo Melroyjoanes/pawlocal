@@ -224,7 +224,25 @@ function UpgradeBanner({ trialStatus, daysRemaining, totalReports, dogName, dogI
       </div>
     )
   }
-  // No trial started yet (no walk report received)
+  // No trial started yet (no WALKER report received). totalReports still
+  // counts self-walk reports though — this state is reachable by someone
+  // who's been self-walking for a while but never connected a walker, and
+  // the generic "starts with your first walk report" copy is simply false
+  // for them (they have reports, just not from a walker). Branch on that
+  // instead of adding a separate blanket disclaimer elsewhere.
+  if (totalReports > 0) {
+    return (
+      <div style={{ borderRadius: '18px', background: 'rgba(255,140,82,0.08)', border: '1.5px solid rgba(255,140,82,0.3)', padding: '14px 16px', boxShadow: clayShadow('204,89,29', { outerOpacity: 0.14, insetOpacity: 0.10 }) }}>
+        <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#0A2F35', margin: '0 0 4px' }}>
+          {totalReports} walk {totalReports === 1 ? 'report' : 'reports'} logged so far.
+        </p>
+        <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', color: '#6B7280', margin: '0 0 10px' }}>
+          Self-logged walks are always free to view. Connect a walker to get automatic GPS-verified reports and start your 3-day trial.
+        </p>
+        <Link href={dogId ? `/setup/qr?dog=${dogId}` : '/setup?go=1'} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'oklch(0.44 0.16 196)', fontSize: '13px', fontWeight: 700, fontFamily: 'var(--font-nunito), sans-serif', textDecoration: 'none' }}>Connect your walker →</Link>
+      </div>
+    )
+  }
   return (
     <div style={{ borderRadius: '18px', background: 'rgba(255,140,82,0.08)', border: '1.5px solid rgba(255,140,82,0.3)', padding: '14px 16px', boxShadow: clayShadow('204,89,29', { outerOpacity: 0.14, insetOpacity: 0.10 }) }}>
       <p style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: '#0A2F35', margin: '0 0 4px' }}>Your 3-day free trial starts with your first walk report.</p>
