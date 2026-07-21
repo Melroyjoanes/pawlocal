@@ -6,6 +6,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 import { CLAY_SHADOW_CREAM, CLAY_SHADOW_TEAL, CLAY_SHADOW_ORANGE, CLAY_SHADOW_ORANGE_SM } from '@/lib/clayShadows'
 import { LoadingButton } from '@/components/LoadingButton'
 import { trackEvent } from '@/lib/analytics'
+import { loadGoogleMaps } from '@/lib/googleMapsLoader'
+import { SNAP_MAP_STYLE } from '@/lib/snapMapStyle'
 
 interface Dog {
   id: string
@@ -68,6 +70,112 @@ function formatTime(seconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
+// Live map shown during the walk — same underlying pattern as the walker
+// flow's own LiveMap (app/walker/[token]/WalkerClient.tsx), rebuilt for
+// self-walk: plain colored dot markers instead of emoji labels, to match
+// this surface's icon-free direction.
+function LiveMap({
+  currentPos,
+  routePoints,
+  poopEvents,
+  peeEvents,
+}: {
+  currentPos: { lat: number; lng: number } | null
+  routePoints: { lat: number; lng: number }[]
+  poopEvents: { lat: number; lng: number }[]
+  peeEvents: { lat: number; lng: number }[]
+}) {
+  const mapDivRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<google.maps.Map | null>(null)
+  const polylineRef = useRef<google.maps.Polyline | null>(null)
+  const posMarkerRef = useRef<google.maps.Marker | null>(null)
+  const eventMarkersRef = useRef<google.maps.Marker[]>([])
+
+  useEffect(() => {
+    function initMap() {
+      if (!mapDivRef.current) return
+      const center = currentPos ?? { lat: 19.098, lng: 72.827 } // Juhu, Mumbai default
+      const gm = (window as { google?: { maps: typeof google.maps } }).google!.maps
+
+      const map = new gm.Map(mapDivRef.current, {
+        center,
+        zoom: 17,
+        disableDefaultUI: true,
+        styles: SNAP_MAP_STYLE,
+      })
+      mapRef.current = map
+
+      polylineRef.current = new gm.Polyline({
+        geodesic: true,
+        strokeColor: '#0f766e',
+        strokeOpacity: 1,
+        strokeWeight: 5,
+        map,
+      })
+
+      posMarkerRef.current = new gm.Marker({
+        position: center,
+        map,
+        zIndex: 10,
+        icon: {
+          path: gm.SymbolPath.CIRCLE,
+          scale: 11,
+          fillColor: '#0f766e',
+          fillOpacity: 1,
+          strokeColor: '#ffffff',
+          strokeWeight: 3,
+        },
+      })
+    }
+
+    loadGoogleMaps(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
+      .then(initMap)
+      .catch(err => console.error('[SelfWalkClient] failed to load Google Maps', err))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pan + update route on every new GPS point
+  useEffect(() => {
+    if (!mapRef.current || !currentPos) return
+    posMarkerRef.current?.setPosition(currentPos)
+    polylineRef.current?.setPath(routePoints)
+    mapRef.current.panTo(currentPos)
+  }, [currentPos, routePoints])
+
+  // Add pee/poop markers when events change — plain colored dots, no emoji,
+  // matching the icon-free direction for this surface.
+  useEffect(() => {
+    if (!mapRef.current) return
+    const gm = (window as { google?: { maps: typeof google.maps } }).google?.maps
+    if (!gm) return
+
+    eventMarkersRef.current.forEach(m => m.setMap(null))
+    eventMarkersRef.current = []
+
+    peeEvents.forEach(evt => {
+      eventMarkersRef.current.push(new gm.Marker({
+        position: evt,
+        map: mapRef.current!,
+        icon: { path: gm.SymbolPath.CIRCLE, scale: 7, fillColor: '#0f766e', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+      }))
+    })
+    poopEvents.forEach(evt => {
+      eventMarkersRef.current.push(new gm.Marker({
+        position: evt,
+        map: mapRef.current!,
+        icon: { path: gm.SymbolPath.CIRCLE, scale: 7, fillColor: '#92400E', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+      }))
+    })
+  }, [poopEvents, peeEvents])
+
+  return (
+    <div
+      ref={mapDivRef}
+      className="w-full h-full"
+      style={{ touchAction: 'none', overscrollBehavior: 'contain' }}
+    />
+  )
+}
+
 export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
   const reduceMotion = useReducedMotion()
   const [selectedDogId, setSelectedDogId] = useState(dogs[0]?.id ?? '')
@@ -87,6 +195,7 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
   const [elapsed, setElapsed] = useState(0)
   const [distanceKm, setDistanceKm] = useState(0)
   const [gpsRoute, setGpsRoute] = useState<GpsPoint[]>([])
+  const [currentPos, setCurrentPos] = useState<{ lat: number; lng: number } | null>(null)
   const [gpsError, setGpsError] = useState<string | null>(null)
   const [walkEvents, setWalkEvents] = useState<WalkEvent[]>([])
 
@@ -144,6 +253,7 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
     setElapsed(0)
     setGpsError(null)
     setWalkEvents([])
+    setCurrentPos(null)
     setPhase('walking')
     walkStartRef.current = new Date()
     trackEvent('self_walk_started', { dog_id: selectedDogId })
@@ -182,6 +292,7 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
             return [...prev, point]
           })
           lastPointRef.current = point
+          setCurrentPos({ lat: point.lat, lng: point.lng })
         },
         (err) => {
           if (err.code === err.PERMISSION_DENIED) {
@@ -335,6 +446,7 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
     setElapsed(0)
     setDistanceKm(0)
     setGpsRoute([])
+    setCurrentPos(null)
     setWalkEvents([])
     setMood('')
     setNotes('')
@@ -453,6 +565,16 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
               exit={reduceMotion ? undefined : { opacity: 0 }}
               transition={{ duration: 0.3 }}
             >
+              {/* Live map — same route/GPS visibility the walker flow has */}
+              <div className="rounded-3xl mb-5 overflow-hidden" style={{ height: 220, boxShadow: CLAY_SHADOW_CREAM }}>
+                <LiveMap
+                  currentPos={currentPos}
+                  routePoints={gpsRoute}
+                  poopEvents={walkEvents.filter((e): e is WalkEvent & { lat: number; lng: number } => e.type === 'poop' && e.lat != null && e.lng != null)}
+                  peeEvents={walkEvents.filter((e): e is WalkEvent & { lat: number; lng: number } => e.type === 'pee' && e.lat != null && e.lng != null)}
+                />
+              </div>
+
               <div className="rounded-3xl p-7 mb-5 text-center" style={{ background: '#0A2F35', boxShadow: CLAY_SHADOW_TEAL }}>
                 <p className="text-6xl font-bold tabular-nums" style={{ fontFamily: 'var(--font-fredoka)', color: '#FFFBEB' }}>
                   {formatTime(elapsed)}
