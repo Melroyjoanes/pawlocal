@@ -30,11 +30,24 @@ interface WalkEvent {
 
 type Phase = 'idle' | 'walking' | 'logging' | 'success'
 
+// No emoji, by design — a color tint plus the label carries the distinction
+// instead of a pictogram.
 const MOOD_OPTIONS = [
-  { value: 'great', emoji: '😊', label: 'Great' },
-  { value: 'okay', emoji: '😐', label: 'Okay' },
-  { value: 'issue', emoji: '😟', label: 'Had a problem' },
+  { value: 'great', label: 'Great', tint: 'oklch(0.48 0.17 196)' },
+  { value: 'okay', label: 'Okay', tint: '#4B5563' }, // darker than #9CA3AF — white label text needs AA contrast
+  { value: 'issue', label: 'Had a problem', tint: '#DC2626' },
 ]
+
+// Three-step first-run explainer — shown once, before this parent's first
+// self-walk. Same underlying idea as the walker flow's own first-time guide
+// (app/walker/[token]/WalkerClient.tsx), rebuilt without its emoji markers
+// since this surface is deliberately icon-free.
+const HOW_IT_WORKS_STEPS = [
+  { step: 1, text: 'Tap Start Walk when you head out the door' },
+  { step: 2, text: 'Tap Pee or Poop the moment it happens' },
+  { step: 3, text: 'Tap End Walk to get your report, same as any other walk' },
+]
+const SELF_WALK_INTRO_SEEN_KEY = 'pupstep_self_walk_intro_seen'
 
 // Same haversine + GPS-quality heuristics as app/walker/[token]/WalkerClient.tsx —
 // kept in sync deliberately rather than imported, since that file is a live,
@@ -59,6 +72,17 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
   const reduceMotion = useReducedMotion()
   const [selectedDogId, setSelectedDogId] = useState(dogs[0]?.id ?? '')
   const [phase, setPhase] = useState<Phase>('idle')
+
+  // First-run explainer — read once on mount (SSR has no localStorage), never
+  // shown again on this device once they've started their first self-walk.
+  const [showIntro, setShowIntro] = useState(false)
+  useEffect(() => {
+    try {
+      setShowIntro(!localStorage.getItem(SELF_WALK_INTRO_SEEN_KEY))
+    } catch {
+      setShowIntro(true) // storage blocked — default to showing it once, harmless if repeated
+    }
+  }, [])
 
   const [elapsed, setElapsed] = useState(0)
   const [distanceKm, setDistanceKm] = useState(0)
@@ -123,6 +147,8 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
     setPhase('walking')
     walkStartRef.current = new Date()
     trackEvent('self_walk_started', { dog_id: selectedDogId })
+    try { localStorage.setItem(SELF_WALK_INTRO_SEEN_KEY, '1') } catch { /* noop */ }
+    setShowIntro(false)
 
     requestWakeLock()
 
@@ -339,15 +365,46 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
               exit={reduceMotion ? undefined : { opacity: 0, y: -12 }}
               transition={{ duration: 0.35 }}
             >
-              <div className="text-center mb-8">
-                <span className="text-5xl">🐾</span>
-                <h1 className="text-2xl font-bold mt-3" style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}>
+              <div className="mb-8">
+                <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'rgba(10,47,53,0.4)', fontFamily: 'var(--font-nunito)' }}>
+                  No walker needed
+                </p>
+                <h1 className="text-2xl font-bold" style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}>
                   Walking {selectedDog?.name ?? 'your dog'} yourself?
                 </h1>
                 <p className="text-sm mt-2" style={{ fontFamily: 'var(--font-nunito)', color: '#64748B' }}>
-                  Track the route, log potty breaks, and get the same report card, no walker needed.
+                  Track the route and log potty breaks — you'll get the same report card a walker would produce.
                 </p>
               </div>
+
+              {showIntro && (
+                <motion.div
+                  initial={reduceMotion ? undefined : { opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35 }}
+                  className="rounded-3xl p-6 mb-5"
+                  style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}
+                >
+                  <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'rgba(10,47,53,0.4)', fontFamily: 'var(--font-nunito)' }}>
+                    How this works
+                  </p>
+                  <div className="flex flex-col gap-4">
+                    {HOW_IT_WORKS_STEPS.map(({ step, text }) => (
+                      <div key={step} className="flex items-start gap-3">
+                        <span
+                          className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
+                          style={{ background: 'oklch(0.48 0.17 196)', color: '#fff', fontFamily: 'var(--font-nunito)' }}
+                        >
+                          {step}
+                        </span>
+                        <p className="text-sm pt-0.5" style={{ fontFamily: 'var(--font-nunito)', color: '#0A2F35' }}>
+                          {text}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
 
               {dogs.length > 1 && (
                 <div className="mb-5">
@@ -406,7 +463,7 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
                 {gpsError && <p className="text-xs mt-2" style={{ color: 'rgba(255,140,82,0.9)' }}>{gpsError}</p>}
                 {typeof window !== 'undefined' && !('wakeLock' in navigator) && (
                   <p className="text-xs mt-3" style={{ color: 'rgba(255,140,82,0.9)', fontFamily: 'var(--font-nunito)' }}>
-                    🔆 Keep your screen on for accurate tracking
+                    Keep your screen on for accurate tracking
                   </p>
                 )}
               </div>
@@ -414,32 +471,30 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
               <div className="grid grid-cols-2 gap-3 mb-5">
                 <button
                   onClick={handlePeeTap}
-                  className="flex flex-col items-center justify-center gap-1.5 rounded-2xl py-5 active:scale-[0.97] transition-transform"
-                  style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}
+                  className="flex flex-col items-center justify-center gap-1 rounded-2xl py-6 active:scale-[0.97] transition-transform"
+                  style={{ background: 'oklch(0.48 0.17 196 / 0.08)', boxShadow: CLAY_SHADOW_CREAM }}
                 >
-                  <span className="text-3xl">💧</span>
-                  <span className="text-sm font-bold flex items-center gap-1.5" style={{ color: '#0A2F35', fontFamily: 'var(--font-nunito)' }}>
+                  <span className="text-lg font-bold" style={{ fontFamily: 'var(--font-fredoka)', color: 'oklch(0.40 0.17 196)' }}>
                     Pee
-                    {walkEvents.filter(e => e.type === 'pee').length > 0 && (
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold text-white" style={{ background: 'oklch(0.48 0.17 196)' }}>
-                        {walkEvents.filter(e => e.type === 'pee').length}
-                      </span>
-                    )}
+                  </span>
+                  <span className="text-xs font-semibold" style={{ fontFamily: 'var(--font-nunito)', color: 'oklch(0.48 0.17 196)' }}>
+                    {walkEvents.filter(e => e.type === 'pee').length > 0
+                      ? `${walkEvents.filter(e => e.type === 'pee').length} logged`
+                      : 'Tap to log'}
                   </span>
                 </button>
                 <button
                   onClick={handlePoopTap}
-                  className="flex flex-col items-center justify-center gap-1.5 rounded-2xl py-5 active:scale-[0.97] transition-transform"
-                  style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}
+                  className="flex flex-col items-center justify-center gap-1 rounded-2xl py-6 active:scale-[0.97] transition-transform"
+                  style={{ background: 'rgba(180,83,9,0.08)', boxShadow: CLAY_SHADOW_CREAM }}
                 >
-                  <span className="text-3xl">💩</span>
-                  <span className="text-sm font-bold flex items-center gap-1.5" style={{ color: '#0A2F35', fontFamily: 'var(--font-nunito)' }}>
+                  <span className="text-lg font-bold" style={{ fontFamily: 'var(--font-fredoka)', color: '#92400E' }}>
                     Poop
-                    {walkEvents.filter(e => e.type === 'poop').length > 0 && (
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold text-white" style={{ background: 'oklch(0.48 0.17 196)' }}>
-                        {walkEvents.filter(e => e.type === 'poop').length}
-                      </span>
-                    )}
+                  </span>
+                  <span className="text-xs font-semibold" style={{ fontFamily: 'var(--font-nunito)', color: '#B45309' }}>
+                    {walkEvents.filter(e => e.type === 'poop').length > 0
+                      ? `${walkEvents.filter(e => e.type === 'poop').length} logged`
+                      : 'Tap to log'}
                   </span>
                 </button>
               </div>
@@ -471,18 +526,22 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
               <div className="rounded-3xl p-6 mb-4" style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
                 <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'rgba(10,47,53,0.4)', fontFamily: 'var(--font-nunito)' }}>Mood</p>
                 <div className="grid grid-cols-3 gap-2 mb-5">
-                  {MOOD_OPTIONS.map(({ value, emoji, label }) => (
+                  {MOOD_OPTIONS.map(({ value, label, tint }) => (
                     <button
                       key={value}
                       onClick={() => setMood(m => m === value ? '' : value)}
-                      className="flex flex-col items-center justify-center py-3 rounded-2xl transition-all active:scale-[0.97]"
+                      className="flex items-center justify-center py-3.5 rounded-2xl transition-all active:scale-[0.97]"
                       style={{
-                        background: mood === value ? 'oklch(0.48 0.17 196 / 0.1)' : '#F9FAFB',
-                        border: mood === value ? '1.5px solid oklch(0.48 0.17 196)' : '1px solid transparent',
+                        background: mood === value ? tint : '#F9FAFB',
+                        border: mood === value ? `1.5px solid ${tint}` : '1px solid transparent',
                       }}
                     >
-                      <span className="text-2xl">{emoji}</span>
-                      <span className="text-xs font-semibold mt-1" style={{ color: '#0A2F35', fontFamily: 'var(--font-nunito)' }}>{label}</span>
+                      <span
+                        className="text-xs font-bold text-center"
+                        style={{ color: mood === value ? '#fff' : '#0A2F35', fontFamily: 'var(--font-nunito)' }}
+                      >
+                        {label}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -491,10 +550,15 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
                 <input ref={photoInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoCapture} id="self-walk-photo" />
                 <label
                   htmlFor="self-walk-photo"
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl font-semibold text-sm mb-5 cursor-pointer"
-                  style={{ background: '#F9FAFB', color: uploading ? '#9CA3AF' : '#0A2F35', border: '1.5px dashed #D1D5DB', fontFamily: 'var(--font-nunito)' }}
+                  className="flex items-center justify-center w-full py-3 rounded-2xl font-semibold text-sm mb-5 cursor-pointer"
+                  style={{
+                    background: photoUrl ? 'oklch(0.48 0.17 196 / 0.08)' : '#F9FAFB',
+                    color: uploading ? '#9CA3AF' : photoUrl ? 'oklch(0.40 0.17 196)' : '#0A2F35',
+                    border: photoUrl ? '1.5px solid oklch(0.48 0.17 196 / 0.3)' : '1.5px dashed #D1D5DB',
+                    fontFamily: 'var(--font-nunito)',
+                  }}
                 >
-                  {uploading ? 'Uploading…' : photoUrl ? '📸 Photo added' : '📸 Add a photo'}
+                  {uploading ? 'Uploading…' : photoUrl ? 'Photo added' : 'Add a photo'}
                 </label>
 
                 <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'rgba(10,47,53,0.4)', fontFamily: 'var(--font-nunito)' }}>Notes (optional)</p>
@@ -534,9 +598,9 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
               className="text-center"
             >
               <div className="rounded-3xl px-7 py-10" style={{ background: '#fff', boxShadow: CLAY_SHADOW_CREAM }}>
-                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: 'oklch(0.48 0.17 196 / 0.1)' }}>
-                  <span className="text-3xl">✅</span>
-                </div>
+                <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'oklch(0.48 0.17 196)', fontFamily: 'var(--font-nunito)' }}>
+                  Saved
+                </p>
                 <h1 className="text-2xl font-bold mb-2" style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}>Report saved!</h1>
                 <p className="text-sm mb-7" style={{ color: '#64748B', fontFamily: 'var(--font-nunito)' }}>
                   {selectedDog?.name ?? 'Your dog'}'s walk is logged, right alongside every other report.
@@ -579,15 +643,15 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
             <div className="flex justify-center mb-4">
               <div className="w-10 h-1 rounded-full" style={{ background: '#E5E7EB' }} />
             </div>
-            <p className="text-center text-lg font-bold mb-1" style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}>💩 Poop marked!</p>
+            <p className="text-center text-lg font-bold mb-1" style={{ fontFamily: 'var(--font-fredoka)', color: '#0A2F35' }}>Poop marked!</p>
             <p className="text-center text-sm mb-5" style={{ color: '#6B7280', fontFamily: 'var(--font-nunito)' }}>Add a photo? It helps track health patterns over time.</p>
             <input ref={poopPhotoInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePoopPhotoTaken} id="self-walk-poop-photo" />
             <label
               htmlFor="self-walk-poop-photo"
-              className="flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl font-bold text-base mb-2.5 cursor-pointer"
+              className="flex items-center justify-center w-full py-3.5 rounded-2xl font-bold text-base mb-2.5 cursor-pointer"
               style={{ background: '#FF8C52', color: '#fff', boxShadow: CLAY_SHADOW_ORANGE_SM }}
             >
-              {poopPhotoUploading ? 'Uploading…' : '📷 Take photo'}
+              {poopPhotoUploading ? 'Uploading…' : 'Take photo'}
             </label>
             <button
               onClick={handlePoopSkip}
