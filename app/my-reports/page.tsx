@@ -11,7 +11,7 @@ function admin() {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const safe = async (q: any) => { try { return await q } catch { return { data: [] } } }
 
-const REPORT_COLS = 'id, token, dog_name, duration_mins, poop_count, pee_count, distance_meters, walk_date, created_at, photo_url, notes, walker_name'
+const REPORT_COLS = 'id, token, dog_name, duration_mins, poop_count, pee_count, distance_meters, walk_date, created_at, photo_url, notes, walker_name, logged_by'
 
 export default async function MyReportsPage() {
   const supabase = await createServerClient()

@@ -7,6 +7,11 @@ import { motion } from 'framer-motion'
 const NAV = [
   { href: '/home',       label: 'Home',    icon: '🏠' },
   { href: '/my-reports', label: 'Reports', icon: '📋' },
+  // Always visible regardless of whether a dog/walker is set up yet —
+  // /walk/self itself redirects to dog setup first if none exists, so this
+  // one link correctly covers all three parent states: no dog, dog only,
+  // dog + walker connected.
+  { href: '/walk/self',  label: 'Log Walk', icon: '📝' },
   { href: '/my-account', label: 'Account', icon: '👤' },
 ]
 

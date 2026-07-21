@@ -19,6 +19,7 @@ interface WalkReport {
   photo_url: string | null
   notes: string | null
   providers: { name: string } | null
+  logged_by?: 'walker' | 'parent'
 }
 
 interface Props {
@@ -193,7 +194,13 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, t
     return isSubscribed && !localStorage.getItem('pupstep_pro_welcome_seen')
   })
 
-  if (trialExpired && !isSubscribed) {
+  // Self-walk reports are always free to view (see the isSelfWalk carve-out
+  // in app/walk-report/[token]/page.tsx) — a self-walk-only user must never
+  // hit the paywall here, and a mixed user still gets to see their free
+  // self-walk reports even while their walker-logged ones are locked.
+  const hasSelfWalkReports = walkReports.some((r) => r.logged_by === 'parent')
+
+  if (trialExpired && !isSubscribed && !hasSelfWalkReports) {
     return (
       <div style={{ minHeight: '100dvh', background: '#FFFBEB', display: 'flex', flexDirection: 'column' }}>
         {/* header */}
@@ -258,11 +265,18 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, t
     )
   }
 
-  const dogName = walkReports.length > 0 ? walkReports[0].dog_name : null
-  const summary = walkReports.length > 0 ? computeSummary(walkReports) : null
+  // Trial-expired, unsubscribed users only get to see self-walk reports
+  // (always free) — walker-logged reports stay locked out of the list too,
+  // not just out of the full-page gate above.
+  const viewableReports = (trialExpired && !isSubscribed)
+    ? walkReports.filter((r) => r.logged_by === 'parent')
+    : walkReports
+
+  const dogName = viewableReports.length > 0 ? viewableReports[0].dog_name : null
+  const summary = viewableReports.length > 0 ? computeSummary(viewableReports) : null
 
   // Sort newest first
-  const sorted = [...walkReports].sort(
+  const sorted = [...viewableReports].sort(
     (a, b) => new Date(b.walk_date).getTime() - new Date(a.walk_date).getTime()
   )
 

@@ -98,6 +98,7 @@ export async function generateMetadata({
   if (!report) return { title: 'Walk Report · PupStep' }
 
   const dogName = report.dog_name
+  const isSelfWalk = report.logged_by === 'parent'
   const walkerName = report.provider_name ?? 'Your dog walker'
   const duration = report.duration_mins ? `${report.duration_mins} mins` : ''
   const poop = report.poop_count > 0 ? `💩 ${report.poop_count}` : ''
@@ -109,10 +110,15 @@ export async function generateMetadata({
       : `${Math.round(report.distance_meters)} m`
     : null
 
-  // WhatsApp / iMessage preview: emoji-rich, warm, parent-friendly
+  // WhatsApp / iMessage preview: emoji-rich, warm, parent-friendly. Self-walk
+  // reports never mention a walker — there wasn't one — since this preview
+  // is what family members see before they even open the report, and it
+  // must not contradict the "Walked by you" content on the page itself.
   const title = `🐾 ${dogName}'s Walk Report`
   const description = [
-    `${dogName} just had a great walk with ${walkerName} in Mumbai, India!`,
+    isSelfWalk
+      ? `${dogName} just had a great walk!`
+      : `${dogName} just had a great walk with ${walkerName} in Mumbai, India!`,
     stats && `Stats: ${stats}`,
     distance && `📏 ${distance} covered`,
   ].filter(Boolean).join(' ')
@@ -123,7 +129,7 @@ export async function generateMetadata({
   // Embed report data as URL params so the OG image route doesn't need a DB query.
   // WhatsApp's scraper times out on cold-start serverless + DB latency (> ~5s).
   // Old links without params fall back to the DB query path.
-  const ogParams = new URLSearchParams({ dog: dogName, walker: walkerName })
+  const ogParams = new URLSearchParams({ dog: dogName, walker: isSelfWalk ? '' : walkerName })
   if (report.poop_count > 0) ogParams.set('poop', String(report.poop_count))
   if (report.pee_count > 0) ogParams.set('pee', String(report.pee_count))
   if (report.duration_mins > 0) ogParams.set('mins', String(report.duration_mins))

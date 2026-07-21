@@ -56,6 +56,7 @@ interface WalkLog {
   pee_count: number | null
   mood: string | null
   walker_name: string | null
+  logged_by?: 'walker' | 'parent'
 }
 
 interface WeekDay { label: string; date: string; walked: boolean }
@@ -417,7 +418,7 @@ function LastWalkCard({ log, reportToken }: { log: WalkLog; reportToken?: string
       <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 10px' }}>Last walk</p>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
         <div>
-          <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#0A2F35', margin: 0 }}>{log.walker_name ?? 'Your walker'} · {formatTime(log.started_at)}</p>
+          <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#0A2F35', margin: 0 }}>{log.logged_by === 'parent' ? '🧡 You' : (log.walker_name ?? 'Your walker')} · {formatTime(log.started_at)}</p>
           <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF', margin: 0 }}>{formatDate(log.started_at)}</p>
         </div>
       </div>
@@ -954,7 +955,7 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
           <span style={{ fontSize: 24 }}>✅</span>
           <div>
             <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, color: '#166534', margin: 0 }}>Walked today!</p>
-            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#16A34A', margin: 0 }}>{todayLogs[0].walker_name ?? 'Your walker'} · {todayLogs[0].duration_mins ? `${todayLogs[0].duration_mins} min` : formatTime(todayLogs[0].started_at)}</p>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#16A34A', margin: 0 }}>{todayLogs[0].logged_by === 'parent' ? '🧡 You' : (todayLogs[0].walker_name ?? 'Your walker')} · {todayLogs[0].duration_mins ? `${todayLogs[0].duration_mins} min` : formatTime(todayLogs[0].started_at)}</p>
           </div>
         </motion.div>
       ) : connections.length > 0 ? (

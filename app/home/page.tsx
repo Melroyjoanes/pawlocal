@@ -184,29 +184,56 @@ async function renderHome(
   // with multiple dogs doesn't see walks blended across all their dogs.
   const [
     { data: walkLogsRaw },
-    { data: latestReportData },
+    { data: latestWalkerReportData },
+    { data: latestSelfWalkReportData },
   ] = await Promise.all([
     safe((db.from('walk_logs') as any)
-      .select('id, started_at, ended_at, duration_mins, distance_km, poop_count, pee_count, mood, walker_name')
+      .select('id, started_at, ended_at, duration_mins, distance_km, poop_count, pee_count, mood, walker_name, logged_by')
       .eq('owner_id', user.id)
       .eq('dog_id', selectedDog?.id ?? '')
       .gte('started_at', fourteenDaysAgoIST())
       .order('started_at', { ascending: false })),
 
     // Latest walk report token — for direct link from last walk card.
-    // walk_reports has no dog_id column directly; it links to the dog via
-    // connection_id -> walker_connections.dog_id, so we embed that relation
-    // to filter by the selected dog.
+    // walk_reports has no dog_id column directly; a walker-logged report
+    // links to the dog via connection_id -> walker_connections.dog_id (inner
+    // join below), but a self-walk report has no connection_id at all, so
+    // it can never match that join — matched separately by dog_name instead
+    // (same fallback pattern used in app/my-reports/page.tsx), and the two
+    // results are compared by recency just below.
     selectedDog
       ? safe((db.from('walk_reports') as any)
-          .select('token, walker_connections!inner(dog_id)')
+          .select('token, walk_date, walker_connections!inner(dog_id)')
           .eq('owner_id', user.id)
           .eq('walker_connections.dog_id', selectedDog.id)
           .order('walk_date', { ascending: false })
           .limit(1)
           .maybeSingle())
       : Promise.resolve({ data: null }),
+
+    selectedDog
+      ? safe((db.from('walk_reports') as any)
+          .select('token, walk_date')
+          .eq('owner_id', user.id)
+          .eq('logged_by', 'parent')
+          .eq('dog_name', selectedDog.name)
+          .order('walk_date', { ascending: false })
+          .limit(1)
+          .maybeSingle())
+      : Promise.resolve({ data: null }),
   ])
+
+  // Pick whichever of the two is more recent — a self-walk logged today
+  // should win over a walker report from three days ago, and vice versa.
+  type ReportPick = { token: string; walk_date: string } | null
+  const walkerReport = latestWalkerReportData as ReportPick
+  const selfWalkReport = latestSelfWalkReportData as ReportPick
+  const latestReportData =
+    !walkerReport ? selfWalkReport
+    : !selfWalkReport ? walkerReport
+    : new Date(walkerReport.walk_date).getTime() >= new Date(selfWalkReport.walk_date).getTime()
+      ? walkerReport
+      : selfWalkReport
 
   // Trial status derived from the shared entitlement helper (keeps this page,
   // /upgrade, and /my-reports from drifting apart on trial-window math).
