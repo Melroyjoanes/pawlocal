@@ -25,8 +25,11 @@ export default async function SelfWalkPage() {
     .order('created_at', { ascending: true })
 
   if (!dogs || dogs.length === 0) {
-    // No dog yet — send them to setup first, this route needs a dog_id
-    redirect('/setup?go=1')
+    // No dog yet — send them to setup first, this route needs a dog_id.
+    // next=/walk/self tells setup this visit has nothing to do with
+    // connecting a walker, so it skips /setup/qr and sends them straight
+    // back here once the dog is created.
+    redirect('/setup?go=1&next=/walk/self')
   }
 
   return <SelfWalkClient dogs={dogs} />

@@ -645,6 +645,31 @@ export default function QRDisplayClient({
           </div>
         )}
 
+        {/* Escape hatch — not everyone here wants to connect a walker right
+            now (or ever). Visible, not buried, and tracked so we know how
+            many people actually take this path. */}
+        <Link
+          href="/walk/self"
+          onClick={() => trackEvent('setup_qr_self_walk_clicked', { dog_id: dogId })}
+          style={{
+            display: 'block',
+            width: '100%',
+            textAlign: 'center',
+            backgroundColor: '#FFFBEB',
+            color: '#92400E',
+            textDecoration: 'none',
+            borderRadius: '16px',
+            padding: '14px 24px',
+            fontSize: '15px',
+            fontWeight: 700,
+            fontFamily: 'var(--font-fredoka), sans-serif',
+            boxSizing: 'border-box',
+            border: '2px solid #FDE68A',
+          }}
+        >
+          Not right now — I&apos;ll walk {dogName} myself
+        </Link>
+
         {/* Navigation links */}
         <div
           style={{

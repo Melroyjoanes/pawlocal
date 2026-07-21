@@ -6,9 +6,12 @@ import SetupClient from './SetupClient'
 export default async function SetupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ just_paid?: string; recover?: string; new?: string }>
+  searchParams: Promise<{ just_paid?: string; recover?: string; new?: string; next?: string }>
 }) {
-  const { just_paid, recover, new: isAddingAnother } = await searchParams
+  const { just_paid, recover, new: isAddingAnother, next } = await searchParams
+  // Same same-origin check as SetupClient — never forward an absolute or
+  // protocol-relative URL into a redirect.
+  const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : undefined
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -32,8 +35,9 @@ export default async function SetupPage({
         .maybeSingle()
 
       if (existingDog?.id) {
-        // Dog already exists — redirect to QR so they don't create a duplicate
-        redirect(`/setup/qr?dog=${existingDog.id}`)
+        // Dog already exists — redirect to QR so they don't create a duplicate,
+        // unless this visit had nothing to do with connecting a walker.
+        redirect(safeNext ?? `/setup/qr?dog=${existingDog.id}`)
       }
     } catch {
       // If check fails, just show the form — safe fallback
@@ -48,6 +52,7 @@ export default async function SetupPage({
       } : null}
       justPaid={just_paid === '1'}
       recover={recover === '1'}
+      next={safeNext}
     />
   )
 }

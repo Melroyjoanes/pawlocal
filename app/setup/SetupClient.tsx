@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import AuthModal from '@/components/AuthModal'
 import { LoadingButton } from '@/components/LoadingButton'
@@ -11,6 +12,11 @@ interface Props {
   user: { id: string; fullName: string | null } | null
   justPaid?: boolean
   recover?: boolean
+  // Where to send the parent after their dog is created, instead of the
+  // default /setup/qr walker-connection screen — set when this page was
+  // reached from a flow that has nothing to do with connecting a walker
+  // (e.g. /walk/self redirecting a dog-less self-walk user here first).
+  next?: string
 }
 
 interface DraftData {
@@ -79,7 +85,11 @@ const CLAY_INPUT_RECESSED_FOCUS = [
   '0 0 0 3px rgba(255,140,82,0.18)',
 ].join(', ')
 
-export default function SetupClient({ user, justPaid, recover }: Props) {
+export default function SetupClient({ user, justPaid, recover, next }: Props) {
+  // Only ever redirect back to a same-origin relative path — never trust
+  // this into a full URL, since it ultimately comes from a query param.
+  // Rejects "//evil.com" (protocol-relative) as well as absolute URLs.
+  const isSafeNext = next && next.startsWith('/') && !next.startsWith('//')
   const router = useRouter()
 
   // Always start at step 1 — welcome screen removed entirely
@@ -237,7 +247,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
       }
 
       trackEvent('dog_created', { dog_id: dog.id })
-      router.push(`/setup/qr?dog=${dog.id}&phone=${encodeURIComponent(d.ownerPhone.trim())}`)
+      router.push(isSafeNext ? next! : `/setup/qr?dog=${dog.id}&phone=${encodeURIComponent(d.ownerPhone.trim())}`)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
       setLoading(false)
@@ -387,9 +397,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
         <div style={{ ...cardStyle, paddingTop: 24 }}>
           {/* Logo */}
           <div style={{ textAlign: 'center', marginBottom: 36 }}>
-            <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 24, fontWeight: 700, color: TEAL, margin: '0 0 24px' }}>
-              PupStep 🐾
-            </p>
+            <Image src="/logo.webp" alt="PupStep" width={130} height={48} className="h-9 w-auto mx-auto" style={{ marginBottom: 24 }} priority />
             <h1 style={{
               fontFamily: 'var(--font-fredoka)',
               fontSize: 30,
@@ -418,12 +426,20 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
             gap: 16,
           }}>
             {[
-              { emoji: '🐕', text: "Add your dog's details" },
-              { emoji: '📱', text: 'Share a link with your walker' },
-              { emoji: '📊', text: 'Get walk reports on WhatsApp' },
-            ].map(item => (
-              <div key={item.emoji} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <span style={{ fontSize: 28, flexShrink: 0 }}>{item.emoji}</span>
+              { text: "Add your dog's details" },
+              { text: 'Share a link with your walker' },
+              { text: 'Get walk reports on WhatsApp' },
+            ].map((item, i) => (
+              <div key={item.text} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <span
+                  style={{
+                    flexShrink: 0, width: 26, height: 26, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: TEAL, color: '#fff', fontSize: 12, fontWeight: 700,
+                  }}
+                >
+                  {i + 1}
+                </span>
                 <p style={{ margin: 0, fontSize: 15, fontWeight: 600, color: '#0A2F35' }}>{item.text}</p>
               </div>
             ))}
@@ -955,7 +971,7 @@ export default function SetupClient({ user, justPaid, recover }: Props) {
             const res = await fetch('/api/dogs')
             const existingDogs = res.ok ? await res.json() as Array<{ id: string }> : []
             if (existingDogs.length > 0) {
-              router.push(`/setup/qr?dog=${existingDogs[0].id}`)
+              router.push(isSafeNext ? next! : `/setup/qr?dog=${existingDogs[0].id}`)
               return
             }
           } catch {
