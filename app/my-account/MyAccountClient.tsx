@@ -593,7 +593,7 @@ export default function MyAccountClient({
                 className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
                 style={{ background: '#F0FDF4', color: '#15803D' }}
               >
-                Pet owner
+                Pet parent
               </span>
             </div>
           </div>
