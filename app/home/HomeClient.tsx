@@ -966,9 +966,12 @@ function StateC({ displayName, firstDog, connections, lastWalk, isPro, walkStrea
               <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#B45309', margin: 0 }}>{connections[0].walker_name || 'Your walker'} hasn&apos;t logged yet</p>
             </div>
           </div>
-          {connections[0].walker_phone && (
-            <a href={`https://wa.me/91${connections[0].walker_phone.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer" className="active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]" style={{ background: '#25D366', color: '#fff', borderRadius: 100, padding: '6px 12px', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-nunito)', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0, boxShadow: clayShadow('21,135,68', { outerOpacity: 0.30, insetOpacity: 0.20 }) }}>💬 Remind</a>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            {connections[0].walker_phone && (
+              <a href={`https://wa.me/91${connections[0].walker_phone.replace(/\D/g,'')}`} target="_blank" rel="noopener noreferrer" className="active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]" style={{ background: '#25D366', color: '#fff', borderRadius: 100, padding: '6px 12px', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-nunito)', textDecoration: 'none', whiteSpace: 'nowrap', boxShadow: clayShadow('21,135,68', { outerOpacity: 0.30, insetOpacity: 0.20 }) }}>💬 Remind</a>
+            )}
+            <Link href="/walk/self" className="active:scale-[0.97] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0A2F35]" style={{ background: '#fff', color: '#92400E', borderRadius: 100, padding: '6px 12px', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-nunito)', textDecoration: 'none', whiteSpace: 'nowrap', border: '1px solid #FDE68A' }}>📝 Log it</Link>
+          </div>
         </motion.div>
       ) : null}
 
@@ -1138,6 +1141,11 @@ export default function HomeClient({ displayName, firstDog, otherDogs, activeWal
                 <span style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '14px', fontWeight: 500, color: '#6B7280', flex: 1 }}>First walk report</span>
               </div>
             </div>
+            {firstDog && (
+              <Link href="/walk/self" style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: 'oklch(0.48 0.17 196)', textDecoration: 'none', textAlign: 'center' }}>
+                Or log a walk yourself right now →
+              </Link>
+            )}
             <Link href="/walker-guide" style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', fontWeight: 600, color: '#9CA3AF', textDecoration: 'none', textAlign: 'center' }}>
               See how it works for your walker →
             </Link>
@@ -1175,6 +1183,9 @@ export default function HomeClient({ displayName, firstDog, otherDogs, activeWal
               >
                 💬 Ask {walkerName} to log a walk →
               </a>
+              <Link href="/walk/self" style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '13px', fontWeight: 700, color: 'oklch(0.48 0.17 196)', textDecoration: 'none' }}>
+                Or log this one yourself →
+              </Link>
               <Link href="/walker-guide" style={{ fontFamily: 'var(--font-nunito), sans-serif', fontSize: '12px', fontWeight: 600, color: '#9CA3AF', textDecoration: 'none' }}>
                 View walker guide →
               </Link>

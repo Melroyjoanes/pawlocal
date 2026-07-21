@@ -110,10 +110,15 @@ export async function GET(req: NextRequest) {
 
     checked++
 
+    // Checked by owner_id, not connection_id — a parent can log a self-walk
+    // (app/walk/self) with no walker_connections row involved at all. That
+    // report has connection_id NULL, so a connection_id-scoped check here
+    // would miss it and send a "no walk from your walker" nudge on a day the
+    // dog was walked by the parent themselves.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { count: reportsToday, error: reportsError } = await (db.from('walk_reports') as any)
       .select('id', { count: 'exact', head: true })
-      .eq('connection_id', conn.id)
+      .eq('owner_id', conn.owner_id)
       .gte('created_at', startOfTodayIso)
       .lte('created_at', nowIso)
 

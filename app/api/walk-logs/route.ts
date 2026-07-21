@@ -10,6 +10,128 @@ function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
+// Dog parent logging a walk with their own dog — no walker, no walker_connections
+// row at all. Deliberately a separate function with its own auth, own DB writes,
+// and an early return, rather than threading a branch through the 300-line
+// walker path below — that path is live/load-bearing and none of its logic
+// (trial-start counting, WhatsApp-to-owner links, walker total_walks increment)
+// applies here. Self-walk reports are always free to view (see the isSelfWalk
+// carve-out in app/walk-report/[token]/page.tsx) and never start/consume the
+// trial, so there is intentionally no entitlement gating or email/WhatsApp
+// delivery in this path — the parent is already looking at the result.
+async function handleSelfWalk(req: NextRequest, body: Record<string, unknown>) {
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const dogId = body.dog_id as string | undefined
+  if (!dogId) return NextResponse.json({ error: 'dog_id is required' }, { status: 400 })
+
+  const {
+    duration_mins, poop_count, pee_count, mood, notes,
+    distance_km, started_at, ended_at, gps_route, photo_url, walk_events,
+  } = body as {
+    duration_mins?: number; poop_count?: number; pee_count?: number; mood?: string; notes?: string
+    distance_km?: number; started_at?: string; ended_at?: string; gps_route?: unknown; photo_url?: string
+    walk_events?: Array<{ type: 'pee' | 'poop'; lat: number | null; lng: number | null; ts: string; photoUrl?: string | null }>
+  }
+
+  const db = admin()
+
+  // Ownership check — a parent can only self-log a walk for their own dog
+  const { data: dog, error: dogError } = await (db.from('dogs') as any)
+    .select('id, name')
+    .eq('id', dogId)
+    .eq('owner_id', user.id)
+    .single()
+
+  if (dogError || !dog) {
+    return NextResponse.json({ error: 'Dog not found' }, { status: 404 })
+  }
+
+  const { data: log, error: insertError } = await (db.from('walk_logs') as any)
+    .insert({
+      connection_id: null,
+      dog_id: dogId,
+      owner_id: user.id,
+      walker_name: null,
+      logged_by: 'parent',
+      duration_mins: duration_mins ?? null,
+      poop_count: poop_count ?? 0,
+      pee_count: pee_count ?? 0,
+      mood: mood ?? null,
+      notes: notes ?? null,
+      distance_km: distance_km ?? null,
+      started_at: started_at ?? new Date().toISOString(),
+      ended_at: ended_at ?? null,
+      gps_route: gps_route ?? null,
+      photo_url: photo_url ?? null,
+    })
+    .select('id')
+    .single()
+
+  if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
+
+  type WalkEvent = { type: 'pee' | 'poop'; lat: number | null; lng: number | null; ts: string; photoUrl?: string | null }
+  const events: WalkEvent[] = Array.isArray(walk_events) ? walk_events : []
+  const poopEvents = events
+    .filter((e) => e.type === 'poop' && e.lat != null && e.lng != null)
+    .map((e) => ({ lat: e.lat!, lng: e.lng!, time: e.ts, photo_url: e.photoUrl ?? null }))
+  const peeEvents = events
+    .filter((e) => e.type === 'pee' && e.lat != null && e.lng != null)
+    .map((e) => ({ lat: e.lat!, lng: e.lng!, time: e.ts }))
+
+  const finalPoopCount = poopEvents.length > 0 ? poopEvents.length : (poop_count ?? 0)
+  const finalPeeCount = peeEvents.length > 0 ? peeEvents.length : (pee_count ?? 0)
+
+  const gpsPoints = Array.isArray(gps_route) ? gps_route.length : 0
+  const qualityScore =
+    (gpsPoints >= 5 ? 30 : gpsPoints > 0 ? 15 : 0) +
+    (photo_url ? 25 : 0) +
+    (poopEvents.length + peeEvents.length > 0 ? 20 : 0) +
+    ((duration_mins ?? 0) >= 5 ? 15 : 0) +
+    (notes?.trim() ? 10 : 0)
+
+  const moodEmoji: Record<string, string> = { great: '😊', good: '😐', tired: '😴', anxious: '😟', okay: '😐', issue: '😟' }
+  const moodNote = mood ? `[Mood: ${moodEmoji[mood] ?? '😊'} ${mood}] ` : ''
+  const reportNotes = moodNote + (notes?.trim() ?? '')
+
+  const reportToken = randomBytes(16).toString('hex')
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL ?? ''
+  const siteUrl = envUrl.includes('pupstep.in') ? envUrl : 'https://pupstep.in'
+  const reportUrl = `${siteUrl}/walk-report/${reportToken}`
+
+  try {
+    await (db.from('walk_reports') as any).insert({
+      provider_id: null,
+      connection_id: null,
+      walker_name: null,
+      logged_by: 'parent',
+      owner_id: user.id,
+      token: reportToken,
+      dog_name: dog.name,
+      duration_mins: duration_mins ?? 0,
+      poop_count: finalPoopCount,
+      pee_count: finalPeeCount,
+      notes: reportNotes || null,
+      photo_url: photo_url ?? null,
+      walk_date: started_at ?? new Date().toISOString(),
+      route_points: gps_route ?? null,
+      distance_meters: distance_km != null ? Math.round(distance_km * 1000) : null,
+      poop_events: poopEvents.length > 0 ? poopEvents : null,
+      pee_events: peeEvents.length > 0 ? peeEvents : null,
+      quality_score: qualityScore,
+      flagged_suspicious: false,
+      flag_reason: null,
+    })
+  } catch (err) {
+    console.error('[walk-logs/self] report creation failed:', err)
+    return NextResponse.json({ error: 'Failed to create walk report. Please try again.' }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true, log_id: log.id, report_token: reportToken, report_url: reportUrl }, { status: 201 })
+}
+
 // GET /api/walk-logs — returns all walk logs for authenticated user's dogs
 export async function GET() {
   const supabase = await createServerClient()
@@ -34,6 +156,11 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
   const body = await req.json()
+
+  if (body.self_walk === true) {
+    return handleSelfWalk(req, body)
+  }
+
   const {
     connection_token,
     duration_mins,
