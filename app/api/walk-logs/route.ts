@@ -129,6 +129,12 @@ async function handleSelfWalk(req: NextRequest, body: Record<string, unknown>) {
     return NextResponse.json({ error: 'Failed to create walk report. Please try again.' }, { status: 500 })
   }
 
+  // Server-side, not just the client-side trackEvent('self_walk_completed')
+  // in SelfWalkClient — this is the one that answers "is anyone actually
+  // using this," and a client beacon alone silently drops on ad-blockers or
+  // a tab closed a moment too early. Same pattern as trial_start below.
+  sendGA4Event(user.id, { name: 'self_walk_completed', params: { gps_points: gpsPoints, has_photo: !!photo_url } }).catch(() => {})
+
   return NextResponse.json({ ok: true, log_id: log.id, report_token: reportToken, report_url: reportUrl }, { status: 201 })
 }
 
