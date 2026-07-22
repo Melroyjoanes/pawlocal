@@ -28,6 +28,12 @@ interface Props {
   subscriptionPlan: string | null
   userName: string
   trialExpired: boolean
+  // The single source of truth for "can this user see walker reports right
+  // now" (isPro || trialActive). Gating on trialExpired alone missed a lapsed
+  // subscriber who never trialed (trial_started_at null → trialExpired false),
+  // leaking their whole walker history here while home + the per-report page
+  // correctly locked it.
+  isEntitled: boolean
   totalReports: number
 }
 
@@ -187,7 +193,7 @@ function EmptyState() {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function MyReportsClient({ walkReports, userName, isSubscribed, trialExpired, totalReports }: Props) {
+export default function MyReportsClient({ walkReports, userName, isSubscribed, isEntitled, totalReports }: Props) {
   const router = useRouter()
   const [showUnlock, setShowUnlock] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -200,7 +206,7 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, t
   // self-walk reports even while their walker-logged ones are locked.
   const hasSelfWalkReports = walkReports.some((r) => r.logged_by === 'parent')
 
-  if (trialExpired && !isSubscribed && !hasSelfWalkReports) {
+  if (!isEntitled && !hasSelfWalkReports) {
     return (
       <div style={{ minHeight: '100dvh', background: '#FFFBEB', display: 'flex', flexDirection: 'column' }}>
         {/* header */}
@@ -265,10 +271,10 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, t
     )
   }
 
-  // Trial-expired, unsubscribed users only get to see self-walk reports
-  // (always free) — walker-logged reports stay locked out of the list too,
-  // not just out of the full-page gate above.
-  const viewableReports = (trialExpired && !isSubscribed)
+  // Non-entitled users (trial expired OR lapsed subscription) only get to see
+  // self-walk reports (always free) — walker-logged reports stay locked out of
+  // the list too, not just out of the full-page gate above.
+  const viewableReports = !isEntitled
     ? walkReports.filter((r) => r.logged_by === 'parent')
     : walkReports
 

@@ -108,6 +108,7 @@ export default async function MyReportsPage() {
       subscriptionPlan={(subPlanRow as any)?.plan ?? null}
       userName={user.user_metadata?.full_name ?? user.email ?? ''}
       trialExpired={trialExpired}
+      isEntitled={entitlement.isEntitled}
       totalReports={Array.from(walkMap.values()).length}
     />
   )
