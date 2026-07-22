@@ -88,8 +88,10 @@ const CLAY_INPUT_RECESSED_FOCUS = [
 export default function SetupClient({ user, justPaid, recover, next }: Props) {
   // Only ever redirect back to a same-origin relative path — never trust
   // this into a full URL, since it ultimately comes from a query param.
-  // Rejects "//evil.com" (protocol-relative) as well as absolute URLs.
-  const isSafeNext = next && next.startsWith('/') && !next.startsWith('//')
+  // Must start with a single "/" and NOT "//" or "/\" — browsers normalise
+  // backslashes to slashes, so "/\evil.com" would otherwise resolve to
+  // "//evil.com" → https://evil.com (open redirect).
+  const isSafeNext = !!next && next.startsWith('/') && next[1] !== '/' && next[1] !== '\\'
   const router = useRouter()
 
   // Always start at step 1 — welcome screen removed entirely
@@ -265,7 +267,15 @@ export default function SetupClient({ user, justPaid, recover, next }: Props) {
     }
 
     if (!user) {
-      // Open auth modal — email OTP path keeps user on same page, draft stays in memory
+      // Persist the draft before opening auth. The email-OTP path keeps the
+      // user on this page (in-memory state survives), but the Google path
+      // does a full-page OAuth redirect that wipes React state — without this
+      // the entire dog draft was silently lost and the user landed on '/'.
+      // The recover effect above restores it on return via ?recover=1.
+      try {
+        const draft: DraftData = { name, careFocuses, healthNotes, walkingInstructions, photoUrl, parentName, ownerPhone, walkTimeBucket }
+        localStorage.setItem('pup-setup-draft', JSON.stringify(draft))
+      } catch { /* storage blocked — OTP path still works in-memory */ }
       setAuthOpen(true)
       return
     }
@@ -491,6 +501,12 @@ export default function SetupClient({ user, justPaid, recover, next }: Props) {
     return (
       <div style={containerStyle}>
         <div style={cardStyle}>
+          {/* Brand logo — this is the first screen a new parent actually
+              lands on (step 0 welcome is only reachable via Back), so the
+              logo belongs here. */}
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <Image src="/logo.webp" alt="PupStep" width={120} height={44} className="h-8 w-auto mx-auto" priority />
+          </div>
           {/* Back + progress */}
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: 20 }}>
             <button
@@ -961,8 +977,13 @@ export default function SetupClient({ user, justPaid, recover, next }: Props) {
         open={authOpen}
         onClose={() => setAuthOpen(false)}
         message="Sign in to save your dog's profile"
+        redirectTo={`/setup?recover=1${isSafeNext ? `&next=${encodeURIComponent(next!)}` : ''}`}
         onSignedIn={async (userId) => {
           setAuthOpen(false)
+          // OTP kept us on-page, so the draft we stashed for the Google path
+          // is now orphaned — clear it so it can't resurface on a later
+          // recover=1 return.
+          try { localStorage.removeItem('pup-setup-draft') } catch { /* noop */ }
           // This is a returning user signing in mid-form — the server-side
           // existing-dog check in setup/page.tsx only runs on page load, so
           // without this they'd get a duplicate dog created on submit. Check

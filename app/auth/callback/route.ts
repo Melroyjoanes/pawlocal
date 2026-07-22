@@ -46,7 +46,9 @@ export async function GET(request: NextRequest) {
   const base = resolveBase(request)
 
   const rawNext = searchParams.get('next') ?? '/'
-  const next = rawNext.startsWith('/') && !rawNext.includes('://') && !rawNext.startsWith('//') ? rawNext : '/'
+  // Reject absolute, protocol-relative ("//"), and backslash ("/\") targets —
+  // browsers normalise "\"→"/", so "/\evil.com" would resolve off-origin.
+  const next = rawNext.startsWith('/') && rawNext[1] !== '/' && rawNext[1] !== '\\' && !rawNext.includes('://') ? rawNext : '/'
 
   if (!code) {
     return NextResponse.redirect(`${base}/?auth_error=true`)

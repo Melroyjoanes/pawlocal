@@ -9,9 +9,10 @@ export default async function SetupPage({
   searchParams: Promise<{ just_paid?: string; recover?: string; new?: string; next?: string }>
 }) {
   const { just_paid, recover, new: isAddingAnother, next } = await searchParams
-  // Same same-origin check as SetupClient — never forward an absolute or
-  // protocol-relative URL into a redirect.
-  const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : undefined
+  // Same same-origin check as SetupClient — reject absolute, protocol-relative
+  // ("//"), and backslash ("/\") URLs (browsers normalise "\"→"/", so "/\x"
+  // resolves off-origin). Only a single-slash relative path is allowed.
+  const safeNext = next && next.startsWith('/') && next[1] !== '/' && next[1] !== '\\' ? next : undefined
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
