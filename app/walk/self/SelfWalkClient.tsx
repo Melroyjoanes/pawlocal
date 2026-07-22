@@ -208,6 +208,7 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
   const [notes, setNotes] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [photoError, setPhotoError] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   const [submitting, setSubmitting] = useState(false)
@@ -254,6 +255,9 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
     setGpsError(null)
     setWalkEvents([])
     setCurrentPos(null)
+    // Must clear too — otherwise a pee/poop tapped before this walk's first
+    // GPS fix gets tagged at the PREVIOUS walk's last coordinates.
+    lastPointRef.current = null
     setPhase('walking')
     walkStartRef.current = new Date()
     trackEvent('self_walk_started', { dog_id: selectedDogId })
@@ -293,10 +297,16 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
           })
           lastPointRef.current = point
           setCurrentPos({ lat: point.lat, lng: point.lng })
+          setGpsError(null) // a fix arrived — clear any earlier weak-signal warning
         },
         (err) => {
+          // Surface ALL failure modes, not just denied permission — on a real
+          // outdoor walk a weak signal (POSITION_UNAVAILABLE / TIMEOUT) would
+          // otherwise leave the screen stuck on "Getting GPS…" with no hint.
           if (err.code === err.PERMISSION_DENIED) {
             setGpsError("Location access denied. Distance won't be tracked.")
+          } else {
+            setGpsError("Weak GPS signal — distance may be incomplete. Keep the screen on and stay outdoors.")
           }
         },
         { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
@@ -381,8 +391,11 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
 
   async function handlePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
+    // Reset the input so re-selecting the same file still fires onChange.
+    e.target.value = ''
     if (!file) return
     setUploading(true)
+    setPhotoError(false)
     try {
       const { compressImage } = await import('@/lib/compressImage')
       const compressed = await compressImage(file)
@@ -395,7 +408,11 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
       if (!error) {
         const { data } = supabase.storage.from('provider-photos').getPublicUrl(path)
         setPhotoUrl(data.publicUrl)
+      } else {
+        setPhotoError(true)
       }
+    } catch {
+      setPhotoError(true)
     } finally {
       setUploading(false)
     }
@@ -447,6 +464,7 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
     setDistanceKm(0)
     setGpsRoute([])
     setCurrentPos(null)
+    lastPointRef.current = null
     setWalkEvents([])
     setMood('')
     setNotes('')
@@ -672,16 +690,17 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
                 <input ref={photoInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhotoCapture} id="self-walk-photo" />
                 <label
                   htmlFor="self-walk-photo"
-                  className="flex items-center justify-center w-full py-3 rounded-2xl font-semibold text-sm mb-5 cursor-pointer"
+                  className="flex items-center justify-center w-full py-3 rounded-2xl font-semibold text-sm mb-1 cursor-pointer"
                   style={{
-                    background: photoUrl ? 'oklch(0.48 0.17 196 / 0.08)' : '#F9FAFB',
-                    color: uploading ? '#9CA3AF' : photoUrl ? 'oklch(0.40 0.17 196)' : '#0A2F35',
-                    border: photoUrl ? '1.5px solid oklch(0.48 0.17 196 / 0.3)' : '1.5px dashed #D1D5DB',
+                    background: photoError ? '#FEF2F2' : photoUrl ? 'oklch(0.48 0.17 196 / 0.08)' : '#F9FAFB',
+                    color: uploading ? '#9CA3AF' : photoError ? '#DC2626' : photoUrl ? 'oklch(0.40 0.17 196)' : '#0A2F35',
+                    border: photoError ? '1.5px solid #FECACA' : photoUrl ? '1.5px solid oklch(0.48 0.17 196 / 0.3)' : '1.5px dashed #D1D5DB',
                     fontFamily: 'var(--font-nunito)',
                   }}
                 >
-                  {uploading ? 'Uploading…' : photoUrl ? 'Photo added' : 'Add a photo'}
+                  {uploading ? 'Uploading…' : photoError ? 'Upload failed — tap to retry' : photoUrl ? 'Photo added' : 'Add a photo'}
                 </label>
+                <div className="mb-5" />
 
                 <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'rgba(10,47,53,0.4)', fontFamily: 'var(--font-nunito)' }}>Notes (optional)</p>
                 <textarea
@@ -769,9 +788,9 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
             <p className="text-center text-sm mb-5" style={{ color: '#6B7280', fontFamily: 'var(--font-nunito)' }}>Add a photo? It helps track health patterns over time.</p>
             <input ref={poopPhotoInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePoopPhotoTaken} id="self-walk-poop-photo" />
             <label
-              htmlFor="self-walk-poop-photo"
-              className="flex items-center justify-center w-full py-3.5 rounded-2xl font-bold text-base mb-2.5 cursor-pointer"
-              style={{ background: '#FF8C52', color: '#fff', boxShadow: CLAY_SHADOW_ORANGE_SM }}
+              htmlFor={poopPhotoUploading ? undefined : 'self-walk-poop-photo'}
+              className="flex items-center justify-center w-full py-3.5 rounded-2xl font-bold text-base mb-2.5"
+              style={{ background: '#FF8C52', color: '#fff', boxShadow: CLAY_SHADOW_ORANGE_SM, cursor: poopPhotoUploading ? 'default' : 'pointer', opacity: poopPhotoUploading ? 0.7 : 1 }}
             >
               {poopPhotoUploading ? 'Uploading…' : 'Take photo'}
             </label>

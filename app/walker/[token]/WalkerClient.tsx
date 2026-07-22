@@ -1764,6 +1764,9 @@ export default function WalkerClient({
     setElapsed(0)
     setGpsError(null)
     setCurrentPos(null)
+    // Clear too — a pee/poop tapped before this walk's first GPS fix would
+    // otherwise be tagged at the previous walk's last coordinates.
+    lastPointRef.current = null
     setWalkEvents([])
     setDemoStep(1)
     setDemoToiletDone(false)

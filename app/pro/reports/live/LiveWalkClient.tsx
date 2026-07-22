@@ -249,37 +249,41 @@ export default function LiveWalkClient({
     // Start GPS
     watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
+        // Reject junk fixes before they touch the route, distance, OR the
+        // pace calibration — matches app/walker/[token]/WalkerClient.tsx so
+        // the same physical walk yields the same distance across surfaces.
+        // Dense Mumbai neighbourhoods routinely emit 100m+ accuracy readings
+        // that would otherwise inject hundreds of phantom metres.
+        if (pos.coords.accuracy > 100) return
+
         const point = { lat: pos.coords.latitude, lng: pos.coords.longitude, ts: new Date().toISOString() }
-        routePointsRef.current.push(point)
         setCurrentPos(point)
-        if (routePointsRef.current.length >= 2) {
-          const prev = routePointsRef.current[routePointsRef.current.length - 2]
+        if (routePointsRef.current.length >= 1) {
+          const prev = routePointsRef.current[routePointsRef.current.length - 1]
           const deltaMeters = haversineDistance(prev, point)
           const elapsedSec = prev.ts ? (new Date(point.ts).getTime() - new Date(prev.ts).getTime()) / 1000 : 0
           // Tracking gap (30s+ with no fix): estimate the unobserved distance
           // from this walk's own confirmed pace instead of counting the raw
-          // straight-line jump, which can wildly overstate a wandering dog's
-          // actual path. See lib/gapDistanceEstimate.ts.
+          // straight-line jump. See lib/gapDistanceEstimate.ts.
           if (elapsedSec > 30) {
             const estimatedMeters = estimateGapDistanceKm(elapsedSec, confirmedDistanceKmRef.current, confirmedSecRef.current) * 1000
             if (estimatedMeters > 0) setDistance((d) => d + estimatedMeters)
           } else {
-            // Reject implausible jumps (GPS teleport artifacts) before they
-            // corrupt either the displayed distance or the pace used to
-            // calibrate future gap estimates. The point still stays on the
-            // map (pushed above) — only its distance contribution is skipped.
+            // Reject implausible jumps (>20 m/s teleport artifacts).
             const impliedSpeed = elapsedSec > 0 ? deltaMeters / elapsedSec : 0
-            if (impliedSpeed > 20) {
-              // no-op — discard this segment's distance contribution
-            } else {
-              setDistance((d) => d + deltaMeters)
-              if (elapsedSec > 0) {
-                confirmedDistanceKmRef.current += deltaMeters / 1000
-                confirmedSecRef.current += elapsedSec
-              }
+            if (impliedSpeed > 20) return
+            // Debounce jitter: a <3m move within 5s is GPS noise from a
+            // stationary walker, not real movement — skip it entirely so the
+            // route doesn't grow a spider-web and pace stays clean.
+            if (deltaMeters < 3 && elapsedSec < 5) return
+            setDistance((d) => d + deltaMeters)
+            if (elapsedSec > 0) {
+              confirmedDistanceKmRef.current += deltaMeters / 1000
+              confirmedSecRef.current += elapsedSec
             }
           }
         }
+        routePointsRef.current.push(point)
       },
       (err) => {
         console.warn('GPS error:', err)

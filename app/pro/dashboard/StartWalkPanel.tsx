@@ -168,6 +168,11 @@ export default function StartWalkPanel({ walkerName, walkerPhone }: { walkerName
         // GPS watch
         watchIdRef.current = navigator.geolocation.watchPosition(
           (p) => {
+            // Reject junk fixes before they touch distance or pace — matches
+            // app/walker/[token]/WalkerClient.tsx so distance is consistent
+            // across surfaces. Urban Mumbai routinely emits 100m+ accuracy.
+            if (p.coords.accuracy > 100) return
+
             const newPt = { lat: p.coords.latitude, lng: p.coords.longitude, ts: Date.now() }
             const last = lastPointRef.current
             if (last) {
@@ -180,11 +185,12 @@ export default function StartWalkPanel({ walkerName, walkerPhone }: { walkerName
                 const estimatedKm = estimateGapDistanceKm(elapsedSec, confirmedDistanceKmRef.current, confirmedSecRef.current)
                 if (estimatedKm > 0) setActiveWalk((prev) => prev ? { ...prev, distanceKm: +(prev.distanceKm + estimatedKm).toFixed(3) } : prev)
               } else {
-                // Reject implausible jumps (GPS teleport artifacts) before
-                // they corrupt either the displayed distance or the pace
-                // used to calibrate future gap estimates.
+                // Reject implausible jumps (>20 m/s teleport artifacts).
                 const impliedSpeed = elapsedSec > 0 ? (delta * 1000) / elapsedSec : 0
                 if (impliedSpeed > 20) return
+                // Debounce jitter: a <3m move within 5s is GPS noise from a
+                // stationary walker, not real movement.
+                if (delta * 1000 < 3 && elapsedSec < 5) return
                 setActiveWalk((prev) => prev ? { ...prev, distanceKm: +(prev.distanceKm + delta).toFixed(3) } : prev)
                 if (elapsedSec > 0) {
                   confirmedDistanceKmRef.current += delta

@@ -49,6 +49,19 @@ async function handleSelfWalk(req: NextRequest, body: Record<string, unknown>) {
     return NextResponse.json({ error: 'Dog not found' }, { status: 404 })
   }
 
+  // Derive duration from wall-clock start→end when both are present — the
+  // client's duration_mins comes from a setInterval counter that the browser
+  // throttles/pauses when the screen locks, so it can only undercount. The
+  // timestamps are the source of truth; fall back to the client value only if
+  // a timestamp is missing.
+  const durationMins = (() => {
+    if (started_at && ended_at) {
+      const secs = Math.round((new Date(ended_at).getTime() - new Date(started_at).getTime()) / 1000)
+      if (secs > 0) return Math.max(1, Math.round(secs / 60))
+    }
+    return duration_mins ?? null
+  })()
+
   const { data: log, error: insertError } = await (db.from('walk_logs') as any)
     .insert({
       connection_id: null,
@@ -56,7 +69,7 @@ async function handleSelfWalk(req: NextRequest, body: Record<string, unknown>) {
       owner_id: user.id,
       walker_name: null,
       logged_by: 'parent',
-      duration_mins: duration_mins ?? null,
+      duration_mins: durationMins,
       poop_count: poop_count ?? 0,
       pee_count: pee_count ?? 0,
       mood: mood ?? null,
@@ -81,8 +94,12 @@ async function handleSelfWalk(req: NextRequest, body: Record<string, unknown>) {
     .filter((e) => e.type === 'pee' && e.lat != null && e.lng != null)
     .map((e) => ({ lat: e.lat!, lng: e.lng!, time: e.ts }))
 
-  const finalPoopCount = poopEvents.length > 0 ? poopEvents.length : (poop_count ?? 0)
-  const finalPeeCount = peeEvents.length > 0 ? peeEvents.length : (pee_count ?? 0)
+  // Max, not "tagged-if-any": an event tapped before the first GPS fix has
+  // null coords and is dropped from the *_events arrays above, so preferring
+  // the tagged count alone would silently undercount. The client's plain
+  // count includes those untagged taps.
+  const finalPoopCount = Math.max(poopEvents.length, poop_count ?? 0)
+  const finalPeeCount = Math.max(peeEvents.length, pee_count ?? 0)
 
   const gpsPoints = Array.isArray(gps_route) ? gps_route.length : 0
   const qualityScore =
@@ -289,9 +306,11 @@ export async function POST(req: NextRequest) {
     .filter((e) => e.type === 'pee' && e.lat != null && e.lng != null)
     .map((e) => ({ lat: e.lat!, lng: e.lng!, time: e.ts }))
 
-  // Use GPS-tagged counts if available, otherwise fall back to submitted counts
-  const finalPoopCount = poopEvents.length > 0 ? poopEvents.length : (poop_count ?? 0)
-  const finalPeeCount = peeEvents.length > 0 ? peeEvents.length : (pee_count ?? 0)
+  // Max, not "tagged-if-any": a tap before the first GPS fix has null coords
+  // and is dropped from the *_events arrays, so preferring the tagged count
+  // would undercount. The client's plain count includes those untagged taps.
+  const finalPoopCount = Math.max(poopEvents.length, poop_count ?? 0)
+  const finalPeeCount = Math.max(peeEvents.length, pee_count ?? 0)
 
   const dogRow = await (db.from('dogs') as any).select('name').eq('id', connection.dog_id).maybeSingle()
   const dogName = dogRow?.data?.name ?? 'your dog'
