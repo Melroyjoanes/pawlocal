@@ -32,6 +32,26 @@ interface WalkEvent {
 
 type Phase = 'idle' | 'walking' | 'logging' | 'success'
 
+// Same tap-to-toggle quick notes as the walker flow (app/walker/[token]/
+// WalkerClient.tsx's QUICK_NOTES) — typing is friction standing outside with
+// a leash in one hand, tapping isn't. Kept in sync deliberately rather than
+// imported (same reasoning as haversineKm above): this is a live, load-
+// bearing walker-facing file we don't want this feature touching. Emoji
+// stripped from the walker's original list to match self-walk's icon-free
+// direction; phrases themselves need no other change since they're written
+// as observations about the dog, which read naturally from a parent too.
+const QUICK_NOTES = [
+  'Had a great walk today',
+  'Walked well, no issues',
+  'Happy and energetic the whole time',
+  'Calm, easy walk today',
+  'A little tired today, walked slower than usual',
+  'Was a bit hesitant at first, settled in after a few minutes',
+  'Stayed close, a little cautious today',
+  'Walked a shorter route due to heat',
+  'Rained a little, cut the walk a bit short',
+]
+
 // No emoji, by design — a color tint plus the label carries the distinction
 // instead of a pictogram.
 const MOOD_OPTIONS = [
@@ -206,6 +226,17 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
 
   const [mood, setMood] = useState('')
   const [notes, setNotes] = useState('')
+  const [selectedQuickNotes, setSelectedQuickNotes] = useState<string[]>([])
+  function toggleQuickNote(phrase: string) {
+    setSelectedQuickNotes((prev) =>
+      prev.includes(phrase) ? prev.filter((p) => p !== phrase) : [...prev, phrase]
+    )
+  }
+  // Bulleted quick notes first, then any freely-typed text.
+  const composedNotes = [
+    ...selectedQuickNotes.map((p) => `• ${p}`),
+    ...(notes.trim() ? [notes.trim()] : []),
+  ].join('\n')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [photoError, setPhotoError] = useState(false)
@@ -440,7 +471,7 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
           poop_count: finalPoopCount,
           pee_count: finalPeeCount,
           mood: mood || null,
-          notes: notes || null,
+          notes: composedNotes || null,
           started_at: walkStartRef.current?.toISOString(),
           ended_at: new Date().toISOString(),
           walk_events: walkEvents,
@@ -468,6 +499,7 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
     setWalkEvents([])
     setMood('')
     setNotes('')
+    setSelectedQuickNotes([])
     setPhotoUrl(null)
     setReportUrl(null)
     setSubmitError(null)
@@ -703,10 +735,42 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
                 <div className="mb-5" />
 
                 <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: 'rgba(10,47,53,0.4)', fontFamily: 'var(--font-nunito)' }}>Notes (optional)</p>
+                {/* Tap-to-toggle phrases — same pattern as the walker flow.
+                    Typing is friction with a leash in one hand; tapping isn't. */}
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {QUICK_NOTES.map((phrase) => {
+                    const selected = selectedQuickNotes.includes(phrase)
+                    return (
+                      <button
+                        key={phrase}
+                        type="button"
+                        onClick={() => toggleQuickNote(phrase)}
+                        aria-pressed={selected}
+                        className="text-xs font-medium px-3 py-1.5 rounded-full border active:scale-[0.97] transition-all"
+                        style={selected
+                          ? { borderColor: 'oklch(0.48 0.17 196)', background: 'oklch(0.95 0.04 196)', color: 'oklch(0.40 0.17 196)', fontWeight: 700 }
+                          : { borderColor: '#E2E8F0', background: '#fff', color: '#64748B' }
+                        }
+                      >
+                        {phrase}
+                      </button>
+                    )
+                  })}
+                </div>
+                {selectedQuickNotes.length > 0 && (
+                  <ul className="list-none m-0 mb-2 px-0 space-y-1">
+                    {selectedQuickNotes.map((phrase) => (
+                      <li key={phrase} className="text-sm flex items-start gap-1.5" style={{ color: '#0A2F35' }}>
+                        <span style={{ color: 'oklch(0.48 0.17 196)' }}>•</span>
+                        {phrase}
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <textarea
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
-                  placeholder="Anything worth noting?"
+                  placeholder="Anything else worth noting?"
                   rows={3}
                   className="w-full px-4 py-3 rounded-xl text-sm resize-none focus:outline-none"
                   style={{ background: '#F9FAFB', color: '#0A2F35', fontFamily: 'var(--font-nunito)', border: '1px solid #E5E7EB' }}
