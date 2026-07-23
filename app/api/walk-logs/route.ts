@@ -436,6 +436,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to create walk report. Please try again.' }, { status: 500 })
   }
 
+  // A real report just came in — clear the walker-noshow cooldown so a
+  // FUTURE miss can alert the parent again, instead of staying silenced
+  // forever from one old alert. Best-effort: a failure here just means the
+  // cooldown doesn't reset today, not a broken report.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(db.from('walker_connections') as any)
+    .update({ last_noshow_alert_sent_at: null })
+    .eq('id', connection.id)
+    .then(({ error: resetError }: { error: { message: string } | null }) => {
+      if (resetError && !/last_noshow_alert_sent_at/i.test(resetError.message ?? '')) {
+        console.error('[walk-logs] failed to reset noshow cooldown:', resetError)
+      }
+    })
+
   // Only send the report email if the owner is within their trial or has an active subscription.
   // This is the single email sent per walk — for the owner's very first-ever report, it
   // includes an extra "your trial has started" banner at the top instead of a separate email.

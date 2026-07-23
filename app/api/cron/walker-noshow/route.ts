@@ -62,12 +62,32 @@ export async function GET(req: NextRequest) {
       owner_id,
       walker_name,
       status,
+      last_noshow_alert_sent_at,
       dogs!walker_connections_dog_id_fkey (
         name,
         walk_time_bucket
       )
     `)
     .eq('status', 'active')
+
+  // last_noshow_alert_sent_at is a nullable column added in migration 061 —
+  // until that migration is run manually against prod, the column won't
+  // exist yet. Retry without it: the cooldown just can't be enforced yet
+  // (same behaviour as before 061), rather than failing the whole run.
+  if (error && /last_noshow_alert_sent_at/i.test(error.message ?? '')) {
+    ;({ data: connections, error } = await (db.from('walker_connections') as any)
+      .select(`
+        id,
+        owner_id,
+        walker_name,
+        status,
+        dogs!walker_connections_dog_id_fkey (
+          name,
+          walk_time_bucket
+        )
+      `)
+      .eq('status', 'active'))
+  }
 
   // walk_time_bucket is a nullable column added in migration 053 — until that
   // migration is run manually against prod, the column won't exist yet. Retry
@@ -96,6 +116,7 @@ export async function GET(req: NextRequest) {
     owner_id: string | null
     walker_name: string | null
     status: string
+    last_noshow_alert_sent_at?: string | null
     dogs: { name: string | null; walk_time_bucket: string | null } | null
   }
 
@@ -107,6 +128,11 @@ export async function GET(req: NextRequest) {
     if (passHour == null || istHour < passHour) continue // window hasn't clearly passed yet — skip for today
 
     if (!conn.owner_id) continue
+
+    // Already alerted for this unresolved miss-streak — stay quiet until a
+    // real report comes in and resets this (see app/api/walk-logs/route.ts),
+    // rather than emailing the same parent every single day.
+    if (conn.last_noshow_alert_sent_at) continue
 
     checked++
 
@@ -146,6 +172,17 @@ export async function GET(req: NextRequest) {
           `We haven't seen a walk report from ${walkerName} for ${dogName} today. This could just mean the walk is running later than usual — but if you haven't heard from ${walkerName} either, it might be worth checking in.`,
         ),
       }).catch(() => {})
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (db.from('walker_connections') as any)
+        .update({ last_noshow_alert_sent_at: new Date().toISOString() })
+        .eq('id', conn.id)
+        .then(({ error: updateError }: { error: { message: string } | null }) => {
+          // Column may not exist yet if migration 061 hasn't been run —
+          // non-fatal, just means the cooldown can't be enforced yet.
+          if (updateError && !/last_noshow_alert_sent_at/i.test(updateError.message ?? '')) {
+            console.error('[walker-noshow] failed to set cooldown timestamp:', updateError)
+          }
+        })
     }
 
     processed++
