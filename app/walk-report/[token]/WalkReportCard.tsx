@@ -62,6 +62,23 @@ function formatTime(isoDate: string) {
     return d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
   } catch { return '' }
 }
+// "6:49 – 7:22 pm" when both ends share a meridiem, "11:50 am – 12:15 pm"
+// when they don't. Derived from walk_date + duration_mins — there's no
+// stored end timestamp, and to-the-minute precision is exactly right for a
+// display value the underlying duration is already only minute-precise.
+function formatTimeRange(startIso: string, durationMins: number) {
+  try {
+    const start = new Date(startIso)
+    if (!durationMins || durationMins <= 0) return formatTime(startIso)
+    const end = new Date(start.getTime() + durationMins * 60000)
+    const startMeridiem = start.toLocaleTimeString('en-IN', { hour: 'numeric', hour12: true }).slice(-2)
+    const endMeridiem = end.toLocaleTimeString('en-IN', { hour: 'numeric', hour12: true }).slice(-2)
+    const startStr = startMeridiem === endMeridiem
+      ? start.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).replace(/\s?[ap]m$/i, '')
+      : formatTime(startIso)
+    return `${startStr} – ${formatTime(end.toISOString())}`
+  } catch { return formatTime(startIso) }
+}
 function parseMood(notes: string | null) {
   if (!notes) return null
   const m = notes.match(/\[Mood:\s*([\S]+)\s+(\w+)\]/i)
@@ -563,7 +580,7 @@ export default function WalkReportCard({
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ color: '#9CA3AF', display: 'flex' }}><IconCalendar /></span>
                 <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF' }}>
-                  {formatDate(report.walk_date)} · {formatTime(report.walk_date)}
+                  {formatDate(report.walk_date)} · {formatTimeRange(report.walk_date, report.duration_mins)}
                 </span>
               </div>
             </div>
