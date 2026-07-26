@@ -1,8 +1,11 @@
 name: Walker no-show cron
 
+# Disabled: this cron emails the parent whenever a walker hasn't logged a
+# report yet that day. /home already surfaces the same situation live
+# in-app ("No walk yet today" + a Remind button the parent taps themselves),
+# so the automated email was just an unwanted duplicate notification.
+# workflow_dispatch kept for manual/future use; schedule trigger removed.
 on:
-  schedule:
-    - cron: '30 14 * * *'
   workflow_dispatch: {}
 
 jobs:
