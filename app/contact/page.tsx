@@ -8,9 +8,9 @@ const EASE_EXP = [0.16, 1, 0.3, 1] as const
 
 const TOPICS = [
   'General enquiry',
-  'I need help finding a provider',
-  'Issue with a care report',
-  'I want to get listed as a provider',
+  'I need help connecting my walker',
+  'Issue with a walk report',
+  'I’m a dog walker with a question',
   'Partnership / press enquiry',
   'Feedback or suggestion',
   'Something else',
