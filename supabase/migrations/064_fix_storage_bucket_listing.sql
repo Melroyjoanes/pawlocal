@@ -1,0 +1,29 @@
+-- ============================================================
+-- 064_fix_storage_bucket_listing.sql
+-- Supabase's own dashboard security check flagged this directly:
+-- "Clients can list all files in this bucket" — the storage.objects
+-- SELECT policy from 001_initial.sql was broad enough (USING
+-- (bucket_id = 'provider-photos')) to let anyone enumerate every
+-- filename in the bucket via the Storage API's list()/download(),
+-- not just read files by known URL.
+--
+-- provider-photos is a `public: true` bucket (set in 001_initial.sql).
+-- Reading a specific file by its public URL (getPublicUrl(), used
+-- throughout this app for dog photos, walk photos, poop photos,
+-- provider photos) goes through Supabase's public-bucket serving
+-- path and does NOT consult storage.objects RLS at all — dropping
+-- this policy has zero effect on normal photo display. It only
+-- removes the ability to call list()/download() via the SDK, which
+-- nothing in this codebase does (confirmed: no .list( call on this
+-- bucket anywhere in the app).
+--
+-- Upload (INSERT) policy on this bucket is a SEPARATE, still-open
+-- issue ("anyone can upload photos" WITH CHECK (true), also from
+-- 001_initial.sql) — deliberately NOT touched here. At least 6 live
+-- features (self-walk photos, walker photos, provider photos, pro
+-- profile/fitness/grooming) upload to this same bucket through
+-- different code paths and auth models; tightening it safely needs
+-- its own careful pass, not a rushed bundle into this fix.
+-- ============================================================
+
+DROP POLICY IF EXISTS "public can read photos" ON storage.objects;
