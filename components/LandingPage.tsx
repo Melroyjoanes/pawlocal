@@ -12,6 +12,7 @@ import {
   PawPrint as LucidePaw, Sparkles, Bone,
 } from 'lucide-react'
 import { CLAY_SHADOW_TEAL_OUTLINE } from '@/lib/clayShadows'
+import DemoVideo from './DemoVideo'
 
 // ─── Tokens ──────────────────────────────────────────────────────────────────
 const EASE_EXP = [0.16, 1, 0.3, 1] as const
@@ -695,6 +696,9 @@ export default function LandingPage() {
           ))}
         </div>
       </div>
+
+      {/* ── DEMO VIDEO ────────────────────────────────────────────────────── */}
+      <DemoVideo />
 
       {/* ── HOW IT WORKS ──────────────────────────────────────────────────── */}
       <section id="how-it-works"
