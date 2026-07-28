@@ -44,7 +44,7 @@ export async function GET() {
     // V2 parents = those with at least one dog. This MUST be a distinct count of
     // owners, not a row count: count:'exact' counts dog ROWS, so a parent with
     // three dogs was being counted three times. Fetch the owner ids and dedupe below.
-    (client.from('dogs') as any).select('owner_id').limit(2000),
+    (client.from('dogs') as any).select('owner_id, created_at').limit(2000),
     // V2 walkers connected
     (client.from('walker_connections') as any).select('owner_id').eq('status', 'active').limit(2000),
     // V2 reports = only those with connection_id (QR walker flow)
@@ -91,13 +91,31 @@ export async function GET() {
       .map(r => r.owner_id).filter(Boolean) as string[]).size
   const parentsV2 = distinctOwners(dogsRes)
 
+  // Signed up must come from auth.users, not from dogs. Previously signedUp and
+  // dogCreated were both set to parentsV2, so the first funnel step always read
+  // 8 -> 8 and the single biggest activation problem was invisible: most people
+  // who sign up never create a dog at all.
+  let signedUpTotal = parentsV2
+  try {
+    const { data: authList } = await client.auth.admin.listUsers({ perPage: 1000 })
+    if (authList?.users?.length) signedUpTotal = authList.users.length
+  } catch {
+    // fall back to parentsV2 rather than failing the whole dashboard
+  }
+
+  // parentsToday / parentsThisWeek were hardcoded 0 with a "skip for now" note,
+  // so the tiles displayed a fake zero as if it were real. Compute them properly.
+  const dogRows = ((dogsRes?.data ?? []) as { owner_id?: string | null; created_at?: string | null }[])
+  const ownersSince = (iso: string) =>
+    new Set(dogRows.filter(d => (d.created_at ?? '') >= iso).map(d => d.owner_id).filter(Boolean) as string[]).size
+
   return NextResponse.json({
     northStar: northStarRes.count ?? 0,
     northStarLabel: 'walk reports opened by parents this week',
 
     funnel: {
-      signedUp: parentsV2,                          // V2: parents with dogs
-      dogCreated: parentsV2,                         // same — dog = signed up in V2
+      signedUp: signedUpTotal,
+      dogCreated: parentsV2,
       walkerConnected: distinctOwners(walkerConnRes),
       firstReport: firstReportRes.count ?? 0,
       parentOpened: parentOpenedRes.count ?? 0,
@@ -105,8 +123,8 @@ export async function GET() {
     },
 
     parentsTotal: parentsV2,
-    parentsToday: 0,   // skip for now — would need dogs.created_at filter
-    parentsThisWeek: 0,
+    parentsToday: ownersSince(todayStr),
+    parentsThisWeek: ownersSince(sevenDaysAgo),
     dogsTotal: dogsTotalRes.count ?? 0,
     walkersActive: walkersActiveRes.count ?? 0,
     reportsTotal: reportsTotalRes.count ?? 0,
