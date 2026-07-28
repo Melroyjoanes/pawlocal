@@ -50,8 +50,39 @@ export async function GET(request: NextRequest) {
   // browsers normalise "\"→"/", so "/\evil.com" would resolve off-origin.
   const next = rawNext.startsWith('/') && rawNext[1] !== '/' && rawNext[1] !== '\\' && !rawNext.includes('://') ? rawNext : '/'
 
+  // Auth failures used to redirect to `/?auth_error=true`, but nothing in the
+  // app ever read that param — so a failed Google sign-in silently dumped the
+  // user on the marketing homepage with no feedback at all ("nothing happens").
+  // Send them to /login with a reason they can see, and record the failure so
+  // the underlying cause is diagnosable instead of invisible.
+  async function failAuth(reason: string, detail?: string) {
+    try {
+      const admin = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+      await logAnalyticsEvent(admin, {
+        event_type: 'auth_failed',
+        user_id: null,
+        user_email: null,
+        user_name: null,
+        is_new_user: false,
+        invite_token: null,
+        referrer_url: request.headers.get('referer'),
+        ip_address: request.headers.get('x-forwarded-for'),
+        user_agent: request.headers.get('user-agent'),
+        metadata: { reason, detail: detail ?? null, next },
+      })
+    } catch {
+      // never block the redirect because logging failed
+    }
+    return NextResponse.redirect(
+      `${base}/login?auth_error=${encodeURIComponent(reason)}&next=${encodeURIComponent(next)}`
+    )
+  }
+
   if (!code) {
-    return NextResponse.redirect(`${base}/?auth_error=true`)
+    return failAuth('no_code')
   }
 
   const cookieStore = await cookies()
@@ -71,10 +102,10 @@ export async function GET(request: NextRequest) {
   )
 
   const { error } = await supabase.auth.exchangeCodeForSession(code)
-  if (error) return NextResponse.redirect(`${base}/?auth_error=true`)
+  if (error) return failAuth('exchange_failed', error.message)
 
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.redirect(`${base}/?auth_error=true`)
+  if (!user) return failAuth('no_user_after_exchange')
 
   const admin = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

@@ -8,16 +8,31 @@ import { trackEvent } from '@/lib/analytics'
 
 interface Props {
   next: string
+  authError?: string | null
 }
 
 type EmailView = 'input' | 'otp'
 
-export default function LoginClient({ next }: Props) {
+function authErrorMessage(code: string): string {
+  switch (code) {
+    case 'exchange_failed':
+    case 'no_user_after_exchange':
+      return 'That sign-in link could not be completed. This usually means it expired or your browser blocked the sign-in cookie. Please try again below.'
+    case 'no_code':
+      return 'The sign-in did not come back complete. Please try again below.'
+    default:
+      return 'Sign-in did not complete. Please try again below.'
+  }
+}
+
+export default function LoginClient({ next, authError }: Props) {
   const router = useRouter()
   const supabase = createClient()
 
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  // Seeded from the callback so a failed Google sign-in explains itself instead
+  // of bouncing the user to the homepage with no feedback.
+  const [error, setError] = useState(authError ? authErrorMessage(authError) : '')
   const [emailView, setEmailView] = useState<EmailView>('input')
   const [emailInput, setEmailInput] = useState('')
   const [otpCode, setOtpCode] = useState('')
