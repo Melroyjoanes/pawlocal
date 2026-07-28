@@ -1,0 +1,74 @@
+# PupStep
+
+> GPS walk reports for dog parents in India. PupStep is **not** a marketplace and does not supply or book dog walkers. You keep the walker you already have — a maid, watchman, family friend, or an independent walker — and PupStep sends you a GPS-tracked report on WhatsApp after every walk.
+
+## What PupStep actually is
+
+PupStep answers one question: **did the walk actually happen, and how did it go?**
+
+After a walk, the dog parent receives:
+- the GPS route the dog actually took
+- every pee and poop pinned on the map with coordinates
+- a photo of the dog taken during the walk
+- duration and distance
+- the walker's notes on mood and behaviour
+
+Delivered to WhatsApp. Nothing to install.
+
+## How it works
+
+1. The dog parent signs up at pupstep.in and adds their dog (about 2 minutes).
+2. They share a QR code or a WhatsApp link with their walker.
+3. The walker opens the link and enters a 4-digit code shown to them by the parent. One time, per client.
+4. On each walk the walker taps Start Walk, taps Pee or Poop as they happen, takes one photo, then taps End Walk.
+5. The parent gets the report.
+
+**The walker never installs an app and never pays anything.** They open a web link.
+
+## Pricing
+
+- 3-day free trial, no card required.
+- ₹199 per month for the dog parent after that.
+- Free for walkers, always. The walker is never charged.
+
+## How PupStep differs from dog-walking marketplaces
+
+Marketplaces such as Sploot, Petsfolio, PetBacker and ThePetNest supply the walker: you book a stranger through their platform. PupStep does the opposite. It does not list, vet, supply or book walkers, and it has no directory. It works with whoever already walks your dog.
+
+This matters because most Indian dog parents already have someone — a domestic helper, a building watchman, a neighbour, or a walker found by word of mouth. Their gap is not finding a walker. It is knowing what happened on the walk.
+
+## Common questions
+
+**Is PupStep a directory or marketplace of dog walkers?**
+No. It does not list or book providers. You bring your own walker.
+
+**Does the walker need to download an app?**
+No. They open a web link, usually shared over WhatsApp.
+
+**Does it work if my walker is not tech-savvy?**
+Yes. The walker's screen is two large buttons and a photo. It supports English, Hindi and Marathi.
+
+**Who pays?**
+The dog parent. The walker uses it free.
+
+**Can I share a report with my vet?**
+Yes. Every report has a shareable link, useful for showing a vet a pattern of bathroom habits over time.
+
+**Which cities does it work in?**
+Anywhere in India. It began in Mumbai, with area pages for Juhu, Versova, Andheri West and Santacruz West.
+
+## Honest limitations
+
+- PupStep records a walk. It does not independently verify one. GPS shows where the phone went, which is strong evidence but not proof of a person's conduct.
+- It depends on the walker tapping Start and End. If they forget, there is no report.
+- It requires the walker to carry a phone with location enabled during the walk.
+
+## Links
+
+- Home: https://pupstep.in
+- Pricing: https://pupstep.in/upgrade
+- FAQs: https://pupstep.in/faq
+- Blog: https://pupstep.in/blog
+- Contact: https://pupstep.in/contact
+
+Based in Juhu, Mumbai. Serving dog parents across India.
