@@ -46,15 +46,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ userId:
       .limit(1)
       .maybeSingle()
 
-    const oneYearFromNow = new Date(Date.now() + 365 * 86400000).toISOString()
+    // Comped access is 30 days, not a year. A year of free Pro handed out from
+    // an admin button is effectively an unbounded giveaway: nobody revisits it,
+    // and the account looks "paid" in every internal number for twelve months.
+    // 30 days forces a deliberate re-grant and keeps the metrics honest.
+    const GRANT_DAYS = 30
+    const grantExpiry = new Date(Date.now() + GRANT_DAYS * 86400000).toISOString()
 
     if (existing) {
       // Extend/reactivate the most recent row rather than inserting a second
       // one — a partial unique index only allows one status='active' row per
       // user_id, so reusing the row avoids a constraint violation.
-      const newExpiry = existing.expires_at && new Date(existing.expires_at) > new Date(oneYearFromNow)
+      const newExpiry = existing.expires_at && new Date(existing.expires_at) > new Date(grantExpiry)
         ? existing.expires_at
-        : oneYearFromNow
+        : grantExpiry
       const { error } = await table
         .update({ status: 'active', expires_at: newExpiry })
         .eq('id', existing.id)
@@ -65,7 +70,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ userId:
         plan: 'monthly',
         status: 'active',
         amount_paise: 0,
-        expires_at: oneYearFromNow,
+        expires_at: grantExpiry,
       })
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     }

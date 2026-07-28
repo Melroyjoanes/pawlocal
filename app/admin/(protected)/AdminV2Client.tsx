@@ -221,7 +221,7 @@ function ParentsTab() {
 
   async function runAction(userId: string, action: 'grant' | 'cancel' | 'revoke') {
     const confirmMsg = {
-      grant: 'Grant this parent free Pro access for 1 year?',
+      grant: 'Grant this parent 30 days of free Pro access?',
       cancel: 'Cancel auto-renewal? Access continues until the current period ends.',
       revoke: 'Immediately end this parent’s access right now?',
     }[action]
