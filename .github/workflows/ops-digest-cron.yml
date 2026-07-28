@@ -1,0 +1,25 @@
+name: Ops digest cron
+
+# Daily internal ops digest for the founder: signups, walks, reports
+# delivered, subscriptions expiring soon, and any failed logins in the last
+# 24 hours. This is the push half of the admin dashboard, which was pull-only
+# until now (a broken login went unnoticed for three weeks).
+#
+# Recipient is the founder only (ADMIN_EMAIL). This never emails a customer.
+# Note the sibling walker-noshow-cron.yml is deliberately left disabled
+# because it spammed customers — do not re-enable it.
+#
+# 02:30 UTC = 08:00 IST, so it lands at the start of the working day.
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  call-ops-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call ops-digest endpoint
+        run: |
+          curl -sf -X GET "https://pupstep.in/api/cron/ops-digest" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

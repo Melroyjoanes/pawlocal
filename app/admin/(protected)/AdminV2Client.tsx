@@ -95,6 +95,75 @@ interface OverviewData {
   avgQualityScore: number; goodReports: number; weakReports: number; brokenReports: number
 }
 
+interface StalledWalk {
+  id: string
+  source: 'walk_log' | 'walk_session'
+  dogName: string | null
+  walkerName: string | null
+  parentName: string | null
+  parentEmail: string | null
+  parentPhone: string | null
+  startedAt: string
+  stalledMinutes: number
+  stalledHours: number
+}
+
+function stalledLabel(w: StalledWalk): string {
+  if (w.stalledHours < 24) return `${w.stalledHours}h ago`
+  return `${Math.floor(w.stalledHours / 24)}d ago`
+}
+
+function StalledWalksPanel() {
+  const [walks, setWalks] = useState<StalledWalk[] | null>(null)
+
+  useEffect(() => {
+    fetch('/api/admin/v2/stalled-walks')
+      .then(r => r.json())
+      .then(d => setWalks(Array.isArray(d) ? d : []))
+      .catch(() => setWalks([]))
+  }, [])
+
+  if (!walks || walks.length === 0) return null
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #FCA5A5', borderRadius: 12, overflow: 'hidden' }}>
+      <div style={{ background: '#FEE2E2', padding: '14px 24px' }}>
+        <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: '#991B1B', fontFamily: 'var(--font-nunito)' }}>
+          🚨 Stalled walks · {fmt(walks.length)}
+        </p>
+        <p style={{ margin: 0, fontSize: 12, color: '#991B1B', opacity: 0.8, fontFamily: 'var(--font-nunito)' }}>
+          Started over 3 hours ago and never ended. These parents never got a report.
+        </p>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff' }}>
+          <thead>
+            <tr><Th>Dog</Th><Th>Walker</Th><Th>Parent</Th><Th>Started</Th><Th>Stalled for</Th></tr>
+          </thead>
+          <tbody>
+            {walks.map((w, i) => (
+              <tr key={`${w.source}-${w.id}`} style={{ background: i % 2 === 0 ? '#fff' : '#F9FAFB' }}>
+                <Td><span style={{ fontWeight: 700 }}>{w.dogName || '—'}</span></Td>
+                <Td>{w.walkerName || '—'}</Td>
+                <Td>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    <span style={{ fontSize: 13 }}>{w.parentName || '—'}</span>
+                    {w.parentEmail && (
+                      <span style={{ fontSize: 11, color: '#9CA3AF' }}>{w.parentEmail}</span>
+                    )}
+                  </div>
+                </Td>
+                <Td>{rel(w.startedAt)}</Td>
+                <Td><Badge text={stalledLabel(w)} type="broken" /></Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 function OverviewTab() {
   const [data, setData] = useState<OverviewData | null>(null)
   useEffect(() => { fetch('/api/admin/v2/overview').then(r => r.json()).then(setData).catch(() => {}) }, [])
@@ -130,6 +199,9 @@ function OverviewTab() {
           A parent who opens their report is getting value. This is the only number that matters.
         </p>
       </div>
+
+      {/* Stalled walks */}
+      <StalledWalksPanel />
 
       {/* Activation funnel */}
       <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '20px 24px' }}>

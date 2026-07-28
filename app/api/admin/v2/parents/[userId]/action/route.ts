@@ -10,6 +10,34 @@ function db() {
 
 type Action = 'grant' | 'cancel' | 'revoke'
 
+// Append-only audit trail for privileged admin actions — see
+// supabase/migrations/066_admin_actions.sql for why this exists.
+// Best-effort by design: a logging failure must NEVER be able to break
+// or roll back the admin action the operator actually asked for, so
+// every error (including a missing table before the migration is run)
+// is swallowed here.
+async function logAdminAction(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  client: any,
+  entry: {
+    adminEmail: string
+    action: string
+    targetUserId: string | null
+    metadata?: Record<string, unknown>
+  },
+) {
+  try {
+    await client.from('admin_actions').insert({
+      admin_email: entry.adminEmail,
+      action: entry.action,
+      target_user_id: entry.targetUserId,
+      metadata: entry.metadata ?? {},
+    })
+  } catch {
+    // Intentionally silent — see above.
+  }
+}
+
 // Admin override actions for a parent's paid access. Deliberately reuses the
 // existing `subscriptions` table (rather than a separate "override" flag) so
 // every surface that already reads entitlement — lib/entitlement.ts, used by
@@ -26,6 +54,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ userId:
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user || user.email !== ADMIN_EMAIL) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const adminEmail = user.email ?? 'unknown'
 
   const { userId } = await params
   const { action } = await req.json() as { action?: Action }
@@ -63,7 +93,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ userId:
       const { error } = await table
         .update({ status: 'active', expires_at: newExpiry })
         .eq('id', existing.id)
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (error) {
+        await logAdminAction(client, {
+          adminEmail, action, targetUserId: userId,
+          metadata: { result: 'error', mode: 'extend_existing', subscription_id: existing.id, error: error.message },
+        })
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      await logAdminAction(client, {
+        adminEmail, action, targetUserId: userId,
+        metadata: {
+          result: 'ok', mode: 'extend_existing', subscription_id: existing.id,
+          grant_days: GRANT_DAYS, previous_status: existing.status,
+          previous_expires_at: existing.expires_at, expires_at: newExpiry,
+        },
+      })
     } else {
       const { error } = await table.insert({
         user_id: userId,
@@ -72,7 +116,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ userId:
         amount_paise: 0,
         expires_at: grantExpiry,
       })
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+      if (error) {
+        await logAdminAction(client, {
+          adminEmail, action, targetUserId: userId,
+          metadata: { result: 'error', mode: 'new_subscription', error: error.message },
+        })
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      await logAdminAction(client, {
+        adminEmail, action, targetUserId: userId,
+        metadata: { result: 'ok', mode: 'new_subscription', grant_days: GRANT_DAYS, expires_at: grantExpiry },
+      })
     }
     return NextResponse.json({ ok: true })
   }
@@ -85,14 +139,31 @@ export async function POST(req: Request, { params }: { params: Promise<{ userId:
     .limit(1)
     .maybeSingle()
 
-  if (!mostRecent) return NextResponse.json({ error: 'No subscription found for this parent' }, { status: 404 })
+  if (!mostRecent) {
+    await logAdminAction(client, {
+      adminEmail, action, targetUserId: userId,
+      metadata: { result: 'error', error: 'No subscription found for this parent' },
+    })
+    return NextResponse.json({ error: 'No subscription found for this parent' }, { status: 404 })
+  }
 
   const update = action === 'revoke'
     ? { status: 'cancelled', expires_at: new Date().toISOString() }
     : { status: 'cancelled' }
 
   const { error } = await table.update(update).eq('id', mostRecent.id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    await logAdminAction(client, {
+      adminEmail, action, targetUserId: userId,
+      metadata: { result: 'error', subscription_id: mostRecent.id, error: error.message },
+    })
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  await logAdminAction(client, {
+    adminEmail, action, targetUserId: userId,
+    metadata: { result: 'ok', subscription_id: mostRecent.id, ...update },
+  })
 
   return NextResponse.json({ ok: true })
 }

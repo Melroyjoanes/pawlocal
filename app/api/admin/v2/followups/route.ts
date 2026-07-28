@@ -38,7 +38,7 @@ export async function GET() {
 
   // Fetch all profiles
   const { data: profiles, error } = await (client.from('profiles') as any)
-    .select('id, full_name, trial_started_at, created_at, phone')
+    .select('id, display_name, trial_started_at, created_at, phone')
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -122,7 +122,7 @@ export async function GET() {
 
     const parent: Parent = {
       id: uid,
-      name: (p.full_name as string | null) ?? '',
+      name: (p.display_name as string | null) ?? '',
       email: emailMap[uid] ?? '',
       phone: (p.phone as string | null) ?? null,
       createdAt: p.created_at as string,
