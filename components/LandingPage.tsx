@@ -663,7 +663,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-5 sm:px-8">
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
             {[
-              { icon: <Shield size={14} />, text: 'GPS-verified every walk' },
+              { icon: <Shield size={14} />, text: 'GPS on every walk' },
               { icon: <LucidePaw size={14} />, text: 'Keep the walker you already trust' },
               { icon: <MessageCircle size={14} />, text: 'Reports on WhatsApp in seconds' },
               { icon: <Zap size={14} />, text: 'Walker needs no app download' },
