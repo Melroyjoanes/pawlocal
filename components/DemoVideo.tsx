@@ -9,14 +9,6 @@ const C = {
   teal:   'oklch(0.48 0.17 196)',
 }
 
-// Full-bleed out of the page container so the dark band spans the viewport.
-const BLEED: React.CSSProperties = {
-  marginLeft:   'calc(50% - 50vw)',
-  marginRight:  'calc(50% - 50vw)',
-  paddingLeft:  'calc(50vw - 50%)',
-  paddingRight: 'calc(50vw - 50%)',
-}
-
 type Cut = 'mobile' | 'desktop'
 
 /**
@@ -94,16 +86,7 @@ export default function DemoVideo() {
   }
 
   return (
-    <section
-      className="px-5 sm:px-8 py-16 sm:py-24"
-      style={{
-        ...BLEED,
-        // Theater treatment. The video's own interior is warm cream, so on the
-        // page's #FFFBEB it measured 1.29:1 and had no edge at all. Against the
-        // brand dark it is ~12:1 and the media finally reads as an object.
-        background: 'linear-gradient(168deg,#0C363D 0%,#0A2F35 52%,#092A30 100%)',
-      }}
-    >
+    <section className="px-5 sm:px-8 py-16 sm:py-24">
       <div className="max-w-6xl mx-auto">
 
         {/* heading, left aligned from md up */}
@@ -111,9 +94,9 @@ export default function DemoVideo() {
           <span
             className="inline-block text-[11px] font-bold tracking-[0.14em] uppercase mb-4 px-3.5 py-1.5 rounded-full"
             style={{
-              background: 'rgba(255,140,82,0.16)',
-              color: '#FFB98A',
-              border: '1px solid rgba(255,140,82,0.34)',
+              background: 'rgba(255,140,82,0.11)',
+              color: '#B4531A',
+              border: '1px solid rgba(255,140,82,0.24)',
               fontFamily: 'var(--font-nunito)',
             }}
           >
@@ -125,7 +108,7 @@ export default function DemoVideo() {
               fontSize: 'clamp(1.9rem,4.4vw,3rem)',
               lineHeight: 1.12,
               letterSpacing: '-0.02em',
-              color: '#FFFBEB',
+              color: C.dark,
             }}
           >
             See a real walk, start to finish.
@@ -136,7 +119,7 @@ export default function DemoVideo() {
               fontFamily: 'var(--font-nunito)',
               fontSize: 'clamp(0.98rem,1.8vw,1.1rem)',
               lineHeight: 1.65,
-              color: 'rgba(255,251,235,0.72)',
+              color: '#3F5C61',
               maxWidth: 540,
             }}
           >
@@ -154,11 +137,9 @@ export default function DemoVideo() {
               : 'w-full aspect-video rounded-[2.25rem]')
           }
           style={{
-            background: '#FDF5E6',
-            // lifted off the dark ground, with a warm rim so the cream edge
-            // separates cleanly rather than smearing into the teal
-            boxShadow:
-              '0 0 0 1px rgba(255,251,235,0.10), 0 30px 70px -20px rgba(0,0,0,0.55)',
+            background: '#FBF3E0',
+            border: '1px solid rgba(120,85,40,0.22)',
+            boxShadow: '0 2px 0 rgba(120,85,40,0.07), 0 26px 54px -18px rgba(120,85,40,0.40)',
           }}
         >
           {/* poster placeholder holds the box before the cut is known, so the

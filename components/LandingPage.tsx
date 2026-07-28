@@ -392,8 +392,8 @@ function WalkReportMock() {
     <div ref={wrapRef} style={{
       background: '#fff',
       borderRadius: 24,
-      boxShadow: '0 8px 0 rgba(0,0,0,0.09), 0 30px 70px rgba(10,47,53,0.20), inset 0 2px 0 rgba(255,255,255,0.9)',
-      border: '1px solid rgba(226,232,240,0.5)',
+      boxShadow: '0 8px 0 rgba(120,85,40,0.09), 0 30px 70px rgba(10,47,53,0.20), inset 0 2px 0 rgba(255,255,255,0.9)',
+      border: '1px solid rgba(10,47,53,0.08)',
       overflow: 'hidden',
       width: '100%',
       maxWidth: 340,
@@ -436,7 +436,7 @@ function WalkReportMock() {
           <div key={label} style={{ padding: '10px 8px', textAlign: 'center', borderRight: i < 2 ? '1px solid #f3f4f6' : 'none' }}>
             <div style={{ color: C.teal, display: 'flex', justifyContent: 'center', marginBottom: 3 }}>{icon}</div>
             <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 14, fontWeight: 700, color: C.dark, margin: 0 }}>{value}</p>
-            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 9, color: '#9CA3AF', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 9, color: '#547378', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
           </div>
         ))}
       </div>
@@ -473,7 +473,7 @@ function WalkReportMock() {
 
       {/* Footer */}
       <div style={{ padding: '10px 14px', background: '#FAFAFA', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#9CA3AF', margin: 0 }}>Delivered via WhatsApp</p>
+        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#547378', margin: 0 }}>Delivered via WhatsApp</p>
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <div style={{ width: 18, height: 18, borderRadius: '50%', background: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <MessageCircle size={10} color="#fff" />
@@ -524,7 +524,7 @@ const FAQ_ITEMS = [
 function AccordionItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false)
   return (
-    <div style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+    <div style={{ borderBottom: '1px solid rgba(120,85,40,0.06)' }}>
       <button
         onClick={() => setOpen(o => !o)}
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', gap: 12 }}
@@ -533,7 +533,7 @@ function AccordionItem({ q, a }: { q: string; a: string }) {
         <ChevronDown size={18} style={{ flexShrink: 0, color: C.teal, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.25s ease' }} />
       </button>
       {open && (
-        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#64748B', lineHeight: 1.7, paddingBottom: 18, margin: 0 }}>{a}</p>
+        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#3F5C61', lineHeight: 1.7, paddingBottom: 18, margin: 0 }}>{a}</p>
       )}
     </div>
   )
@@ -591,7 +591,7 @@ export default function LandingPage() {
                 initial={rm ? {} : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: EASE_EXP, delay: 0.16 }}
-                style={{ fontFamily: 'var(--font-nunito)', fontSize: 'clamp(1rem,2vw,1.15rem)', lineHeight: 1.7, color: '#64748B', maxWidth: 460, marginBottom: 32, marginLeft: 'auto', marginRight: 'auto' }}
+                style={{ fontFamily: 'var(--font-nunito)', fontSize: 'clamp(1rem,2vw,1.15rem)', lineHeight: 1.7, color: '#3F5C61', maxWidth: 460, marginBottom: 32, marginLeft: 'auto', marginRight: 'auto' }}
                 className="lg:mx-0">
                 No more wondering how the walk went. GPS route, pee and poop map, dog photo — on your WhatsApp within seconds of every walk.
               </motion.p>
@@ -624,7 +624,7 @@ export default function LandingPage() {
                 className="flex items-center gap-5 justify-center lg:justify-start flex-wrap">
                 {['3-day free trial', 'No app download', 'Works with any walker'].map(t => (
                   <span key={t} className="flex items-center gap-1.5"
-                    style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 600, color: '#94A3B8' }}>
+                    style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 600, color: '#547378' }}>
                     <Check size={12} style={{ color: C.teal }} strokeWidth={3} /> {t}
                   </span>
                 ))}
@@ -689,7 +689,7 @@ export default function LandingPage() {
         `}</style>
         <div className="pupstep-marquee-track" style={{ display: 'flex', gap: 10, width: 'max-content' }}>
           {[...PROOF_CHIPS, ...PROOF_CHIPS].map((c, i) => (
-            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, flexShrink: 0, background: '#fff', border: '1px solid rgba(226,232,240,0.7)', borderRadius: 100, padding: '7px 14px', boxShadow: '0 2px 6px rgba(10,47,53,0.05)' }}>
+            <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, flexShrink: 0, background: '#fff', border: '1px solid rgba(10,47,53,0.10)', borderRadius: 100, padding: '7px 14px', boxShadow: '0 2px 6px rgba(10,47,53,0.05)' }}>
               <span style={{ color: C.teal, display: 'flex' }}>{proofIcon(c.icon)}</span>
               <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, fontWeight: 700, color: C.dark, whiteSpace: 'nowrap' }}>{c.stat}</span>
             </span>
@@ -702,14 +702,14 @@ export default function LandingPage() {
 
       {/* ── HOW IT WORKS ──────────────────────────────────────────────────── */}
       <section id="how-it-works"
-        style={{ ...BLEED, background: 'linear-gradient(120deg,#FEF9ED,#FEF3C7 50%,#FEF9ED)', borderTop: '1.5px solid rgba(253,230,138,0.8)', borderBottom: '1.5px solid rgba(253,230,138,0.8)' }}
+        style={{ ...BLEED, background: 'transparent', borderTop: '1px solid rgba(120,85,40,0.10)', borderBottom: '1px solid rgba(120,85,40,0.10)' }}
         className="py-16 sm:py-20 lg:py-28">
         <div className="max-w-6xl mx-auto px-5 sm:px-8">
 
           <Reveal variant="up" className="text-center mb-16">
             <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.orange, marginBottom: 12 }}>4 steps, zero friction</p>
             <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(1.9rem,4vw,3rem)', color: C.dark, marginBottom: 10 }}>How dog walk GPS tracking works</h2>
-            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 16, color: '#64748B', maxWidth: 380, margin: '0 auto' }}>Set it up once. Get a real-time check-in on your dog after every single walk.</p>
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 16, color: '#3F5C61', maxWidth: 380, margin: '0 auto' }}>Set it up once. Get a real-time check-in on your dog after every single walk.</p>
           </Reveal>
 
           {/* Desktop timeline */}
@@ -725,7 +725,7 @@ export default function LandingPage() {
             ].map(({ num, icon, title, body, delay }) => (
               <Reveal key={title} variant="zoom" delay={delay} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '0 18px', position: 'relative', zIndex: 1 }}>
                 <div style={{ position: 'relative', marginBottom: 20 }}>
-                  <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#fff', boxShadow: '0 4px 0 rgba(0,0,0,0.06),0 12px 32px rgba(0,0,0,0.07),inset 0 2px 0 rgba(255,255,255,1)', border: '1.5px solid rgba(226,232,240,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.teal }}>
+                  <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#fff', boxShadow: '0 4px 0 rgba(120,85,40,0.06),0 12px 32px rgba(120,85,40,0.07),inset 0 2px 0 rgba(255,255,255,1)', border: '1.5px solid rgba(10,47,53,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.teal }}>
                     {icon}
                   </div>
                   <span style={{ position: 'absolute', top: -8, right: -8, width: 24, height: 24, borderRadius: '50%', background: C.orange, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-fredoka)', fontSize: 12, fontWeight: 700, color: '#fff' }}>
@@ -733,7 +733,7 @@ export default function LandingPage() {
                   </span>
                 </div>
                 <h3 style={{ fontFamily: 'var(--font-fredoka)', fontSize: '1.15rem', fontWeight: 700, color: C.dark, marginBottom: 8 }}>{title}</h3>
-                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', lineHeight: 1.65 }}>{body}</p>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#3F5C61', lineHeight: 1.65 }}>{body}</p>
               </Reveal>
             ))}
           </div>
@@ -748,7 +748,7 @@ export default function LandingPage() {
             ].map(({ num, icon, title, body, delay, last }) => (
               <div key={title} className="flex gap-4">
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 0 rgba(0,0,0,0.05),0 8px 20px rgba(0,0,0,0.07)', border: '1.5px solid rgba(226,232,240,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.teal, position: 'relative' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 0 rgba(120,85,40,0.05),0 8px 20px rgba(120,85,40,0.07)', border: '1.5px solid rgba(10,47,53,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.teal, position: 'relative' }}>
                     {icon}
                     <span style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: C.orange, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-fredoka)', fontSize: 10, fontWeight: 700, color: '#fff' }}>{num}</span>
                   </div>
@@ -756,7 +756,7 @@ export default function LandingPage() {
                 </div>
                 <Reveal variant="left" delay={delay} style={{ paddingBottom: last ? 0 : 28 }}>
                   <h3 style={{ fontFamily: 'var(--font-fredoka)', fontSize: '1.1rem', fontWeight: 700, color: C.dark, marginBottom: 4, marginTop: 10 }}>{title}</h3>
-                  <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#64748B', lineHeight: 1.6, margin: 0 }}>{body}</p>
+                  <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#3F5C61', lineHeight: 1.6, margin: 0 }}>{body}</p>
                 </Reveal>
               </div>
             ))}
@@ -782,7 +782,7 @@ export default function LandingPage() {
               <Reveal variant="right">
                 <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: C.orange, marginBottom: 12 }}>Every walk, every time</p>
                 <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(1.9rem,4vw,2.8rem)', color: C.dark, marginBottom: 8 }}>See exactly how your dog&apos;s walk went</h2>
-                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 15, color: '#64748B', marginBottom: 28, lineHeight: 1.65, maxWidth: 380 }}>Not a screenshot from the walker. Not a guess. A GPS-tagged update on how your furry baby's walk went — delivered to WhatsApp in seconds.</p>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 15, color: '#3F5C61', marginBottom: 28, lineHeight: 1.65, maxWidth: 380 }}>Not a screenshot from the walker. Not a guess. A GPS-tagged update on how your furry baby's walk went — delivered to WhatsApp in seconds.</p>
               </Reveal>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -801,7 +801,7 @@ export default function LandingPage() {
                       </div>
                       <div>
                         <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: '1rem', fontWeight: 700, color: C.dark, margin: '0 0 2px' }}>{title}</p>
-                        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#64748B', margin: 0, lineHeight: 1.6 }}>{body}</p>
+                        <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#3F5C61', margin: 0, lineHeight: 1.6 }}>{body}</p>
                       </div>
                     </div>
                   </Reveal>
@@ -815,7 +815,7 @@ export default function LandingPage() {
 
       {/* ── TESTIMONIALS (CSS scroll-snap carousel) ───────────────────────── */}
       <section
-        style={{ ...BLEED, background: 'linear-gradient(120deg,#FEF9ED,#FEF3C7 50%,#FEF9ED)', borderTop: '1.5px solid rgba(253,230,138,0.8)', borderBottom: '1.5px solid rgba(253,230,138,0.8)' }}
+        style={{ ...BLEED, background: 'transparent', borderTop: '1px solid rgba(120,85,40,0.10)', borderBottom: '1px solid rgba(120,85,40,0.10)' }}
         className="py-16 sm:py-20">
         <div className="max-w-6xl mx-auto">
           <Reveal variant="up" className="text-center mb-10 px-5 sm:px-8">
@@ -831,19 +831,19 @@ export default function LandingPage() {
               { quote: 'Our maid has low tech literacy. The QR took under 5 minutes. She sends reports every single day now.', name: 'Sunita K.', area: 'Versova', dog: 'Mango, Indie', img: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=120&q=80&auto=format&fit=crop' },
               { quote: 'My vet asked about bathroom habits. I shared 3 months of poop reports instantly. He was surprised.', name: 'Deepa N.', area: 'Bandra West', dog: 'Bruno, Golden Retriever', img: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?w=120&q=80&auto=format&fit=crop' },
             ].map(({ quote, name, area, dog, img }) => (
-              <div key={name} style={{ flexShrink: 0, width: 300, scrollSnapAlign: 'start', background: '#fff', borderRadius: 20, padding: 24, boxShadow: '0 2px 0 rgba(0,0,0,0.04),0 8px 24px rgba(0,0,0,0.05)', border: '1px solid rgba(226,232,240,0.7)', transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease' }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 4px 0 rgba(0,0,0,0.04),0 20px 40px rgba(10,47,53,0.12)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 0 rgba(0,0,0,0.04),0 8px 24px rgba(0,0,0,0.05)' }}>
+              <div key={name} style={{ flexShrink: 0, width: 300, scrollSnapAlign: 'start', background: '#fff', borderRadius: 20, padding: 24, boxShadow: '0 2px 0 rgba(120,85,40,0.04),0 8px 24px rgba(120,85,40,0.05)', border: '1px solid rgba(10,47,53,0.10)', transition: 'transform 0.3s cubic-bezier(0.16,1,0.3,1), box-shadow 0.3s ease' }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 4px 0 rgba(120,85,40,0.04),0 20px 40px rgba(10,47,53,0.12)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 0 rgba(120,85,40,0.04),0 8px 24px rgba(120,85,40,0.05)' }}>
                 <svg width="22" height="17" viewBox="0 0 22 17" fill="none" style={{ marginBottom: 10, opacity: 0.15 }}>
                   <path d="M0 17V9.93C0 4.43 3.03 1.13 9.17 0l1.38 2.27C7.44 3 5.79 4.73 5.5 7.5H9V17H0zm13 0V9.93C13 4.43 16.03 1.13 22.17 0l1.38 2.27C20.44 3 18.79 4.73 18.5 7.5H22V17H13z" fill={C.dark} />
                 </svg>
                 <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#374151', lineHeight: 1.72, marginBottom: 16 }}>{quote}</p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 14, borderTop: '1px solid #F3F4F6' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 14, borderTop: '1px solid #F6F1E6' }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={img} alt={name} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                   <div>
                     <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 700, color: C.dark, margin: 0 }}>{name} · {area}</p>
-                    <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#94A3B8', margin: 0 }}>{dog}</p>
+                    <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#547378', margin: 0 }}>{dog}</p>
                   </div>
                 </div>
               </div>
@@ -904,7 +904,7 @@ export default function LandingPage() {
             <h2 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(1.9rem,4vw,2.8rem)', color: C.dark }}>Common questions</h2>
           </Reveal>
           <Reveal variant="up" delay={0.06}>
-            <div style={{ background: '#fff', borderRadius: 24, boxShadow: '0 4px 0 rgba(0,0,0,0.04),0 12px 36px rgba(0,0,0,0.05)', border: '1px solid rgba(226,232,240,0.7)', padding: '4px 24px' }}>
+            <div style={{ background: '#fff', borderRadius: 24, boxShadow: '0 4px 0 rgba(120,85,40,0.04),0 12px 36px rgba(120,85,40,0.05)', border: '1px solid rgba(10,47,53,0.10)', padding: '4px 24px' }}>
               {FAQ_ITEMS.map(item => <AccordionItem key={item.q} q={item.q} a={item.a} />)}
             </div>
           </Reveal>
@@ -919,7 +919,7 @@ export default function LandingPage() {
         {/* Barely-visible paw print texture — depth without a light show */}
         <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(PAW_PATTERN_SVG)}")`, backgroundSize: '84px 84px' }} />
         <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse at 26% 18%, rgba(255,255,255,0.12) 0%, transparent 55%)' }} />
-        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse at 80% 90%, rgba(0,0,0,0.10) 0%, transparent 60%)' }} />
+        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(ellipse at 80% 90%, rgba(120,85,40,0.10) 0%, transparent 60%)' }} />
         <div className="relative max-w-2xl mx-auto px-5 sm:px-8 text-center">
           <Reveal variant="zoom">
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
@@ -934,7 +934,7 @@ export default function LandingPage() {
             </p>
             <motion.div whileHover={rm ? {} : { y: -3, scale: 1.03 }} whileTap={rm ? {} : { scale: 0.97 }} transition={SPRING} style={{ display: 'inline-block' }}>
               <Link href="/setup?go=1"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 100, padding: '16px 36px', background: C.dark, color: '#FFFBEB', fontFamily: 'var(--font-nunito)', fontSize: 15, fontWeight: 700, textDecoration: 'none', boxShadow: '0 6px 0 rgba(0,0,0,0.18),0 16px 40px rgba(10,47,53,0.32)' }}>
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, borderRadius: 100, padding: '16px 36px', background: C.dark, color: '#FFFBEB', fontFamily: 'var(--font-nunito)', fontSize: 15, fontWeight: 700, textDecoration: 'none', boxShadow: '0 6px 0 rgba(120,85,40,0.18),0 16px 40px rgba(10,47,53,0.32)' }}>
                 Set up your dog <ArrowRight size={16} />
               </Link>
             </motion.div>
