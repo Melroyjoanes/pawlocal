@@ -52,7 +52,7 @@ export async function GET() {
 
   const [profilesRes, connectionsRes, reportsRes] = await Promise.all([
     (db.from('profiles') as any)
-      .select('id, full_name')
+      .select('id, display_name')
       .in('id', ownerIds),
     (db.from('walker_connections') as any)
       .select('dog_id, status')
@@ -70,7 +70,7 @@ export async function GET() {
     if (data?.user?.email) emailMap[uid] = data.user.email
   }
 
-  const profiles: { id: string; full_name: string | null }[] = profilesRes.data ?? []
+  const profiles: { id: string; display_name: string | null }[] = profilesRes.data ?? []
   const connections: { dog_id: string; status: string }[] = connectionsRes.data ?? []
   // walk_reports don't have dog_id in all schemas - get them by owner_id match
   // Fetch walk logs which DO have dog_id
@@ -96,7 +96,7 @@ export async function GET() {
       hasPhoto: !!dog.photo_url,
       hasHealthNotes: !!dog.health_notes && dog.health_notes.trim().length > 0,
       hasWalkingInstructions: !!dog.walking_instructions && dog.walking_instructions.trim().length > 0,
-      ownerName: owner?.full_name ?? null,
+      ownerName: owner?.display_name ?? null,
       ownerEmail: emailMap[dog.owner_id] ?? null,
       activeWalkers,
       reportCount,

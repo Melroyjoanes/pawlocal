@@ -102,14 +102,14 @@ export async function GET() {
   const ownerIds: string[] = [...new Set(allConnections.map((c) => c.owner_id).filter(Boolean))]
   const [profilesRes, authRes] = await Promise.all([
     ownerIds.length > 0
-      ? (client.from('profiles') as any).select('id, full_name').in('id', ownerIds)
+      ? (client.from('profiles') as any).select('id, display_name').in('id', ownerIds)
       : Promise.resolve({ data: [] }),
     client.auth.admin.listUsers({ perPage: 1000 }),
   ])
 
   const ownerNameMap: Record<string, string | null> = {}
   for (const o of (profilesRes.data ?? [])) {
-    ownerNameMap[o.id] = o.full_name ?? null
+    ownerNameMap[o.id] = o.display_name ?? null
   }
   const ownerEmailMap: Record<string, string> = {}
   for (const u of (authRes.data?.users ?? [])) {

@@ -27,13 +27,13 @@ export async function GET() {
   if (!userIds.length) return NextResponse.json([])
 
   const { data: profiles } = await (client.from('profiles') as any)
-    .select('id, full_name, phone, trial_started_at, created_at')
+    .select('id, display_name, phone, trial_started_at, created_at')
     .in('id', userIds)
 
   const profileMap: Record<string, { full_name: string | null; phone: string | null; trial_started_at: string | null; created_at: string | null }> = {}
   for (const p of profiles ?? []) {
     profileMap[p.id as string] = {
-      full_name: p.full_name ?? null,
+      full_name: p.display_name ?? null,
       phone: p.phone ?? null,
       trial_started_at: p.trial_started_at ?? null,
       created_at: p.created_at ?? null,

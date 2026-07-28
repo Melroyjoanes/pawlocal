@@ -41,10 +41,12 @@ export async function GET() {
     trialUsersRes,
     expiredTrialsRes,
   ] = await Promise.all([
-    // V2 parents = those with at least one dog (distinct count)
-    (client.from('dogs') as any).select('owner_id', { count: 'exact', head: true }),
+    // V2 parents = those with at least one dog. This MUST be a distinct count of
+    // owners, not a row count: count:'exact' counts dog ROWS, so a parent with
+    // three dogs was being counted three times. Fetch the owner ids and dedupe below.
+    (client.from('dogs') as any).select('owner_id').limit(2000),
     // V2 walkers connected
-    (client.from('walker_connections') as any).select('owner_id', { count: 'exact', head: true }).eq('status', 'active'),
+    (client.from('walker_connections') as any).select('owner_id').eq('status', 'active').limit(2000),
     // V2 reports = only those with connection_id (QR walker flow)
     (client.from('walk_reports') as any).select('id', { count: 'exact', head: true }).not('connection_id', 'is', null),
     // V2 reports opened by parent (customer_id set OR owner_id set and opened)
@@ -82,7 +84,12 @@ export async function GET() {
     return new Date(p.trial_started_at).getTime() + threeDays < now
   }).length
 
-  const parentsV2 = dogsRes.count ?? 0  // V2 parents = those with at least 1 dog
+  // Distinct owners, not row counts. Previously this reported 17 (dog rows) when
+  // there were only 8 actual parents.
+  const distinctOwners = (rows: { data?: { owner_id?: string | null }[] | null }) =>
+    new Set(((rows?.data ?? []) as { owner_id?: string | null }[])
+      .map(r => r.owner_id).filter(Boolean) as string[]).size
+  const parentsV2 = distinctOwners(dogsRes)
 
   return NextResponse.json({
     northStar: northStarRes.count ?? 0,
@@ -91,7 +98,7 @@ export async function GET() {
     funnel: {
       signedUp: parentsV2,                          // V2: parents with dogs
       dogCreated: parentsV2,                         // same — dog = signed up in V2
-      walkerConnected: walkerConnRes.count ?? 0,
+      walkerConnected: distinctOwners(walkerConnRes),
       firstReport: firstReportRes.count ?? 0,
       parentOpened: parentOpenedRes.count ?? 0,
       paid: activeSubscribers,

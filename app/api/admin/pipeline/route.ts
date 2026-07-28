@@ -19,7 +19,7 @@ export async function GET() {
 
   // Get all non-admin users (profiles)
   const { data: profiles } = await (db.from('profiles') as any)
-    .select('id, full_name, trial_started_at, created_at')
+    .select('id, display_name, trial_started_at, created_at')
     .order('created_at', { ascending: false })
     .limit(50)
 
