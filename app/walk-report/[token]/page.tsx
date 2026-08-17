@@ -27,7 +27,7 @@ type WalkReport = {
   verification_tier: string
   start_location: string | null
   end_location: string | null
-  route_points: {lat: number, lng: number}[] | null
+  route_points: { lat: number; lng: number; ts?: string; accuracy?: number }[] | null
   distance_meters: number | null
   poop_events: {lat: number, lng: number, time: string}[] | null
   pee_events: {lat: number, lng: number, time: string}[] | null

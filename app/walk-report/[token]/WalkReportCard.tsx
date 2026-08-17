@@ -6,6 +6,8 @@ import { useRef, useEffect, useState } from 'react'
 import { loadGoogleMaps } from '@/lib/googleMapsLoader'
 import { trackEvent } from '@/lib/analytics'
 import { SNAP_MAP_STYLE } from '@/lib/snapMapStyle'
+import { smoothRoute, matchToRoads, type GpsPoint } from '@/lib/gpsProcessing'
+import { haversineKm, MIN_WALK_PACE_MPS } from '@/lib/gapDistanceEstimate'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type WalkReport = {
@@ -27,7 +29,7 @@ type WalkReport = {
   verification_tier: string
   start_location: string | null
   end_location: string | null
-  route_points: { lat: number; lng: number }[] | null
+  route_points: { lat: number; lng: number; ts?: string; accuracy?: number }[] | null
   distance_meters: number | null
   poop_events: { lat: number; lng: number; time: string; photo_url?: string | null }[] | null
   pee_events: { lat: number; lng: number; time: string }[] | null
@@ -42,6 +44,13 @@ const CLAY = [
   '0 6px 20px -4px rgba(10,47,53,0.12)',
   '0 24px 48px -8px rgba(10,47,53,0.08)',
 ].join(', ')
+// Shared by both stat bands so the measurement row and the potty row stay
+// typographically identical — they read as one table split by a rule, not as
+// two separately-styled blocks.
+const STAT_LABEL: React.CSSProperties = {
+  fontFamily: 'var(--font-nunito)', fontSize: 10, fontWeight: 600, color: '#9CA3AF',
+  margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap',
+}
 const CLAY_ORANGE = [
   'inset 0 2px 0 rgba(255,200,120,0.6)',
   'inset 0 -3px 0 rgba(180,60,0,0.22)',
@@ -252,28 +261,6 @@ function PoopStat({ count, poopEvents }: {
   )
 }
 
-// Remove GPS outlier points that create implausible jumps (e.g. a bad first
-// fix right after location lock-on). A dog walk never exceeds ~15km/h, so any
-// consecutive-point jump implying a much higher speed is almost certainly a
-// GPS glitch, not real movement.
-function cleanRoute(points: { lat: number; lng: number }[]): { lat: number; lng: number }[] {
-  if (points.length < 3) return points
-  const cleaned: { lat: number; lng: number }[] = [points[0]]
-  for (let i = 1; i < points.length; i++) {
-    const prev = cleaned[cleaned.length - 1]
-    const curr = points[i]
-    const dLat = curr.lat - prev.lat
-    const dLng = curr.lng - prev.lng
-    // Rough distance in meters (good enough for outlier detection at this scale)
-    const distMeters = Math.sqrt(dLat * dLat + dLng * dLng) * 111000
-    // Reject single-point jumps further than 150m from the previous accepted point
-    // (typical GPS noise is under 30m; 150m in one reading is almost certainly bad)
-    if (distMeters > 150 && i < points.length - 1) continue
-    cleaned.push(curr)
-  }
-  return cleaned
-}
-
 // Rough flat-earth distance in meters — fine at the scale of a single walk
 function distMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
   const dLat = a.lat - b.lat
@@ -342,36 +329,63 @@ function partialPath(points: { lat: number; lng: number }[], fraction: number): 
 }
 
 // ─── Google Maps ──────────────────────────────────────────────────────────────
+// Draws the smoothed route, then silently upgrades it to a road-matched
+// version if OSRM can match the trace (map-matching quietly no-ops on
+// failure — no visible difference to the walker/parent either way).
 function WalkMap({ routePoints, poopEvents, peeEvents, reducedMotion }: {
-  routePoints: { lat: number; lng: number }[]
+  routePoints: GpsPoint[]
   poopEvents: { lat: number; lng: number; time: string }[]
   peeEvents: { lat: number; lng: number; time: string }[]
   reducedMotion?: boolean
 }) {
   const mapRef = useRef<HTMLDivElement>(null)
+  // The Maps JS bundle isn't even requested until this component hydrates, and
+  // tiles land seconds after that on mobile data. Without an explicit state the
+  // container is just an empty grey box sitting under a "Route / Started / Ended"
+  // legend, which reads as "the walk wasn't recorded" — the exact wrong message,
+  // since the route is already in hand by the time this renders.
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
 
   useEffect(() => {
     if (!routePoints?.length || !mapRef.current) return
 
-    const cleanedRoutePoints = cleanRoute(routePoints)
     let rafId: number | null = null
+    let cancelled = false
+    // Never let the spinner run forever: if tiles never paint (dead network, blocked
+    // API, throttled background tab) a permanent spinner is worse than the blank box
+    // this replaced. Production's first tile lands ~11.5s out, so this sits well clear
+    // of a slow-but-working load and only trips on a genuine failure.
+    const stallTimer = setTimeout(() => {
+      if (!cancelled) setStatus(s => (s === 'loading' ? 'error' : s))
+    }, 20000)
 
-    function initMap() {
+    async function initMap() {
       if (!mapRef.current) return
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const gm = (window as any).google.maps
+
+      const smoothed = smoothRoute(routePoints)
+      const displayPoints = smoothed.length >= 2 ? smoothed : routePoints
+
       const map = new gm.Map(mapRef.current, {
         zoom: 15,
-        center: cleanedRoutePoints[0],
+        center: displayPoints[0],
         disableDefaultUI: true,
+        keyboardShortcuts: false,
         gestureHandling: 'cooperative',
         styles: SNAP_MAP_STYLE,
       })
 
-      // Soft glow layer under the route — wider, translucent, same color.
-      // Gives the line depth without turning it into a gradient/heatmap.
+      // Clear the placeholder only once tiles have actually painted — resolving
+      // on map construction alone would swap it out while the canvas is still blank.
+      gm.event.addListenerOnce(map, 'tilesloaded', () => {
+        clearTimeout(stallTimer)
+        if (!cancelled) setStatus('ready')
+      })
+
+      // Soft glow layer under the processed route
       const glow = new gm.Polyline({
-        path: [cleanedRoutePoints[0]],
+        path: [displayPoints[0]],
         strokeColor: 'oklch(0.48 0.17 196)',
         strokeWeight: 13,
         strokeOpacity: 0.18,
@@ -380,9 +394,9 @@ function WalkMap({ routePoints, poopEvents, peeEvents, reducedMotion }: {
       })
       glow.setMap(map)
 
-      // Main route line
+      // Main (processed) route line
       const route = new gm.Polyline({
-        path: [cleanedRoutePoints[0]],
+        path: [displayPoints[0]],
         strokeColor: 'oklch(0.48 0.17 196)',
         strokeWeight: 5,
         strokeOpacity: 0.95,
@@ -391,41 +405,49 @@ function WalkMap({ routePoints, poopEvents, peeEvents, reducedMotion }: {
       })
       route.setMap(map)
 
-      // Draw the route in over ~1.4s instead of appearing instantly — but not
-      // on small/mobile viewports. Each animation frame calls Polyline.setPath()
-      // on TWO overlays (glow + route), forcing Google Maps to re-tessellate and
-      // repaint the whole path (up to 900+ points on a long walk) ~84 times in
-      // 1.4s. On desktop that's imperceptible; on a mid-range mobile CPU/GPU
-      // during the exact window it's also busy hydrating the page, it's a real
-      // source of jank for a purely decorative flourish on a 240px-tall map.
       const isSmallViewport = typeof window !== 'undefined' && window.matchMedia('(max-width: 640px)').matches
-      if (reducedMotion || isSmallViewport) {
-        glow.setPath(cleanedRoutePoints)
-        route.setPath(cleanedRoutePoints)
-      } else {
-        const durationMs = 1400
-        const start = performance.now()
-        const tick = (now: number) => {
-          const t = Math.min((now - start) / durationMs, 1)
-          const eased = 1 - Math.pow(1 - t, 3)
-          const partial = partialPath(cleanedRoutePoints, eased)
-          glow.setPath(partial)
-          route.setPath(partial)
-          if (t < 1) rafId = requestAnimationFrame(tick)
+      function drawFinal(points: { lat: number; lng: number }[]) {
+        if (reducedMotion || isSmallViewport) {
+          glow.setPath(points)
+          route.setPath(points)
+        } else {
+          const durationMs = 1400
+          const start = performance.now()
+          const tick = (now: number) => {
+            const t = Math.min((now - start) / durationMs, 1)
+            const eased = 1 - Math.pow(1 - t, 3)
+            const partial = partialPath(points, eased)
+            glow.setPath(partial)
+            route.setPath(partial)
+            if (t < 1) rafId = requestAnimationFrame(tick)
+          }
+          rafId = requestAnimationFrame(tick)
         }
-        rafId = requestAnimationFrame(tick)
       }
+
+      drawFinal(displayPoints)
+
+      // Map-matching runs after the initial draw (it's a network call) —
+      // upgrades the line to the road-snapped version if OSRM returns one,
+      // otherwise silently stays on the smoothed-but-unmatched path.
+      matchToRoads(smoothed).then((matched) => {
+        if (cancelled || !matched || matched.length < 2) return
+        drawFinal(matched)
+        const b = new gm.LatLngBounds()
+        matched.forEach((p) => b.extend(p))
+        map.fitBounds(b, { top: 36, bottom: 36, left: 36, right: 36 })
+      })
 
       // Color-coded start/end — green means the walk began here, red means it
       // stopped/ended here. No on-map text; the legend below explains the colors.
       new gm.Marker({
-        position: cleanedRoutePoints[0], map,
+        position: displayPoints[0], map,
         icon: { path: gm.SymbolPath.CIRCLE, scale: 8, fillColor: '#22c55e', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
         title: 'Walk started here',
         zIndex: 10,
       })
       new gm.Marker({
-        position: cleanedRoutePoints[cleanedRoutePoints.length - 1], map,
+        position: displayPoints[displayPoints.length - 1], map,
         icon: { path: gm.SymbolPath.CIRCLE, scale: 8, fillColor: '#EF4444', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2.5 },
         title: 'Walk ended here',
         zIndex: 10,
@@ -456,19 +478,56 @@ function WalkMap({ routePoints, poopEvents, peeEvents, reducedMotion }: {
       })
 
       const bounds = new gm.LatLngBounds()
-      cleanedRoutePoints.forEach(p => bounds.extend(p))
+      displayPoints.forEach((p: { lat: number; lng: number }) => bounds.extend(p))
       clusters.forEach(c => bounds.extend({ lat: c.lat, lng: c.lng }))
       map.fitBounds(bounds, { top: 36, bottom: 36, left: 36, right: 36 })
     }
 
     loadGoogleMaps(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
       .then(initMap)
-      .catch(err => console.error('[WalkMap] failed to load Google Maps', err))
+      .catch(err => {
+        console.error('[WalkMap] failed to load Google Maps', err)
+        clearTimeout(stallTimer)
+        if (!cancelled) setStatus('error')
+      })
 
-    return () => { if (rafId !== null) cancelAnimationFrame(rafId) }
+    return () => { cancelled = true; clearTimeout(stallTimer); if (rafId !== null) cancelAnimationFrame(rafId) }
   }, [routePoints, poopEvents, peeEvents, reducedMotion])
 
-  return <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
+      {status !== 'ready' && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
+          background: '#EDF1F2', textAlign: 'center', padding: '0 24px',
+        }}>
+          {status === 'loading' ? (
+            <>
+              <motion.div
+                style={{ width: 26, height: 26, borderRadius: '50%', border: '3px solid rgba(10,47,53,0.12)', borderTopColor: 'oklch(0.48 0.17 196)' }}
+                animate={reducedMotion ? undefined : { rotate: 360 }}
+                transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
+              />
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 600, color: '#6B7280', margin: 0 }}>
+                Loading the route map…
+              </p>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: 24 }}>🗺️</span>
+              {/* The route is already recorded and its stats render below, so this
+                  must not read like the walk itself failed. */}
+              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 600, color: '#6B7280', margin: 0, lineHeight: 1.5 }}>
+                The map couldn&apos;t load right now.<br />The walk was tracked — distance and timings are below.
+              </p>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -505,6 +564,47 @@ export default function WalkReportCard({
       ? `${(report.distance_meters / 1000).toFixed(1)}km`
       : `${Math.round(report.distance_meters)}m`
     : null
+  // Pace while the dog was actually moving, not distance ÷ total elapsed time.
+  // A normal walk is roughly a quarter standing still (sniffing, greeting, 11
+  // pee stops on a typical Baxter walk), and counting that idle time dragged the
+  // headline number down to ~3.4 km/h — slow enough that a parent reads it as
+  // the walker dawdling, when the dog was walked at a perfectly normal 4.1.
+  // Reuses MIN_WALK_PACE_MPS, the same "stopped vs moving" line the walker app
+  // already uses, so both ends of the product agree on what counts as walking.
+  const walkingPace = (() => {
+    const pts = report.route_points
+    if (!pts || pts.length < 2) return null
+    let km = 0
+    let sec = 0
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i]
+      if (!a.ts || !b.ts) continue
+      const dt = (new Date(b.ts).getTime() - new Date(a.ts).getTime()) / 1000
+      // Gaps over 30s carry an *estimated* distance rather than a measured one
+      // (see estimateGapDistanceKm) — letting an extrapolation set the headline
+      // pace would be inventing precision we don't have.
+      if (!(dt > 0) || dt > 30) continue
+      const dk = haversineKm(a.lat, a.lng, b.lat, b.lng)
+      if ((dk * 1000) / dt < MIN_WALK_PACE_MPS) continue // stopped, or GPS drift
+      km += dk
+      sec += dt
+    }
+    // Under a minute of confirmed movement isn't enough to quote a pace from.
+    if (sec < 60 || km <= 0) return null
+    return `${(km / (sec / 3600)).toFixed(1)} km/h`
+  })()
+
+
+  // Split into two bands: what the walk measured, and what the dog did. Built as
+  // arrays so the grid can size itself to however many stats a report actually
+  // carries — a walk with no GPS still lays out evenly instead of leaving a hole.
+  const primaryStats = [
+    report.duration_mins > 0 && { icon: '⏱', value: `${report.duration_mins} min`, label: 'Duration' },
+    distKm && { icon: '📍', value: distKm, label: 'Distance' },
+    walkingPace && { icon: '🚶', value: walkingPace, label: 'Walking pace' },
+  ].filter(Boolean) as { icon: string; value: string; label: string }[]
+
+  const secondaryCount = (report.pee_count > 0 ? 1 : 0) + (report.poop_count > 0 ? 1 : 0)
 
   const waText = encodeURIComponent(`${report.dog_name} just had a walk! 🐾\nSee how it went:\n${shareUrl}`)
 
@@ -548,9 +648,12 @@ export default function WalkReportCard({
           style={{ background: '#fff', borderRadius: 24, padding: '18px 18px', boxShadow: CLAY }}
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: EASE }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+          {/* Avatar and gap give back width on narrow phones — the Completed badge
+              holds ~95px no matter what, so on a 320px screen the name was left
+              with too little room and broke mid-word. */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'clamp(10px, 3.5vw, 14px)' }}>
             {/* Circular dog photo or placeholder */}
-            <div style={{ flexShrink: 0, width: 72, height: 72, borderRadius: '50%', overflow: 'hidden', boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.7), 0 4px 12px rgba(10,47,53,0.14)', border: '3px solid #fff' }}>
+            <div style={{ flexShrink: 0, width: 'clamp(58px, 18vw, 72px)', height: 'clamp(58px, 18vw, 72px)', borderRadius: '50%', overflow: 'hidden', boxShadow: 'inset 0 2px 0 rgba(255,255,255,0.7), 0 4px 12px rgba(10,47,53,0.14)', border: '3px solid #fff' }}>
               {report.photo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={report.photo_url} alt={report.dog_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -563,7 +666,9 @@ export default function WalkReportCard({
 
             {/* Dog info */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <h1 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 26, fontWeight: 700, color: '#0A2F35', margin: '0 0 6px', lineHeight: 1 }}>
+              {/* Scales down on narrow phones so a long name can't slide under
+                  the Completed badge, which holds its width. */}
+              <h1 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 'clamp(20px, 6.2vw, 26px)', fontWeight: 700, color: '#0A2F35', margin: '0 0 6px', lineHeight: 1.05, overflowWrap: 'anywhere' }}>
                 {report.dog_name}
               </h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
@@ -577,12 +682,6 @@ export default function WalkReportCard({
                   </>
                 )}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                <span style={{ color: '#9CA3AF', display: 'flex' }}><IconCalendar /></span>
-                <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12, color: '#9CA3AF' }}>
-                  {formatDate(report.walk_date)} · {formatTimeRange(report.walk_date, report.duration_mins)}
-                </span>
-              </div>
             </div>
 
             {/* Completed badge */}
@@ -590,6 +689,16 @@ export default function WalkReportCard({
               <span style={{ color: '#22c55e', display: 'flex' }}><IconCheck /></span>
               <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, fontWeight: 700, color: '#166534' }}>Completed</span>
             </div>
+          </div>
+
+          {/* Date sits on its own full-width line below the photo/badge row.
+              Inside that row it only had ~110px to work with and broke across
+              two lines mid-phrase ("17 Aug 2026 ·" / "6:40 – 7:12 pm"). */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 12 }}>
+            <span style={{ color: '#9CA3AF', display: 'flex', flexShrink: 0 }}><IconCalendar /></span>
+            <span style={{ fontFamily: 'var(--font-nunito)', fontSize: 12.5, color: '#9CA3AF', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {formatDate(report.walk_date)} · {formatTimeRange(report.walk_date, report.duration_mins)}
+            </span>
           </div>
         </motion.div>
 
@@ -646,41 +755,53 @@ export default function WalkReportCard({
           </motion.div>
         )}
 
-        {/* ── STATS ROW ────────────────────────────────────── */}
+        {/* ── STATS ────────────────────────────────────────── */}
+        {/* Two bands separated by a rule: what the walk measured on top, what the
+            dog did below. Grid rather than flex space-around so columns are
+            mathematically equal and a five-stat report can't squeeze itself. */}
         <motion.div
-          style={{ background: '#fff', borderRadius: 24, padding: '18px 16px', boxShadow: CLAY, display: 'flex', alignItems: 'center', justifyContent: 'space-around' }}
+          style={{ background: '#fff', borderRadius: 24, boxShadow: CLAY, overflow: 'hidden' }}
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.15, ease: EASE }}>
-          {report.duration_mins > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontSize: 26 }}>⏱</span>
-              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#0A2F35', margin: 0 }}>{report.duration_mins} min</p>
-              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, fontWeight: 600, color: '#9CA3AF', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Duration</p>
+
+          {primaryStats.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${primaryStats.length}, minmax(0, 1fr))`, padding: '18px 10px 16px' }}>
+              {primaryStats.map(s => (
+                <div key={s.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 0 }}>
+                  <span style={{ fontSize: 24 }}>{s.icon}</span>
+                  <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 19, fontWeight: 700, color: '#0A2F35', margin: 0, whiteSpace: 'nowrap' }}>{s.value}</p>
+                  <p style={STAT_LABEL}>{s.label}</p>
+                </div>
+              ))}
             </div>
           )}
-          {distKm && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontSize: 26 }}>📍</span>
-              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#0A2F35', margin: 0 }}>{distKm}</p>
-              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, fontWeight: 600, color: '#9CA3AF', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Distance</p>
+
+          {secondaryCount > 0 && (
+            <div style={{
+              display: 'grid', gridTemplateColumns: `repeat(${secondaryCount}, minmax(0, 1fr))`,
+              padding: '14px 10px 16px', alignItems: 'start',
+              borderTop: primaryStats.length > 0 ? '1px solid rgba(10,47,53,0.07)' : undefined,
+              background: primaryStats.length > 0 ? '#FCFBF7' : undefined,
+            }}>
+              {report.pee_count > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 0 }}>
+                  <span style={{ fontSize: 24 }}>💧</span>
+                  <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 19, fontWeight: 700, color: '#1E6DB5', margin: 0 }}>{report.pee_count}</p>
+                  <p style={STAT_LABEL}>Pee</p>
+                </div>
+              )}
+              {report.poop_count > 0 && (
+                <PoopStat
+                  count={report.poop_count}
+                  poopEvents={report.poop_events ?? []}
+                />
+              )}
             </div>
           )}
-          {report.pee_count > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontSize: 26 }}>💧</span>
-              <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#1E6DB5', margin: 0 }}>{report.pee_count}</p>
-              <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 10, fontWeight: 600, color: '#9CA3AF', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pee</p>
-            </div>
-          )}
-          {report.poop_count > 0 && (
-            <PoopStat
-              count={report.poop_count}
-              poopEvents={report.poop_events ?? []}
-            />
-          )}
-          {/* Fallback if all zero */}
-          {report.duration_mins === 0 && !distKm && report.pee_count === 0 && report.poop_count === 0 && (
-            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#9CA3AF', margin: '0 auto', padding: '8px 0' }}>Walk logged — stats not recorded</p>
+          {/* Fallback when a report carries no stats at all — the card owns no
+              padding of its own now, so this supplies its own. */}
+          {primaryStats.length === 0 && secondaryCount === 0 && (
+            <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#9CA3AF', margin: 0, padding: '22px 16px', textAlign: 'center' }}>Walk logged — stats not recorded</p>
           )}
         </motion.div>
 

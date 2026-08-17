@@ -76,6 +76,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${fredoka.variable} ${nunito.variable}`}>
       <body className="font-sans antialiased bg-background text-foreground">
+        {/* Walk reports are the most-opened page (every WhatsApp link lands here) and
+            the Maps JS bundle isn't requested until the card hydrates. Warming the
+            connection overlaps DNS/TLS with hydration instead of paying for it
+            serially once the map effect finally fires. React hoists these into
+            <head> on its own — wrapping them in a literal <head> element breaks
+            hydration in the App Router and leaves the whole page unhydrated. */}
+        <link rel="preconnect" href="https://maps.googleapis.com" />
+        <link rel="preconnect" href="https://maps.gstatic.com" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://maps.googleapis.com" />
         {GA_MEASUREMENT_ID && (
           <>
             <Script
