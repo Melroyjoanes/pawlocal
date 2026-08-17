@@ -59,16 +59,24 @@ const CLAY_ORANGE = [
 ].join(', ')
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+// The walk happened in India, so the report reads in IST wherever it's rendered.
+// Without an explicit zone each runtime picks its own: Vercel's server renders
+// UTC while the parent's phone renders IST, so the same walk showed "1:10 pm"
+// server-side and "6:40 pm" after hydration — a React hydration mismatch, and a
+// parent seeing the wrong walk time for the first paint. Pinning also keeps the
+// time correct for a parent reading the report while travelling abroad.
+const IST = 'Asia/Kolkata'
+
 function formatDate(isoDate: string) {
   try {
     const d = new Date(isoDate)
-    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: IST })
   } catch { return '' }
 }
 function formatTime(isoDate: string) {
   try {
     const d = new Date(isoDate)
-    return d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })
+    return d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: IST })
   } catch { return '' }
 }
 // "6:49 – 7:22 pm" when both ends share a meridiem, "11:50 am – 12:15 pm"
@@ -80,10 +88,10 @@ function formatTimeRange(startIso: string, durationMins: number) {
     const start = new Date(startIso)
     if (!durationMins || durationMins <= 0) return formatTime(startIso)
     const end = new Date(start.getTime() + durationMins * 60000)
-    const startMeridiem = start.toLocaleTimeString('en-IN', { hour: 'numeric', hour12: true }).slice(-2)
-    const endMeridiem = end.toLocaleTimeString('en-IN', { hour: 'numeric', hour12: true }).slice(-2)
+    const startMeridiem = start.toLocaleTimeString('en-IN', { hour: 'numeric', hour12: true, timeZone: IST }).slice(-2)
+    const endMeridiem = end.toLocaleTimeString('en-IN', { hour: 'numeric', hour12: true, timeZone: IST }).slice(-2)
     const startStr = startMeridiem === endMeridiem
-      ? start.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true }).replace(/\s?[ap]m$/i, '')
+      ? start.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: IST }).replace(/\s?[ap]m$/i, '')
       : formatTime(startIso)
     return `${startStr} – ${formatTime(end.toISOString())}`
   } catch { return formatTime(startIso) }
@@ -248,7 +256,7 @@ function PoopStat({ count, poopEvents }: {
                   />
                   <div style={{ padding: '8px 12px' }}>
                     <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 11, color: '#9CA3AF', margin: 0 }}>
-                      {new Date(e.time).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                      {new Date(e.time).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: IST })}
                     </p>
                   </div>
                 </div>
