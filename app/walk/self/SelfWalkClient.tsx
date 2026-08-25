@@ -112,9 +112,17 @@ function LiveMap({
   const eventMarkersRef = useRef<google.maps.Marker[]>([])
 
   useEffect(() => {
+    // Never initialise the map on a guessed location. This used to fall back to a
+    // hardcoded Juhu centre whenever the first GPS fix hadn't landed yet, so a
+    // parent with slow or denied location watched a generic street map that had
+    // nothing to do with where they were standing — and, because the effect ran
+    // once on mount, it stayed there. Wait for a real fix; the walk can't start
+    // without one now anyway.
+    if (mapRef.current || !currentPos) return
+    const center = currentPos
+
     function initMap() {
       if (!mapDivRef.current) return
-      const center = currentPos ?? { lat: 19.098, lng: 72.827 } // Juhu, Mumbai default
       const gm = (window as { google?: { maps: typeof google.maps } }).google!.maps
 
       const map = new gm.Map(mapDivRef.current, {
@@ -151,7 +159,7 @@ function LiveMap({
     loadGoogleMaps(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
       .then(initMap)
       .catch(err => console.error('[SelfWalkClient] failed to load Google Maps', err))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentPos])
 
   // Pan + update route on every new GPS point
   useEffect(() => {
@@ -200,6 +208,7 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
   const reduceMotion = useReducedMotion()
   const [selectedDogId, setSelectedDogId] = useState(dogs[0]?.id ?? '')
   const [phase, setPhase] = useState<Phase>('idle')
+  const [acquiringGps, setAcquiringGps] = useState(false)
 
   // First-run explainer — read once on mount (SSR has no localStorage), never
   // shown again on this device once they've started their first self-walk.
@@ -279,15 +288,48 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
     }
   }, [])
 
+  // Location is a precondition, not a nice-to-have. The timer used to start
+  // immediately and only then ask for permission, so a denied or slow fix still
+  // produced a running clock and, at the end, a report with a duration but no
+  // route and no distance. Get a real fix first; start the walk only if it lands.
   function startWalk() {
+    if (!navigator.geolocation) {
+      setGpsError('This device cannot share location, so a walk cannot be tracked.')
+      return
+    }
+
+    setGpsError(null)
+    setAcquiringGps(true)
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setAcquiringGps(false)
+        beginWalk({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+      },
+      (err) => {
+        setAcquiringGps(false)
+        if (err.code === err.PERMISSION_DENIED) {
+          setGpsError('Location is needed to track the walk. Please allow location access and try again.')
+        } else if (err.code === err.TIMEOUT) {
+          setGpsError('Could not get your location in time. Step outside or near a window, then try again.')
+        } else {
+          setGpsError('Could not get your location. Please try again.')
+        }
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
+    )
+  }
+
+  function beginWalk(startPos: { lat: number; lng: number }) {
     setGpsRoute([])
     setDistanceKm(0)
     setElapsed(0)
     setGpsError(null)
     setWalkEvents([])
-    setCurrentPos(null)
-    // Must clear too — otherwise a pee/poop tapped before this walk's first
-    // GPS fix gets tagged at the PREVIOUS walk's last coordinates.
+    // Seed with the confirmed fix so the map opens on the real location instead
+    // of a placeholder, and an event tapped before the first watch update is
+    // tagged where the walk actually started.
+    setCurrentPos(startPos)
     lastPointRef.current = null
     setPhase('walking')
     walkStartRef.current = new Date()
@@ -597,11 +639,17 @@ export default function SelfWalkClient({ dogs }: { dogs: Dog[] }) {
                 {gpsError && <p className="text-xs text-center mb-4" style={{ color: '#DC2626', fontFamily: 'var(--font-nunito)' }}>{gpsError}</p>}
                 <button
                   onClick={startWalk}
-                  className="w-full py-4 rounded-2xl font-bold text-base active:scale-[0.97] transition-transform"
-                  style={{ background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)', color: '#451A03', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)' }}
+                  disabled={acquiringGps}
+                  className="w-full py-4 rounded-2xl font-bold text-base active:scale-[0.97] transition-transform disabled:active:scale-100"
+                  style={{ background: 'linear-gradient(160deg, #FF8C52 0%, #F56B22 100%)', color: '#451A03', boxShadow: CLAY_SHADOW_ORANGE, fontFamily: 'var(--font-nunito)', opacity: acquiringGps ? 0.65 : 1 }}
                 >
-                  Start Walk
+                  {acquiringGps ? 'Getting your location…' : 'Start Walk'}
                 </button>
+                {acquiringGps && (
+                  <p className="text-xs text-center mt-3" style={{ color: '#6B7280', fontFamily: 'var(--font-nunito)' }}>
+                    Allow location so the walk can be tracked
+                  </p>
+                )}
               </div>
             </motion.div>
           )}
