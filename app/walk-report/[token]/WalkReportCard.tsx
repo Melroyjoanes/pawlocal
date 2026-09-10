@@ -552,6 +552,7 @@ export default function WalkReportCard({
   const [burst, setBurst] = useState(false)
   const [copied, setCopied] = useState(false)
   const [photoExpanded, setPhotoExpanded] = useState(false)
+  const [showHowMeasured, setShowHowMeasured] = useState(false)
 
   useEffect(() => {
     if (isFirstReport && !rm) { const t = setTimeout(() => setBurst(true), 600); return () => clearTimeout(t) }
@@ -609,8 +610,10 @@ export default function WalkReportCard({
   const primaryStats = [
     report.duration_mins > 0 && { icon: '⏱', value: `${report.duration_mins} min`, label: 'Duration' },
     distKm && { icon: '📍', value: distKm, label: 'Distance' },
-    walkingPace && { icon: '🚶', value: walkingPace, label: 'Walking pace' },
-  ].filter(Boolean) as { icon: string; value: string; label: string }[]
+    // `info` marks the one stat parents actually ask about — pace looks wrong
+    // to anyone who divides distance by duration, so it gets an explainer.
+    walkingPace && { icon: '🚶', value: walkingPace, label: 'Walking pace', info: true },
+  ].filter(Boolean) as { icon: string; value: string; label: string; info?: boolean }[]
 
   const secondaryCount = (report.pee_count > 0 ? 1 : 0) + (report.poop_count > 0 ? 1 : 0)
 
@@ -778,7 +781,29 @@ export default function WalkReportCard({
                 <div key={s.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 0 }}>
                   <span style={{ fontSize: 24 }}>{s.icon}</span>
                   <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 19, fontWeight: 700, color: '#0A2F35', margin: 0, whiteSpace: 'nowrap' }}>{s.value}</p>
-                  <p style={STAT_LABEL}>{s.label}</p>
+                  <p style={STAT_LABEL}>
+                    {s.label}
+                    {s.info && (
+                      // Padding widens the tap target to ~31px while the negative
+                      // margin keeps the layout identical — a bare 15px circle is
+                      // well under the 44px guideline and hard to hit with a thumb.
+                      <button
+                        onClick={() => setShowHowMeasured(true)}
+                        aria-label="How this is measured"
+                        style={{
+                          background: 'none', border: 0, padding: 8, margin: '-8px -8px -8px -4px',
+                          cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+                          verticalAlign: 'middle', lineHeight: 0,
+                        }}>
+                        <span style={{
+                          width: 15, height: 15, borderRadius: '50%', border: '1px solid #C3CBC7',
+                          color: '#9CA3AF', fontSize: 10, fontWeight: 700, lineHeight: 1,
+                          fontFamily: 'var(--font-nunito)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>i</span>
+                      </button>
+                    )}
+                  </p>
                 </div>
               ))}
             </div>
@@ -925,6 +950,53 @@ export default function WalkReportCard({
         </div>
 
       </div>
+
+      {/* ── HOW THIS IS MEASURED ────────────────────────────── */}
+      {/* Pace reads as wrong to anyone who divides distance by duration, so say
+          plainly why the two don't match rather than leaving parents to guess —
+          or worse, to conclude the walker was slow. */}
+      {showHowMeasured && (
+        <>
+          <div
+            onClick={() => setShowHowMeasured(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 60, backdropFilter: 'blur(4px)' }}
+          />
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 70, background: '#fff', borderRadius: '24px 24px 0 0', maxHeight: '80vh', overflowY: 'auto', paddingBottom: 'env(safe-area-inset-bottom, 20px)', boxShadow: '0 -8px 32px rgba(10,47,53,0.18)' }}>
+            <div style={{ padding: '14px 20px 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ fontFamily: 'var(--font-fredoka)', fontSize: 20, fontWeight: 700, color: '#0A2F35', margin: 0 }}>How this is measured</h3>
+              <button onClick={() => setShowHowMeasured(false)} aria-label="Close" style={{ background: '#F3F4F6', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16, color: '#6B7280', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
+            </div>
+
+            <div style={{ padding: '4px 20px 26px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <div>
+                <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, color: '#0A2F35', margin: '0 0 6px' }}>📍 Distance</p>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#4B5563', margin: 0, lineHeight: 1.6 }}>
+                  The walker&apos;s phone records where your dog is every few seconds. We add up the distance between each point.
+                  If the signal drops for more than half a minute, that stretch is estimated from the walk&apos;s own speed rather than left out.
+                </p>
+              </div>
+
+              <div>
+                <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 15, fontWeight: 700, color: '#0A2F35', margin: '0 0 6px' }}>🚶 Walking pace</p>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#4B5563', margin: 0, lineHeight: 1.6 }}>
+                  This is how fast your dog moved <strong>while actually walking</strong> — not the distance divided by the whole time.
+                </p>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#4B5563', margin: '10px 0 0', lineHeight: 1.6 }}>
+                  Dogs stop constantly to sniff and say hello, and that standing-around time is often a quarter of the walk.
+                  Counting it would make every normal walk look slow, so we leave it out.
+                </p>
+              </div>
+
+              <div style={{ background: '#F9F6EF', borderRadius: 14, padding: '13px 15px', border: '1px solid rgba(10,47,53,0.07)' }}>
+                <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#6B7280', margin: 0, lineHeight: 1.6 }}>
+                  GPS is accurate to roughly <strong>5%</strong>. Readings with a weak signal are ignored rather than guessed at,
+                  so a walk is never counted as longer than it really was.
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
