@@ -1295,16 +1295,35 @@ export default function WalkerClient({
     }
   }, [token])
 
+  // Latest-ref handle on resumeTracking (declared further down — function
+  // declarations hoist) so the visibility effect below can restart GPS
+  // without re-subscribing its listener on every render.
+  const resumeTrackingRef = useRef<() => void>(() => {})
+  useEffect(() => {
+    resumeTrackingRef.current = resumeTracking
+  })
+
   // On returning to the tab mid-walk (screen unlocked, app switch, etc.):
-  // re-acquire the wake lock (it auto-releases when the page hides) and
-  // snap the elapsed timer straight to the true wall-clock value instead of
-  // waiting for the next tick.
+  // re-acquire the wake lock (it auto-releases when the page hides), restart
+  // the GPS watch if it died while we were hidden, and snap the elapsed timer
+  // straight to the true wall-clock value instead of waiting for the next tick.
   useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState !== 'visible' || phase !== 'walking') return
       if (wakeLockRef.current?.released ?? true) requestWakeLock()
       const start = walkStartRef.current
       if (start) setElapsed(Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000)))
+      // Backgrounding/freezing the page stops watchPosition firing, and the
+      // browser does NOT reliably resume it when the page comes back — the
+      // walk then finishes with no further fixes at all (measured: the worst
+      // real gap was 689s). Re-acquiring the wake lock alone doesn't fix that.
+      // So if no fix has landed for 10s+, or the watch isn't running, tear it
+      // down and start a fresh one. resumeTracking() is idempotent: it clears
+      // the existing watch/interval first and never resets walk state.
+      const lastTs = lastPointRef.current ? new Date(lastPointRef.current.ts).getTime() : 0
+      if (watchIdRef.current === null || Date.now() - lastTs > 10_000) {
+        resumeTrackingRef.current()
+      }
     }
     document.addEventListener('visibilitychange', onVisibility)
     return () => document.removeEventListener('visibilitychange', onVisibility)
