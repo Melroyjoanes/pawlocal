@@ -18,7 +18,7 @@ export async function generateMetadata(
     .select('name, bio, category_slug')
     .eq('id', id)
     .single()
-  if (!data) return { title: 'Provider not found | PupStep' }
+  if (!data) return { title: 'Provider not found' }
 
   const serviceLabel = data.category_slug.replace(/-/g, ' ')
   const title = `${data.name} — ${serviceLabel} in Mumbai | PupStep`

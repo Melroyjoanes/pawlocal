@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — PupStep',
+  title: 'Privacy Policy',
   description: 'How PupStep collects, uses, and protects your personal data. Compliant with the Indian IT Act 2000 and SPDI Rules 2011.',
 }
 

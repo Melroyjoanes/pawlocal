@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import LiveMapClient from './LiveMapClient'
 
 export const metadata: Metadata = {
-  title: "Live Walk — PupStep",
+  title: "Live Walk",
 }
 
 interface PageProps {

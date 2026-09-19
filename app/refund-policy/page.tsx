@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Refund & Cancellation Policy — PupStep',
+  title: 'Refund & Cancellation Policy',
   description: 'PupStep refund and cancellation policy for Pro subscriptions. Understand when and how refunds are processed.',
 }
 

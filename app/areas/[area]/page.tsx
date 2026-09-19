@@ -60,7 +60,7 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { area: areaSlug } = await params
   const area = AREAS.find(a => a.slug === areaSlug)
-  if (!area) return { title: 'Area not found | PupStep' }
+  if (!area) return { title: 'Area not found' }
 
   // No "| PupStep" suffix here: the root layout's title template already
   // appends one, so hardcoding it produced "... | PupStep | PupStep" in the

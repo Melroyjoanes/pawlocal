@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Terms & Conditions — PupStep',
+  title: 'Terms & Conditions',
   description: 'Terms and conditions governing use of the PupStep platform for dog parents and service providers.',
 }
 
