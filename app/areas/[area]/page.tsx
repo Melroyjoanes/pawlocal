@@ -79,8 +79,47 @@ export default async function AreaPage({ params }: { params: Promise<{ area: str
   const area = AREAS.find(a => a.slug === areaSlug)
   if (!area) notFound()
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
+
   return (
     <div className="min-h-screen" style={{ background: '#FFFBEB' }}>
+
+      {/* Service schema — states plainly what is offered and where. The
+          areaServed/serviceType pair is what lets a local query resolve to
+          this page rather than to the generic homepage. Deliberately NOT
+          LocalBusiness: PupStep has no storefront in these neighbourhoods and
+          claiming one would be a fake local entity. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'Service',
+            name: `GPS-Tracked Dog Walk Reports in ${area.name}`,
+            serviceType: 'Dog walk GPS verification and reporting',
+            description: area.blurb,
+            url: `${siteUrl}/areas/${area.slug}`,
+            provider: { '@type': 'Organization', name: 'PupStep', url: siteUrl },
+            areaServed: { '@type': 'Place', name: `${area.name}, Mumbai, India` },
+            audience: { '@type': 'Audience', audienceType: 'Dog parents' },
+          }),
+        }}
+      />
+
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+              { '@type': 'ListItem', position: 2, name: `Dog walks in ${area.name}`, item: `${siteUrl}/areas/${area.slug}` },
+            ],
+          }),
+        }}
+      />
+
       <div className="max-w-2xl mx-auto px-5 py-14 sm:py-20">
 
         {/* Back link */}
@@ -171,8 +210,21 @@ export default async function AreaPage({ params }: { params: Promise<{ area: str
           </div>
         </div>
 
-        <p className="text-xs text-slate-400 mt-8 text-center">
-          PupStep also covers Juhu, Versova, Andheri West, and Santacruz West — and works with dog parents across India.
+        {/* Cross-links to the sibling area pages. These were plain text before,
+            which meant each area page was an orphan: nothing on the site
+            pointed at it except the sitemap, so crawl priority stayed low and
+            no authority flowed between them. */}
+        <p className="text-xs text-slate-400 mt-8 text-center" style={{ lineHeight: 1.8 }}>
+          PupStep also covers{' '}
+          {AREAS.filter(a => a.slug !== area.slug).map((a, i, arr) => (
+            <span key={a.slug}>
+              <Link href={`/areas/${a.slug}`} style={{ color: '#0A8A96', textDecoration: 'underline' }}>
+                {a.name}
+              </Link>
+              {i < arr.length - 2 ? ', ' : i === arr.length - 2 ? ' and ' : ''}
+            </span>
+          ))}
+          {' '}— and works with dog parents across India.
         </p>
       </div>
     </div>

@@ -20,6 +20,9 @@ const BLOG_SLUGS = [
   'vet-visit-checklist-mumbai',
   'how-to-verify-your-dog-walker-mumbai',
   'dog-walking-app-model-differences-mumbai',
+  'dog-walking-charges-mumbai',
+  'track-dog-walk-real-time-india',
+  'dog-walker-skipping-walks-what-to-do',
 ]
 
 const AREA_SLUGS = ['juhu', 'versova', 'andheri-west', 'santacruz-west']
