@@ -62,7 +62,10 @@ export async function generateMetadata(
   const area = AREAS.find(a => a.slug === areaSlug)
   if (!area) return { title: 'Area not found | PupStep' }
 
-  const title = `GPS-Tracked Dog Walks in ${area.name}, Mumbai | PupStep`
+  // No "| PupStep" suffix here: the root layout's title template already
+  // appends one, so hardcoding it produced "... | PupStep | PupStep" in the
+  // live SERP title (confirmed on pupstep.in/areas/juhu).
+  const title = `GPS-Tracked Dog Walks in ${area.name}, Mumbai`
   const description = `Get GPS-verified walk reports for your dog in ${area.name}, Mumbai. Works with the walker you already trust — maid, watchman, or family friend. No marketplace, no supplied walker. Free for walkers, 3-day free trial for parents.`
 
   return {
