@@ -6,9 +6,14 @@ function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 }
 
+// Anything not listed here is rejected with a 400 and lost. 'onboarding_skipped'
+// was being sent by app/onboarding/OnboardingClient.tsx's handleSkip and
+// silently dropped on every single skip, which is why the table shows one
+// onboarding_completed and no skips at all — the drop-off was invisible.
 const ALLOWED_EVENTS = new Set([
   'report_viewed', 'viral_hook_tapped', 'invite_link_clicked',
-  'invite_sent', 'onboarding_completed',
+  'invite_sent', 'onboarding_completed', 'onboarding_skipped',
+  'onboarding_started', 'report_shared',
 ])
 
 export async function POST(req: NextRequest) {
