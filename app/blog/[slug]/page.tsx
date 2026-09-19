@@ -480,6 +480,180 @@ const POSTS: BlogPost[] = [
       </>
     ),
   },
+  {
+    slug: 'dog-walking-charges-mumbai',
+    category: 'Dog Walking',
+    categoryColor: '#FEF3C7',
+    categoryText: '#78350F',
+    image: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=1200&q=80',
+    title: 'Dog walking charges in Mumbai: what people actually pay',
+    date: 'Sep 16, 2026',
+    readTime: '6 min read',
+    author: 'PupStep Team',
+    content: (
+      <>
+        <p>Ask five dog parents in Andheri what they pay their walker and you&apos;ll get five different numbers, none of them written down anywhere. Dog walking in Mumbai is an almost entirely informal market: no published rate card, no standard duration, no contract. The price is whatever was agreed verbally, often years ago, and quietly never revisited.</p>
+        <p>Here is what that market actually looks like, based on what walkers and parents in the western suburbs have told us directly. Treat these as observed ranges from conversations, not a survey — the spread is genuinely wide, and your building, your dog, and your timing all move the number.</p>
+
+        <h2>The rough shape of the market</h2>
+        <p>Most arrangements in Mumbai fall into one of three buckets:</p>
+        <ul>
+          <li><strong>The person already in your home.</strong> A maid, cook, or house help who adds the walk to their existing duties. Often the cheapest arrangement by a wide margin, sometimes folded into their overall salary with no separate line item at all.</li>
+          <li><strong>The building watchman or a local freelancer.</strong> Paid monthly per dog, usually cash, usually one walk a day. This is the most common setup we see in the western suburbs.</li>
+          <li><strong>A professional walker or small agency.</strong> Someone who walks dogs as their actual job, often handling fifteen to thirty dogs across a neighbourhood with a small team. Higher rate, more reliability, and the only tier where you are likely to get anything resembling a substitute when your regular person is sick.</li>
+        </ul>
+        <p>The jump between the second and third bucket is where most of the price difference lives, and it usually buys continuity rather than a better walk.</p>
+
+        <h2>What actually moves the price</h2>
+        <p>The variables that matter most, roughly in order:</p>
+        <ul>
+          <li><strong>Walks per day.</strong> Two walks is rarely double the price of one; most walkers quote a smaller increment for the second.</li>
+          <li><strong>Dog size and pull.</strong> A large, strong dog that pulls is genuinely harder work, and walkers price it that way.</li>
+          <li><strong>Your building.</strong> High floors with slow lifts, or societies that require the walker to sign in every time, add real minutes to every trip.</li>
+          <li><strong>Timing.</strong> Early morning slots before 7am are the most in demand and the hardest for a walker to fill with other dogs.</li>
+          <li><strong>Monsoon.</strong> Some walkers quietly raise rates from June to September, or reduce duration. Worth asking about before the season, not during it.</li>
+        </ul>
+
+        <h2>The question almost nobody asks</h2>
+        <p>Price is the question every parent asks first. The one they almost never ask is <em>how long is the walk actually</em>, and it matters more.</p>
+        <p>A walk is usually agreed as &quot;half an hour&quot; and then never measured again. Whether that half hour is genuinely thirty minutes of walking, or twelve minutes plus a chat downstairs, is invisible from inside your flat. Two parents paying identical amounts in the same building can be getting very different walks, and neither of them knows it.</p>
+        <p>This is not an accusation against walkers. Most of them are doing an honest job. It is simply that nothing in the arrangement produces a record, so there is no way for a good walker to prove they are good, and no way for a parent to tell the difference.</p>
+
+        <h2>How to have the money conversation without making it awkward</h2>
+        <p>If you think you are overpaying, or your walker has asked for a raise, a few things that work better than haggling:</p>
+        <ul>
+          <li><strong>Anchor on duration and consistency, not rupees.</strong> &quot;Can we make it a proper forty minutes?&quot; is a much easier conversation than &quot;I think this is expensive.&quot;</li>
+          <li><strong>Ask what happens when they are unavailable.</strong> A walker with a real backup is worth more than one without, and it is fair to say so out loud.</li>
+          <li><strong>Revisit annually, not never.</strong> Rates agreed three years ago and never touched are how good walkers quietly leave for someone who pays market.</li>
+          <li><strong>Pay on a fixed date.</strong> The single most common complaint we hear from walkers is not the rate, it is being chased for payment.</li>
+        </ul>
+
+        <h2>Paying for the walk and paying for proof are two different things</h2>
+        <p>Whatever you pay your walker, that money buys the walk. It does not buy you any way of seeing it.</p>
+        <p>That is the gap PupStep fills, and it is worth being precise about what it is and is not. PupStep does not supply a walker, set their rate, or take a cut of what you pay them. You keep the person you already have on exactly the terms you already agreed. What changes is that after each walk you get the GPS route, how long it actually took, how far they actually went, a photo, and a potty log, on WhatsApp.</p>
+        <p>For a good walker this is an asset, not a threat: it is the first time they have had a way to demonstrate that the walk they did was a real one. Several walkers have told us it ended a recurring argument about duration in their favour.</p>
+
+        <h2>The short version</h2>
+        <p>Mumbai has no standard dog walking rate, and anyone quoting you one with confidence is guessing. What you can do is be clear about what you are buying: how many walks, how long each one is, what happens when your walker cannot come, and whether you have any way at all of knowing the agreed walk is the walk that happened.</p>
+
+        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Already paying someone to walk your dog? <Link href="/setup" className="underline text-amber-800">Set up PupStep</Link> and see the route, duration and distance of every walk on WhatsApp. Free for your walker, 3-day free trial for you.</p>
+      </>
+    ),
+  },
+  {
+    slug: 'track-dog-walk-real-time-india',
+    category: 'Dog Walking',
+    categoryColor: '#FEF3C7',
+    categoryText: '#78350F',
+    image: 'https://images.unsplash.com/photo-1477884213360-7e9d7dcc1e48?auto=format&fit=crop&w=1200&q=80',
+    title: 'How to track your dog’s walk in real time (and what each method actually costs)',
+    date: 'Sep 17, 2026',
+    readTime: '7 min read',
+    author: 'PupStep Team',
+    content: (
+      <>
+        <p>If you want to know where your dog actually goes on their daily walk, you have three realistic options in India right now. They cost very different amounts, they fail in very different ways, and most articles comparing them are written by whoever sells one of the three.</p>
+        <p>Here is an honest walk through all three, including where our own approach falls short.</p>
+
+        <h2>Option 1: A GPS collar or tracker on the dog</h2>
+        <p>A small device clipped to the dog&apos;s collar with its own SIM and its own battery.</p>
+        <p><strong>What it does well.</strong> It tracks the dog, not a phone, so it works no matter who is holding the leash or what handset they own. It keeps working if the walker&apos;s phone dies. And it doubles as a lost-dog tracker, which is a genuinely separate and valuable use.</p>
+        <p><strong>Where it falls down.</strong> Cost is the obvious one: a device plus an ongoing SIM or subscription, per dog. Battery life is the quieter problem, because the failure is silent. Nobody notices a flat tracker until the day they need it. Size and weight matter too: most 4G trackers sold in India are built for bikes and cars, and are genuinely too heavy for a small or medium dog to wear comfortably twice a day. And a tracker records a path but nothing else. No photo, no note that your dog was limping, no potty log.</p>
+
+        <h2>Option 2: The walker&apos;s own phone</h2>
+        <p>The walker opens a link or an app at the start of the walk, and their phone&apos;s GPS records the route.</p>
+        <p><strong>What it does well.</strong> Zero hardware. Nothing to charge, clip on, lose, or replace. It works from the first walk, and it captures things a collar never can, because there is a person attached to it: a photo of your dog mid-walk, a note that they refused to walk past a particular gate, a potty log.</p>
+        <p><strong>Where it falls down, and this is the part usually left out.</strong> Browser-based GPS stops recording when the phone screen locks or the walker switches apps. The page freezes, and location updates stop until they look at the screen again.</p>
+        <p>We can put a number on this because we measured it on our own walks. Across 55 real tracked walks, 30 of them — 55% — contained at least one gap longer than 30 seconds. The longest single gap was 11 and a half minutes. Around 15% of total tracked time was affected. Budget Android phones sold in India are especially aggressive about freezing background tabs to save battery, which makes this worse here than in most markets.</p>
+        <p>There are real mitigations. A screen wake lock stops the phone locking on its own, and the walk resumes tracking the moment the walker looks at their screen again. Distance covered during a gap is estimated from the walk&apos;s own measured pace rather than counted as zero. But mitigation is not elimination, and anyone telling you phone-based tracking is flawless has not measured it.</p>
+
+        <h2>Option 3: Nothing, which is what most people do</h2>
+        <p>Worth stating plainly, because it is the actual status quo for the overwhelming majority of dog parents in India. The walk happens, a one-line WhatsApp message arrives, and that is the entire record.</p>
+        <p><strong>What it does well.</strong> It costs nothing and it asks nothing of the walker, which is not a small thing when the walker is your maid or your building watchman and the relationship matters more than the data.</p>
+        <p><strong>Where it falls down.</strong> You have no way to tell a good walk from a short one, and no way to reconstruct anything after the fact. If your dog is limping on Thursday, you cannot check what Tuesday&apos;s route was.</p>
+
+        <h2>Which one is actually right for you</h2>
+        <ul>
+          <li><strong>Your dog has escaped or you fear they might.</strong> Buy a GPS collar. That is what it is for, and no phone-based method substitutes for it.</li>
+          <li><strong>You want to know how the daily walk went.</strong> Phone-based tracking gives you far more than a route: photo, duration, distance, potty log, and a note from a human who was there.</li>
+          <li><strong>Your walker has no smartphone at all.</strong> Genuinely rare in Mumbai now, but if so, a collar is your only option.</li>
+          <li><strong>You want both.</strong> They are not mutually exclusive, and they fail independently, which is the point.</li>
+        </ul>
+
+        <h2>What PupStep does, stated plainly</h2>
+        <p>PupStep is option two. Your walker opens a WhatsApp link, taps Start, walks your dog, taps End. There is no app to download and no account for them to create. You get the GPS route, real duration, real distance, walking pace, a photo, and a potty log on WhatsApp within seconds of the walk finishing.</p>
+        <p>What it is not: it is not a dog walker marketplace. We do not supply, vet, assign, or guarantee a walker, and we do not take a cut of what you pay yours. You keep the person your dog already knows.</p>
+        <p>And the limitation above is real. If the walker&apos;s phone is locked in a pocket for the whole walk, some of that stretch is estimated rather than measured, and the report says so rather than quietly presenting an estimate as a fact. We would rather tell you which minutes we are sure about.</p>
+
+        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Want to see today&apos;s walk? <Link href="/setup" className="underline text-amber-800">Set up PupStep for your dog</Link> — 3-day free trial, nothing for your walker to install.</p>
+      </>
+    ),
+  },
+  {
+    slug: 'dog-walker-skipping-walks-what-to-do',
+    category: 'Dog Walking',
+    categoryColor: '#FEF3C7',
+    categoryText: '#78350F',
+    image: 'https://images.unsplash.com/photo-1494947665470-20322015e3a8?auto=format&fit=crop&w=1200&q=80',
+    title: 'You think your dog walker is cutting the walk short. What now?',
+    date: 'Sep 18, 2026',
+    readTime: '6 min read',
+    author: 'PupStep Team',
+    content: (
+      <>
+        <p>It usually starts small. Your dog comes back with dry paws on a day it rained. The walk was reported done eleven minutes after it started. Your neighbour mentions seeing your walker sitting downstairs with your dog at a time they should have been out.</p>
+        <p>None of those is proof. All of them are the kind of thing that sits in your head for weeks, because there is no polite way to raise it and no way to check.</p>
+        <p>Here is how to handle it without either accusing someone unfairly or quietly resenting them for months.</p>
+
+        <h2>First: separate the signals from the noise</h2>
+        <p>Some things that feel like evidence are not:</p>
+        <ul>
+          <li><strong>Your dog isn&apos;t tired.</strong> Fitness, weather, age, and what happened earlier in the day all affect this more than walk length does.</li>
+          <li><strong>A single fast walk.</strong> Bad weather, a sudden stomach upset, or an aggressive street dog on the usual route all legitimately cut a walk short.</li>
+          <li><strong>They didn&apos;t answer your message immediately.</strong> They were walking your dog.</li>
+        </ul>
+        <p>Things that genuinely are worth paying attention to:</p>
+        <ul>
+          <li>A <em>pattern</em> of unusually short turnarounds, not one instance</li>
+          <li>Reports that are word-for-word identical every single day</li>
+          <li>The same photo appearing on different days, or photos that are always taken at the gate and never anywhere else</li>
+          <li>Your dog starting to resist the leash specifically when this person arrives</li>
+          <li>A direct question about a specific walk getting a vague non-answer</li>
+        </ul>
+        <p>The last one is the strongest tell. Most people answer a specific question specifically unless there is a reason not to.</p>
+
+        <h2>Second: consider the boring explanations</h2>
+        <p>Before assuming the worst, the most common real causes of short walks, in rough order of frequency:</p>
+        <ul>
+          <li><strong>They have too many dogs in that slot.</strong> A walker who has quietly taken on four more dogs on your street is squeezing every walk, not singling you out.</li>
+          <li><strong>Heat.</strong> In May, a genuinely responsible walker shortens midday walks, and should tell you so.</li>
+          <li><strong>Your dog doesn&apos;t want to go.</strong> Some dogs plant themselves after ten minutes. A walker who drags them further is not doing better.</li>
+          <li><strong>The agreement was never specific.</strong> You think you agreed forty minutes. They think you agreed &quot;a walk.&quot; Both of you are being honest.</li>
+        </ul>
+        <p>That last one causes more of these conflicts than dishonesty does.</p>
+
+        <h2>Third: raise it without turning it into an accusation</h2>
+        <p>The framing that works is a request going forward, not an audit going backward. Some phrasings that keep the relationship intact:</p>
+        <ul>
+          <li>&quot;Can we make it a proper thirty minutes from now on? I want to be clear it&apos;s thirty and not fifteen, so you&apos;re not short-changed either.&quot;</li>
+          <li>&quot;Can you send me a photo from wherever you turn around? Not checking up, I just like seeing him out.&quot;</li>
+          <li>&quot;How many dogs are you handling in the morning slot now?&quot;</li>
+        </ul>
+        <p>Notice none of those say &quot;I think you&apos;re lying.&quot; A walker who is doing the job well will answer all three without difficulty. A walker who is not will get uncomfortable at the second one, and that itself tells you something.</p>
+
+        <h2>Fourth: get a record, so this never becomes a standoff again</h2>
+        <p>The root problem is structural. You are paying for something that happens entirely outside your sight, and neither of you has any record of it. That means every disagreement becomes your word against theirs, which is a terrible position for both of you.</p>
+        <p>A record fixes it in both directions, and the second direction is the one people miss. A walker who is doing thirty honest minutes currently has no way to prove it. The day a parent accuses them unfairly, they have nothing. Several walkers using PupStep have told us the route map ended exactly that argument in their favour.</p>
+        <p>What that looks like in practice: your walker opens a WhatsApp link, taps Start, walks your dog, taps End. No app to install, no account to create, nothing for them to pay. You get the actual GPS route, actual duration, actual distance, walking pace, a photo, and a potty log after every walk.</p>
+
+        <h2>And if it turns out you were right</h2>
+        <p>If you get a record and it confirms the walks really are eight minutes, you have a decision, but at least it is now a decision based on something. Give them one clear chance with the expectation stated plainly. Most people correct course when they know it is visible. If it does not change after that, it is not a misunderstanding.</p>
+        <p>For what it is worth: in our experience the record vindicates the walker more often than it convicts them. The suspicion is usually a product of not knowing, rather than of something actually being wrong.</p>
+
+        <p className="text-sm text-slate-400 mt-8 pt-6 border-t border-slate-100">Stop guessing about the daily walk. <Link href="/setup" className="underline text-amber-800">Set up PupStep for your dog</Link> — GPS route and photo on WhatsApp after every walk, free for your walker.</p>
+      </>
+    ),
+  },
 ]
 
 export function generateStaticParams() {
@@ -499,6 +673,9 @@ const META_DESCRIPTIONS: Record<string, string> = {
   'vet-visit-checklist-mumbai': 'Vaccination records, food logs, walk history — vets in Mumbai say most pet parents come underprepared. A simple checklist to make every visit count.',
   'how-to-verify-your-dog-walker-mumbai': 'A one-line WhatsApp text or a blurry gate photo doesn\'t tell you much. What actually lets you check in on a dog walk — GPS route, timestamped photo, duration, and potty log.',
   'dog-walking-app-model-differences-mumbai': 'Marketplace-style apps and verification-style apps solve different problems. The structural difference worth understanding before you choose between them.',
+  'dog-walking-charges-mumbai': 'Mumbai has no standard dog walking rate. What maids, watchmen and professional walkers actually charge, what moves the price, and the question about duration almost nobody asks.',
+  'track-dog-walk-real-time-india': 'GPS collar, the walker\'s phone, or nothing at all. An honest comparison of all three ways to track your dog\'s walk in India — including where each one fails.',
+  'dog-walker-skipping-walks-what-to-do': 'Short walks, dry paws on a rainy day, identical reports every day. How to tell a real signal from noise, raise it without accusing anyone, and get a record so it never becomes your word against theirs.',
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -521,13 +698,72 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   }
 }
 
+// Display dates ('Jul 13, 2026') are what the page shows; schema.org needs a
+// machine-readable one. Derive it here rather than duplicating an `iso` field
+// on every post — the next post added would be the one that forgets it. The
+// explicit 'Z' pins parsing to UTC so the date never shifts by a day on a
+// server in another timezone.
+function isoDate(display: string): string {
+  const d = new Date(`${display} 00:00:00Z`)
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10)
+}
+
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const post = POSTS.find(p => p.slug === slug)
   if (!post) notFound()
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pupstep.in'
+  const published = isoDate(post.date)
+  const description = META_DESCRIPTIONS[post.slug] ?? post.title
+
   return (
     <div className="min-h-screen" style={{ background: '#FFFBEB' }}>
+
+      {/* Article schema — makes the post eligible for article rich results and
+          gives assistants an explicit author/publisher/date to cite. Without
+          this, Google has to infer all of it from the rendered HTML. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BlogPosting',
+            headline: post.title,
+            description,
+            image: [post.image],
+            datePublished: published,
+            dateModified: published,
+            author: { '@type': 'Organization', name: 'PupStep', url: siteUrl },
+            publisher: {
+              '@type': 'Organization',
+              name: 'PupStep',
+              url: siteUrl,
+              logo: { '@type': 'ImageObject', url: `${siteUrl}/icon.png` },
+            },
+            mainEntityOfPage: { '@type': 'WebPage', '@id': `${siteUrl}/blog/${post.slug}` },
+            articleSection: post.category,
+            inLanguage: 'en-IN',
+          }),
+        }}
+      />
+
+      {/* Breadcrumbs — renders the Home › Blog › Post trail under the search
+          result instead of a bare URL. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+              { '@type': 'ListItem', position: 2, name: 'Blog', item: `${siteUrl}/blog` },
+              { '@type': 'ListItem', position: 3, name: post.title, item: `${siteUrl}/blog/${post.slug}` },
+            ],
+          }),
+        }}
+      />
 
       {/* Hero image */}
       <div className="w-full relative overflow-hidden" style={{ height: '420px' }}>
