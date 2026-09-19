@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { createClient } from '@/lib/supabase/client'
+import { trackServer } from '@/lib/analytics'
 
 const EASE = [0.25, 0.46, 0.45, 0.94] as const
 
@@ -41,6 +42,14 @@ export default function OnboardingClient({ userName }: { userName: string }) {
   const [loading, setLoading] = useState(false)
   const [direction, setDirection] = useState(1)
 
+  // Without a "started" event, completed and skipped can't be read as a rate —
+  // someone who closes the tab mid-onboarding leaves no trace at all, so a low
+  // completed count is indistinguishable from low traffic. This is the
+  // denominator.
+  useEffect(() => {
+    trackServer('onboarding_started')
+  }, [])
+
   function goNext() {
     setDirection(1)
     setStep(s => s + 1)
@@ -56,12 +65,10 @@ export default function OnboardingClient({ userName }: { userName: string }) {
       })
       const data = await res.json()
 
-      // Track event
-      fetch('/api/track', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ event_type: 'onboarding_completed', role }),
-      }).catch(() => {})
+      // `role` was being sent as a top-level key, which /api/track ignores —
+      // it only reads event_type, invite_token, report_token and metadata. It
+      // belongs in metadata to actually be stored.
+      trackServer('onboarding_completed', { metadata: { role } })
 
       // Mark onboarding complete
       fetch('/api/onboarding-complete', { method: 'POST' }).catch(() => {})
@@ -80,11 +87,7 @@ export default function OnboardingClient({ userName }: { userName: string }) {
   }
 
   async function handleSkip() {
-    fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_type: 'onboarding_skipped' }),
-    }).catch(() => {})
+    trackServer('onboarding_skipped', { metadata: { step } })
     fetch('/api/onboarding-complete', { method: 'POST' }).catch(() => {})
     window.location.href = '/my-reports'
   }

@@ -4,7 +4,7 @@ import { motion, useReducedMotion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
 import { useRef, useEffect, useState } from 'react'
 import { loadGoogleMaps } from '@/lib/googleMapsLoader'
-import { trackEvent } from '@/lib/analytics'
+import { trackEvent, trackServer } from '@/lib/analytics'
 import { SNAP_MAP_STYLE } from '@/lib/snapMapStyle'
 import { smoothRoute, matchToRoads, type GpsPoint } from '@/lib/gpsProcessing'
 import { haversineKm, MIN_WALK_PACE_MPS } from '@/lib/gapDistanceEstimate'
@@ -562,6 +562,14 @@ export default function WalkReportCard({
   }, [burst])
   useEffect(() => {
     trackEvent('report_viewed', { is_first_report: isFirstReport, logged_by: report.logged_by ?? 'walker' })
+    // Also log first-party, keyed to this report's token. GA4 alone can't tell
+    // the admin panel how many times THIS report was opened — that count reads
+    // from analytics_events.report_token, and it has been frozen since the
+    // /api/track call was dropped from this effect in June.
+    trackServer('report_viewed', {
+      report_token: report.token,
+      metadata: { is_first_report: isFirstReport, logged_by: report.logged_by ?? 'walker' },
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -622,6 +630,7 @@ export default function WalkReportCard({
   async function handleCopy() {
     try { await navigator.clipboard.writeText(shareUrl) } catch { void 0 }
     trackEvent('report_shared', { method: 'copy_link', logged_by: report.logged_by ?? 'walker' })
+    trackServer('report_shared', { report_token: report.token, metadata: { method: 'copy_link' } })
     setCopied(true); setTimeout(() => setCopied(false), 2200)
   }
 
@@ -919,7 +928,10 @@ export default function WalkReportCard({
           <motion.a
             href={`https://wa.me/?text=${waText}`}
             target="_blank" rel="noopener noreferrer"
-            onClick={() => trackEvent('report_shared', { method: 'whatsapp', logged_by: report.logged_by ?? 'walker' })}
+            onClick={() => {
+              trackEvent('report_shared', { method: 'whatsapp', logged_by: report.logged_by ?? 'walker' })
+              trackServer('report_shared', { report_token: report.token, metadata: { method: 'whatsapp' } })
+            }}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '15px', borderRadius: 18, background: 'linear-gradient(160deg, #25D366 0%, #1aad54 100%)', boxShadow: 'inset 0 1.5px 0 rgba(255,255,255,0.22), inset 0 -4px 0 rgba(14,100,55,0.5), 0 8px 20px rgba(37,211,102,0.28)', color: '#fff', fontFamily: 'var(--font-fredoka)', fontSize: 16, fontWeight: 700, textDecoration: 'none' }}
             whileTap={{ scale: 0.97 }} transition={{ duration: 0.12 }}>
             <IconWA />
@@ -940,7 +952,17 @@ export default function WalkReportCard({
 
         {/* Footer */}
         <div style={{ textAlign: 'center', paddingTop: 8 }}>
-          <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, textDecoration: 'none' }}>
+          {/* This is the acquisition loop: someone who was SENT a report taps
+              the brand and lands on the homepage. The admin panel's per-report
+              "hook tapped" flag reads this event, and nothing has fired it
+              since June — every tap since then has gone uncounted. */}
+          <Link
+            href="/"
+            onClick={() => {
+              trackEvent('viral_hook_tapped', { logged_by: report.logged_by ?? 'walker' })
+              trackServer('viral_hook_tapped', { report_token: report.token })
+            }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, textDecoration: 'none' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.webp" alt="PupStep" style={{ height: 16, width: 'auto', opacity: 0.35 }} />
           </Link>
