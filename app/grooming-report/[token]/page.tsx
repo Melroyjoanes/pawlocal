@@ -21,7 +21,7 @@ async function fetchReport(token: string) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { token } = await params
   const report = await fetchReport(token)
-  if (!report) return { title: 'Grooming Report | PupStep' }
+  if (!report) return { title: 'Grooming Report' }
 
   const { dog_name, provider_name, services_done = [], ticks_found = 0 } = report
 
@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const ogImageUrl = `${base}/api/og/grooming-report/${token}?${ogParams.toString()}`
 
   return {
-    title: `${dog_name}'s Grooming Report | PupStep`,
+    title: `${dog_name}'s Grooming Report`,
     description: desc,
     openGraph: {
       title: `${dog_name} just got groomed! ✂️`,

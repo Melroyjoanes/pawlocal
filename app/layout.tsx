@@ -12,6 +12,13 @@ import './globals.css'
 
 const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
 
+// Microsoft Clarity — session replay and heatmaps. The project id is not a
+// secret (it ships to every visitor in the page), so it's inlined with an env
+// override rather than env-only: env-only would mean the tag silently does
+// nothing until someone remembers to set it in Vercel. Same pattern as
+// siteUrl below.
+const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID ?? 'ykx74q9zge'
+
 // Fredoka — bubbly display font matching the logo lettering
 // Only 2 weights: regular headings (500) + bold CTAs (700)
 const fredoka = Fredoka({
@@ -93,6 +100,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://maps.googleapis.com" />
         <link rel="preconnect" href="https://maps.gstatic.com" crossOrigin="" />
         <link rel="dns-prefetch" href="https://maps.googleapis.com" />
+        {/* Clarity records sessions, and walk report pages carry a real dog's
+            name, the walker's name, a route map and a doorstep photo. Clarity
+            masks form inputs by default but NOT page content, so that detail
+            reaches Microsoft unless masking is tightened in the Clarity
+            dashboard (Settings → Masking). Flagged, not silently shipped. */}
+        {CLARITY_PROJECT_ID && (
+          <Script id="ms-clarity" strategy="afterInteractive">
+            {`(function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+              })(window, document, "clarity", "script", "${CLARITY_PROJECT_ID}");`}
+          </Script>
+        )}
         {GA_MEASUREMENT_ID && (
           <>
             <Script
