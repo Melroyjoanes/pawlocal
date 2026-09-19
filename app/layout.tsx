@@ -69,7 +69,15 @@ export const metadata: Metadata = {
     images: [`${siteUrl}/api/og`],
   },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
-  verification: { google: '2LztnQwPLifOrj3Ns_OhWx_tfRcu4aSwZAsP-fsskeg' },
+  // Two Search Console properties. The first token verifies the original
+  // property and must stay — removing it un-verifies that property and the
+  // historical search data with it. Next.js renders one meta tag per entry.
+  verification: {
+    google: [
+      '2LztnQwPLifOrj3Ns_OhWx_tfRcu4aSwZAsP-fsskeg',
+      '-04GnLXCcLDjeicvrWo3zJWtHKRW5Yb6qayGafz7wwA',
+    ],
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
