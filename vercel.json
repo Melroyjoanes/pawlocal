@@ -11,5 +11,14 @@
       ]
     }
   ],
-  "crons": []
+  "crons": [
+    {
+      "path": "/api/cron/trial-expiry",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/renewal-reminder",
+      "schedule": "30 3 * * *"
+    }
+  ]
 }
