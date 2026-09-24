@@ -11,5 +11,13 @@ jobs:
     steps:
       - name: Call payment-reconciliation endpoint
         run: |
-          curl -sf -X GET "https://pupstep.in/api/cron/payment-reconciliation" \
+          # --retry covers transient upstream failures (Razorpay/Supabase 5xx,
+          # timeouts) which previously turned a one-off blip into a red X.
+          # A 401 is NOT retried on purpose — that means the secret is wrong
+          # and retrying would only hide it.
+          # --fail-with-body prints the server's error instead of a bare exit 22.
+          curl --fail-with-body -sS \
+            --retry 4 --retry-delay 15 \
+            --connect-timeout 15 --max-time 120 \
+            -X GET "https://pupstep.in/api/cron/payment-reconciliation" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
