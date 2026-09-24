@@ -35,6 +35,10 @@ interface Props {
   // correctly locked it.
   isEntitled: boolean
   totalReports: number
+  hasDog: boolean
+  hasActiveWalker: boolean
+  primaryDogName: string | null
+  walkerName: string | null
 }
 
 // ─── Framer Motion variants ───────────────────────────────────────────────────
@@ -193,7 +197,7 @@ function EmptyState() {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export default function MyReportsClient({ walkReports, userName, isSubscribed, isEntitled, totalReports }: Props) {
+export default function MyReportsClient({ walkReports, userName, isSubscribed, isEntitled, totalReports, trialExpired, hasDog, hasActiveWalker, primaryDogName, walkerName }: Props) {
   const router = useRouter()
   const [showUnlock, setShowUnlock] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -205,6 +209,64 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, i
   // hit the paywall here, and a mixed user still gets to see their free
   // self-walk reports even while their walker-logged ones are locked.
   const hasSelfWalkReports = walkReports.some((r) => r.logged_by === 'parent')
+
+  // This screen used to have two states keyed off `totalReports` alone, so a
+  // parent who had just signed up — no dog, no walker, no trial — was told
+  // "Your trial has ended. Your walker can still log walks." Both false:
+  // trialExpired is only true once trial_started_at is set and elapsed (see
+  // lib/entitlement.ts), and the trial starts on the FIRST walk report. So
+  // zero reports means the trial never began.
+  //
+  // Four real states, and only the last one is a paywall. Showing ₹199/month
+  // to someone who hasn't added a dog asks for money before the product has
+  // done anything.
+  // Reports-or-expired wins the precedence: a parent who has locked history
+  // (or a genuinely spent trial) needs the unlock, even if they since deleted
+  // the dog row — telling them to "add your dog" would strand their history.
+  // Only below that do the setup states apply.
+  const lockedState: 'no-dog' | 'no-walker' | 'awaiting-first-walk' | 'expired' =
+    (totalReports > 0 || trialExpired) ? 'expired'
+    : !hasDog ? 'no-dog'
+    : !hasActiveWalker ? 'no-walker'
+    : 'awaiting-first-walk'
+
+  const dog = primaryDogName ?? 'your dog'
+  const walker = walkerName ?? 'your walker'
+
+  const LOCKED_COPY = {
+    'no-dog': {
+      icon: '🐕',
+      title: 'No walks here yet',
+      body: 'Add your dog, then share a link with whoever walks them. Every walk they log shows up here and on your WhatsApp.',
+      cta: 'Add your dog',
+      href: '/setup',
+    },
+    'no-walker': {
+      icon: '🔗',
+      title: `${dog} is all set`,
+      body: `Now share the walker link with whoever walks ${dog}. They just open it — nothing to download, and they never pay.`,
+      cta: 'Get the walker link',
+      href: '/setup',
+    },
+    'awaiting-first-walk': {
+      icon: '🐾',
+      title: 'Waiting on the first walk',
+      body: `${walker} is connected. As soon as they finish a walk with ${dog}, the report lands here — and your 3 free days start from that first walk, not before.`,
+      cta: 'Back to home',
+      href: '/home',
+    },
+    expired: {
+      icon: '🔒',
+      title: totalReports > 0
+        ? `${totalReports} walk ${totalReports === 1 ? 'report' : 'reports'} on record`
+        : 'Your free trial has ended',
+      body: totalReports > 0
+        ? `${walker} keeps logging walks. Upgrade to get new reports on WhatsApp and open your full history again.`
+        : `${walker} can keep logging walks. Upgrade to start getting reports on WhatsApp after every walk.`,
+      cta: 'Get reports delivered → ₹199/month',
+      href: '/upgrade',
+    },
+  }[lockedState]
 
   if (!isEntitled && !hasSelfWalkReports) {
     return (
@@ -233,18 +295,16 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, i
               maxWidth: 340,
             }}
           >
-            <div style={{ fontSize: 56 }}>🔒</div>
+            <div style={{ fontSize: 56 }}>{LOCKED_COPY.icon}</div>
             <p style={{ fontFamily: 'var(--font-fredoka)', fontSize: 24, fontWeight: 700, color: '#0A2F35', margin: '12px 0 8px' }}>
-              {totalReports > 0 ? `${totalReports} walk ${totalReports === 1 ? 'report' : 'reports'} on record` : 'Your trial has ended'}
+              {LOCKED_COPY.title}
             </p>
             <p style={{ fontFamily: 'var(--font-nunito)', fontSize: 14, color: '#6B7280', margin: 0, lineHeight: 1.6, maxWidth: 280 }}>
-              {totalReports > 0
-                ? "Your walker keeps logging walks. Upgrade to receive new reports on WhatsApp and view your full history."
-                : "Your walker can still log walks. Upgrade to start receiving reports on WhatsApp after every walk."}
+              {LOCKED_COPY.body}
             </p>
           </div>
           <a
-            href="/upgrade"
+            href={LOCKED_COPY.href}
             className="clay-cta-pill"
             style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -254,11 +314,15 @@ export default function MyReportsClient({ walkReports, userName, isSubscribed, i
               boxShadow: CLAY_SHADOW_ORANGE,
             }}
           >
-            Get reports delivered → ₹199/month
+            {LOCKED_COPY.cta}
           </a>
+          {/* The awaiting-first-walk CTA already goes home; a second link to
+              the same place would just be noise. */}
+          {LOCKED_COPY.href !== '/home' && (
           <a href="/home" style={{ fontFamily: 'var(--font-nunito)', fontSize: 13, color: '#9CA3AF', textDecoration: 'none' }}>
             ← Back to home
           </a>
+          )}
         </div>
 
         <ParentBottomNav />

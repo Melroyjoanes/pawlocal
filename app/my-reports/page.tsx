@@ -24,7 +24,7 @@ export default async function MyReportsPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [{ data: connections }, { data: dogsRaw }] = await Promise.all([
     safe((db.from('walker_connections') as any)
-      .select('id')
+      .select('id, status, walker_name')
       .eq('owner_id', user.id)),
     safe((db.from('dogs') as any)
       .select('name')
@@ -33,6 +33,14 @@ export default async function MyReportsPage() {
 
   const connectionIds: string[] = (connections ?? []).map((c: { id: string }) => c.id)
   const dogNames: string[] = (dogsRaw ?? []).map((d: { name: string }) => d.name).filter(Boolean)
+
+  // The locked screen used to assume anyone without reports was a lapsed
+  // trialist. Someone who signed up and never added a dog has no trial and no
+  // walker, so it told them two things that weren't true. These three let the
+  // screen say where the parent actually is.
+  const activeConnection = (connections ?? []).find(
+    (c: { status?: string }) => c.status === 'active'
+  ) as { walker_name?: string | null } | undefined
 
   const [
     entitlement,
@@ -110,6 +118,10 @@ export default async function MyReportsPage() {
       trialExpired={trialExpired}
       isEntitled={entitlement.isEntitled}
       totalReports={Array.from(walkMap.values()).length}
+      hasDog={dogNames.length > 0}
+      hasActiveWalker={!!activeConnection}
+      primaryDogName={dogNames[0] ?? null}
+      walkerName={activeConnection?.walker_name ?? null}
     />
   )
 }
