@@ -298,7 +298,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
             className="text-sm max-w-sm mx-auto leading-relaxed mt-3"
             style={{ fontFamily: 'var(--font-nunito)', color: '#0A2F35', opacity: 0.5 }}
           >
-            Every report is saved for good, building into {dogName ? `${dogName}'s` : 'your dog\'s'} full health history — vet visits, grooming, and every walk, in one place.
+            Every report is saved for good, building into {dogName ? `${dogName}'s` : 'your dog\'s'} full walk history, in one place.
           </p>
         </div>
 
@@ -621,7 +621,7 @@ export default function UpgradeClient({ currentPlan, expiresAt, isLoggedIn, tria
 
         {/* Feature pills */}
         <div className="flex flex-wrap gap-2 justify-center mb-12">
-          {['GPS every walk', 'Photos never deleted', 'Cancel anytime', 'Grooming history', 'Share with vets'].map((pill) => (
+          {['GPS every walk', 'Photos never deleted', 'Cancel anytime'].map((pill) => (
             <span
               key={pill}
               className="px-4 py-2 rounded-full text-xs font-semibold"
