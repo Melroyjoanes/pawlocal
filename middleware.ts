@@ -1,7 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import { CAMPAIGN_COOKIE, campaignFromSearchParams } from '@/lib/campaign'
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'melroy@verfolia.com'
+
+function preserveCampaignAttribution(request: NextRequest, response: NextResponse) {
+  // Keep the first campaign that introduced this visitor. GA4 handles the live
+  // session; this cookie lets us attribute a later Google OAuth signup after
+  // the browser has left pupstep.in and returned.
+  if (request.cookies.has(CAMPAIGN_COOKIE)) return response
+
+  const campaign = campaignFromSearchParams(
+    request.nextUrl.searchParams,
+    `${request.nextUrl.pathname}${request.nextUrl.search}`
+  )
+
+  if (campaign) {
+    response.cookies.set(CAMPAIGN_COOKIE, JSON.stringify(campaign), {
+      maxAge: 60 * 60 * 24 * 90,
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: request.nextUrl.protocol === 'https:',
+    })
+  }
+
+  return response
+}
 
 // Routes only the admin can access (V1 provider tools kept for internal use)
 function isAdminOnly(pathname: string) {
@@ -27,7 +52,7 @@ export async function middleware(request: NextRequest) {
 
   // Always set x-pathname so the root layout can detect /pro, /admin, /track
   // and suppress the customer header/footer for those isolated shells.
-  let response = NextResponse.next({ request })
+  let response = preserveCampaignAttribution(request, NextResponse.next({ request }))
   response.headers.set('x-pathname', pathname)
 
   // Admin-only routes: /pro/*, /join/*, /become-a-provider, /review/*, /live/*
@@ -41,7 +66,7 @@ export async function middleware(request: NextRequest) {
           getAll() { return request.cookies.getAll() },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-            response = NextResponse.next({ request })
+            response = preserveCampaignAttribution(request, NextResponse.next({ request }))
             response.headers.set('x-pathname', pathname)
             cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
           },
@@ -51,7 +76,7 @@ export async function middleware(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (user?.email === ADMIN_EMAIL) return response // admin — let through
     // Everyone else → homepage
-    return NextResponse.redirect(new URL('/', request.url))
+    return preserveCampaignAttribution(request, NextResponse.redirect(new URL('/', request.url)))
   }
 
   // Redirect logged-in pet parents from the marketing homepage to their personal home.
@@ -69,7 +94,7 @@ export async function middleware(request: NextRequest) {
           getAll() { return request.cookies.getAll() },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-            response = NextResponse.next({ request })
+            response = preserveCampaignAttribution(request, NextResponse.next({ request }))
             response.headers.set('x-pathname', pathname)
             cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
           },
@@ -81,8 +106,7 @@ export async function middleware(request: NextRequest) {
     if (user) {
       const homeUrl = request.nextUrl.clone()
       homeUrl.pathname = '/home'
-      homeUrl.search = ''
-      return NextResponse.redirect(homeUrl)
+      return preserveCampaignAttribution(request, NextResponse.redirect(homeUrl))
     }
     return response
   }
@@ -98,7 +122,7 @@ export async function middleware(request: NextRequest) {
         getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          response = NextResponse.next({ request })
+          response = preserveCampaignAttribution(request, NextResponse.next({ request }))
           response.headers.set('x-pathname', pathname)
           cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
         },
@@ -113,7 +137,7 @@ export async function middleware(request: NextRequest) {
     const [redirectPath, qs] = protection.redirect.split('?')
     redirectUrl.pathname = redirectPath
     redirectUrl.search = qs ? `?${qs}&next=${encodeURIComponent(pathname)}` : `?next=${encodeURIComponent(pathname)}`
-    return NextResponse.redirect(redirectUrl)
+    return preserveCampaignAttribution(request, NextResponse.redirect(redirectUrl))
   }
 
   return response
