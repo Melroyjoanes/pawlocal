@@ -588,7 +588,13 @@ export default function WalkReportCard({
   // the walker dawdling, when the dog was walked at a perfectly normal 4.1.
   // Reuses MIN_WALK_PACE_MPS, the same "stopped vs moving" line the walker app
   // already uses, so both ends of the product agree on what counts as walking.
-  const walkingPace = (() => {
+  // Returns both the pace and the moving seconds behind it. The loop already
+  // separated moving time from standing time to compute pace honestly; the
+  // moving total was being discarded. Surfacing it answers the question a
+  // parent actually has about a walker who stays in the lobby — "moving 31 of
+  // 38 min" is the difference between a walk and a wait, and it needs no GPS
+  // work that isn't already happening.
+  const walkMotion = (() => {
     const pts = report.route_points
     if (!pts || pts.length < 2) return null
     let km = 0
@@ -608,7 +614,22 @@ export default function WalkReportCard({
     }
     // Under a minute of confirmed movement isn't enough to quote a pace from.
     if (sec < 60 || km <= 0) return null
-    return `${(km / (sec / 3600)).toFixed(1)} km/h`
+    return { pace: `${(km / (sec / 3600)).toFixed(1)} km/h`, movingMins: Math.round(sec / 60) }
+  })()
+
+  const walkingPace = walkMotion?.pace ?? null
+
+  // Only worth showing when it tells the parent something the duration doesn't.
+  // Within a couple of minutes of the total it's just noise, and a computed
+  // figure above the logged duration means the clock and the trace disagree —
+  // say nothing rather than something that looks wrong.
+  const movingSplit = (() => {
+    if (!walkMotion) return null
+    const total = report.duration_mins
+    const moving = walkMotion.movingMins
+    if (!(total > 0) || moving <= 0 || moving > total) return null
+    if (total - moving < 3) return null
+    return { label: `Moving ${moving} of ${total} min`, pct: Math.round((moving / total) * 100) }
   })()
 
 
@@ -815,6 +836,27 @@ export default function WalkReportCard({
                   </p>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Label + percentage + fill bar, per FreeL04Report. It qualifies the
+              duration above rather than standing as a stat of its own, so it
+              sits under the measurement band and not inside the grid. */}
+          {movingSplit && (
+            <div style={{ padding: '0 16px 16px', marginTop: -4, display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{
+                display: 'flex', justifyContent: 'space-between',
+                fontFamily: 'var(--font-nunito)', fontSize: 13, fontWeight: 800,
+              }}>
+                <span style={{ color: '#0A2F35' }}>{movingSplit.label}</span>
+                <span style={{ color: '#547378' }}>{movingSplit.pct}%</span>
+              </div>
+              <div style={{ height: 10, borderRadius: 10, background: 'rgba(10,47,53,0.08)', overflow: 'hidden' }}>
+                <div style={{
+                  width: `${movingSplit.pct}%`, height: '100%',
+                  borderRadius: 10, background: 'oklch(0.48 0.17 196)',
+                }} />
+              </div>
             </div>
           )}
 
