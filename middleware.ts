@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
-import { CAMPAIGN_COOKIE, campaignFromSearchParams } from '@/lib/campaign'
+import { CAMPAIGN_COOKIE, campaignFromSearchParams, redactPath } from '@/lib/campaign'
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'melroy@verfolia.com'
 
@@ -10,9 +10,15 @@ function preserveCampaignAttribution(request: NextRequest, response: NextRespons
   // the browser has left pupstep.in and returned.
   if (request.cookies.has(CAMPAIGN_COOKIE)) return response
 
+  // Pathname only — never the query string. A parent landing on a tagged
+  // /walk-report/<token> link would otherwise write that token into the
+  // cookie, and from there into analytics_events.metadata at signup. The
+  // token is what grants access to that report; it does not belong in an
+  // analytics record. The utm_* values are captured as their own fields
+  // above, so the query adds nothing here anyway.
   const campaign = campaignFromSearchParams(
     request.nextUrl.searchParams,
-    `${request.nextUrl.pathname}${request.nextUrl.search}`
+    redactPath(request.nextUrl.pathname)
   )
 
   if (campaign) {
