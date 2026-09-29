@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { createClient } from '@/lib/supabase/server'
+import { CAMPAIGN_QUERY_KEYS } from '@/lib/campaign'
 import LandingPage from '@/components/LandingPage'
 
 export const metadata: Metadata = {
@@ -13,9 +14,10 @@ export const metadata: Metadata = {
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ ref?: string }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const { ref } = await searchParams
+  const params = await searchParams
+  const ref = typeof params.ref === 'string' ? params.ref : undefined
 
   // Referral capture: the visitor isn't logged in yet, so we can't attribute
   // this to a user account here. Just persist the intent in a short-lived
@@ -32,7 +34,18 @@ export default async function HomePage({
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (user) redirect('/home')
+  if (user) {
+    // Middleware normally handles this redirect. Preserve campaign parameters
+    // here too so attribution survives if the session refreshes between the
+    // middleware and Server Component auth checks.
+    const campaignParams = new URLSearchParams()
+    for (const key of CAMPAIGN_QUERY_KEYS) {
+      const value = params[key]
+      if (typeof value === 'string' && value) campaignParams.set(key, value)
+    }
+    const query = campaignParams.toString()
+    redirect(query ? `/home?${query}` : '/home')
+  }
 
   return (
     <>

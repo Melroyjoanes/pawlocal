@@ -11,7 +11,7 @@ function admin() {
 // silently dropped on every single skip, which is why the table shows one
 // onboarding_completed and no skips at all — the drop-off was invisible.
 const ALLOWED_EVENTS = new Set([
-  'report_viewed', 'viral_hook_tapped', 'invite_link_clicked',
+  'report_viewed', 'first_report_viewed', 'viral_hook_tapped', 'invite_link_clicked',
   'invite_sent', 'onboarding_completed', 'onboarding_skipped',
   'onboarding_started', 'report_shared',
 ])

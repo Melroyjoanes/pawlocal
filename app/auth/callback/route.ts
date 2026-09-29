@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { sendGA4Event } from '@/lib/ga4'
+import { CAMPAIGN_COOKIE, parseCampaignCookie } from '@/lib/campaign'
 
 function resolveBase(request: NextRequest): string {
   const forwardedHost = request.headers.get('x-forwarded-host')
@@ -123,6 +124,7 @@ export async function GET(request: NextRequest) {
     ?? null
   const userAgent = request.headers.get('user-agent') ?? null
   const referrer = request.headers.get('referer') ?? null
+  const campaign = parseCampaignCookie(cookieStore.get(CAMPAIGN_COOKIE)?.value)
 
   // Log analytics event (fire and forget — don't block auth redirect)
   logAnalyticsEvent(admin, {
@@ -135,7 +137,7 @@ export async function GET(request: NextRequest) {
     referrer_url: referrer,
     ip_address: ip,
     user_agent: userAgent,
-    metadata: { next, provider: 'google' },
+    metadata: { next, provider: 'google', campaign },
   })
 
   // GA4 sign_up — only for genuinely new accounts, matches the same isNewUser
@@ -144,7 +146,16 @@ export async function GET(request: NextRequest) {
     const gaCookie = cookieStore.get('_ga')?.value
     const gaParts = gaCookie?.split('.') ?? []
     const gaClientId = gaParts.length >= 4 ? `${gaParts[2]}.${gaParts[3]}` : user.id
-    sendGA4Event(gaClientId, { name: 'sign_up', params: { method: 'google' } })
+    sendGA4Event(gaClientId, {
+      name: 'sign_up',
+      params: {
+        method: 'google',
+        ...(campaign?.utm_source ? { campaign_source: campaign.utm_source } : {}),
+        ...(campaign?.utm_medium ? { campaign_medium: campaign.utm_medium } : {}),
+        ...(campaign?.utm_campaign ? { campaign_name: campaign.utm_campaign } : {}),
+        ...(campaign?.utm_content ? { campaign_content: campaign.utm_content } : {}),
+      },
+    })
   }
 
   // V1 provider routing removed — all users are treated as pet parents in V2.

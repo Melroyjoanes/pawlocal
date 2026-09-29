@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'How PupStep collects, uses, and protects your personal data. Compliant with the Indian IT Act 2000 and SPDI Rules 2011.',
 }
 
-const LAST_UPDATED = '21 June 2025'
+const LAST_UPDATED = '29 September 2026'
 
 export default function PrivacyPolicyPage() {
   return (
@@ -55,7 +55,7 @@ export default function PrivacyPolicyPage() {
               <ul>
                 <li>Device type, browser, and operating system</li>
                 <li>IP address and approximate location (city level)</li>
-                <li>Pages visited, time spent, and interaction patterns (via Google Analytics 4)</li>
+                <li>Pages visited, time spent, and interaction patterns (via Google Analytics 4 and Microsoft Clarity). Clarity is configured in strict masking mode so page text and images are masked in recordings.</li>
                 <li>GPS coordinates during active walk sessions (precise location, collected only while a walk is in progress)</li>
               </ul>
             </SubSection>
@@ -87,7 +87,7 @@ export default function PrivacyPolicyPage() {
           <Section title="3. Sharing of Information">
             <p>We share your data only in these limited circumstances:</p>
             <ul>
-              <li><strong>Service providers:</strong> Supabase (database and authentication), Razorpay (payments), Resend (email), Vercel (hosting). Each is bound by data processing agreements.</li>
+              <li><strong>Service providers:</strong> Supabase (database and authentication), Razorpay (payments), Resend (email), Vercel (hosting), Google Analytics 4 and Microsoft Clarity (product analytics). Each processes data for the stated service purpose.</li>
               <li><strong>Other users:</strong> When you connect with a service provider, your name, dog&apos;s name, and WhatsApp number are visible to that provider. Walk report links are shareable only by the provider.</li>
               <li><strong>Legal requirements:</strong> If required by law, court order, or governmental authority in India.</li>
               <li><strong>Business transfer:</strong> In the event of a merger or acquisition, your data may be transferred. You will be notified via email before any such transfer.</li>
@@ -138,9 +138,11 @@ export default function PrivacyPolicyPage() {
 
           <Section title="7. Cookies">
             <p>
-              We use essential cookies for authentication (Supabase session management) and analytics cookies via
-              Google Analytics 4 to understand how PupStep is used, so we can improve it. No data is sold or shared
-              with advertisers. You can clear or block cookies through your browser settings at any time.
+              We use essential cookies for authentication (Supabase session management), analytics cookies via
+              Google Analytics 4, and a first-party campaign cookie that records the UTM campaign which first introduced
+              a visitor to PupStep. The campaign cookie expires after 90 days and helps us attribute later signups to the
+              correct campaign. Microsoft Clarity helps us understand page usage with strict masking enabled. No data is
+              sold to advertisers. You can clear or block cookies through your browser settings at any time.
             </p>
           </Section>
 

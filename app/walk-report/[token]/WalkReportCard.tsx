@@ -561,15 +561,23 @@ export default function WalkReportCard({
     if (burst) { const t = setTimeout(() => setBurst(false), 1200); return () => clearTimeout(t) }
   }, [burst])
   useEffect(() => {
-    trackEvent('report_viewed', { is_first_report: isFirstReport, logged_by: report.logged_by ?? 'walker' })
+    const reportMetadata = { is_first_report: isFirstReport, logged_by: report.logged_by ?? 'walker' }
+    trackEvent('report_viewed', reportMetadata)
+    if (isFirstReport) trackEvent('first_report_viewed', reportMetadata)
     // Also log first-party, keyed to this report's token. GA4 alone can't tell
     // the admin panel how many times THIS report was opened — that count reads
     // from analytics_events.report_token, and it has been frozen since the
     // /api/track call was dropped from this effect in June.
     trackServer('report_viewed', {
       report_token: report.token,
-      metadata: { is_first_report: isFirstReport, logged_by: report.logged_by ?? 'walker' },
+      metadata: reportMetadata,
     })
+    if (isFirstReport) {
+      trackServer('first_report_viewed', {
+        report_token: report.token,
+        metadata: reportMetadata,
+      })
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

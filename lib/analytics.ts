@@ -5,12 +5,17 @@ declare global {
   interface Window {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     gtag?: (...args: any[]) => void
+    clarity?: (command: 'event', name: string) => void
   }
 }
 
 export function trackEvent(name: string, params: Record<string, unknown> = {}): void {
-  if (typeof window === 'undefined' || typeof window.gtag !== 'function') return
-  window.gtag('event', name, params)
+  if (typeof window === 'undefined') return
+  window.gtag?.('event', name, params)
+  // Mirror named product milestones into Clarity. This keeps recordings and
+  // heatmaps filterable by the same funnel vocabulary used in GA4 without
+  // sending event parameters or pet/walker details to Clarity.
+  window.clarity?.('event', name)
 }
 
 // First-party event log (Supabase analytics_events), separate from GA4 above.
